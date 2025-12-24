@@ -102,11 +102,7 @@ function Greeting({ name }) {
 import { Trans, Plural } from '@idioma/react'
 
 <Trans>
-  <Plural
-    value={count}
-    one="You have # item in your cart"
-    other="You have # items in your cart"
-  />
+  You have <Plural value={count} one="# item" other="# items" /> in your cart
 </Trans>
 ```
 
