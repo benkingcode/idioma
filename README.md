@@ -52,10 +52,7 @@ Set up the provider:
 
 ```tsx
 // main.tsx
-import { createIdiomaProvider, createUseLocale } from '@idioma/react'
-
-export const IdiomaProvider = createIdiomaProvider()
-export const useLocale = createUseLocale()
+import { IdiomaProvider } from './src/idioma'
 
 createRoot(document.getElementById('root')!).render(
   <IdiomaProvider locale="en">
@@ -67,7 +64,7 @@ createRoot(document.getElementById('root')!).render(
 Use it:
 
 ```tsx
-import { Trans } from '@idioma/react'
+import { Trans } from './src/idioma'
 
 function Greeting({ name }) {
   return <Trans>Hello {name}!</Trans>
@@ -99,7 +96,7 @@ function Greeting({ name }) {
 ### Pluralization
 
 ```tsx
-import { Trans, Plural } from '@idioma/react'
+import { Trans, Plural } from './src/idioma'
 
 <Trans>
   You have <Plural value={count} one="# item" other="# items" /> in your cart
@@ -109,7 +106,7 @@ import { Trans, Plural } from '@idioma/react'
 ### Imperative usage with useT
 
 ```tsx
-import { useT } from '@idioma/react'
+import { useT } from './src/idioma'
 
 function SearchInput() {
   const t = useT()
