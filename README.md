@@ -58,7 +58,7 @@ export const IdiomaProvider = createIdiomaProvider()
 export const useLocale = createUseLocale()
 
 createRoot(document.getElementById('root')!).render(
-  <IdiomaProvider defaultLocale="en">
+  <IdiomaProvider locale="en">
     <App />
   </IdiomaProvider>
 )
