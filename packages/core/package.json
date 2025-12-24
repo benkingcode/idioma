@@ -1,0 +1,75 @@
+{
+  "name": "@idioma/core",
+  "version": "0.1.0",
+  "description": "Compile-time React i18n - build tools and CLI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./babel": {
+      "types": "./dist/babel/plugin.d.ts",
+      "import": "./dist/babel/plugin.js"
+    },
+    "./vite": {
+      "types": "./dist/bundler/vite.d.ts",
+      "import": "./dist/bundler/vite.js"
+    }
+  },
+  "bin": {
+    "idioma": "./bin/idioma.mjs"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@formatjs/icu-messageformat-parser": "^2.11.4",
+    "chokidar": "^3.6.0",
+    "citty": "^0.1.6",
+    "consola": "^3.4.2",
+    "fast-glob": "^3.3.3",
+    "gettext-parser": "^8.0.0",
+    "murmurhash-js": "^1.0.0",
+    "pathe": "^1.1.2",
+    "unplugin": "^1.12.0"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@babel/core": "^7.28.5",
+    "@babel/generator": "^7.28.5",
+    "@babel/parser": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@babel/traverse": "^7.28.5",
+    "@babel/types": "^7.28.5",
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/gettext-parser": "^4.0.4",
+    "openai": "^4.0.0",
+    "vite": "^5.4.21"
+  },
+  "keywords": [
+    "i18n",
+    "react",
+    "babel",
+    "vite",
+    "internationalization",
+    "localization",
+    "translation",
+    "cli"
+  ],
+  "license": "MIT"
+}
