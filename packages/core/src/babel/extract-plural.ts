@@ -1,16 +1,16 @@
-import * as t from '@babel/types'
-import generate from '@babel/generator'
+import generate from '@babel/generator';
+import * as t from '@babel/types';
 
 export interface PluralIcuResult {
   /** The ICU plural message */
-  icu: string
+  icu: string;
   /** The variable name used for the count */
-  variable: string
+  variable: string;
 }
 
 // Valid plural form names in order
-const PLURAL_FORMS = ['zero', 'one', 'two', 'few', 'many', 'other'] as const
-type PluralForm = (typeof PLURAL_FORMS)[number]
+const PLURAL_FORMS = ['zero', 'one', 'two', 'few', 'many', 'other'] as const;
+type PluralForm = (typeof PLURAL_FORMS)[number];
 
 /**
  * Serialize a Plural JSX element to ICU MessageFormat.
@@ -21,57 +21,57 @@ type PluralForm = (typeof PLURAL_FORMS)[number]
  *   {count, plural, one {# item} other {# items}}
  */
 export function serializePluralToIcu(element: t.JSXElement): PluralIcuResult {
-  const opening = element.openingElement
+  const opening = element.openingElement;
 
   // Extract props
-  const props = new Map<string, string>()
-  let variable: string | null = null
+  const props = new Map<string, string>();
+  let variable: string | null = null;
 
   for (const attr of opening.attributes) {
-    if (!t.isJSXAttribute(attr) || !t.isJSXIdentifier(attr.name)) continue
+    if (!t.isJSXAttribute(attr) || !t.isJSXIdentifier(attr.name)) continue;
 
-    const name = attr.name.name
+    const name = attr.name.name;
 
     if (name === 'value') {
       // Extract the variable expression
       if (t.isJSXExpressionContainer(attr.value)) {
-        variable = generate(attr.value.expression).code
+        variable = generate(attr.value.expression).code;
       }
     } else if (PLURAL_FORMS.includes(name as PluralForm)) {
       // Extract the form string
       if (t.isStringLiteral(attr.value)) {
-        props.set(name, attr.value.value)
+        props.set(name, attr.value.value);
       } else if (
         t.isJSXExpressionContainer(attr.value) &&
         t.isStringLiteral(attr.value.expression)
       ) {
-        props.set(name, attr.value.expression.value)
+        props.set(name, attr.value.expression.value);
       }
     }
   }
 
   // Validate required props
   if (!variable) {
-    throw new Error('Plural requires a value prop')
+    throw new Error('Plural requires a value prop');
   }
 
   if (!props.has('other')) {
-    throw new Error('Plural requires an "other" form')
+    throw new Error('Plural requires an "other" form');
   }
 
   // Build ICU message
-  const forms: string[] = []
+  const forms: string[] = [];
 
   for (const form of PLURAL_FORMS) {
     if (props.has(form)) {
-      const formText = escapeIcuSpecialChars(props.get(form)!)
-      forms.push(`${form} {${formText}}`)
+      const formText = escapeIcuSpecialChars(props.get(form)!);
+      forms.push(`${form} {${formText}}`);
     }
   }
 
-  const icu = `{${variable}, plural, ${forms.join(' ')}}`
+  const icu = `{${variable}, plural, ${forms.join(' ')}}`;
 
-  return { icu, variable }
+  return { icu, variable };
 }
 
 /**
@@ -81,5 +81,5 @@ export function serializePluralToIcu(element: t.JSXElement): PluralIcuResult {
  */
 function escapeIcuSpecialChars(text: string): string {
   // Escape { and } but not #
-  return text.replace(/\{/g, "'{").replace(/\}/g, "}'")
+  return text.replace(/\{/g, "'{").replace(/\}/g, "}'");
 }

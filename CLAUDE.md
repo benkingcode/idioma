@@ -31,6 +31,7 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 ### Packages
 
 **@idioma/core** (`packages/core/`) - Build tools and CLI
+
 - `babel/` - Babel plugin that transforms `<Trans>` components and extracts messages
 - `bundler/` - Vite plugin that compiles PO files and injects Babel transforms
 - `cli/` - CLI commands: `extract`, `compile`, `check`, `stats`, `translate`
@@ -40,6 +41,7 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `keys/` - Message key generation (murmurhash-based)
 
 **@idioma/react** (`packages/react/`) - Runtime components
+
 - `Trans` component and `__Trans` (compiled output)
 - `__useT` hook (compiled output consumes this)
 - `IdiomaContext` and `IdiomaProvider` for locale state
@@ -56,15 +58,16 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 ### Configuration
 
 Projects use `idioma.config.ts`:
+
 ```typescript
-import { defineConfig } from '@idioma/core'
+import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
   localeDir: './locales',
   outputDir: './src/idioma',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
-})
+});
 ```
 
 ### Key Conventions

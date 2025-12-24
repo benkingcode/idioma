@@ -1,27 +1,27 @@
-import { promises as fs } from 'fs'
-import { join, basename } from 'path'
-import { loadPoFile } from '../po/parser'
-import { compileIcuToFunction, analyzeIcuMessage } from '../icu/compiler'
-import type { Catalog, Message } from '../po/types'
+import { promises as fs } from 'fs';
+import { basename, join } from 'path';
+import { analyzeIcuMessage, compileIcuToFunction } from '../icu/compiler';
+import { loadPoFile } from '../po/parser';
+import type { Catalog, Message } from '../po/types';
 
 export interface CompileOptions {
   /** Directory containing .po files */
-  localeDir: string
+  localeDir: string;
   /** Output directory for compiled translations */
-  outputDir: string
+  outputDir: string;
   /** Default/source locale */
-  defaultLocale: string
+  defaultLocale: string;
 }
 
 export interface CompiledMessage {
   /** The message key */
-  key: string
+  key: string;
   /** Translations by locale (string or compiled function as string) */
-  translations: Record<string, string>
+  translations: Record<string, string>;
   /** Whether this message has ICU formatting (needs function compilation) */
-  isIcu: boolean
+  isIcu: boolean;
   /** Variable names used in the message */
-  variables: string[]
+  variables: string[];
 }
 
 /**
@@ -32,44 +32,46 @@ export interface CompiledMessage {
  * - types.ts: TypeScript type definitions
  * - index.ts: Re-exports with typed factories
  */
-export async function compileTranslations(options: CompileOptions): Promise<void> {
-  const { localeDir, outputDir, defaultLocale } = options
+export async function compileTranslations(
+  options: CompileOptions,
+): Promise<void> {
+  const { localeDir, outputDir, defaultLocale } = options;
 
   // Ensure output directory exists
-  await fs.mkdir(outputDir, { recursive: true })
+  await fs.mkdir(outputDir, { recursive: true });
 
   // Find all .po files
-  const files = await fs.readdir(localeDir)
-  const poFiles = files.filter((f) => f.endsWith('.po'))
+  const files = await fs.readdir(localeDir);
+  const poFiles = files.filter((f) => f.endsWith('.po'));
 
   if (poFiles.length === 0) {
-    throw new Error(`No .po files found in ${localeDir}`)
+    throw new Error(`No .po files found in ${localeDir}`);
   }
 
   // Load all catalogs
-  const catalogs = new Map<string, Catalog>()
+  const catalogs = new Map<string, Catalog>();
   for (const file of poFiles) {
-    const locale = basename(file, '.po')
-    const catalog = await loadPoFile(join(localeDir, file), locale)
-    catalogs.set(locale, catalog)
+    const locale = basename(file, '.po');
+    const catalog = await loadPoFile(join(localeDir, file), locale);
+    catalogs.set(locale, catalog);
   }
 
   // Collect all unique message keys across catalogs
-  const allMessages = new Map<string, CompiledMessage>()
+  const allMessages = new Map<string, CompiledMessage>();
 
   for (const [locale, catalog] of catalogs) {
     for (const [key, message] of catalog.messages) {
       if (!allMessages.has(key)) {
-        const analysis = analyzeIcuMessage(message.source)
+        const analysis = analyzeIcuMessage(message.source);
         allMessages.set(key, {
           key,
           translations: {},
           isIcu: analysis.hasPlural || analysis.hasSelect,
           variables: analysis.variables,
-        })
+        });
       }
 
-      const compiled = allMessages.get(key)!
+      const compiled = allMessages.get(key)!;
 
       // Compile the translation
       if (message.translation) {
@@ -77,20 +79,20 @@ export async function compileTranslations(options: CompileOptions): Promise<void
           // Compile ICU to function string
           compiled.translations[locale] = compileIcuToFunctionString(
             message.translation,
-            locale
-          )
-          compiled.isIcu = true
+            locale,
+          );
+          compiled.isIcu = true;
         } else {
-          compiled.translations[locale] = message.translation
+          compiled.translations[locale] = message.translation;
         }
       }
     }
   }
 
   // Generate output files
-  await generateTranslationsJs(outputDir, allMessages)
-  await generateTypesTs(outputDir, allMessages, [...catalogs.keys()])
-  await generateIndexTs(outputDir)
+  await generateTranslationsJs(outputDir, allMessages);
+  await generateTypesTs(outputDir, allMessages, [...catalogs.keys()]);
+  await generateIndexTs(outputDir);
 }
 
 /**
@@ -99,11 +101,11 @@ export async function compileTranslations(options: CompileOptions): Promise<void
 function compileIcuToFunctionString(message: string, locale: string): string {
   // For now, we'll inline the ICU runtime
   // In production, this would be optimized to conditionals
-  const analysis = analyzeIcuMessage(message)
+  const analysis = analyzeIcuMessage(message);
 
   if (!analysis.hasPlural && !analysis.hasSelect) {
     // Simple string with placeholders - use template literal
-    return message.replace(/\{([^}]+)\}/g, '${args.$1}')
+    return message.replace(/\{([^}]+)\}/g, '${args.$1}');
   }
 
   // For ICU with plural/select, generate a function
@@ -111,80 +113,81 @@ function compileIcuToFunctionString(message: string, locale: string): string {
   return `(args) => {
     const pr = new Intl.PluralRules('${locale}')
     ${generatePluralFunction(message, analysis.variables)}
-  }`
+  }`;
 }
 
 function generatePluralFunction(message: string, variables: string[]): string {
   // Simplified plural function generation
   // Full implementation would parse the ICU and generate optimal code
-  return `return ${JSON.stringify(message)}.replace(/{(\\w+)}/g, (_, k) => args[k] || '')`
+  return `return ${JSON.stringify(message)}.replace(/{(\\w+)}/g, (_, k) => args[k] || '')`;
 }
 
 async function generateTranslationsJs(
   outputDir: string,
-  messages: Map<string, CompiledMessage>
+  messages: Map<string, CompiledMessage>,
 ): Promise<void> {
-  let content = '// Auto-generated by @idioma/core\n'
-  content += '// Do not edit directly\n\n'
-  content += 'export const translations = {\n'
+  let content = '// Auto-generated by @idioma/core\n';
+  content += '// Do not edit directly\n\n';
+  content += 'export const translations = {\n';
 
   for (const [key, msg] of messages) {
-    content += `  ${JSON.stringify(key)}: {\n`
+    content += `  ${JSON.stringify(key)}: {\n`;
     for (const [locale, translation] of Object.entries(msg.translations)) {
       if (msg.isIcu && translation.startsWith('(args)')) {
         // Function translation
-        content += `    ${JSON.stringify(locale)}: ${translation},\n`
+        content += `    ${JSON.stringify(locale)}: ${translation},\n`;
       } else {
-        content += `    ${JSON.stringify(locale)}: ${JSON.stringify(translation)},\n`
+        content += `    ${JSON.stringify(locale)}: ${JSON.stringify(translation)},\n`;
       }
     }
-    content += '  },\n'
+    content += '  },\n';
   }
 
-  content += '};\n'
+  content += '};\n';
 
-  await fs.writeFile(join(outputDir, 'translations.js'), content, 'utf-8')
+  await fs.writeFile(join(outputDir, 'translations.js'), content, 'utf-8');
 }
 
 async function generateTypesTs(
   outputDir: string,
   messages: Map<string, CompiledMessage>,
-  locales: string[]
+  locales: string[],
 ): Promise<void> {
-  let content = '// Auto-generated by @idioma/core\n'
-  content += '// Do not edit directly\n\n'
+  let content = '// Auto-generated by @idioma/core\n';
+  content += '// Do not edit directly\n\n';
 
   // Generate Locale type
-  content += `export type Locale = ${locales.map((l) => JSON.stringify(l)).join(' | ')};\n\n`
+  content += `export type Locale = ${locales.map((l) => JSON.stringify(l)).join(' | ')};\n\n`;
 
   // Generate TranslationKey type
-  const keys = [...messages.keys()]
-  content += `export type TranslationKey = ${keys.map((k) => JSON.stringify(k)).join(' | ') || 'never'};\n\n`
+  const keys = [...messages.keys()];
+  content += `export type TranslationKey = ${keys.map((k) => JSON.stringify(k)).join(' | ') || 'never'};\n\n`;
 
   // Generate MessageValues interface
-  content += 'export interface MessageValues {\n'
+  content += 'export interface MessageValues {\n';
   for (const [key, msg] of messages) {
     if (msg.variables.length > 0) {
-      content += `  ${JSON.stringify(key)}: { ${msg.variables.map((v) => `${v}: string | number`).join('; ')} };\n`
+      content += `  ${JSON.stringify(key)}: { ${msg.variables.map((v) => `${v}: string | number`).join('; ')} };\n`;
     }
   }
-  content += '}\n\n'
+  content += '}\n\n';
 
   // Generate StringOnlyKeys type (messages without variables)
   const stringOnlyKeys = [...messages.entries()]
     .filter(([, m]) => m.variables.length === 0)
-    .map(([k]) => k)
+    .map(([k]) => k);
 
-  content += `export type StringOnlyKey = ${stringOnlyKeys.map((k) => JSON.stringify(k)).join(' | ') || 'never'};\n`
+  content += `export type StringOnlyKey = ${stringOnlyKeys.map((k) => JSON.stringify(k)).join(' | ') || 'never'};\n`;
 
-  await fs.writeFile(join(outputDir, 'types.ts'), content, 'utf-8')
+  await fs.writeFile(join(outputDir, 'types.ts'), content, 'utf-8');
 }
 
 async function generateIndexTs(outputDir: string): Promise<void> {
-  let content = '// Auto-generated by @idioma/core\n'
-  content += '// Do not edit directly\n\n'
-  content += "export { translations } from './translations';\n"
-  content += "export type { Locale, TranslationKey, MessageValues, StringOnlyKey } from './types';\n"
+  let content = '// Auto-generated by @idioma/core\n';
+  content += '// Do not edit directly\n\n';
+  content += "export { translations } from './translations';\n";
+  content +=
+    "export type { Locale, TranslationKey, MessageValues, StringOnlyKey } from './types';\n";
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8')
+  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
 }

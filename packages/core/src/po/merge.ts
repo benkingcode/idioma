@@ -1,4 +1,4 @@
-import type { Catalog, MergeOptions, MergeResult } from './types'
+import type { Catalog, MergeOptions, MergeResult } from './types';
 
 /**
  * Merge extracted messages into an existing catalog.
@@ -18,58 +18,58 @@ import type { Catalog, MergeOptions, MergeResult } from './types'
 export function mergeCatalogs(
   existing: Catalog,
   extracted: Catalog,
-  options: MergeOptions = {}
+  options: MergeOptions = {},
 ): MergeResult {
-  const { clean = false } = options
+  const { clean = false } = options;
 
   const result: MergeResult = {
     added: [],
     updated: [],
     removed: [],
     markedFuzzy: [],
-  }
+  };
 
   // Track which existing keys are still in extracted
-  const extractedKeys = new Set<string>()
+  const extractedKeys = new Set<string>();
 
   // Process each extracted message
   for (const [key, extractedMsg] of extracted.messages) {
-    extractedKeys.add(key)
+    extractedKeys.add(key);
 
-    const existingMsg = existing.messages.get(key)
+    const existingMsg = existing.messages.get(key);
 
     if (!existingMsg) {
       // New message - add it
       existing.messages.set(key, {
         ...extractedMsg,
         translation: '', // New messages are untranslated
-      })
-      result.added.push(key)
+      });
+      result.added.push(key);
     } else {
       // Existing message - update references and comments but preserve translation
-      existingMsg.references = extractedMsg.references
-      existingMsg.comments = extractedMsg.comments
+      existingMsg.references = extractedMsg.references;
+      existingMsg.comments = extractedMsg.comments;
 
       // Track as updated if references changed
-      result.updated.push(key)
+      result.updated.push(key);
     }
   }
 
   // Handle removal of obsolete messages
   if (clean) {
-    const keysToRemove: string[] = []
+    const keysToRemove: string[] = [];
 
     for (const key of existing.messages.keys()) {
       if (!extractedKeys.has(key)) {
-        keysToRemove.push(key)
+        keysToRemove.push(key);
       }
     }
 
     for (const key of keysToRemove) {
-      existing.messages.delete(key)
-      result.removed.push(key)
+      existing.messages.delete(key);
+      result.removed.push(key);
     }
   }
 
-  return result
+  return result;
 }

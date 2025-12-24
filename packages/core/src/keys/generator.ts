@@ -1,26 +1,27 @@
-import murmur from 'murmurhash-js'
+import murmur from 'murmurhash-js';
 
 // Base62 character set (0-9, A-Z, a-z)
-const BASE62_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+const BASE62_CHARS =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 // Context separator (ASCII end-of-transmission character)
-const CONTEXT_SEPARATOR = '\u0004'
+const CONTEXT_SEPARATOR = '\u0004';
 
 /**
  * Encode a number to base62 string
  */
 function toBase62(num: number): string {
-  if (num === 0) return BASE62_CHARS[0]!
+  if (num === 0) return BASE62_CHARS[0]!;
 
   // Ensure we're working with unsigned 32-bit integer
-  num = num >>> 0
+  num = num >>> 0;
 
-  let result = ''
+  let result = '';
   while (num > 0) {
-    result = BASE62_CHARS[num % 62] + result
-    num = Math.floor(num / 62)
+    result = BASE62_CHARS[num % 62] + result;
+    num = Math.floor(num / 62);
   }
-  return result
+  return result;
 }
 
 /**
@@ -39,14 +40,14 @@ function toBase62(num: number): string {
  */
 export function generateKey(message: string, context?: string): string {
   // Combine context and message if context is provided
-  const input = context ? `${context}${CONTEXT_SEPARATOR}${message}` : message
+  const input = context ? `${context}${CONTEXT_SEPARATOR}${message}` : message;
 
   // Generate 32-bit hash using murmurhash3
-  const hash = murmur.murmur3(input)
+  const hash = murmur.murmur3(input);
 
   // Convert to base62
-  const base62 = toBase62(hash)
+  const base62 = toBase62(hash);
 
   // Pad to 8 characters (max base62 for 32-bit is 6 chars, so we pad with leading zeros)
-  return base62.padStart(8, '0').slice(-8)
+  return base62.padStart(8, '0').slice(-8);
 }

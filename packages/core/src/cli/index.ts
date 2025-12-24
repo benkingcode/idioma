@@ -1,9 +1,9 @@
-import { defineCommand, runMain } from 'citty'
-import { extractCommand } from './commands/extract'
-import { compileCommand } from './commands/compile'
-import { checkCommand } from './commands/check'
-import { statsCommand } from './commands/stats'
-import { translateCommand } from './commands/translate'
+import { defineCommand, runMain } from 'citty';
+import { checkCommand } from './commands/check';
+import { compileCommand } from './commands/compile';
+import { extractCommand } from './commands/extract';
+import { statsCommand } from './commands/stats';
+import { translateCommand } from './commands/translate';
 
 const main = defineCommand({
   meta: {
@@ -18,11 +18,11 @@ const main = defineCommand({
     stats: statsCommand,
     translate: translateCommand,
   },
-})
+});
 
-export { main }
+export { main };
 
 // CLI entry point
 export function run() {
-  runMain(main)
+  runMain(main);
 }

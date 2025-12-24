@@ -1,14 +1,14 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
 export interface IdiomaContextValue {
-  locale: string
+  locale: string;
 }
 
-export const IdiomaContext = createContext<IdiomaContextValue | null>(null)
+export const IdiomaContext = createContext<IdiomaContextValue | null>(null);
 
 export interface IdiomaProviderProps {
-  children: ReactNode
-  locale: string
+  children: ReactNode;
+  locale: string;
 }
 
 /**
@@ -27,12 +27,12 @@ export interface IdiomaProviderProps {
  */
 export function createIdiomaProvider() {
   return function IdiomaProvider({ children, locale }: IdiomaProviderProps) {
-    const value = useMemo(() => ({ locale }), [locale])
+    const value = useMemo(() => ({ locale }), [locale]);
 
     return (
       <IdiomaContext.Provider value={value}>{children}</IdiomaContext.Provider>
-    )
-  }
+    );
+  };
 }
 
 /**
@@ -50,13 +50,13 @@ export function createIdiomaProvider() {
  */
 export function createUseLocale() {
   return function useLocale(): string {
-    const context = useContext(IdiomaContext)
+    const context = useContext(IdiomaContext);
     if (!context) {
       throw new Error(
         '[idioma] useLocale must be used within an IdiomaProvider. ' +
-          'Make sure to wrap your app with <IdiomaProvider>.'
-      )
+          'Make sure to wrap your app with <IdiomaProvider>.',
+      );
     }
-    return context.locale
-  }
+    return context.locale;
+  };
 }

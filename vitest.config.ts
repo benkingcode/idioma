@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -11,8 +11,6 @@ export default defineConfig({
       exclude: ['**/*.test.{ts,tsx}', '**/*.d.ts'],
     },
     // Use jsdom for React component tests
-    environmentMatchGlobs: [
-      ['packages/react/**/*.test.tsx', 'jsdom'],
-    ],
+    environmentMatchGlobs: [['packages/react/**/*.test.tsx', 'jsdom']],
   },
-})
+});

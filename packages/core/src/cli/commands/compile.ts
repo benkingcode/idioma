@@ -1,47 +1,49 @@
-import { defineCommand } from 'citty'
-import { loadConfig } from '../config'
-import { compileTranslations } from '../../compiler/compile'
+import { defineCommand } from 'citty';
+import { compileTranslations } from '../../compiler/compile';
+import { loadConfig } from '../config';
 
 export interface CompileResult {
-  messageCount: number
-  locales: string[]
+  messageCount: number;
+  locales: string[];
 }
 
 export interface CompileCommandOptions {
-  localeDir: string
-  outputDir: string
-  defaultLocale: string
+  localeDir: string;
+  outputDir: string;
+  defaultLocale: string;
 }
 
 /**
  * Run the compile command programmatically.
  */
-export async function runCompile(options: CompileCommandOptions): Promise<CompileResult> {
-  const { localeDir, outputDir, defaultLocale } = options
+export async function runCompile(
+  options: CompileCommandOptions,
+): Promise<CompileResult> {
+  const { localeDir, outputDir, defaultLocale } = options;
 
   await compileTranslations({
     localeDir,
     outputDir,
     defaultLocale,
-  })
+  });
 
   // Read back results to get stats
-  const { promises: fs } = await import('fs')
-  const { join } = await import('path')
+  const { promises: fs } = await import('fs');
+  const { join } = await import('path');
 
-  const files = await fs.readdir(localeDir)
-  const poFiles = files.filter((f) => f.endsWith('.po'))
-  const locales = poFiles.map((f) => f.replace('.po', ''))
+  const files = await fs.readdir(localeDir);
+  const poFiles = files.filter((f) => f.endsWith('.po'));
+  const locales = poFiles.map((f) => f.replace('.po', ''));
 
   // Count messages from the translations file
-  const translationsPath = join(outputDir, 'translations.js')
-  const content = await fs.readFile(translationsPath, 'utf-8')
-  const messageCount = (content.match(/^\s*"/gm) || []).length / 2
+  const translationsPath = join(outputDir, 'translations.js');
+  const content = await fs.readFile(translationsPath, 'utf-8');
+  const messageCount = (content.match(/^\s*"/gm) || []).length / 2;
 
   return {
     messageCount: Math.floor(messageCount),
     locales,
-  }
+  };
 }
 
 export const compileCommand = defineCommand({
@@ -51,19 +53,19 @@ export const compileCommand = defineCommand({
   },
   args: {},
   async run() {
-    const cwd = process.cwd()
-    const config = await loadConfig(cwd)
+    const cwd = process.cwd();
+    const config = await loadConfig(cwd);
 
-    console.log('Compiling translations...')
+    console.log('Compiling translations...');
 
     const result = await runCompile({
       localeDir: config.localeDir,
       outputDir: config.outputDir,
       defaultLocale: config.defaultLocale,
-    })
+    });
 
     console.log(
-      `Compiled ${result.messageCount} messages for ${result.locales.length} locales: ${result.locales.join(', ')}`
-    )
+      `Compiled ${result.messageCount} messages for ${result.locales.length} locales: ${result.locales.join(', ')}`,
+    );
   },
-})
+});

@@ -3,19 +3,19 @@
  */
 export interface Message {
   /** The message key (msgctxt or generated hash) */
-  key: string
+  key: string;
   /** The source message (msgid) */
-  source: string
+  source: string;
   /** The translated message (msgstr), empty if untranslated */
-  translation: string
+  translation: string;
   /** Extracted comments (#.) */
-  comments?: string[]
+  comments?: string[];
   /** Reference comments (#:) - file:line locations */
-  references?: string[]
+  references?: string[];
   /** Flags (#,) like fuzzy, icu-format */
-  flags?: string[]
+  flags?: string[];
   /** Context (msgctxt) if explicitly provided */
-  context?: string
+  context?: string;
 }
 
 /**
@@ -23,11 +23,11 @@ export interface Message {
  */
 export interface Catalog {
   /** The locale code (e.g., 'es', 'fr', 'de') */
-  locale: string
+  locale: string;
   /** Headers from the PO file */
-  headers: Record<string, string>
+  headers: Record<string, string>;
   /** Messages keyed by their msgid (or msgctxt\u0004msgid if context exists) */
-  messages: Map<string, Message>
+  messages: Map<string, Message>;
 }
 
 /**
@@ -35,9 +35,9 @@ export interface Catalog {
  */
 export interface MergeOptions {
   /** Remove messages that are not in the extracted set */
-  clean?: boolean
+  clean?: boolean;
   /** Mark changed source messages as fuzzy */
-  markFuzzy?: boolean
+  markFuzzy?: boolean;
 }
 
 /**
@@ -45,11 +45,11 @@ export interface MergeOptions {
  */
 export interface MergeResult {
   /** Messages that were added */
-  added: string[]
+  added: string[];
   /** Messages that were updated */
-  updated: string[]
+  updated: string[];
   /** Messages that were removed (if clean option used) */
-  removed: string[]
+  removed: string[];
   /** Messages that were marked fuzzy */
-  markedFuzzy: string[]
+  markedFuzzy: string[];
 }

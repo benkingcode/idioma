@@ -1,36 +1,38 @@
-import { defineCommand } from 'citty'
-import { join } from 'path'
-import { loadConfig } from '../config'
-import { loadPoFile, writePoFile } from '../../po/parser'
+import { join } from 'path';
+import { defineCommand } from 'citty';
 import {
   createAnthropicProvider,
   createOpenAIProvider,
-  type TranslationProvider,
   type MessageToTranslate,
-} from '../../ai/provider'
+  type TranslationProvider,
+} from '../../ai/provider';
+import { loadPoFile, writePoFile } from '../../po/parser';
+import { loadConfig } from '../config';
 
 export interface TranslateResult {
-  translated: number
-  skipped: number
-  total: number
-  dryRun?: boolean
+  translated: number;
+  skipped: number;
+  total: number;
+  dryRun?: boolean;
 }
 
 export interface TranslateOptions {
-  localeDir: string
-  defaultLocale: string
-  targetLocale: string
-  provider: TranslationProvider
-  force?: boolean
-  dryRun?: boolean
-  markAI?: boolean
-  batchSize?: number
+  localeDir: string;
+  defaultLocale: string;
+  targetLocale: string;
+  provider: TranslationProvider;
+  force?: boolean;
+  dryRun?: boolean;
+  markAI?: boolean;
+  batchSize?: number;
 }
 
 /**
  * Translate messages using AI.
  */
-export async function runTranslate(options: TranslateOptions): Promise<TranslateResult> {
+export async function runTranslate(
+  options: TranslateOptions,
+): Promise<TranslateResult> {
   const {
     localeDir,
     defaultLocale,
@@ -40,28 +42,28 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
     dryRun = false,
     markAI = false,
     batchSize = 20,
-  } = options
+  } = options;
 
   // Load target catalog
-  const poPath = join(localeDir, `${targetLocale}.po`)
-  const catalog = await loadPoFile(poPath, targetLocale)
+  const poPath = join(localeDir, `${targetLocale}.po`);
+  const catalog = await loadPoFile(poPath, targetLocale);
 
   // Find messages that need translation
-  const messagesToTranslate: MessageToTranslate[] = []
-  const skippedKeys = new Set<string>()
+  const messagesToTranslate: MessageToTranslate[] = [];
+  const skippedKeys = new Set<string>();
 
   for (const [key, message] of catalog.messages) {
     const needsTranslation =
-      force || !message.translation || message.translation.length === 0
+      force || !message.translation || message.translation.length === 0;
 
     if (needsTranslation) {
       messagesToTranslate.push({
         key,
         source: message.source,
         context: message.comments?.join(' '),
-      })
+      });
     } else {
-      skippedKeys.add(key)
+      skippedKeys.add(key);
     }
   }
 
@@ -71,43 +73,43 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
       skipped: skippedKeys.size,
       total: catalog.messages.size,
       dryRun,
-    }
+    };
   }
 
   // Translate in batches
-  const translatedMessages: Map<string, string> = new Map()
+  const translatedMessages: Map<string, string> = new Map();
 
   for (let i = 0; i < messagesToTranslate.length; i += batchSize) {
-    const batch = messagesToTranslate.slice(i, i + batchSize)
+    const batch = messagesToTranslate.slice(i, i + batchSize);
 
     const results = await provider.translate({
       messages: batch,
       sourceLocale: defaultLocale,
       targetLocale,
-    })
+    });
 
     for (const result of results) {
-      translatedMessages.set(result.key, result.translation)
+      translatedMessages.set(result.key, result.translation);
     }
   }
 
   // Update catalog with translations
   if (!dryRun) {
     for (const [key, translation] of translatedMessages) {
-      const message = catalog.messages.get(key)
+      const message = catalog.messages.get(key);
       if (message) {
-        message.translation = translation
+        message.translation = translation;
 
         if (markAI) {
-          message.flags = message.flags || []
+          message.flags = message.flags || [];
           if (!message.flags.includes('ai-translated')) {
-            message.flags.push('ai-translated')
+            message.flags.push('ai-translated');
           }
         }
       }
     }
 
-    await writePoFile(poPath, catalog)
+    await writePoFile(poPath, catalog);
   }
 
   return {
@@ -115,7 +117,7 @@ export async function runTranslate(options: TranslateOptions): Promise<Translate
     skipped: skippedKeys.size,
     total: catalog.messages.size,
     dryRun,
-  }
+  };
 }
 
 export const translateCommand = defineCommand({
@@ -151,42 +153,42 @@ export const translateCommand = defineCommand({
     },
   },
   async run({ args }) {
-    const cwd = process.cwd()
-    const config = await loadConfig(cwd)
+    const cwd = process.cwd();
+    const config = await loadConfig(cwd);
 
     // Create provider
-    let provider: TranslationProvider
-    const providerName = args.provider as string
+    let provider: TranslationProvider;
+    const providerName = args.provider as string;
 
     if (providerName === 'anthropic') {
-      const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY
+      const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
-        console.error('Error: ANTHROPIC_API_KEY not set')
-        process.exitCode = 1
-        return
+        console.error('Error: ANTHROPIC_API_KEY not set');
+        process.exitCode = 1;
+        return;
       }
       provider = createAnthropicProvider({
         apiKey,
         model: config.ai?.model,
-      })
+      });
     } else if (providerName === 'openai') {
-      const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY
+      const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY;
       if (!apiKey) {
-        console.error('Error: OPENAI_API_KEY not set')
-        process.exitCode = 1
-        return
+        console.error('Error: OPENAI_API_KEY not set');
+        process.exitCode = 1;
+        return;
       }
       provider = createOpenAIProvider({
         apiKey,
         model: config.ai?.model,
-      })
+      });
     } else {
-      console.error(`Error: Unknown provider: ${providerName}`)
-      process.exitCode = 1
-      return
+      console.error(`Error: Unknown provider: ${providerName}`);
+      process.exitCode = 1;
+      return;
     }
 
-    console.log(`Translating to ${args.locale} using ${provider.name}...`)
+    console.log(`Translating to ${args.locale} using ${provider.name}...`);
 
     const result = await runTranslate({
       localeDir: config.localeDir,
@@ -196,14 +198,14 @@ export const translateCommand = defineCommand({
       force: args.force,
       dryRun: args['dry-run'],
       markAI: args['mark-ai'],
-    })
+    });
 
     if (result.dryRun) {
-      console.log('(dry run - no changes saved)')
+      console.log('(dry run - no changes saved)');
     }
 
-    console.log(`Translated: ${result.translated}`)
-    console.log(`Skipped: ${result.skipped}`)
-    console.log(`Total: ${result.total}`)
+    console.log(`Translated: ${result.translated}`);
+    console.log(`Skipped: ${result.skipped}`);
+    console.log(`Total: ${result.total}`);
   },
-})
+});

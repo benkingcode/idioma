@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { __Trans } from './Trans'
-import { createIdiomaProvider } from './context'
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { createIdiomaProvider } from './context';
+import { __Trans } from './Trans';
 
-const IdiomaProvider = createIdiomaProvider()
+const IdiomaProvider = createIdiomaProvider();
 
 describe('__Trans', () => {
   it('renders a simple string for the current locale', () => {
@@ -15,11 +15,11 @@ describe('__Trans', () => {
             es: 'Hola',
           }}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByText('Hello')).toBeDefined()
-  })
+    expect(screen.getByText('Hello')).toBeDefined();
+  });
 
   it('switches locale dynamically', () => {
     const { rerender } = render(
@@ -30,10 +30,10 @@ describe('__Trans', () => {
             es: 'Hola',
           }}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByText('Hello')).toBeDefined()
+    expect(screen.getByText('Hello')).toBeDefined();
 
     rerender(
       <IdiomaProvider locale="es">
@@ -43,11 +43,11 @@ describe('__Trans', () => {
             es: 'Hola',
           }}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByText('Hola')).toBeDefined()
-  })
+    expect(screen.getByText('Hola')).toBeDefined();
+  });
 
   it('interpolates values with __a prop', () => {
     render(
@@ -59,16 +59,16 @@ describe('__Trans', () => {
           }}
           __a={{ name: 'Ben' }}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByText('Hello Ben!')).toBeDefined()
-  })
+    expect(screen.getByText('Hello Ben!')).toBeDefined();
+  });
 
   it('interpolates components with __c prop', () => {
     const Bold = ({ children }: { children: React.ReactNode }) => (
       <strong data-testid="bold">{children}</strong>
-    )
+    );
 
     render(
       <IdiomaProvider locale="en">
@@ -79,11 +79,11 @@ describe('__Trans', () => {
           }}
           __c={[Bold]}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByTestId('bold').textContent).toBe('world')
-  })
+    expect(screen.getByTestId('bold').textContent).toBe('world');
+  });
 
   it('handles function messages (compiled plurals)', () => {
     render(
@@ -97,11 +97,11 @@ describe('__Trans', () => {
           }}
           __a={{ count: 5 }}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByText('5 items')).toBeDefined()
-  })
+    expect(screen.getByText('5 items')).toBeDefined();
+  });
 
   it('handles function messages with count of 1', () => {
     render(
@@ -115,16 +115,16 @@ describe('__Trans', () => {
           }}
           __a={{ count: 1 }}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByText('1 item')).toBeDefined()
-  })
+    expect(screen.getByText('1 item')).toBeDefined();
+  });
 
   it('handles both values and components together', () => {
     const Link = ({ children }: { children: React.ReactNode }) => (
       <a data-testid="link">{children}</a>
-    )
+    );
 
     render(
       <IdiomaProvider locale="en">
@@ -136,11 +136,11 @@ describe('__Trans', () => {
           __a={{ name: 'Ben' }}
           __c={[Link]}
         />
-      </IdiomaProvider>
-    )
+      </IdiomaProvider>,
+    );
 
-    expect(screen.getByTestId('link').textContent).toBe('here')
+    expect(screen.getByTestId('link').textContent).toBe('here');
     // The full text should contain "Hello Ben"
-    expect(screen.getByText(/Hello Ben/)).toBeDefined()
-  })
-})
+    expect(screen.getByText(/Hello Ben/)).toBeDefined();
+  });
+});

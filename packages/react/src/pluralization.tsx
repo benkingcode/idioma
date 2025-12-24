@@ -1,18 +1,18 @@
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react';
 
 export interface PluralForms {
   /** Form for zero (optional, falls back to other) */
-  zero?: string
+  zero?: string;
   /** Form for one */
-  one?: string
+  one?: string;
   /** Form for two (used in some languages like Arabic) */
-  two?: string
+  two?: string;
   /** Form for few (used in some languages like Russian, Polish) */
-  few?: string
+  few?: string;
   /** Form for many (used in some languages like Russian, Arabic) */
-  many?: string
+  many?: string;
   /** Form for other (required - the fallback) */
-  other: string
+  other: string;
 }
 
 /**
@@ -28,39 +28,39 @@ export function plural(value: number, forms: PluralForms): string {
   // Dev-mode implementation using simple English-like plural rules
   // In production, this is compiled to ICU and then to JS conditionals
 
-  let form: string
+  let form: string;
 
   if (value === 0 && forms.zero !== undefined) {
-    form = forms.zero
+    form = forms.zero;
   } else if (value === 1 && forms.one !== undefined) {
-    form = forms.one
+    form = forms.one;
   } else if (value === 2 && forms.two !== undefined) {
-    form = forms.two
+    form = forms.two;
   } else {
     // For dev mode, we don't implement full CLDR rules
     // Just use "other" as the fallback
-    form = forms.other
+    form = forms.other;
   }
 
   // Replace # with the actual value
-  return form.replace(/#/g, String(value))
+  return form.replace(/#/g, String(value));
 }
 
 export interface PluralProps {
   /** The numeric value to pluralize */
-  value: number
+  value: number;
   /** Form for zero (optional, falls back to other) */
-  zero?: string
+  zero?: string;
   /** Form for one */
-  one?: string
+  one?: string;
   /** Form for two (used in some languages like Arabic) */
-  two?: string
+  two?: string;
   /** Form for few (used in some languages like Russian, Polish) */
-  few?: string
+  few?: string;
   /** Form for many (used in some languages like Russian, Arabic) */
-  many?: string
+  many?: string;
   /** Form for other (required - the fallback) */
-  other: string
+  other: string;
 }
 
 /**
@@ -83,22 +83,22 @@ export function Plural({
   // Dev-mode implementation using simple English-like plural rules
   // In production, this is compiled to ICU and then to JS conditionals
 
-  let form: string
+  let form: string;
 
   if (value === 0 && zero !== undefined) {
-    form = zero
+    form = zero;
   } else if (value === 1 && one !== undefined) {
-    form = one
+    form = one;
   } else if (value === 2 && two !== undefined) {
-    form = two
+    form = two;
   } else {
     // For dev mode, we don't implement full CLDR rules
     // Just use "other" as the fallback
-    form = other
+    form = other;
   }
 
   // Replace # with the actual value
-  const text = form.replace(/#/g, String(value))
+  const text = form.replace(/#/g, String(value));
 
-  return <Fragment>{text}</Fragment>
+  return <Fragment>{text}</Fragment>;
 }

@@ -7,12 +7,21 @@ export {
   IdiomaContext,
   type IdiomaContextValue,
   type IdiomaProviderProps,
-} from './context'
+} from './context';
 
 // Pluralization (dev-time)
-export { Plural, plural, type PluralForms, type PluralProps } from './pluralization'
+export {
+  Plural,
+  plural,
+  type PluralForms,
+  type PluralProps,
+} from './pluralization';
 
 // Runtime internals (used by compiled code)
-export { __Trans, type TransProps } from './Trans'
-export { __useT, type UseTOptions } from './useT'
-export { interpolateValues, interpolateTags, type TransComponent } from './interpolate'
+export { __Trans, type TransProps } from './Trans';
+export { __useT, type UseTOptions } from './useT';
+export {
+  interpolateValues,
+  interpolateTags,
+  type TransComponent,
+} from './interpolate';

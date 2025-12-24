@@ -1,23 +1,23 @@
-import type { NodePath } from '@babel/traverse'
-import * as t from '@babel/types'
-import { serializeJsxChildren } from './serialize'
-import { generateKey } from '../keys/generator'
+import type { NodePath } from '@babel/traverse';
+import * as t from '@babel/types';
+import { generateKey } from '../keys/generator';
+import { serializeJsxChildren } from './serialize';
 
 export interface ExtractedMessage {
   /** The message key (explicit id or generated hash) */
-  key: string
+  key: string;
   /** The source message */
-  source: string
+  source: string;
   /** Optional context */
-  context?: string
+  context?: string;
   /** Placeholder mappings */
-  placeholders: Record<string, string>
+  placeholders: Record<string, string>;
   /** Component names */
-  components: string[]
+  components: string[];
   /** File:line references */
-  references: string[]
+  references: string[];
   /** Comments for complex expressions */
-  comments?: string[]
+  comments?: string[];
 }
 
 /**
@@ -29,38 +29,38 @@ export interface ExtractedMessage {
  */
 export function extractTransMessage(
   path: NodePath<t.JSXElement>,
-  filename: string
+  filename: string,
 ): ExtractedMessage | null {
-  const opening = path.node.openingElement
+  const opening = path.node.openingElement;
 
   // Check if this is a Trans component
   if (!isTransComponent(opening.name)) {
-    return null
+    return null;
   }
 
   // Get props
-  const idProp = getStringProp(opening, 'id')
-  const contextProp = getStringProp(opening, 'context')
+  const idProp = getStringProp(opening, 'id');
+  const contextProp = getStringProp(opening, 'context');
 
   // Skip key-only Trans (self-closing or empty)
-  const children = path.node.children
+  const children = path.node.children;
   if (children.length === 0 || opening.selfClosing) {
-    return null
+    return null;
   }
 
   // Serialize children to message
-  const serialized = serializeJsxChildren(children)
+  const serialized = serializeJsxChildren(children);
 
   // Skip if message is empty after serialization
   if (!serialized.message) {
-    return null
+    return null;
   }
 
   // Generate or use explicit key
-  const key = idProp || generateKey(serialized.message, contextProp)
+  const key = idProp || generateKey(serialized.message, contextProp);
 
   // Get line number for reference
-  const line = path.node.loc?.start.line || 0
+  const line = path.node.loc?.start.line || 0;
 
   const result: ExtractedMessage = {
     key,
@@ -68,33 +68,33 @@ export function extractTransMessage(
     placeholders: serialized.placeholders,
     components: serialized.components,
     references: [`${filename}:${line}`],
-  }
+  };
 
   if (contextProp) {
-    result.context = contextProp
+    result.context = contextProp;
   }
 
   if (serialized.comments && serialized.comments.length > 0) {
-    result.comments = serialized.comments
+    result.comments = serialized.comments;
   }
 
-  return result
+  return result;
 }
 
 /**
  * Check if the element name is "Trans"
  */
 function isTransComponent(
-  name: t.JSXIdentifier | t.JSXMemberExpression | t.JSXNamespacedName
+  name: t.JSXIdentifier | t.JSXMemberExpression | t.JSXNamespacedName,
 ): boolean {
   if (t.isJSXIdentifier(name)) {
-    return name.name === 'Trans'
+    return name.name === 'Trans';
   }
   if (t.isJSXMemberExpression(name)) {
     // Handle Idioma.Trans or similar
-    return t.isJSXIdentifier(name.property) && name.property.name === 'Trans'
+    return t.isJSXIdentifier(name.property) && name.property.name === 'Trans';
   }
-  return false
+  return false;
 }
 
 /**
@@ -102,17 +102,24 @@ function isTransComponent(
  */
 function getStringProp(
   opening: t.JSXOpeningElement,
-  propName: string
+  propName: string,
 ): string | undefined {
   for (const attr of opening.attributes) {
-    if (t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name) && attr.name.name === propName) {
+    if (
+      t.isJSXAttribute(attr) &&
+      t.isJSXIdentifier(attr.name) &&
+      attr.name.name === propName
+    ) {
       if (t.isStringLiteral(attr.value)) {
-        return attr.value.value
+        return attr.value.value;
       }
-      if (t.isJSXExpressionContainer(attr.value) && t.isStringLiteral(attr.value.expression)) {
-        return attr.value.expression.value
+      if (
+        t.isJSXExpressionContainer(attr.value) &&
+        t.isStringLiteral(attr.value.expression)
+      ) {
+        return attr.value.expression.value;
       }
     }
   }
-  return undefined
+  return undefined;
 }

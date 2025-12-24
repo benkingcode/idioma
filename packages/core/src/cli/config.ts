@@ -1,34 +1,34 @@
-import { promises as fs } from 'fs'
-import { join, resolve } from 'path'
-import { pathToFileURL } from 'url'
+import { promises as fs } from 'fs';
+import { join, resolve } from 'path';
+import { pathToFileURL } from 'url';
 
 export interface IdiomaConfig {
   /** Directory containing .po files */
-  localeDir: string
+  localeDir: string;
   /** Output directory for compiled translations */
-  outputDir: string
+  outputDir: string;
   /** Default/source locale */
-  defaultLocale: string
+  defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
-  locales?: string[]
+  locales?: string[];
   /** Glob patterns for source files to extract from */
-  sourcePatterns?: string[]
+  sourcePatterns?: string[];
   /** AI translation provider configuration */
   ai?: {
-    provider: 'anthropic' | 'openai'
-    model?: string
-    apiKey?: string
-  }
+    provider: 'anthropic' | 'openai';
+    model?: string;
+    apiKey?: string;
+  };
 }
 
-const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js']
+const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'];
 
 /**
  * Type-safe config helper.
  * Use this in your idioma.config.ts for autocomplete.
  */
 export function defineConfig(config: IdiomaConfig): IdiomaConfig {
-  return config
+  return config;
 }
 
 /**
@@ -36,20 +36,20 @@ export function defineConfig(config: IdiomaConfig): IdiomaConfig {
  * Looks for idioma.config.ts or idioma.config.js
  */
 export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
-  const tsPath = join(cwd, 'idioma.config.ts')
-  const jsPath = join(cwd, 'idioma.config.js')
+  const tsPath = join(cwd, 'idioma.config.ts');
+  const jsPath = join(cwd, 'idioma.config.js');
 
-  let configPath: string | null = null
+  let configPath: string | null = null;
 
   // Check for .ts first (preferred)
   try {
-    await fs.access(tsPath)
-    configPath = tsPath
+    await fs.access(tsPath);
+    configPath = tsPath;
   } catch {
     // Try .js
     try {
-      await fs.access(jsPath)
-      configPath = jsPath
+      await fs.access(jsPath);
+      configPath = jsPath;
     } catch {
       // No config found
     }
@@ -58,54 +58,54 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
   if (!configPath) {
     throw new Error(
       `No idioma config file found in ${cwd}. ` +
-        `Create idioma.config.ts or idioma.config.js`
-    )
+        `Create idioma.config.ts or idioma.config.js`,
+    );
   }
 
   // Load the config using dynamic import
-  const config = await loadConfigFile(configPath)
+  const config = await loadConfigFile(configPath);
 
   // Merge with defaults
   return {
     ...config,
     sourcePatterns: config.sourcePatterns ?? DEFAULT_SOURCE_PATTERNS,
-  }
+  };
 }
 
 async function loadConfigFile(configPath: string): Promise<IdiomaConfig> {
-  const absolutePath = resolve(configPath)
+  const absolutePath = resolve(configPath);
 
   if (configPath.endsWith('.ts')) {
     // For TypeScript, we need to use a bundler or ts-node
     // In a real implementation, we'd use jiti or tsx
     // For now, we'll use a simpler approach with eval
-    const content = await fs.readFile(absolutePath, 'utf-8')
+    const content = await fs.readFile(absolutePath, 'utf-8');
 
     // Simple transform: remove TypeScript-specific syntax
     const jsContent = content
       .replace(/export\s+default\s+/, 'module.exports = ')
       .replace(/:\s*IdiomaConfig/g, '')
-      .replace(/import.*from.*['"].*['"]\s*;?\n?/g, '')
+      .replace(/import.*from.*['"].*['"]\s*;?\n?/g, '');
 
     // Create a temporary .mjs file
-    const tempPath = absolutePath + '.mjs'
+    const tempPath = absolutePath + '.mjs';
     const mjsContent = jsContent.replace(
       'module.exports = ',
-      'export default '
-    )
-    await fs.writeFile(tempPath, mjsContent)
+      'export default ',
+    );
+    await fs.writeFile(tempPath, mjsContent);
 
     try {
-      const fileUrl = pathToFileURL(tempPath).href
-      const module = await import(fileUrl)
-      return module.default
+      const fileUrl = pathToFileURL(tempPath).href;
+      const module = await import(fileUrl);
+      return module.default;
     } finally {
-      await fs.unlink(tempPath).catch(() => {})
+      await fs.unlink(tempPath).catch(() => {});
     }
   } else {
     // For JS, import directly
-    const fileUrl = pathToFileURL(absolutePath).href
-    const module = await import(fileUrl)
-    return module.default ?? module
+    const fileUrl = pathToFileURL(absolutePath).href;
+    const module = await import(fileUrl);
+    return module.default ?? module;
   }
 }

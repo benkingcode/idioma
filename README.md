@@ -25,49 +25,49 @@ Add the Vite plugin:
 
 ```ts
 // vite.config.ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { idioma } from '@idioma/core/bundler/vite'
+import { idioma } from '@idioma/core/bundler/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [react(), idioma()]
-})
+  plugins: [react(), idioma()],
+});
 ```
 
 Create a config file:
 
 ```ts
 // idioma.config.ts
-import { defineConfig } from '@idioma/core'
+import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
   localeDir: './locales',
   outputDir: './src/idioma',
   defaultLocale: 'en',
-  locales: ['en', 'es', 'fr']
-})
+  locales: ['en', 'es', 'fr'],
+});
 ```
 
 Set up the provider:
 
 ```tsx
 // main.tsx
-import { IdiomaProvider } from './src/idioma'
+import { IdiomaProvider } from './src/idioma';
 
 createRoot(document.getElementById('root')!).render(
   <IdiomaProvider locale="en">
     <App />
-  </IdiomaProvider>
-)
+  </IdiomaProvider>,
+);
 ```
 
 Use it:
 
 ```tsx
-import { Trans } from './src/idioma'
+import { Trans } from './src/idioma';
 
 function Greeting({ name }) {
-  return <Trans>Hello {name}!</Trans>
+  return <Trans>Hello {name}!</Trans>;
 }
 ```
 
@@ -89,28 +89,29 @@ function Greeting({ name }) {
 
 ```tsx
 <Trans>
-  Read our <a href="/terms">terms of service</a> and <a href="/privacy">privacy policy</a>
+  Read our <a href="/terms">terms of service</a> and{' '}
+  <a href="/privacy">privacy policy</a>
 </Trans>
 ```
 
 ### Pluralization
 
 ```tsx
-import { Trans, Plural } from './src/idioma'
+import { Plural, Trans } from './src/idioma';
 
 <Trans>
   You have <Plural value={count} one="# item" other="# items" /> in your cart
-</Trans>
+</Trans>;
 ```
 
 ### Imperative usage with useT
 
 ```tsx
-import { useT } from './src/idioma'
+import { useT } from './src/idioma';
 
 function SearchInput() {
-  const t = useT()
-  return <input placeholder={t`Search...`} />
+  const t = useT();
+  return <input placeholder={t`Search...`} />;
 }
 ```
 
@@ -137,7 +138,7 @@ idioma stats
 
 ```ts
 // idioma.config.ts
-import { defineConfig } from '@idioma/core'
+import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
   // Where PO files are stored
@@ -160,13 +161,14 @@ export default defineConfig({
     provider: 'anthropic', // or 'openai'
     model: 'claude-sonnet-4-20250514',
     // Uses ANTHROPIC_API_KEY or OPENAI_API_KEY env var
-  }
-})
+  },
+});
 ```
 
 ## How It Works
 
 **Development:**
+
 ```
 <Trans>Hello {name}</Trans>
     ↓ runs as-is
@@ -174,6 +176,7 @@ React context provides locale, renders translated text
 ```
 
 **Production build:**
+
 ```
 <Trans>Hello {name}</Trans>
     ↓ Babel transforms to
@@ -184,14 +187,14 @@ The Babel plugin extracts messages during build, generates content-addressed key
 
 ## Comparison
 
-| Feature | Idioma | react-intl | i18next | lingui |
-|---------|--------|------------|---------|--------|
-| Runtime size | ~800B | ~13KB | ~40KB | ~5KB |
-| Key management | Auto | Manual | Manual | Auto |
-| Extraction | Built-in | External | External | Built-in |
-| AI translation | Built-in | No | No | No |
-| Compile-time | Yes | No | No | Yes |
-| PO format | Yes | No | No | Yes |
+| Feature        | Idioma   | react-intl | i18next  | lingui   |
+| -------------- | -------- | ---------- | -------- | -------- |
+| Runtime size   | ~800B    | ~13KB      | ~40KB    | ~5KB     |
+| Key management | Auto     | Manual     | Manual   | Auto     |
+| Extraction     | Built-in | External   | External | Built-in |
+| AI translation | Built-in | No         | No       | No       |
+| Compile-time   | Yes      | No         | No       | Yes      |
+| PO format      | Yes      | No         | No       | Yes      |
 
 ## Packages
 

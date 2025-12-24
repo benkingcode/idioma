@@ -1,17 +1,17 @@
-import type { Plugin, ResolvedConfig } from 'vite'
-import { compileTranslations } from '../compiler/compile'
+import type { Plugin, ResolvedConfig } from 'vite';
+import { compileTranslations } from '../compiler/compile';
 
 export interface IdiomaViteOptions {
   /** Directory containing .po files */
-  localeDir: string
+  localeDir: string;
   /** Output directory for compiled translations */
-  outputDir: string
+  outputDir: string;
   /** Default/source locale */
-  defaultLocale: string
+  defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
-  locales?: string[]
+  locales?: string[];
   /** Watch for changes in development (default: true in dev mode) */
-  watch?: boolean
+  watch?: boolean;
 }
 
 /**
@@ -24,10 +24,10 @@ export interface IdiomaViteOptions {
  * - Triggers HMR when translations change
  */
 export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
-  const { localeDir, outputDir, defaultLocale, watch } = options
+  const { localeDir, outputDir, defaultLocale, watch } = options;
 
-  let config: ResolvedConfig
-  let isDevMode = false
+  let config: ResolvedConfig;
+  let isDevMode = false;
 
   async function compile() {
     try {
@@ -35,9 +35,9 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
         localeDir,
         outputDir,
         defaultLocale,
-      })
+      });
     } catch (error) {
-      console.error('[idioma] Compilation error:', error)
+      console.error('[idioma] Compilation error:', error);
     }
   }
 
@@ -46,13 +46,13 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
     enforce: 'pre',
 
     configResolved(resolvedConfig) {
-      config = resolvedConfig
-      isDevMode = resolvedConfig.command === 'serve'
+      config = resolvedConfig;
+      isDevMode = resolvedConfig.command === 'serve';
     },
 
     async buildStart() {
       // Compile translations at build start
-      await compile()
+      await compile();
 
       // Set up file watching in dev mode
       if (isDevMode && watch !== false) {
@@ -69,10 +69,10 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
           server.ws.send({
             type: 'full-reload',
             path: '*',
-          })
-        })
+          });
+        });
 
-        return []
+        return [];
       }
     },
 
@@ -84,9 +84,9 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
           babelConfig.plugins.push([
             require.resolve('../babel/plugin'),
             { mode: 'production' },
-          ])
+          ]);
         }
       },
     },
-  }
+  };
 }
