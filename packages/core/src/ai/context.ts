@@ -162,11 +162,15 @@ export function groupMessagesByFile(
 export interface AnthropicContextProviderOptions {
   apiKey: string;
   model?: string;
+  /** Project-specific guidelines for AI context generation */
+  guidelines?: string;
 }
 
 export interface OpenAIContextProviderOptions {
   apiKey: string;
   model?: string;
+  /** Project-specific guidelines for AI context generation */
+  guidelines?: string;
 }
 
 const CONTEXT_GENERATION_SYSTEM_PROMPT = `You are a technical writer helping translators understand UI text.
@@ -195,6 +199,24 @@ Do NOT:
 - Reference specific variable names or code structure`;
 
 /**
+ * Build the system prompt for context generation, optionally including user guidelines.
+ */
+export function buildContextSystemPrompt(guidelines?: string): string {
+  let prompt = CONTEXT_GENERATION_SYSTEM_PROMPT;
+
+  if (guidelines) {
+    prompt += `
+
+Project-specific guidelines from the developer:
+${guidelines}
+
+Use these guidelines to inform the context you generate.`;
+  }
+
+  return prompt;
+}
+
+/**
  * Format messages for context generation request.
  */
 function formatContextRequest(request: FileContextRequest): string {
@@ -219,9 +241,10 @@ ${messageList}`;
 export function createAnthropicContextProvider(
   options: AnthropicContextProviderOptions,
 ): ContextProvider {
-  const { apiKey, model = 'claude-sonnet-4-20250514' } = options;
+  const { apiKey, model = 'claude-sonnet-4-20250514', guidelines } = options;
 
   const client = new Anthropic({ apiKey });
+  const systemPrompt = buildContextSystemPrompt(guidelines);
 
   return {
     async generateContext(
@@ -232,7 +255,7 @@ export function createAnthropicContextProvider(
       const response = await client.messages.create({
         model,
         max_tokens: 4096,
-        system: CONTEXT_GENERATION_SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: [{ role: 'user', content: userContent }],
         tools: [
           {
@@ -285,9 +308,10 @@ export function createAnthropicContextProvider(
 export function createOpenAIContextProvider(
   options: OpenAIContextProviderOptions,
 ): ContextProvider {
-  const { apiKey, model = 'gpt-4o' } = options;
+  const { apiKey, model = 'gpt-4o', guidelines } = options;
 
   const client = new OpenAI({ apiKey });
+  const systemPrompt = buildContextSystemPrompt(guidelines);
 
   return {
     async generateContext(
@@ -298,7 +322,7 @@ export function createOpenAIContextProvider(
       const response = await client.chat.completions.create({
         model,
         messages: [
-          { role: 'system', content: CONTEXT_GENERATION_SYSTEM_PROMPT },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent },
         ],
         response_format: {

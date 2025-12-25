@@ -338,6 +338,8 @@ idioma translate es --no-auto-context  # Skip automatic context generation
 
 **Auto-context generation:** Before translating, Idioma reads your source files and uses AI to generate helpful context for each message (e.g., "Button label in checkout form"). This context is saved to the PO file and helps the translation AI produce more accurate results.
 
+**Guidelines:** Configure `ai.guidelines` to describe your app's tone, audience, and style. These guidelines are sent to the AI during both context generation and translation, ensuring consistent results across your entire app.
+
 ```po
 #. [AI Context]: Button label shown when user confirms their order
 #: src/components/Checkout.tsx:42
@@ -396,6 +398,10 @@ export default defineConfig({
     provider: 'anthropic', // or 'openai'
     model: 'claude-sonnet-4-20250514', // default: claude-sonnet-4-20250514 (Anthropic) or gpt-4o (OpenAI)
     // Uses ANTHROPIC_API_KEY or OPENAI_API_KEY env var
+
+    // Project-specific guidelines for AI translation
+    guidelines: `This is a children's educational game for ages 4-8.
+Use simple, friendly language. Avoid complex vocabulary.`,
   },
 });
 ```

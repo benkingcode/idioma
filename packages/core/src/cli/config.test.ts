@@ -160,5 +160,27 @@ describe('CLI Config', () => {
 
       expect(config.useSuspense).toBe(true);
     });
+
+    it('accepts ai.guidelines in config', async () => {
+      const configContent = `
+        export default {
+          localeDir: './locales',
+          outputDir: './src/idioma',
+          defaultLocale: 'en',
+          ai: {
+            provider: 'anthropic',
+            guidelines: 'This is a formal business app. Use professional language.',
+          },
+        }
+      `;
+      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+      const config = await loadConfig(tempDir);
+
+      expect(config.ai?.provider).toBe('anthropic');
+      expect(config.ai?.guidelines).toBe(
+        'This is a formal business app. Use professional language.',
+      );
+    });
   });
 });

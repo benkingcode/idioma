@@ -199,6 +199,7 @@ export const translateCommand = defineCommand({
       provider = createAnthropicProvider({
         apiKey,
         model: config.ai?.model,
+        guidelines: config.ai?.guidelines,
       });
     } else if (providerName === 'openai') {
       const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY;
@@ -210,6 +211,7 @@ export const translateCommand = defineCommand({
       provider = createOpenAIProvider({
         apiKey,
         model: config.ai?.model,
+        guidelines: config.ai?.guidelines,
       });
     } else {
       console.error(`Error: Unknown provider: ${providerName}`);
@@ -228,6 +230,7 @@ export const translateCommand = defineCommand({
           contextProvider = createAnthropicContextProvider({
             apiKey,
             model: config.ai?.model,
+            guidelines: config.ai?.guidelines,
           });
         }
       } else if (providerName === 'openai') {
@@ -236,6 +239,7 @@ export const translateCommand = defineCommand({
           contextProvider = createOpenAIContextProvider({
             apiKey,
             model: config.ai?.model,
+            guidelines: config.ai?.guidelines,
           });
         }
       }

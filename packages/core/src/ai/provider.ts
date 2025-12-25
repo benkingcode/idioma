@@ -26,11 +26,15 @@ export interface TranslationProvider {
 export interface AnthropicProviderOptions {
   apiKey: string;
   model?: string;
+  /** Project-specific guidelines for AI translation */
+  guidelines?: string;
 }
 
 export interface OpenAIProviderOptions {
   apiKey: string;
   model?: string;
+  /** Project-specific guidelines for AI translation */
+  guidelines?: string;
 }
 
 const TRANSLATION_SYSTEM_PROMPT = `You are a professional translator. Translate the following messages from {sourceLocale} to {targetLocale}.
@@ -46,12 +50,35 @@ Important guidelines:
 Each message has a key and source text. Some may have context to help with accurate translation.`;
 
 /**
+ * Build the system prompt for translation, optionally including user guidelines.
+ */
+export function buildTranslationSystemPrompt(
+  sourceLocale: string,
+  targetLocale: string,
+  guidelines?: string,
+): string {
+  let prompt = TRANSLATION_SYSTEM_PROMPT.replace(
+    '{sourceLocale}',
+    sourceLocale,
+  ).replace('{targetLocale}', targetLocale);
+
+  if (guidelines) {
+    prompt += `
+
+Project-specific guidelines from the developer:
+${guidelines}`;
+  }
+
+  return prompt;
+}
+
+/**
  * Create an Anthropic translation provider.
  */
 export function createAnthropicProvider(
   options: AnthropicProviderOptions,
 ): TranslationProvider {
-  const { apiKey, model = 'claude-sonnet-4-20250514' } = options;
+  const { apiKey, model = 'claude-sonnet-4-20250514', guidelines } = options;
 
   const client = new Anthropic({ apiKey });
 
@@ -60,10 +87,11 @@ export function createAnthropicProvider(
     async translate(request: TranslationRequest): Promise<TranslatedMessage[]> {
       const { messages, sourceLocale, targetLocale } = request;
 
-      const systemPrompt = TRANSLATION_SYSTEM_PROMPT.replace(
-        '{sourceLocale}',
+      const systemPrompt = buildTranslationSystemPrompt(
         sourceLocale,
-      ).replace('{targetLocale}', targetLocale);
+        targetLocale,
+        guidelines,
+      );
 
       const userContent = messages
         .map((m, i) => {
@@ -127,7 +155,7 @@ export function createAnthropicProvider(
 export function createOpenAIProvider(
   options: OpenAIProviderOptions,
 ): TranslationProvider {
-  const { apiKey, model = 'gpt-4o' } = options;
+  const { apiKey, model = 'gpt-4o', guidelines } = options;
 
   const client = new OpenAI({ apiKey });
 
@@ -136,10 +164,11 @@ export function createOpenAIProvider(
     async translate(request: TranslationRequest): Promise<TranslatedMessage[]> {
       const { messages, sourceLocale, targetLocale } = request;
 
-      const systemPrompt = TRANSLATION_SYSTEM_PROMPT.replace(
-        '{sourceLocale}',
+      const systemPrompt = buildTranslationSystemPrompt(
         sourceLocale,
-      ).replace('{targetLocale}', targetLocale);
+        targetLocale,
+        guidelines,
+      );
 
       const userContent = messages
         .map((m, i) => {

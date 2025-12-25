@@ -5,6 +5,7 @@ import type { Catalog, Message } from '../po/types';
 import {
   addAIContext,
   AI_CONTEXT_PREFIX,
+  buildContextSystemPrompt,
   createAnthropicContextProvider,
   createOpenAIContextProvider,
   generateContextForCatalog,
@@ -357,6 +358,14 @@ describe('Context Providers', () => {
       });
       expect(typeof provider.generateContext).toBe('function');
     });
+
+    it('accepts guidelines option', () => {
+      const provider = createAnthropicContextProvider({
+        apiKey: 'test-key',
+        guidelines: 'This is a formal business app.',
+      });
+      expect(typeof provider.generateContext).toBe('function');
+    });
   });
 
   describe('createOpenAIContextProvider', () => {
@@ -369,6 +378,14 @@ describe('Context Providers', () => {
       const provider = createOpenAIContextProvider({
         apiKey: 'test-key',
         model: 'gpt-4o-mini',
+      });
+      expect(typeof provider.generateContext).toBe('function');
+    });
+
+    it('accepts guidelines option', () => {
+      const provider = createOpenAIContextProvider({
+        apiKey: 'test-key',
+        guidelines: 'This is a formal business app.',
       });
       expect(typeof provider.generateContext).toBe('function');
     });
@@ -385,6 +402,29 @@ describe('Context Providers', () => {
       expect(request.filePath).toBe('src/App.tsx');
       expect(request.fileContent).toContain('Click me');
       expect(request.messages).toHaveLength(1);
+    });
+  });
+
+  describe('buildContextSystemPrompt', () => {
+    it('includes base context instructions', () => {
+      const prompt = buildContextSystemPrompt();
+      expect(prompt).toContain('technical writer');
+      expect(prompt).toContain('UI element');
+    });
+
+    it('does not include guidelines section when not provided', () => {
+      const prompt = buildContextSystemPrompt();
+      expect(prompt).not.toContain('Project-specific guidelines');
+    });
+
+    it('includes guidelines section when provided', () => {
+      const prompt = buildContextSystemPrompt(
+        "This is a children's educational app.",
+      );
+      expect(prompt).toContain(
+        'Project-specific guidelines from the developer:',
+      );
+      expect(prompt).toContain("This is a children's educational app.");
     });
   });
 });

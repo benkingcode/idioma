@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildTranslationSystemPrompt,
   createAnthropicProvider,
   createOpenAIProvider,
   type TranslationProvider,
@@ -39,6 +40,14 @@ describe('AI Translation Providers', () => {
       });
       expect(provider.name).toBe('anthropic');
     });
+
+    it('accepts guidelines option', () => {
+      const provider = createAnthropicProvider({
+        apiKey: 'test-key',
+        guidelines: 'Use formal language for this business app.',
+      });
+      expect(provider.name).toBe('anthropic');
+    });
   });
 
   describe('createOpenAIProvider', () => {
@@ -56,6 +65,14 @@ describe('AI Translation Providers', () => {
       const provider = createOpenAIProvider({
         apiKey: 'test-key',
         model: 'gpt-4o-mini',
+      });
+      expect(provider.name).toBe('openai');
+    });
+
+    it('accepts guidelines option', () => {
+      const provider = createOpenAIProvider({
+        apiKey: 'test-key',
+        guidelines: 'Use formal language for this business app.',
       });
       expect(provider.name).toBe('openai');
     });
@@ -84,6 +101,37 @@ describe('AI Translation Providers', () => {
       };
 
       expect(request.messages[0].context).toBeUndefined();
+    });
+  });
+
+  describe('buildTranslationSystemPrompt', () => {
+    it('includes source and target locales', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'es');
+      expect(prompt).toContain('from en to es');
+    });
+
+    it('includes base translation instructions', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'fr');
+      expect(prompt).toContain('professional translator');
+      expect(prompt).toContain('Preserve all placeholders');
+    });
+
+    it('does not include guidelines section when not provided', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'de');
+      expect(prompt).not.toContain('Project-specific guidelines');
+    });
+
+    it('includes guidelines section when provided', () => {
+      const prompt = buildTranslationSystemPrompt(
+        'en',
+        'es',
+        "This is a children's app. Use simple, friendly language.",
+      );
+      expect(prompt).toContain(
+        'Project-specific guidelines from the developer:',
+      );
+      expect(prompt).toContain("This is a children's app");
+      expect(prompt).toContain('Use simple, friendly language');
     });
   });
 });

@@ -26,6 +26,12 @@ export interface IdiomaConfig {
     provider: 'anthropic' | 'openai';
     model?: string;
     apiKey?: string;
+    /**
+     * Project-specific guidelines for AI translation.
+     * Describe your app's tone, audience, and any special requirements.
+     * @example "This is a children's educational game. Use simple, friendly language."
+     */
+    guidelines?: string;
   };
 }
 
