@@ -2,7 +2,12 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { defineConfig, loadConfig, type IdiomaConfig } from './config';
+import {
+  defineConfig,
+  getIdiomaPaths,
+  loadConfig,
+  type IdiomaConfig,
+} from './config';
 
 describe('CLI Config', () => {
   let tempDir: string;
@@ -18,8 +23,7 @@ describe('CLI Config', () => {
   describe('defineConfig', () => {
     it('returns the config object unchanged', () => {
       const config: IdiomaConfig = {
-        localeDir: './locales',
-        outputDir: './src/idioma',
+        idiomaDir: './src/idioma',
         defaultLocale: 'en',
         locales: ['en', 'es'],
       };
@@ -31,12 +35,38 @@ describe('CLI Config', () => {
 
     it('provides type safety helper', () => {
       const config = defineConfig({
-        localeDir: './locales',
-        outputDir: './src/idioma',
+        idiomaDir: './src/idioma',
         defaultLocale: 'en',
       });
 
-      expect(config.localeDir).toBe('./locales');
+      expect(config.idiomaDir).toBe('./src/idioma');
+    });
+  });
+
+  describe('getIdiomaPaths', () => {
+    it('computes localeDir from idiomaDir by default', () => {
+      const config: IdiomaConfig = {
+        idiomaDir: './src/idioma',
+        defaultLocale: 'en',
+      };
+
+      const paths = getIdiomaPaths(config);
+
+      expect(paths.localeDir).toBe('src/idioma/locales');
+      expect(paths.outputDir).toBe('./src/idioma');
+    });
+
+    it('uses localesDir override when provided', () => {
+      const config: IdiomaConfig = {
+        idiomaDir: './src/idioma',
+        localesDir: './locales',
+        defaultLocale: 'en',
+      };
+
+      const paths = getIdiomaPaths(config);
+
+      expect(paths.localeDir).toBe('./locales');
+      expect(paths.outputDir).toBe('./src/idioma');
     });
   });
 
@@ -44,8 +74,7 @@ describe('CLI Config', () => {
     it('loads idioma.config.ts from directory', async () => {
       const configContent = `
         export default {
-          localeDir: './locales',
-          outputDir: './src/idioma',
+          idiomaDir: './src/idioma',
           defaultLocale: 'en',
           locales: ['en', 'es', 'fr'],
         }
@@ -54,8 +83,7 @@ describe('CLI Config', () => {
 
       const config = await loadConfig(tempDir);
 
-      expect(config.localeDir).toBe('./locales');
-      expect(config.outputDir).toBe('./src/idioma');
+      expect(config.idiomaDir).toBe('./src/idioma');
       expect(config.defaultLocale).toBe('en');
       expect(config.locales).toEqual(['en', 'es', 'fr']);
     });
@@ -63,8 +91,7 @@ describe('CLI Config', () => {
     it('loads idioma.config.js from directory', async () => {
       const configContent = `
         module.exports = {
-          localeDir: './translations',
-          outputDir: './generated',
+          idiomaDir: './generated',
           defaultLocale: 'en',
         }
       `;
@@ -72,23 +99,22 @@ describe('CLI Config', () => {
 
       const config = await loadConfig(tempDir);
 
-      expect(config.localeDir).toBe('./translations');
-      expect(config.outputDir).toBe('./generated');
+      expect(config.idiomaDir).toBe('./generated');
     });
 
     it('prefers .ts over .js when both exist', async () => {
       await fs.writeFile(
         join(tempDir, 'idioma.config.ts'),
-        `export default { localeDir: './from-ts', outputDir: './out', defaultLocale: 'en' }`,
+        `export default { idiomaDir: './from-ts', defaultLocale: 'en' }`,
       );
       await fs.writeFile(
         join(tempDir, 'idioma.config.js'),
-        `module.exports = { localeDir: './from-js', outputDir: './out', defaultLocale: 'en' }`,
+        `module.exports = { idiomaDir: './from-js', defaultLocale: 'en' }`,
       );
 
       const config = await loadConfig(tempDir);
 
-      expect(config.localeDir).toBe('./from-ts');
+      expect(config.idiomaDir).toBe('./from-ts');
     });
 
     it('throws when no config file found', async () => {
@@ -100,8 +126,7 @@ describe('CLI Config', () => {
     it('merges with default values', async () => {
       const configContent = `
         export default {
-          localeDir: './locales',
-          outputDir: './src/idioma',
+          idiomaDir: './src/idioma',
           defaultLocale: 'en',
         }
       `;
@@ -117,8 +142,7 @@ describe('CLI Config', () => {
     it('allows overriding source patterns', async () => {
       const configContent = `
         export default {
-          localeDir: './locales',
-          outputDir: './src/idioma',
+          idiomaDir: './src/idioma',
           defaultLocale: 'en',
           sourcePatterns: ['src/**/*.tsx'],
         }
@@ -133,8 +157,7 @@ describe('CLI Config', () => {
     it('defaults useSuspense to false', async () => {
       const configContent = `
         export default {
-          localeDir: './locales',
-          outputDir: './src/idioma',
+          idiomaDir: './src/idioma',
           defaultLocale: 'en',
         }
       `;
@@ -148,8 +171,7 @@ describe('CLI Config', () => {
     it('accepts useSuspense: true', async () => {
       const configContent = `
         export default {
-          localeDir: './locales',
-          outputDir: './src/idioma',
+          idiomaDir: './src/idioma',
           defaultLocale: 'en',
           useSuspense: true,
         }
@@ -161,11 +183,25 @@ describe('CLI Config', () => {
       expect(config.useSuspense).toBe(true);
     });
 
+    it('accepts localesDir override', async () => {
+      const configContent = `
+        export default {
+          idiomaDir: './src/idioma',
+          localesDir: './locales',
+          defaultLocale: 'en',
+        }
+      `;
+      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+      const config = await loadConfig(tempDir);
+
+      expect(config.localesDir).toBe('./locales');
+    });
+
     it('accepts ai.guidelines in config', async () => {
       const configContent = `
         export default {
-          localeDir: './locales',
-          outputDir: './src/idioma',
+          idiomaDir: './src/idioma',
           defaultLocale: 'en',
           ai: {
             provider: 'anthropic',

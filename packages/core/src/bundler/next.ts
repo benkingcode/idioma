@@ -7,9 +7,15 @@ import { ensureGitignore } from '../utils/gitignore';
 export interface IdiomaNextOptions {
   /**
    * Base directory for Idioma files.
-   * PO files are in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
    */
   idiomaDir: string;
+  /**
+   * Directory containing PO files.
+   * Override this if you have existing PO files elsewhere.
+   * @default '{idiomaDir}/locales'
+   */
+  localesDir?: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -36,6 +42,7 @@ interface IdiomaWebpackPluginOptions {
   useSuspense?: boolean;
   dev: boolean;
   projectRoot: string;
+  hasCustomLocalesDir: boolean;
 }
 
 /**
@@ -62,8 +69,10 @@ class IdiomaWebpackPlugin {
         }
 
         try {
-          // Ensure .gitignore exists
-          await ensureGitignore(this.options.idiomaDir);
+          // Ensure .gitignore exists (skip creating locales/ if custom path provided)
+          await ensureGitignore(this.options.idiomaDir, {
+            skipLocalesDir: this.options.hasCustomLocalesDir,
+          });
 
           await compileTranslations({
             localeDir: this.options.localeDir,
@@ -134,11 +143,13 @@ class IdiomaWebpackPlugin {
 export function withIdioma(
   options: IdiomaNextOptions,
 ): (nextConfig?: NextConfig) => NextConfig {
-  const { idiomaDir, defaultLocale, locales, useSuspense } = options;
+  const { idiomaDir, localesDir, defaultLocale, locales, useSuspense } =
+    options;
 
   // Compute derived paths
-  const localeDir = join(idiomaDir, 'locales');
+  const localeDir = localesDir ?? join(idiomaDir, 'locales');
   const outputDir = idiomaDir;
+  const hasCustomLocalesDir = !!localesDir;
 
   let pluginAdded = false;
   const projectRoot = process.cwd();
@@ -168,6 +179,7 @@ export function withIdioma(
               useSuspense,
               dev,
               projectRoot,
+              hasCustomLocalesDir,
             }),
           );
         }

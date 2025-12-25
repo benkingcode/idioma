@@ -496,8 +496,11 @@ import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
   // Base directory for all Idioma files
-  // PO files go in {idiomaDir}/locales/, generated files in {idiomaDir}/
+  // Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default
   idiomaDir: './src/idioma',
+
+  // Optional: Override PO file location if you have existing translations elsewhere
+  // localesDir: './locales',
 
   // Source language
   defaultLocale: 'en',

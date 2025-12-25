@@ -6,9 +6,15 @@ import { ensureGitignore } from '../utils/gitignore';
 export interface IdiomaViteOptions {
   /**
    * Base directory for Idioma files.
-   * PO files are in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
    */
   idiomaDir: string;
+  /**
+   * Directory containing PO files.
+   * Override this if you have existing PO files elsewhere.
+   * @default '{idiomaDir}/locales'
+   */
+  localesDir?: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -35,11 +41,13 @@ export interface IdiomaViteOptions {
  * - Supports Suspense mode for lazy loading translations
  */
 export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
-  const { idiomaDir, defaultLocale, locales, watch, useSuspense } = options;
+  const { idiomaDir, localesDir, defaultLocale, locales, watch, useSuspense } =
+    options;
 
   // Compute derived paths
-  const localeDir = join(idiomaDir, 'locales');
+  const localeDir = localesDir ?? join(idiomaDir, 'locales');
   const outputDir = idiomaDir;
+  const hasCustomLocalesDir = !!localesDir;
 
   let config: ResolvedConfig;
   let isDevMode = false;
@@ -47,8 +55,8 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
 
   async function compile() {
     try {
-      // Ensure .gitignore exists
-      await ensureGitignore(idiomaDir);
+      // Ensure .gitignore exists (skip creating locales/ if custom path provided)
+      await ensureGitignore(idiomaDir, { skipLocalesDir: hasCustomLocalesDir });
 
       await compileTranslations({
         localeDir,

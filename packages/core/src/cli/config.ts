@@ -5,9 +5,15 @@ import { pathToFileURL } from 'url';
 export interface IdiomaConfig {
   /**
    * Base directory for Idioma files.
-   * PO files go in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
    */
   idiomaDir: string;
+  /**
+   * Directory containing PO files.
+   * Override this if you have existing PO files elsewhere.
+   * @default '{idiomaDir}/locales'
+   */
+  localesDir?: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -52,8 +58,8 @@ export function defineConfig(config: IdiomaConfig): IdiomaConfig {
 }
 
 /**
- * Compute derived paths from idiomaDir.
- * - localeDir: where PO files are stored
+ * Compute derived paths from config.
+ * - localeDir: where PO files are stored (override or {idiomaDir}/locales)
  * - outputDir: where generated files go (same as idiomaDir)
  */
 export function getIdiomaPaths(config: IdiomaConfig): {
@@ -61,7 +67,7 @@ export function getIdiomaPaths(config: IdiomaConfig): {
   outputDir: string;
 } {
   return {
-    localeDir: join(config.idiomaDir, 'locales'),
+    localeDir: config.localesDir ?? join(config.idiomaDir, 'locales'),
     outputDir: config.idiomaDir,
   };
 }

@@ -5,16 +5,31 @@ export const GITIGNORE_CONTENT = `# Idioma generated files - do not edit
 .generated/
 `;
 
+export interface EnsureGitignoreOptions {
+  /**
+   * Skip creating the locales/ subdirectory.
+   * Set to true when using a custom localesDir.
+   */
+  skipLocalesDir?: boolean;
+}
+
 /**
  * Ensure the idioma directory structure is set up correctly:
  * - Creates the idioma directory
- * - Creates the locales/ subdirectory
+ * - Creates the locales/ subdirectory (unless skipLocalesDir is true)
  * - Creates/updates .gitignore
  */
-export async function ensureGitignore(idiomaDir: string): Promise<void> {
-  // Ensure directories exist
+export async function ensureGitignore(
+  idiomaDir: string,
+  options?: EnsureGitignoreOptions,
+): Promise<void> {
+  // Ensure idioma directory exists
   await fs.mkdir(idiomaDir, { recursive: true });
-  await fs.mkdir(join(idiomaDir, 'locales'), { recursive: true });
+
+  // Create locales/ subdirectory unless using custom localesDir
+  if (!options?.skipLocalesDir) {
+    await fs.mkdir(join(idiomaDir, 'locales'), { recursive: true });
+  }
 
   // Ensure .gitignore exists and is up to date
   const gitignorePath = join(idiomaDir, '.gitignore');

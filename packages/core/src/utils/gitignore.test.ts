@@ -66,4 +66,19 @@ describe('ensureGitignore', () => {
     expect(GITIGNORE_CONTENT).toContain('.generated/');
     expect(GITIGNORE_CONTENT).toContain('# Idioma generated files');
   });
+
+  it('skips creating locales/ when skipLocalesDir is true', async () => {
+    await ensureGitignore(tempDir, { skipLocalesDir: true });
+
+    // .gitignore should still be created
+    const content = await fs.readFile(join(tempDir, '.gitignore'), 'utf-8');
+    expect(content).toBe(GITIGNORE_CONTENT);
+
+    // But locales/ should NOT be created
+    const localesExists = await fs
+      .stat(join(tempDir, 'locales'))
+      .then(() => true)
+      .catch(() => false);
+    expect(localesExists).toBe(false);
+  });
 });

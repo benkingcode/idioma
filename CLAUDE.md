@@ -109,6 +109,8 @@ import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
   idiomaDir: './src/idioma',
+  // Optional: override PO file location if you have existing translations elsewhere
+  // localesDir: './locales',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
 });
