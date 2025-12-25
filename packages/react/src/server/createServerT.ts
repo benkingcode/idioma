@@ -1,20 +1,14 @@
+import type {
+  HasPlaceholders,
+  KeysWithoutValues,
+  KeysWithValues,
+  PlaceholderValues,
+} from '../createUseT';
 import { interpolateValues } from '../interpolate';
 import { generateKey } from './generateKey';
 
 type MessageFunction = (args: Record<string, unknown>) => string;
 type Translations = Record<string, Record<string, string | MessageFunction>>;
-
-/**
- * Key-only mode arguments: t({ id: "welcome", values: { name }, context: "modal", ns: "common" })
- */
-export interface KeyOnlyArgs {
-  id: string;
-  values?: Record<string, unknown>;
-  /** Translator context (saved in PO for human reference, not used in key lookup) */
-  context?: string;
-  /** Namespace for scoped lookups (placeholder for future) */
-  ns?: string;
-}
 
 /**
  * Source text mode options: t("Submit", undefined, { context: "button", ns: "common" })
@@ -27,16 +21,52 @@ export interface SourceTextOptions {
 }
 
 /**
- * Server-side translation function type.
+ * Server-side translation function type with full type safety.
  * Supports both source text and key-only modes.
+ *
+ * @template SK - StringOnlyKey union (valid translation keys)
+ * @template MV - MessageValues interface (maps keys to required values)
  */
-export type ServerTFunction = {
-  (args: KeyOnlyArgs): Promise<string>;
-  (source: string): Promise<string>;
-  (source: string, values: Record<string, unknown>): Promise<string>;
-  (
-    source: string,
-    values: Record<string, unknown> | undefined,
+export type ServerTFunction<
+  SK extends string = string,
+  MV extends Record<string, Record<string, unknown>> = Record<
+    string,
+    Record<string, unknown>
+  >,
+> = {
+  // === Key-only mode ===
+
+  // Keys that require values or not, determined by MV
+  <K extends SK & string>(
+    args: K extends KeysWithValues<MV>
+      ? { id: K; values: MV[K]; context?: string; ns?: string }
+      : K extends KeysWithoutValues<MV>
+        ? { id: K; values?: never; context?: string; ns?: string }
+        : {
+            id: K;
+            values?: Record<string, unknown>;
+            context?: string;
+            ns?: string;
+          },
+  ): Promise<string>;
+
+  // === Source text mode ===
+
+  // Source text WITH placeholders - values required
+  <S extends string>(
+    source: HasPlaceholders<S> extends true ? S : never,
+    values: PlaceholderValues<S>,
+  ): Promise<string>;
+
+  // Source text WITHOUT placeholders - no values
+  <S extends string>(
+    source: HasPlaceholders<S> extends false ? S : never,
+  ): Promise<string>;
+
+  // Source text with options (3rd arg)
+  <S extends string>(
+    source: S,
+    values: PlaceholderValues<S>,
     options: SourceTextOptions,
   ): Promise<string>;
 };
@@ -62,12 +92,23 @@ export type ServerTFunction = {
  * await t({ id: 'welcome' });  // 'Bienvenido!'
  * await t({ id: 'greeting', values: { name: 'Ben' }, ns: 'common' });  // with ns
  */
-export function createServerT(
-  locale: string,
-  translations: Translations,
-): ServerTFunction {
-  return async (
-    sourceOrArgs: string | KeyOnlyArgs,
+// Internal runtime type for key-only args (untyped at runtime)
+interface KeyOnlyArgsRuntime {
+  id: string;
+  values?: Record<string, unknown>;
+  context?: string;
+  ns?: string;
+}
+
+export function createServerT<
+  SK extends string = string,
+  MV extends Record<string, Record<string, unknown>> = Record<
+    string,
+    Record<string, unknown>
+  >,
+>(locale: string, translations: Translations): ServerTFunction<SK, MV> {
+  return (async (
+    sourceOrArgs: string | KeyOnlyArgsRuntime,
     values?: Record<string, unknown>,
     options?: SourceTextOptions,
   ): Promise<string> => {
@@ -110,5 +151,5 @@ export function createServerT(
     return values && Object.keys(values).length > 0
       ? interpolateValues(msg, values)
       : msg;
-  };
+  }) as ServerTFunction<SK, MV>;
 }

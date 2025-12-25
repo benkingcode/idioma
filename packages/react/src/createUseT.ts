@@ -13,12 +13,15 @@ type Translations = Record<string, Record<string, string | MessageFunction>>;
 // --- Key-only mode helpers ---
 
 /** Keys in MessageValues that have at least one required value */
-type KeysWithValues<MV extends Record<string, Record<string, unknown>>> = {
-  [K in keyof MV]: MV[K] extends Record<string, never> ? never : K;
-}[keyof MV];
+export type KeysWithValues<MV extends Record<string, Record<string, unknown>>> =
+  {
+    [K in keyof MV]: MV[K] extends Record<string, never> ? never : K;
+  }[keyof MV];
 
 /** Keys in MessageValues that have no required values */
-type KeysWithoutValues<MV extends Record<string, Record<string, unknown>>> = {
+export type KeysWithoutValues<
+  MV extends Record<string, Record<string, unknown>>,
+> = {
   [K in keyof MV]: MV[K] extends Record<string, never> ? K : never;
 }[keyof MV];
 
@@ -28,7 +31,7 @@ type KeysWithoutValues<MV extends Record<string, Record<string, unknown>>> = {
  * Recursively extract placeholder names from a template string.
  * "Hello {name}, you have {count} items" → "name" | "count"
  */
-type ExtractPlaceholders<S extends string> =
+export type ExtractPlaceholders<S extends string> =
   S extends `${infer _}{${infer Key}}${infer Rest}`
     ? Key | ExtractPlaceholders<Rest>
     : never;
@@ -38,13 +41,13 @@ type ExtractPlaceholders<S extends string> =
  * "Hello {name}" → { name: string | number }
  * "No placeholders" → undefined
  */
-type PlaceholderValues<S extends string> =
+export type PlaceholderValues<S extends string> =
   ExtractPlaceholders<S> extends never
     ? undefined
     : { [K in ExtractPlaceholders<S>]: string | number };
 
 /** Check if a string has any placeholders */
-type HasPlaceholders<S extends string> =
+export type HasPlaceholders<S extends string> =
   ExtractPlaceholders<S> extends never ? false : true;
 
 /**
