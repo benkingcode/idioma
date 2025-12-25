@@ -318,7 +318,9 @@ async function generateTypesTs(
   content += `export type TranslationKey = ${keys.map((k) => JSON.stringify(k)).join(' | ') || 'never'};\n\n`;
 
   // Generate MessageValues interface (all keys, empty object for no variables)
+  // Index signature required for compatibility with Record<string, Record<string, unknown>> constraint
   content += 'export interface MessageValues {\n';
+  content += '  [key: string]: Record<string, unknown>;\n';
   for (const [key, msg] of messages) {
     if (msg.variables.length > 0) {
       const entries = msg.variables
@@ -332,7 +334,9 @@ async function generateTypesTs(
   content += '}\n\n';
 
   // Generate MessageComponents interface
+  // Index signature required for compatibility with Record<string, TransComponent[]> constraint
   content += 'export interface MessageComponents {\n';
+  content += '  [key: string]: TransComponent[];\n';
   for (const [key, msg] of messages) {
     if (msg.componentCount > 0) {
       const tuple = Array(msg.componentCount).fill('TransComponent').join(', ');

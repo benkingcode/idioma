@@ -31,7 +31,7 @@ export function interpolateValues(
   });
 }
 
-export type TransComponent = ComponentType<{ children: ReactNode }>;
+export type TransComponent = ComponentType<{ children?: ReactNode }>;
 
 /**
  * Interpolates numbered tags in a translated string with React components.
