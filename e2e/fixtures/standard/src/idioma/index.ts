@@ -8,7 +8,7 @@ import {
   createUseT,
   plural,
 } from '@idioma/react';
-import { translations } from './.generated/translations.js';
+import { translations } from './.generated/translations';
 import type {
   Locale,
   MessageComponents,

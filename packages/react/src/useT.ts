@@ -98,31 +98,61 @@ export function __useT(
       }
 
       // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button' })
+      // OR after Babel transformation: t('Hello {name}', { en: '...', es: '...' }, { name: 'Ben' })
       const source = sourceOrArgs;
-      const { context: ctx } = options || {};
-      const key = generateKey(source, ctx);
-      const localeMessages = translations[key];
+
+      // Detect if Babel has inlined translations in arg 2
+      // Babel transforms: t('src', { key: { en: '...', es: '...' } }, { actualValues })
+      // The inlined object has ONE key (the message key) whose value has locale keys
+      let actualValues = values;
+      let localeMessages: Record<string, string | MessageFunction> | undefined;
+
+      const valuesKeys = values ? Object.keys(values) : [];
+      const firstKey = valuesKeys[0];
+      const firstValue =
+        firstKey && values
+          ? (values as Record<string, unknown>)[firstKey]
+          : undefined;
+
+      // Check if this looks like Babel-inlined translations:
+      // - Has exactly one key (the message key)
+      // - That key's value is an object with locale as a property
+      if (
+        valuesKeys.length === 1 &&
+        firstValue &&
+        typeof firstValue === 'object' &&
+        typeof (firstValue as Record<string, unknown>)[locale] !== 'undefined'
+      ) {
+        // Babel transformed: arg 2 is { messageKey: { en: '...', es: '...' } }
+        localeMessages = firstValue as Record<string, string | MessageFunction>;
+        actualValues = options as unknown as Record<string, unknown>;
+      } else {
+        // Normal mode: arg 2 is values, arg 3 is options
+        const { context: ctx } = options || {};
+        const key = generateKey(source, ctx);
+        localeMessages = translations[key];
+      }
 
       if (!localeMessages) {
         // Fallback: interpolate source text if values provided
-        return values && Object.keys(values).length > 0
-          ? interpolateValues(source, values)
+        return actualValues && Object.keys(actualValues).length > 0
+          ? interpolateValues(source, actualValues)
           : source;
       }
 
       const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
       if (msg === undefined) {
-        return values && Object.keys(values).length > 0
-          ? interpolateValues(source, values)
+        return actualValues && Object.keys(actualValues).length > 0
+          ? interpolateValues(source, actualValues)
           : source;
       }
 
       if (typeof msg === 'function') {
-        return msg(values || {});
+        return msg(actualValues || {});
       }
 
-      return values && Object.keys(values).length > 0
-        ? interpolateValues(msg, values)
+      return actualValues && Object.keys(actualValues).length > 0
+        ? interpolateValues(msg, actualValues)
         : msg;
     },
     [translations, locale],

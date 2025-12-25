@@ -1,10 +1,6 @@
 import { useContext, type ReactNode } from 'react';
 import { IdiomaContext } from './context';
-import {
-  interpolateTags,
-  interpolateValues,
-  type TransComponent,
-} from './interpolate';
+import { renderMessage, type TransComponent } from './interpolate';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MessageFunction = (args: any) => string | ReactNode;
@@ -45,28 +41,8 @@ export function __Trans({ __t, __a, __c }: TransProps): ReactNode {
     if (fallback === undefined) {
       return null;
     }
-    if (typeof fallback === 'function') {
-      return fallback(__a || {});
-    }
-    return fallback;
+    return renderMessage(fallback, __a, __c);
   }
 
-  // Compiled plural/ICU: msg is a function
-  if (typeof msg === 'function') {
-    return msg(__a || {});
-  }
-
-  // String message - may need interpolation
-  // Tag interpolation: replace <0>...</0> with React components
-  // This must happen first if we have components, as it handles value interpolation too
-  if (__c && __c.length > 0) {
-    return interpolateTags(msg, __c, __a);
-  }
-
-  // Value interpolation only: replace {name} or {0} with values from __a
-  if (__a) {
-    return interpolateValues(msg, __a);
-  }
-
-  return msg;
+  return renderMessage(msg, __a, __c);
 }

@@ -45,10 +45,10 @@ test.describe('useT Hook - Imperative Usage', () => {
   test('t() function works in Arabic', async ({ page }) => {
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('uset-simple')).toContainText(
-      'مرحباً من useT!',
+      'مرحبا من useT!',
     );
     await expect(page.getByTestId('uset-interpolation')).toContainText(
-      'مرحباً، Developer!',
+      'أهلا وسهلا، Developer!',
     );
   });
 
@@ -67,7 +67,7 @@ test.describe('useT Hook - Imperative Usage', () => {
     // Arabic
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('uset-simple')).toContainText(
-      'مرحباً من useT!',
+      'مرحبا من useT!',
     );
 
     // Back to English

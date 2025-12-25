@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parsePoString, writePoFile } from '../po/parser';
 import { compileTranslations, type CompileOptions } from './compile';
 
@@ -10,14 +10,14 @@ describe('compileTranslations', () => {
   let outputDir: string;
   let poDir: string;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-compile-'));
     outputDir = join(tempDir, 'idioma');
     poDir = join(tempDir, 'locales');
     await fs.mkdir(poDir, { recursive: true });
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
@@ -137,7 +137,7 @@ msgstr "Hello"
     const content = await fs.readFile(indexPath, 'utf-8');
 
     expect(content).toContain('export');
-    expect(content).toContain('./.generated/translations.js');
+    expect(content).toContain('./.generated/translations');
   });
 
   it('compiles ICU plural messages to functions', async () => {
@@ -165,6 +165,130 @@ msgstr "{count, plural, one {# item} other {# items}}"
 
     // Compiled plural should be an arrow function
     expect(content).toContain('(args) =>');
+    // Should use Intl.PluralRules for locale-aware pluralization
+    expect(content).toContain('Intl.PluralRules');
+  });
+
+  it('compiles ICU plural with proper CLDR handling', async () => {
+    await createPoFile(
+      'en',
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#, icu-format
+msgid "{count, plural, one {# item} other {# items}}"
+msgstr "{count, plural, one {# item} other {# items}}"
+`,
+    );
+
+    await compileTranslations({
+      localeDir: poDir,
+      outputDir,
+      defaultLocale: 'en',
+    });
+
+    const translationsPath = join(outputDir, '.generated', 'translations.js');
+    const content = await fs.readFile(translationsPath, 'utf-8');
+
+    // Verify the generated code structure for plurals
+    expect(content).toContain('(args) =>');
+    expect(content).toContain("Intl.PluralRules('en')");
+    expect(content).toContain('pr.select');
+    // Check for one/other branches
+    expect(content).toContain("'one'");
+    expect(content).toContain('" item"');
+    expect(content).toContain('" items"');
+  });
+
+  it('compiles ICU plural with zero form', async () => {
+    await createPoFile(
+      'en',
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#, icu-format
+msgid "{count, plural, zero {No items} one {# item} other {# items}}"
+msgstr "{count, plural, zero {No items} one {# item} other {# items}}"
+`,
+    );
+
+    await compileTranslations({
+      localeDir: poDir,
+      outputDir,
+      defaultLocale: 'en',
+    });
+
+    const translationsPath = join(outputDir, '.generated', 'translations.js');
+    const content = await fs.readFile(translationsPath, 'utf-8');
+
+    // Verify zero form handling
+    expect(content).toContain('(args) =>');
+    expect(content).toContain('v === 0');
+    expect(content).toContain('"No items"');
+  });
+
+  it('compiles ICU select correctly', async () => {
+    await createPoFile(
+      'en',
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#, icu-format
+msgid "{gender, select, male {He} female {She} other {They}} liked your post"
+msgstr "{gender, select, male {He} female {She} other {They}} liked your post"
+`,
+    );
+
+    await compileTranslations({
+      localeDir: poDir,
+      outputDir,
+      defaultLocale: 'en',
+    });
+
+    const translationsPath = join(outputDir, '.generated', 'translations.js');
+    const content = await fs.readFile(translationsPath, 'utf-8');
+
+    // Verify select handling
+    expect(content).toContain('(args) =>');
+    expect(content).toContain("sv === 'male'");
+    expect(content).toContain("sv === 'female'");
+    expect(content).toContain('"He"');
+    expect(content).toContain('"She"');
+    expect(content).toContain('"They"');
+    expect(content).toContain('" liked your post"');
+  });
+
+  it('compiles Arabic plural with CLDR forms', async () => {
+    await createPoFile(
+      'ar',
+      `
+msgid ""
+msgstr ""
+"Language: ar\\n"
+
+#, icu-format
+msgid "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصر} other {# عنصر}}"
+msgstr "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصر} other {# عنصر}}"
+`,
+    );
+
+    await compileTranslations({
+      localeDir: poDir,
+      outputDir,
+      defaultLocale: 'ar',
+    });
+
+    const translationsPath = join(outputDir, '.generated', 'translations.js');
+    const content = await fs.readFile(translationsPath, 'utf-8');
+
+    // Should use Intl.PluralRules with Arabic locale
+    expect(content).toContain("Intl.PluralRules('ar')");
   });
 
   describe('useSuspense mode', () => {

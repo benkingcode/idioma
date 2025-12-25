@@ -1,7 +1,16 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
-import { analyzeIcuMessage, compileIcuToFunction } from '../icu/compiler.js';
-import { loadLocaleCatalogs, loadPoFile } from '../po/parser.js';
+import {
+  parse,
+  TYPE,
+  type LiteralElement,
+  type MessageFormatElement,
+  type PluralElement,
+  type PluralOrSelectOption,
+  type SelectElement,
+} from '@formatjs/icu-messageformat-parser';
+import { analyzeIcuMessage } from '../icu/compiler.js';
+import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
 import { generateChunkModules } from './generate-chunks.js';
@@ -59,7 +68,7 @@ function countComponentTags(source: string): number {
  * Compile PO files to JavaScript/TypeScript output.
  *
  * Creates:
- * - translations.js: Compiled translation data
+ * - translations.ts: Compiled translation data
  * - types.ts: TypeScript type definitions
  * - index.ts: Re-exports with typed factories
  *
@@ -150,13 +159,30 @@ export async function compileTranslations(
         const compositeKey = namespace ? `${namespace}:${key}` : key;
 
         if (!allMessages.has(compositeKey)) {
-          const analysis = analyzeIcuMessage(message.source);
+          // Use the translation (not source which is just a hash key) for analysis
+          const translationText = message.translation || '';
+          const hasComponentTags = /<\d+>/.test(translationText);
+
+          // Skip ICU analysis if message has component tags (they break the ICU parser)
+          let analysis = {
+            hasPlural: false,
+            hasSelect: false,
+            variables: [] as string[],
+          };
+          if (!hasComponentTags && translationText) {
+            try {
+              analysis = analyzeIcuMessage(translationText);
+            } catch {
+              // If parsing fails, treat as non-ICU message
+            }
+          }
+
           allMessages.set(compositeKey, {
             key,
             translations: {},
             isIcu: analysis.hasPlural || analysis.hasSelect,
             variables: analysis.variables,
-            componentCount: countComponentTags(message.source),
+            componentCount: countComponentTags(translationText),
             namespace,
           });
         }
@@ -165,15 +191,30 @@ export async function compileTranslations(
 
         // Compile the translation
         if (message.translation) {
-          if (compiled.isIcu || message.flags?.includes('icu-format')) {
-            // Compile ICU to function string
-            compiled.translations[locale] = compileIcuToFunctionString(
-              message.translation,
-              locale,
-            );
-            compiled.isIcu = true;
-          } else {
+          // Skip ICU analysis for messages with component tags (they break the parser)
+          const hasComponentTags = /<\d+>/.test(message.translation);
+
+          if (hasComponentTags) {
+            // Messages with component tags are handled differently - just store as string
             compiled.translations[locale] = message.translation;
+          } else {
+            // Analyze for ICU patterns (plural, select)
+            const analysis = analyzeIcuMessage(message.translation);
+            const hasIcu =
+              analysis.hasPlural ||
+              analysis.hasSelect ||
+              message.flags?.includes('icu-format');
+
+            if (hasIcu) {
+              // Compile ICU to function string
+              compiled.translations[locale] = compileIcuToFunctionString(
+                message.translation,
+                locale,
+              );
+              compiled.isIcu = true;
+            } else {
+              compiled.translations[locale] = message.translation;
+            }
           }
         }
       }
@@ -209,30 +250,270 @@ export async function compileTranslations(
 }
 
 /**
- * Compile ICU message to a function string (for inline in JS)
+ * Compile ICU message to a JavaScript function string (for inline in JS).
+ * This generates actual executable JavaScript code that evaluates the ICU message.
+ * Exported for use in chunk generation (Suspense mode).
  */
-function compileIcuToFunctionString(message: string, locale: string): string {
-  // For now, we'll inline the ICU runtime
-  // In production, this would be optimized to conditionals
+export function compileIcuToFunctionString(
+  message: string,
+  locale: string,
+): string {
   const analysis = analyzeIcuMessage(message);
 
   if (!analysis.hasPlural && !analysis.hasSelect) {
     // Simple string with placeholders - use template literal
-    return message.replace(/\{([^}]+)\}/g, '${args.$1}');
+    // Escape backticks and ${} in the message
+    const escaped = message
+      .replace(/\\/g, '\\\\')
+      .replace(/`/g, '\\`')
+      .replace(/\$\{/g, '\\${');
+    // Replace {varName} with ${args.varName}
+    const template = escaped.replace(/\{([^}]+)\}/g, '${args.$1}');
+    return `\`${template}\``;
   }
 
-  // For ICU with plural/select, generate a function
-  // This is a simplified version - full implementation would use the ICU compiler
-  return `(args) => {
-    const pr = new Intl.PluralRules('${locale}')
-    ${generatePluralFunction(message, analysis.variables)}
-  }`;
+  // Parse the ICU message and generate JavaScript code
+  const ast = parse(message);
+  const body = generateCodeForElements(ast, locale);
+
+  return `(args) => { ${body} }`;
 }
 
-function generatePluralFunction(message: string, variables: string[]): string {
-  // Simplified plural function generation
-  // Full implementation would parse the ICU and generate optimal code
-  return `return ${JSON.stringify(message)}.replace(/{(\\w+)}/g, (_, k) => args[k] || '')`;
+/**
+ * Generate JavaScript code for a list of message format elements.
+ * Returns code that evaluates to a string.
+ */
+function generateCodeForElements(
+  elements: MessageFormatElement[],
+  locale: string,
+  pluralValueExpr?: string,
+): string {
+  const parts: string[] = [];
+
+  for (const el of elements) {
+    switch (el.type) {
+      case TYPE.literal:
+        parts.push(JSON.stringify((el as LiteralElement).value));
+        break;
+
+      case TYPE.argument:
+        parts.push(`String(args.${el.value} ?? '')`);
+        break;
+
+      case TYPE.plural:
+        parts.push(generatePluralCode(el as PluralElement, locale));
+        break;
+
+      case TYPE.select:
+        parts.push(generateSelectCode(el as SelectElement, locale));
+        break;
+
+      case TYPE.pound:
+        // # in plural - use the plural value expression
+        if (pluralValueExpr) {
+          parts.push(`String(${pluralValueExpr})`);
+        }
+        break;
+
+      case TYPE.number:
+      case TYPE.date:
+      case TYPE.time:
+        parts.push(`String(args.${el.value} ?? '')`);
+        break;
+    }
+  }
+
+  if (parts.length === 0) {
+    return "return ''";
+  }
+  if (parts.length === 1) {
+    return `return ${parts[0]}`;
+  }
+  return `return ${parts.join(' + ')}`;
+}
+
+/**
+ * Generate JavaScript code for a plural element.
+ * Uses Intl.PluralRules for CLDR-compliant plural selection.
+ */
+function generatePluralCode(el: PluralElement, locale: string): string {
+  const varName = el.value;
+  const offset = el.offset || 0;
+
+  // Generate an IIFE that handles plural logic
+  let code = `((v) => { `;
+
+  // Apply offset if present
+  if (offset !== 0) {
+    code += `const av = v - ${offset}; `;
+  } else {
+    code += `const av = v; `;
+  }
+
+  // Check for exact matches first (=0, =1, etc.)
+  const exactMatches: [number, PluralOrSelectOption][] = [];
+  const categoryMatches: [string, PluralOrSelectOption][] = [];
+
+  for (const [key, option] of Object.entries(el.options)) {
+    if (key.startsWith('=')) {
+      const exactValue = parseInt(key.slice(1), 10);
+      exactMatches.push([exactValue, option]);
+    } else {
+      categoryMatches.push([key, option]);
+    }
+  }
+
+  // Generate exact match checks
+  for (const [value, option] of exactMatches) {
+    const optionCode = generateCodeForPluralOption(option, locale, 'av');
+    code += `if (v === ${value}) { ${optionCode} } `;
+  }
+
+  // Special handling for zero category when value is 0
+  const zeroOption = el.options.zero;
+  if (zeroOption && !exactMatches.some(([v]) => v === 0)) {
+    const optionCode = generateCodeForPluralOption(zeroOption, locale, 'av');
+    code += `if (v === 0) { ${optionCode} } `;
+  }
+
+  // Use Intl.PluralRules for category matching
+  code += `const pr = new Intl.PluralRules('${locale}'); `;
+  code += `const cat = pr.select(av); `;
+
+  // Generate category matches (skip 'zero' as we handled it above)
+  const categories = ['one', 'two', 'few', 'many', 'other'];
+  let hasOtherCase = false;
+  for (const cat of categories) {
+    const option = el.options[cat];
+    if (option) {
+      const optionCode = generateCodeForPluralOption(option, locale, 'av');
+      if (cat === 'other') {
+        // 'other' is the fallback - it always matches so no if needed
+        code += `${optionCode} `;
+        hasOtherCase = true;
+      } else {
+        code += `if (cat === '${cat}') { ${optionCode} } `;
+      }
+    }
+  }
+
+  // Only add fallback if there's no 'other' case
+  if (!hasOtherCase) {
+    code += `return ''; `;
+  }
+  code += `})(Number(args.${varName}))`;
+
+  return code;
+}
+
+/**
+ * Generate code for a plural option (the content inside one/other/etc.)
+ */
+function generateCodeForPluralOption(
+  option: PluralOrSelectOption,
+  locale: string,
+  valueExpr: string,
+): string {
+  const parts: string[] = [];
+
+  for (const el of option.value) {
+    switch (el.type) {
+      case TYPE.literal:
+        parts.push(JSON.stringify((el as LiteralElement).value));
+        break;
+      case TYPE.argument:
+        parts.push(`String(args.${el.value} ?? '')`);
+        break;
+      case TYPE.pound:
+        parts.push(`String(${valueExpr})`);
+        break;
+      case TYPE.plural:
+        parts.push(generatePluralCode(el as PluralElement, locale));
+        break;
+      case TYPE.select:
+        parts.push(generateSelectCode(el as SelectElement, locale));
+        break;
+      default:
+        parts.push(`String(args.${(el as { value: string }).value} ?? '')`);
+        break;
+    }
+  }
+
+  if (parts.length === 0) {
+    return "return ''";
+  }
+  if (parts.length === 1) {
+    return `return ${parts[0]}`;
+  }
+  return `return ${parts.join(' + ')}`;
+}
+
+/**
+ * Generate JavaScript code for a select element.
+ */
+function generateSelectCode(el: SelectElement, locale: string): string {
+  const varName = el.value;
+
+  let code = `((sv) => { `;
+
+  // Generate case matches
+  for (const [key, option] of Object.entries(el.options)) {
+    if (key === 'other') continue; // Handle 'other' as fallback
+
+    const optionCode = generateCodeForSelectOption(option, locale);
+    code += `if (sv === '${key}') { ${optionCode} } `;
+  }
+
+  // 'other' is the fallback
+  const otherOption = el.options.other;
+  if (otherOption) {
+    const optionCode = generateCodeForSelectOption(otherOption, locale);
+    code += `${optionCode} `;
+  } else {
+    // Only add fallback if there's no 'other' case
+    code += `return ''; `;
+  }
+  code += `})(String(args.${varName} ?? ''))`;
+
+  return code;
+}
+
+/**
+ * Generate code for a select option.
+ */
+function generateCodeForSelectOption(
+  option: PluralOrSelectOption,
+  locale: string,
+): string {
+  const parts: string[] = [];
+
+  for (const el of option.value) {
+    switch (el.type) {
+      case TYPE.literal:
+        parts.push(JSON.stringify((el as LiteralElement).value));
+        break;
+      case TYPE.argument:
+        parts.push(`String(args.${el.value} ?? '')`);
+        break;
+      case TYPE.plural:
+        parts.push(generatePluralCode(el as PluralElement, locale));
+        break;
+      case TYPE.select:
+        parts.push(generateSelectCode(el as SelectElement, locale));
+        break;
+      default:
+        parts.push(`String(args.${(el as { value: string }).value} ?? '')`);
+        break;
+    }
+  }
+
+  if (parts.length === 0) {
+    return "return ''";
+  }
+  if (parts.length === 1) {
+    return `return ${parts[0]}`;
+  }
+  return `return ${parts.join(' + ')}`;
 }
 
 async function generateTranslationsJs(
@@ -262,7 +543,7 @@ async function generateTranslationsJs(
   for (const msg of nonNamespaced) {
     content += `  ${JSON.stringify(msg.key)}: {\n`;
     for (const [locale, translation] of Object.entries(msg.translations)) {
-      if (msg.isIcu && translation.startsWith('(args)')) {
+      if (msg.isIcu && translation.startsWith('(args')) {
         content += `    ${JSON.stringify(locale)}: ${translation},\n`;
       } else {
         content += `    ${JSON.stringify(locale)}: ${JSON.stringify(translation)},\n`;
@@ -279,7 +560,7 @@ async function generateTranslationsJs(
       for (const msg of msgs) {
         content += `      ${JSON.stringify(msg.key)}: {\n`;
         for (const [locale, translation] of Object.entries(msg.translations)) {
-          if (msg.isIcu && translation.startsWith('(args)')) {
+          if (msg.isIcu && translation.startsWith('(args')) {
             content += `        ${JSON.stringify(locale)}: ${translation},\n`;
           } else {
             content += `        ${JSON.stringify(locale)}: ${JSON.stringify(translation)},\n`;
@@ -294,7 +575,21 @@ async function generateTranslationsJs(
 
   content += '};\n';
 
+  // Write .js for runtime/bundler
   await fs.writeFile(join(outputDir, 'translations.js'), content, 'utf-8');
+
+  // Write minimal .d.ts for TypeScript
+  const dtsContent = `// Auto-generated by @idioma/core
+// Do not edit directly
+
+type MessageFunction = (args: Record<string, unknown>) => string;
+type MessageValue = string | MessageFunction;
+type LocaleMessages = Record<string, MessageValue>;
+type Translations = Record<string, LocaleMessages>;
+
+export declare const translations: Translations;
+`;
+  await fs.writeFile(join(outputDir, 'translations.d.ts'), dtsContent, 'utf-8');
 }
 
 async function generateTypesTs(
@@ -378,7 +673,7 @@ import {
   createUseT,
   plural,
 } from '@idioma/react';
-import { translations } from './.generated/translations.js';
+import { translations } from './.generated/translations';
 import type {
   Locale,
   MessageComponents,

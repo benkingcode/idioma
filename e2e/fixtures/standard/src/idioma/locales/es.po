@@ -4,93 +4,155 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 
 #: src/components/BasicTrans.tsx:8
+#. [AI Context]: Static greeting text displayed in a paragraph element on the basic translation demo page.
 msgid "000e6cSN"
 msgstr "¡Hola, Mundo!"
 
 #: src/components/BasicTrans.tsx:13
+#. [AI Context]: Welcome message displayed in a paragraph element to introduce users to the application.
 msgid "002LT9uM"
 msgstr "Bienvenido a nuestra aplicación"
 
 #: src/components/BasicTrans.tsx:18
+#. [AI Context]: Farewell message displayed in a paragraph element, likely used when users are leaving or logging out.
 msgid "greeting.farewell"
 msgstr "¡Adiós!"
 
 #: src/components/ComponentTags.tsx:27
+#. [AI Context]: Text with clickable link element, where <0> tags contain the clickable link text
 msgid "002dCe8j"
 msgstr "Haz clic <0>aquí</0> para continuar"
 
 #: src/components/ComponentTags.tsx:34
+#. [AI Context]: Text with two clickable links, where <0> contains the first link and <1> contains the second link
 msgid "002Wm69N"
 msgstr "Lee los <0>términos</0> y la <1>política de privacidad</1>"
 
 #: src/components/ComponentTags.tsx:41
+#. [AI Context]: Greeting message where <0> tags contain bold text that includes a user's name variable
 msgid "0001eiYR"
 msgstr "¡Hola <0>{name}</0>!"
 
 #: src/components/ComponentTags.tsx:48
+#. [AI Context]: Demonstration text where <0> contains bold formatting and <1> contains italic formatting
 msgid "002Hfyl1"
 msgstr "Esto es <0>negrita</0>, esto es <1>cursiva</1>, y normal"
 
 #: src/components/ComponentTags.tsx:55
+#. [AI Context]: Important notice with nested formatting, where <0> applies bold to entire message and <1> applies italic to specific phrase
 msgid "001Djb8c"
 msgstr "<0> Importante: <1>lee con cuidado</1> </0>"
 
 #: src/components/EdgeCases.tsx:15
+#. [AI Context]: Text displaying a value with brackets, used to test edge case handling when the value is an empty string
 msgid "002TXdYD"
 msgstr "Valor: [{emptyString}]"
 
 #: src/components/EdgeCases.tsx:20
+#. [AI Context]: Text displaying a count value, used to test edge case handling when the value is zero
 msgid "002Baos1"
 msgstr "Cuenta: {zero}"
 
 #: src/components/EdgeCases.tsx:25
+#. [AI Context]: Text displaying a null value with brackets, used to test edge case handling for null values
 msgid "0043ID7R"
 msgstr "Nulo: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx:30
+#. [AI Context]: Test message that intentionally may lack translations to test fallback behavior
 msgid "003jykkI"
 msgstr "Este mensaje podría no estar traducido"
 
 #: src/components/EdgeCases.tsx:35
+#. [AI Context]: Long sample text used to test translation system handling of lengthy content across multiple words
 msgid "0047ZVOp"
-msgstr "Este es un texto más largo que abarca varias palabras y prueba cómo el sistema maneja contenido más largo en las traducciones"
+msgstr ""
+"Este es un texto más largo que abarca varias palabras y prueba cómo el "
+"sistema maneja contenido más largo en las traducciones"
 
 #: src/components/EdgeCases.tsx:43
+#. [AI Context]: Text containing HTML entities and special characters like ampersands, angle brackets, and quotes
 msgid "001r7GGR"
 msgstr "Especial: & < > \"comillas\""
 
 #: src/components/EdgeCases.tsx:51
+#. [AI Context]: Text containing Unicode characters including emoji and copyright symbols for testing character encoding
 msgid "004JLiGr"
 msgstr "Emoji: 🎉 y símbolos: © ® ™"
 
 #: src/components/Interpolation.tsx:12
+#. [AI Context]: Greeting message displayed in a paragraph element, where {name} is replaced with a person's name like 'Alice'
 msgid "0024c34D"
 msgstr "¡Hola, {name}!"
 
 #: src/components/Interpolation.tsx:17
+#. [AI Context]: Welcome message displayed in a paragraph element, where {firstName} and {lastName} are replaced with a person's full name like 'Bob Smith'
 msgid "003lIRId"
 msgstr "¡Bienvenido, {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx:24
+#. [AI Context]: Example text displayed in a paragraph element showing placeholder positioning, where {name} is replaced with a person's name surrounded by other words
 msgid "000iXvMP"
 msgstr "Antes {name} después"
 
 #: src/components/Interpolation.tsx:29
+#. [AI Context]: Item count message displayed in a paragraph element, where {0} is replaced with a numeric value like '42'
 msgid "002r0ybS"
 msgstr "Tienes {0} artículos"
 
 #: src/components/Plurals.tsx:11
+#. [AI Context]: Status text showing item count in inventory or cart. 'one' form for exactly 1 item, 'other' form for 0 or 2+ items.
 msgid "000w9C8y"
 msgstr "Tienes {count, plural, one {# artículo} other {# artículos}}"
 
 #: src/components/Plurals.tsx:18
+#. [AI Context]: Message count display with special zero handling. 'zero' for exactly 0, 'one' for exactly 1, 'other' for 2+ messages.
 msgid "0048f6Nc"
 msgstr "{count, plural, zero {Sin mensajes} one {# mensaje} other {# mensajes}}"
 
 #: src/components/Plurals.tsx:29
+#. [AI Context]: Descriptive text about apples in a basket with grammatical agreement. 'one' form uses 'is' for 1 apple, 'other' form uses 'are' for 0 or 2+ apples.
 msgid "002EaYd6"
 msgstr "Hay {count, plural, one {# manzana} other {# manzanas}} en la canasta"
 
 #: src/components/Plurals.tsx:37
+#. [AI Context]: File count display demonstrating all CLDR plural forms. Shows different forms for zero (0), one (1), two (2), few (3-10), many (11-99), and other (100+) in languages like Arabic.
 msgid "004CDxng"
-msgstr "{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other {# archivos (otros)}}"
+msgstr ""
+"{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# "
+"archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other "
+"{# archivos (otros)}}"
+
+#: src/components/EdgeCases.tsx:47
+#: src/components/EdgeCases.tsx:47
+#: src/components/EdgeCases.tsx:47
+#. [AI Context]: Greeting message with a {name} placeholder that should be replaced with a person's name
+#, ai-translated
+msgid "004Dt4mI"
+msgstr "¡Hola {name}!"
+
+#: src/components/UseT.tsx:7
+#. [AI Context]: Simple greeting text displayed in a paragraph element, shown as a basic translation example.
+#, ai-translated
+msgid "002UQheH"
+msgstr "¡Hola desde useT!"
+
+#: src/components/UseT.tsx:10
+#. [AI Context]: Welcome message displayed in a paragraph with a placeholder for the user's name.
+#, ai-translated
+msgid "003X3cVZ"
+msgstr "¡Bienvenido, {name}!"
+
+#: src/components/UseT.tsx:13
+#. [AI Context]: Text displaying item count and author name in a paragraph, with placeholders for numerical count and author string.
+#, ai-translated
+msgid "001gZ2vk"
+msgstr "{count} elementos por {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#. [AI Context]: Simple text displayed in a paragraph element, demonstrating inline translation usage.
+#, ai-translated
+msgid "002RXyTq"
+msgstr "Traducción en línea"

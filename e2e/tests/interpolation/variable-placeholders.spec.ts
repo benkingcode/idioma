@@ -14,18 +14,18 @@ test.describe('Interpolation - Variable Placeholders', () => {
 
   test('renders multiple placeholders in English', async ({ page }) => {
     await expect(page.getByTestId('interp-multiple')).toContainText(
-      'Welcome, John Doe!',
+      'Welcome, Bob Smith!',
     );
   });
 
   test('renders placeholder with surrounding text', async ({ page }) => {
-    await expect(page.getByTestId('interp-surrounding')).toContainText(
-      'Before Bob after',
+    await expect(page.getByTestId('interp-surrounded')).toContainText(
+      'Before Alice after',
     );
   });
 
   test('renders numeric placeholder', async ({ page }) => {
-    await expect(page.getByTestId('interp-numeric')).toContainText(
+    await expect(page.getByTestId('interp-number')).toContainText(
       'You have 42 items',
     );
   });
@@ -36,7 +36,7 @@ test.describe('Interpolation - Variable Placeholders', () => {
       '¡Hola, Alice!',
     );
     await expect(page.getByTestId('interp-multiple')).toContainText(
-      '¡Bienvenido, John Doe!',
+      '¡Bienvenido, Bob Smith!',
     );
   });
 
@@ -46,7 +46,7 @@ test.describe('Interpolation - Variable Placeholders', () => {
       'مرحباً، Alice!',
     );
     await expect(page.getByTestId('interp-multiple')).toContainText(
-      'أهلاً، John Doe!',
+      'أهلاً، Bob Smith!',
     );
   });
 

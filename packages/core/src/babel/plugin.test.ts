@@ -494,7 +494,7 @@ describe('Idioma Babel Plugin', () => {
 
       // Should inject translations import
       expect(result).toContain('translations');
-      expect(result).toContain('./idioma/translations.js');
+      expect(result).toContain('./idioma/.generated/translations');
       expect(result).toContain('__$translations');
       // Should modify createT call to pass translations
       expect(result).toContain('createT(');
@@ -517,7 +517,7 @@ describe('Idioma Babel Plugin', () => {
 
       // Should NOT inject translations import for static-only files
       expect(result).not.toContain('__$translations');
-      expect(result).not.toContain('./idioma/translations.js');
+      expect(result).not.toContain('./idioma/.generated/translations');
     });
 
     it('injects translations when file has both static and dynamic t() calls', () => {

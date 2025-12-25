@@ -75,21 +75,21 @@ test.describe('Suspense Mode - Locale Switching', () => {
   test('component tags remain functional after locale switch', async ({
     page,
   }) => {
-    const link = page.getByTestId('comp-single-tag').locator('a');
+    const link = page.getByTestId('comp-single').locator('a');
 
     // English
     await expect(link).toHaveText('here');
-    await expect(link).toHaveAttribute('href', '/next');
+    await expect(link).toHaveAttribute('href', '#');
 
     // Spanish
     await selectLocale(page, 'es');
     await expect(link).toHaveText('aquí');
-    await expect(link).toHaveAttribute('href', '/next'); // href unchanged
+    await expect(link).toHaveAttribute('href', '#'); // href unchanged
 
     // Arabic
     await selectLocale(page, 'ar');
     await expect(link).toHaveText('هنا');
-    await expect(link).toHaveAttribute('href', '/next'); // href unchanged
+    await expect(link).toHaveAttribute('href', '#'); // href unchanged
   });
 
   test('rapid locale switching works correctly', async ({ page }) => {

@@ -139,7 +139,7 @@ describe('End-to-End Workflow', () => {
     expect(indexTs).toContain('export const Trans = createTrans');
     expect(indexTs).toContain('export const useT = createUseT');
     // index.ts should import from .generated/
-    expect(indexTs).toContain('./.generated/translations.js');
+    expect(indexTs).toContain('./.generated/translations');
 
     // Step 5: Check translations
     const checkResult = await runCheck({ localeDir });

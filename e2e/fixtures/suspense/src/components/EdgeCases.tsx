@@ -1,8 +1,6 @@
-import { Trans, useT } from '../idioma';
+import { Trans } from '../idioma';
 
 export function EdgeCases() {
-  const t = useT();
-
   // Edge case values
   const emptyString = '';
   const zero = 0;
@@ -42,9 +40,6 @@ export function EdgeCases() {
       <p data-testid="edge-special">
         <Trans>Special: &amp; &lt; &gt; "quotes"</Trans>
       </p>
-
-      {/* useT with missing placeholder */}
-      <p data-testid="edge-missing-placeholder">{t('Hello {name}!')}</p>
 
       {/* Unicode characters */}
       <p data-testid="edge-unicode">

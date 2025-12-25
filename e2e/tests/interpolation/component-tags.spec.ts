@@ -7,32 +7,30 @@ test.describe('Interpolation - Component Tags', () => {
   });
 
   test('renders single component tag with link', async ({ page }) => {
-    const container = page.getByTestId('comp-single-tag');
+    const container = page.getByTestId('comp-single');
     await expect(container).toContainText('Click here to continue');
     // Verify the link is rendered
     await expect(container.locator('a')).toHaveText('here');
-    await expect(container.locator('a')).toHaveAttribute('href', '/next');
+    await expect(container.locator('a')).toHaveAttribute('href', '#');
   });
 
   test('renders multiple component tags', async ({ page }) => {
-    const container = page.getByTestId('comp-multiple-tags');
+    const container = page.getByTestId('comp-multiple');
     await expect(container).toContainText('Read the terms and privacy policy');
-    // Verify both links are rendered
-    const links = container.locator('a');
-    await expect(links).toHaveCount(2);
-    await expect(links.nth(0)).toHaveText('terms');
-    await expect(links.nth(1)).toHaveText('privacy policy');
+    // Verify the link and strong tag are rendered
+    await expect(container.locator('a')).toHaveText('terms');
+    await expect(container.locator('strong')).toHaveText('privacy policy');
   });
 
   test('renders component tag with placeholder inside', async ({ page }) => {
     const container = page.getByTestId('comp-with-placeholder');
-    await expect(container).toContainText('Hello Charlie!');
+    await expect(container).toContainText('Hello World!');
     // Verify the strong tag wraps the name
-    await expect(container.locator('strong')).toHaveText('Charlie');
+    await expect(container.locator('strong')).toHaveText('World');
   });
 
   test('renders multiple formatting tags', async ({ page }) => {
-    const container = page.getByTestId('comp-formatting');
+    const container = page.getByTestId('comp-mixed');
     await expect(container).toContainText(
       'This is bold, this is italic, and normal',
     );
@@ -43,18 +41,20 @@ test.describe('Interpolation - Component Tags', () => {
   test('renders nested component tags', async ({ page }) => {
     const container = page.getByTestId('comp-nested');
     await expect(container).toContainText('Important: read carefully');
-    // Verify nesting structure
-    await expect(container.locator('div > em')).toContainText('read carefully');
+    // Verify nesting structure: strong contains em
+    await expect(container.locator('strong > em')).toContainText(
+      'read carefully',
+    );
   });
 
   test('component tags work in Spanish', async ({ page }) => {
     await selectLocale(page, 'es');
 
-    const singleTag = page.getByTestId('comp-single-tag');
+    const singleTag = page.getByTestId('comp-single');
     await expect(singleTag).toContainText('Haz clic aquí para continuar');
     await expect(singleTag.locator('a')).toHaveText('aquí');
 
-    const multipleTags = page.getByTestId('comp-multiple-tags');
+    const multipleTags = page.getByTestId('comp-multiple');
     await expect(multipleTags).toContainText(
       'Lee los términos y la política de privacidad',
     );
@@ -63,16 +63,16 @@ test.describe('Interpolation - Component Tags', () => {
   test('component tags work in Arabic', async ({ page }) => {
     await selectLocale(page, 'ar');
 
-    const singleTag = page.getByTestId('comp-single-tag');
+    const singleTag = page.getByTestId('comp-single');
     await expect(singleTag).toContainText('انقر هنا للمتابعة');
     await expect(singleTag.locator('a')).toHaveText('هنا');
 
-    const multipleTags = page.getByTestId('comp-multiple-tags');
+    const multipleTags = page.getByTestId('comp-multiple');
     await expect(multipleTags).toContainText('اقرأ الشروط وسياسة الخصوصية');
   });
 
   test('component tags persist through locale switches', async ({ page }) => {
-    const container = page.getByTestId('comp-single-tag');
+    const container = page.getByTestId('comp-single');
 
     // English
     await expect(container.locator('a')).toHaveText('here');

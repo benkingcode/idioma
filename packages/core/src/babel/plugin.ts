@@ -1,9 +1,27 @@
+import { dirname, relative, resolve } from 'path';
 import type { NodePath, PluginObj } from '@babel/core';
+import { parse as babelParse } from '@babel/parser';
 import * as t from '@babel/types';
 import { getChunkId } from '../compiler/chunk-id.js';
 import { generateKey } from '../keys/generator.js';
 import { extractTransMessage, type ExtractedMessage } from './extract-trans.js';
 import { serializeJsxChildren, serializeTemplateLiteral } from './serialize.js';
+
+/**
+ * Parse a function source string into an AST expression.
+ * Used for inlining compiled ICU functions (plurals, selects).
+ */
+function parseFunctionToAst(fnSource: string): t.Expression {
+  // Wrap in parentheses to make it a valid expression statement
+  const code = `(${fnSource})`;
+  const ast = babelParse(code, { sourceType: 'module' });
+  const stmt = ast.program.body[0];
+  if (t.isExpressionStatement(stmt)) {
+    return stmt.expression;
+  }
+  // Fallback to string literal if parsing fails
+  return t.stringLiteral(fnSource);
+}
 
 export interface IdiomaPluginOptions {
   /** Plugin mode: 'development' or 'production' */
@@ -84,7 +102,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
             createTCalls.length > 0 &&
             opts.outputDir
           ) {
-            // Inject: import { translations as __$translations } from '{outputDir}/translations.js'
+            // Inject: import { translations as __$translations } from '{outputDir}/.generated/translations'
             const translationsImport = t.importDeclaration(
               [
                 t.importSpecifier(
@@ -92,7 +110,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
                   t.identifier('translations'),
                 ),
               ],
-              t.stringLiteral(`${opts.outputDir}/translations.js`),
+              t.stringLiteral(`${opts.outputDir}/.generated/translations`),
             );
             path.unshiftContainer('body', [translationsImport]);
 
@@ -108,9 +126,24 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
           // Handle Suspense mode - inject chunk loaders
           if (opts.mode === 'production' && opts.useSuspense && idiomaUsed) {
-            const { locales, outputDir } = opts;
-            if (!locales || !outputDir) {
+            const { locales, outputDir, projectRoot } = opts;
+            if (!locales || !outputDir || !projectRoot) {
               return;
+            }
+
+            // Compute relative path from source file to chunk directory
+            const sourceFileDir = dirname(state.filename);
+            const absSourceDir = resolve(projectRoot, sourceFileDir);
+            const absChunkDir = resolve(
+              projectRoot,
+              outputDir,
+              '.generated',
+              'chunks',
+            );
+            let chunkRelPath = relative(absSourceDir, absChunkDir);
+            // Ensure it starts with ./ for relative imports
+            if (!chunkRelPath.startsWith('.')) {
+              chunkRelPath = './' + chunkRelPath;
             }
 
             // Inject import for __TransSuspense
@@ -139,7 +172,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
                 t.arrowFunctionExpression(
                   [],
                   t.callExpression(t.import(), [
-                    t.stringLiteral(`${outputDir}/chunks/${chunkId}.${locale}`),
+                    t.stringLiteral(`${chunkRelPath}/${chunkId}.${locale}`),
                   ]),
                 ),
               ),
@@ -265,7 +298,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
               t.stringLiteral(locale),
               typeof msg === 'string'
                 ? t.stringLiteral(msg)
-                : t.stringLiteral(String(msg)),
+                : parseFunctionToAst(String(msg)),
             ),
         );
 
@@ -396,11 +429,11 @@ function transformTransComponent(
         t.objectProperty(t.stringLiteral(locale), t.stringLiteral(translation)),
       );
     } else {
-      // Function translations are serialized differently
+      // Function translations - parse the function source to AST
       tEntries.push(
         t.objectProperty(
           t.stringLiteral(locale),
-          t.stringLiteral(String(translation)),
+          parseFunctionToAst(String(translation)),
         ),
       );
     }

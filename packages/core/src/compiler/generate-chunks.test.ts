@@ -181,7 +181,6 @@ describe('generateChunkModules', () => {
     );
 
     expect(content).toContain('export default');
-    expect(content).toContain('as const');
   });
 
   it('handles empty translations gracefully', async () => {

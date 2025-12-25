@@ -69,7 +69,7 @@ test.describe('Suspense Mode - Caching', () => {
     );
 
     // Component tags
-    await expect(page.getByTestId('comp-single-tag')).toContainText(
+    await expect(page.getByTestId('comp-single')).toContainText(
       'Haz clic aquí para continuar',
     );
 
@@ -87,7 +87,7 @@ test.describe('Suspense Mode - Caching', () => {
     await expect(page.getByTestId('plural-basic')).toContainText(
       'Tienes 1 artículo',
     );
-    await expect(page.getByTestId('comp-single-tag')).toContainText(
+    await expect(page.getByTestId('comp-single')).toContainText(
       'Haz clic aquí para continuar',
     );
   });

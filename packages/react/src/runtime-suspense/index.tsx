@@ -16,8 +16,8 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  interpolateTags,
   interpolateValues,
+  renderMessage,
   type TransComponent,
 } from '../interpolate';
 
@@ -35,10 +35,11 @@ if (majorVersion < 19) {
 
 // ============ Types ============
 
-type LoaderFn = () => Promise<{ default: Record<string, string> }>;
-type Loader = Record<string, LoaderFn>;
-
 type MessageFunction = (args: Record<string, unknown>) => string | ReactNode;
+type MessageValue = string | MessageFunction;
+
+type LoaderFn = () => Promise<{ default: Record<string, MessageValue> }>;
+type Loader = Record<string, LoaderFn>;
 
 interface SuspenseConfig {
   locales: readonly string[];
@@ -46,13 +47,13 @@ interface SuspenseConfig {
 
 // ============ Promise Cache ============
 
-const cache = new Map<string, Promise<Record<string, string>>>();
+const cache = new Map<string, Promise<Record<string, MessageValue>>>();
 
 function getTranslations(
   locale: string,
   chunk: string,
   loader: Loader,
-): Promise<Record<string, string>> {
+): Promise<Record<string, MessageValue>> {
   const key = `${locale}:${chunk}`;
 
   if (!cache.has(key)) {
@@ -165,17 +166,8 @@ export function __TransSuspense({
     return __key; // Fallback to key
   }
 
-  // Component interpolation
-  if (__c && __c.length > 0) {
-    return interpolateTags(msg, __c, __a);
-  }
-
-  // Value interpolation
-  if (__a && Object.keys(__a).length > 0) {
-    return interpolateValues(msg, __a);
-  }
-
-  return msg;
+  // Use shared rendering logic (handles ICU functions, tags, and values)
+  return renderMessage(msg, __a, __c);
 }
 
 /**
@@ -302,6 +294,10 @@ export function __useTSuspense(
     if (msg === undefined) {
       return key;
     }
+    // Handle ICU-compiled functions
+    if (typeof msg === 'function') {
+      return msg(values || {}) as string;
+    }
     if (values && Object.keys(values).length > 0) {
       return interpolateValues(msg, values);
     }
@@ -321,11 +317,13 @@ export function createUseT<
     string,
     Record<string, unknown>
   >,
->(_config: SuspenseConfig): TFunction<K, MV> {
-  // In development, this won't have chunk/loader
-  // In production, Babel injects them
-  throw new Error(
-    '[idioma] useT in Suspense mode requires Babel transform. ' +
-      'Make sure the Babel plugin is configured correctly.',
-  );
+>(_config: SuspenseConfig): () => TFunction<K, MV> {
+  // Return a hook that throws when called
+  // In production with proper Babel setup, this would be transformed
+  return function useT(): TFunction<K, MV> {
+    throw new Error(
+      '[idioma] useT in Suspense mode requires Babel transform. ' +
+        'Make sure the Babel plugin is configured correctly.',
+    );
+  };
 }

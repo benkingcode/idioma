@@ -172,6 +172,28 @@ async function extractFromFile(
                   namespace,
                 });
               },
+              // Extract t() calls from useT hook
+              CallExpression(path) {
+                const callee = path.node.callee;
+                // Only handle calls like t('string') where t is an identifier
+                if (!isTIdentifier(callee)) return;
+
+                const args = path.node.arguments;
+                const sourceArg = args[0];
+
+                // Only extract string literal sources
+                if (!sourceArg || sourceArg.type !== 'StringLiteral') return;
+
+                const source = sourceArg.value;
+                const key = generateKey(source);
+                const line = path.node.loc?.start.line ?? 1;
+
+                messages.push({
+                  key,
+                  source,
+                  location: `${filename}:${line}`,
+                });
+              },
             },
           };
         },
@@ -191,6 +213,10 @@ async function extractFromFile(
 function isTransComponent(opening: t.JSXOpeningElement): boolean {
   if (opening.name.type !== 'JSXIdentifier') return false;
   return opening.name.name === 'Trans';
+}
+
+function isTIdentifier(node: t.Node): node is t.Identifier {
+  return node.type === 'Identifier' && node.name === 't';
 }
 
 function parseTransElement(element: t.JSXElement): {

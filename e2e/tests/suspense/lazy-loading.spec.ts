@@ -53,10 +53,10 @@ test.describe('Suspense Mode - Lazy Loading', () => {
   });
 
   test('component interpolation works in Suspense mode', async ({ page }) => {
-    await expect(page.getByTestId('comp-single-tag')).toContainText(
+    await expect(page.getByTestId('comp-single')).toContainText(
       'Click here to continue',
     );
-    await expect(page.getByTestId('comp-single-tag').locator('a')).toHaveText(
+    await expect(page.getByTestId('comp-single').locator('a')).toHaveText(
       'here',
     );
   });

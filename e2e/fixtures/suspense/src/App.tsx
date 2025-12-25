@@ -3,7 +3,8 @@ import { ComponentTags } from './components/ComponentTags';
 import { EdgeCases } from './components/EdgeCases';
 import { Interpolation } from './components/Interpolation';
 import { Plurals } from './components/Plurals';
-import { UseT } from './components/UseT';
+
+// Note: useT is not supported in Suspense mode yet (requires Babel transform)
 
 interface AppProps {
   locale: string;
@@ -56,11 +57,6 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="component-tags-section">
           <h2>Component Tags</h2>
           <ComponentTags />
-        </section>
-
-        <section data-testid="usetT-section">
-          <h2>useT Hook</h2>
-          <UseT />
         </section>
 
         <section data-testid="edge-cases-section">

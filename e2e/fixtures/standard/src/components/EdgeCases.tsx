@@ -44,7 +44,10 @@ export function EdgeCases() {
       </p>
 
       {/* useT with missing placeholder */}
-      <p data-testid="edge-missing-placeholder">{t('Hello {name}!')}</p>
+      <p data-testid="edge-missing-placeholder">
+        {/* @ts-expect-error - testing missing values second arg */}
+        {t('Hello {name}!')}
+      </p>
 
       {/* Unicode characters */}
       <p data-testid="edge-unicode">

@@ -35,33 +35,33 @@ msgstr "This is <0>bold</0>, this is <1>italic</1>, and normal"
 msgid "001Djb8c"
 msgstr "<0> Important: <1>read carefully</1> </0>"
 
-#: src/components/EdgeCases.tsx:15
+#: src/components/EdgeCases.tsx:13
 msgid "002TXdYD"
 msgstr "Value: [{emptyString}]"
 
-#: src/components/EdgeCases.tsx:20
+#: src/components/EdgeCases.tsx:18
 msgid "002Baos1"
 msgstr "Count: {zero}"
 
-#: src/components/EdgeCases.tsx:25
+#: src/components/EdgeCases.tsx:23
 msgid "0043ID7R"
 msgstr "Null: [{nullValue}]"
 
-#: src/components/EdgeCases.tsx:30
+#: src/components/EdgeCases.tsx:28
 msgid "003jykkI"
 msgstr "This message might not be translated"
 
-#: src/components/EdgeCases.tsx:35
+#: src/components/EdgeCases.tsx:33
 msgid "0047ZVOp"
 msgstr ""
 "This is a longer piece of text that spans multiple words and tests how the "
 "system handles longer content in translations"
 
-#: src/components/EdgeCases.tsx:43
+#: src/components/EdgeCases.tsx:41
 msgid "001r7GGR"
 msgstr "Special: & < > \"quotes\""
 
-#: src/components/EdgeCases.tsx:51
+#: src/components/EdgeCases.tsx:46
 msgid "004JLiGr"
 msgstr "Emoji: 🎉 and symbols: © ® ™"
 
@@ -98,3 +98,21 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
+
+#: src/components/UseT.tsx:7
+msgid "002UQheH"
+msgstr "Hello from useT!"
+
+#: src/components/UseT.tsx:10
+msgid "003X3cVZ"
+msgstr "Welcome, {name}!"
+
+#: src/components/UseT.tsx:13
+msgid "001gZ2vk"
+msgstr "{count} items by {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+msgid "002RXyTq"
+msgstr "Inline translation"

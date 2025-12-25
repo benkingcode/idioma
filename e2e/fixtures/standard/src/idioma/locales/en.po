@@ -98,3 +98,27 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
+
+#: src/components/EdgeCases.tsx:47
+#: src/components/EdgeCases.tsx:47
+#: src/components/EdgeCases.tsx:47
+msgid "004Dt4mI"
+msgstr "Hello {name}!"
+
+#: src/components/UseT.tsx:7
+msgid "002UQheH"
+msgstr "Hello from useT!"
+
+#: src/components/UseT.tsx:10
+msgid "003X3cVZ"
+msgstr "Welcome, {name}!"
+
+#: src/components/UseT.tsx:13
+msgid "001gZ2vk"
+msgstr "{count} items by {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+msgid "002RXyTq"
+msgstr "Inline translation"

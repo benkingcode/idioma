@@ -46,6 +46,7 @@ msgstr "Hello"
     // Internal files in .generated/
     const generatedFiles = await fs.readdir(join(outputDir, '.generated'));
     expect(generatedFiles).toContain('translations.js');
+    expect(generatedFiles).toContain('translations.d.ts');
     expect(generatedFiles).toContain('types.ts');
   });
 
@@ -186,7 +187,7 @@ msgstr "Hello"
     );
     expect(content).toContain('export type {');
     // index.ts should import from .generated/
-    expect(content).toContain('./.generated/translations.js');
+    expect(content).toContain('./.generated/translations');
   });
 
   it('returns compile result with stats', async () => {

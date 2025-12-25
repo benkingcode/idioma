@@ -1,3 +1,4 @@
+import { isAbsolute, join } from 'path';
 import type { ExtractedMessage } from '../babel/extract-trans.js';
 import type { Catalog } from '../po/types.js';
 import { getChunkId } from './chunk-id.js';
@@ -93,12 +94,17 @@ function addKeyToFile(
   key: string,
   projectRoot: string,
 ): void {
+  // Ensure the file path is absolute for getChunkId
+  const absolutePath = isAbsolute(filePath)
+    ? filePath
+    : join(projectRoot, filePath);
+
   const existing = files.get(filePath);
   if (existing) {
     existing.keys.add(key);
   } else {
     files.set(filePath, {
-      chunkId: getChunkId(filePath, projectRoot),
+      chunkId: getChunkId(absolutePath, projectRoot),
       keys: new Set([key]),
     });
   }
