@@ -1,0 +1,96 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain; charset=utf-8\n"
+
+#: src/components/BasicTrans.tsx:8
+msgid "000e6cSN"
+msgstr "¡Hola, Mundo!"
+
+#: src/components/BasicTrans.tsx:13
+msgid "002LT9uM"
+msgstr "Bienvenido a nuestra aplicación"
+
+#: src/components/BasicTrans.tsx:18
+msgid "greeting.farewell"
+msgstr "¡Adiós!"
+
+#: src/components/ComponentTags.tsx:27
+msgid "002dCe8j"
+msgstr "Haz clic <0>aquí</0> para continuar"
+
+#: src/components/ComponentTags.tsx:34
+msgid "002Wm69N"
+msgstr "Lee los <0>términos</0> y la <1>política de privacidad</1>"
+
+#: src/components/ComponentTags.tsx:41
+msgid "0001eiYR"
+msgstr "¡Hola <0>{name}</0>!"
+
+#: src/components/ComponentTags.tsx:48
+msgid "002Hfyl1"
+msgstr "Esto es <0>negrita</0>, esto es <1>cursiva</1>, y normal"
+
+#: src/components/ComponentTags.tsx:55
+msgid "001Djb8c"
+msgstr "<0> Importante: <1>lee con cuidado</1> </0>"
+
+#: src/components/EdgeCases.tsx:15
+msgid "002TXdYD"
+msgstr "Valor: [{emptyString}]"
+
+#: src/components/EdgeCases.tsx:20
+msgid "002Baos1"
+msgstr "Cuenta: {zero}"
+
+#: src/components/EdgeCases.tsx:25
+msgid "0043ID7R"
+msgstr "Nulo: [{nullValue}]"
+
+#: src/components/EdgeCases.tsx:30
+msgid "003jykkI"
+msgstr "Este mensaje podría no estar traducido"
+
+#: src/components/EdgeCases.tsx:35
+msgid "0047ZVOp"
+msgstr "Este es un texto más largo que abarca varias palabras y prueba cómo el sistema maneja contenido más largo en las traducciones"
+
+#: src/components/EdgeCases.tsx:43
+msgid "001r7GGR"
+msgstr "Especial: & < > \"comillas\""
+
+#: src/components/EdgeCases.tsx:51
+msgid "004JLiGr"
+msgstr "Emoji: 🎉 y símbolos: © ® ™"
+
+#: src/components/Interpolation.tsx:12
+msgid "0024c34D"
+msgstr "¡Hola, {name}!"
+
+#: src/components/Interpolation.tsx:17
+msgid "003lIRId"
+msgstr "¡Bienvenido, {firstName} {lastName}!"
+
+#: src/components/Interpolation.tsx:24
+msgid "000iXvMP"
+msgstr "Antes {name} después"
+
+#: src/components/Interpolation.tsx:29
+msgid "002r0ybS"
+msgstr "Tienes {0} artículos"
+
+#: src/components/Plurals.tsx:11
+msgid "000w9C8y"
+msgstr "Tienes {count, plural, one {# artículo} other {# artículos}}"
+
+#: src/components/Plurals.tsx:18
+msgid "0048f6Nc"
+msgstr "{count, plural, zero {Sin mensajes} one {# mensaje} other {# mensajes}}"
+
+#: src/components/Plurals.tsx:29
+msgid "002EaYd6"
+msgstr "Hay {count, plural, one {# manzana} other {# manzanas}} en la canasta"
+
+#: src/components/Plurals.tsx:37
+msgid "004CDxng"
+msgstr "{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other {# archivos (otros)}}"

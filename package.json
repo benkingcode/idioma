@@ -8,7 +8,9 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:e2e": "pnpm --filter idioma-e2e test",
+    "test:e2e:ui": "pnpm --filter idioma-e2e test:ui"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.0",

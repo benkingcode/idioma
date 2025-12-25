@@ -4,6 +4,7 @@ import * as babel from '@babel/core';
 import type * as t from '@babel/types';
 import { defineCommand } from 'citty';
 import fg from 'fast-glob';
+import { serializeJsxChildren } from '../../babel/serialize.js';
 import { generateKey } from '../../keys/generator.js';
 import { mergeCatalogs } from '../../po/merge.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
@@ -220,55 +221,11 @@ function parseTransElement(element: t.JSXElement): {
     }
   }
 
-  // Serialize children to source string
-  const source = serializeChildren(element.children);
+  // Serialize children to source string using the proper serializer
+  // that handles plural(), component tags, and other expressions correctly
+  const { message: source } = serializeJsxChildren(element.children);
 
   return { id, context, namespace, source };
-}
-
-function serializeChildren(children: t.JSXElement['children']): string {
-  let result = '';
-  let tagIndex = 0;
-  let exprIndex = 0;
-
-  for (const child of children) {
-    if (child.type === 'JSXText') {
-      // Normalize whitespace but preserve intentional spacing
-      const text = child.value.replace(/\s+/g, ' ');
-      result += text;
-    } else if (child.type === 'JSXExpressionContainer') {
-      if (child.expression.type === 'JSXEmptyExpression') continue;
-
-      if (child.expression.type === 'Identifier') {
-        result += `{${child.expression.name}}`;
-      } else if (child.expression.type === 'MemberExpression') {
-        result += `{${serializeMemberExpression(child.expression)}}`;
-      } else {
-        result += `{${exprIndex++}}`;
-      }
-    } else if (child.type === 'JSXElement') {
-      const innerContent = serializeChildren(child.children);
-      result += `<${tagIndex}>${innerContent}</${tagIndex}>`;
-      tagIndex++;
-    }
-  }
-
-  return result.trim();
-}
-
-function serializeMemberExpression(expr: t.MemberExpression): string {
-  let result = '';
-  if (expr.object.type === 'Identifier') {
-    result = expr.object.name;
-  } else if (expr.object.type === 'MemberExpression') {
-    result = serializeMemberExpression(expr.object);
-  }
-
-  if (expr.property.type === 'Identifier') {
-    result += `.${expr.property.name}`;
-  }
-
-  return result;
 }
 
 function messagesToCatalog(

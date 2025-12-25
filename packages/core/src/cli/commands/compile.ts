@@ -12,6 +12,9 @@ export interface CompileCommandOptions {
   localeDir: string;
   outputDir: string;
   defaultLocale: string;
+  useSuspense?: boolean;
+  locales?: string[];
+  projectRoot?: string;
 }
 
 /**
@@ -20,12 +23,22 @@ export interface CompileCommandOptions {
 export async function runCompile(
   options: CompileCommandOptions,
 ): Promise<CompileResult> {
-  const { localeDir, outputDir, defaultLocale } = options;
+  const {
+    localeDir,
+    outputDir,
+    defaultLocale,
+    useSuspense,
+    locales,
+    projectRoot,
+  } = options;
 
   await compileTranslations({
     localeDir,
     outputDir,
     defaultLocale,
+    useSuspense,
+    locales,
+    projectRoot,
   });
 
   // Read back results to get stats
@@ -34,7 +47,7 @@ export async function runCompile(
 
   const files = await fs.readdir(localeDir);
   const poFiles = files.filter((f) => f.endsWith('.po'));
-  const locales = poFiles.map((f) => f.replace('.po', ''));
+  const detectedLocales = poFiles.map((f) => f.replace('.po', ''));
 
   // Count messages from the translations file (in .generated/)
   const translationsPath = join(outputDir, '.generated', 'translations.js');
@@ -43,7 +56,7 @@ export async function runCompile(
 
   return {
     messageCount: Math.floor(messageCount),
-    locales,
+    locales: detectedLocales,
   };
 }
 
@@ -67,6 +80,9 @@ export const compileCommand = defineCommand({
       localeDir,
       outputDir,
       defaultLocale: config.defaultLocale,
+      useSuspense: config.useSuspense,
+      locales: config.locales,
+      projectRoot: cwd,
     });
 
     console.log(

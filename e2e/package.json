@@ -1,0 +1,19 @@
+{
+  "name": "idioma-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:standard": "playwright test --project=standard",
+    "test:suspense": "playwright test --project=suspense",
+    "setup": "pnpm --filter './fixtures/*' install && pnpm --filter './fixtures/*' run extract && pnpm --filter './fixtures/*' run compile"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}

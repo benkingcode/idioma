@@ -1,5 +1,11 @@
-import generate from '@babel/generator';
+import _generate from '@babel/generator';
 import * as t from '@babel/types';
+
+// Handle ESM/CJS interop for @babel/generator
+const generate =
+  typeof _generate === 'function'
+    ? _generate
+    : (_generate as unknown as { default: typeof _generate }).default;
 
 export interface PluralIcuResult {
   /** The ICU plural message */

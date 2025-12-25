@@ -1,0 +1,100 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/components/BasicTrans.tsx:8
+msgid "000e6cSN"
+msgstr "Hello, World!"
+
+#: src/components/BasicTrans.tsx:13
+msgid "002LT9uM"
+msgstr "Welcome to our application"
+
+#: src/components/BasicTrans.tsx:18
+msgid "greeting.farewell"
+msgstr "Goodbye!"
+
+#: src/components/ComponentTags.tsx:27
+msgid "002dCe8j"
+msgstr "Click <0>here</0> to continue"
+
+#: src/components/ComponentTags.tsx:34
+msgid "002Wm69N"
+msgstr "Read the <0>terms</0> and <1>privacy policy</1>"
+
+#: src/components/ComponentTags.tsx:41
+msgid "0001eiYR"
+msgstr "Hello <0>{name}</0>!"
+
+#: src/components/ComponentTags.tsx:48
+msgid "002Hfyl1"
+msgstr "This is <0>bold</0>, this is <1>italic</1>, and normal"
+
+#: src/components/ComponentTags.tsx:55
+msgid "001Djb8c"
+msgstr "<0> Important: <1>read carefully</1> </0>"
+
+#: src/components/EdgeCases.tsx:15
+msgid "002TXdYD"
+msgstr "Value: [{emptyString}]"
+
+#: src/components/EdgeCases.tsx:20
+msgid "002Baos1"
+msgstr "Count: {zero}"
+
+#: src/components/EdgeCases.tsx:25
+msgid "0043ID7R"
+msgstr "Null: [{nullValue}]"
+
+#: src/components/EdgeCases.tsx:30
+msgid "003jykkI"
+msgstr "This message might not be translated"
+
+#: src/components/EdgeCases.tsx:35
+msgid "0047ZVOp"
+msgstr ""
+"This is a longer piece of text that spans multiple words and tests how the "
+"system handles longer content in translations"
+
+#: src/components/EdgeCases.tsx:43
+msgid "001r7GGR"
+msgstr "Special: & < > \"quotes\""
+
+#: src/components/EdgeCases.tsx:51
+msgid "004JLiGr"
+msgstr "Emoji: 🎉 and symbols: © ® ™"
+
+#: src/components/Interpolation.tsx:12
+msgid "0024c34D"
+msgstr "Hello, {name}!"
+
+#: src/components/Interpolation.tsx:17
+msgid "003lIRId"
+msgstr "Welcome, {firstName} {lastName}!"
+
+#: src/components/Interpolation.tsx:24
+msgid "000iXvMP"
+msgstr "Before {name} after"
+
+#: src/components/Interpolation.tsx:29
+msgid "002r0ybS"
+msgstr "You have {0} items"
+
+#: src/components/Plurals.tsx:11
+msgid "000w9C8y"
+msgstr "You have {count, plural, one {# item} other {# items}}"
+
+#: src/components/Plurals.tsx:18
+msgid "0048f6Nc"
+msgstr "{count, plural, zero {No messages} one {# message} other {# messages}}"
+
+#: src/components/Plurals.tsx:29
+msgid "002EaYd6"
+msgstr "There {count, plural, one {is # apple} other {are # apples}} in the basket"
+
+#: src/components/Plurals.tsx:37
+msgid "004CDxng"
+msgstr ""
+"{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
+"(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
