@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { generateKey } from '../keys/generator';
 import { createT } from './createT';
 
 describe('createT', () => {
@@ -94,6 +95,48 @@ describe('createT', () => {
       // When second arg has object values, it's inlined translations from Babel
       const result = t('Hello', { abc123: { en: 'Hello', es: 'Hola' } });
       expect(result).toBe('Hola');
+    });
+  });
+
+  describe('dynamic string lookup (with translations object)', () => {
+    // Build a translations object like what the compiler generates
+    const translations = {
+      [generateKey('Hello world')]: { en: 'Hello world', es: 'Hola mundo' },
+      [generateKey('Hello {name}')]: { en: 'Hello {name}', es: 'Hola {name}' },
+      [generateKey('Goodbye')]: { en: 'Goodbye', es: 'Adiós' },
+    };
+
+    it('looks up dynamic strings by hashing the source', () => {
+      const t = createT('es', translations);
+      // Dynamic string - no Babel inlining, runtime does the lookup
+      expect(t('Hello world')).toBe('Hola mundo');
+    });
+
+    it('falls back to source when key not found in translations', () => {
+      const t = createT('es', translations);
+      expect(t('Unknown string')).toBe('Unknown string');
+    });
+
+    it('interpolates placeholders in looked-up translations', () => {
+      const t = createT('es', translations);
+      expect(t('Hello {name}', { name: 'Ben' })).toBe('Hola Ben');
+    });
+
+    it('prefers Babel-inlined translations over runtime lookup', () => {
+      const t = createT('es', translations);
+      // When Babel inlines translations, those take precedence
+      const result = t('Hello world', {
+        [generateKey('Hello world')]: {
+          en: 'Hello world',
+          es: 'Babel-inlined',
+        },
+      });
+      expect(result).toBe('Babel-inlined');
+    });
+
+    it('handles translations object being undefined', () => {
+      const t = createT('es', undefined);
+      expect(t('Hello world')).toBe('Hello world');
     });
   });
 });

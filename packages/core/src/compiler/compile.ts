@@ -446,37 +446,12 @@ async function generatePlainTs(outputDir: string): Promise<void> {
 // Do not edit directly
 // Plain JavaScript translation utilities (no React dependency)
 
-import { createT as _createT } from '@idioma/core/runtime';
-import { translations } from './translations.js';
 import type { StringOnlyKey, MessageValues } from './types';
 
-/**
- * Create a translation function for plain JavaScript/TypeScript code.
- * No React context required - locale is passed explicitly.
- *
- * In production, Babel inlines translations at each call site for optimal
- * bundle splitting. This import is only used as a fallback for dynamic strings.
- *
- * @param locale - The locale to use for translations
- * @returns A synchronous translation function
- *
- * @example
- * import { createT } from './idioma/plain';
- *
- * const t = createT('es');
- * t('Hello {name}', { name: 'Ben' });  // 'Hola Ben'
- *
- * // In Zod schemas
- * const schema = z.object({
- *   email: z.string().email(t('Invalid email')),
- * });
- *
- * // In error handling
- * throw new Error(t('Something went wrong'));
- */
-export function createT(locale: string) {
-  return _createT(locale, translations);
-}
+// Re-export createT from runtime.
+// In production, Babel inlines translations at each call site.
+// For dynamic strings, Babel injects the translations import automatically.
+export { createT } from '@idioma/core/runtime';
 
 export type { StringOnlyKey, MessageValues };
 `;

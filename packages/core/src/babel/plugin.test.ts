@@ -434,5 +434,69 @@ describe('Idioma Babel Plugin', () => {
       // Should still contain the original string (transformation happens)
       expect(result).toContain('Submit');
     });
+
+    it('injects translations import for dynamic t() calls', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const key = getErrorKey()
+        const msg = t(key)
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        outputDir: './idioma',
+      });
+
+      // Should inject translations import
+      expect(result).toContain('translations');
+      expect(result).toContain('./idioma/translations.js');
+      expect(result).toContain('__$translations');
+      // Should modify createT call to pass translations
+      expect(result).toContain('createT(');
+    });
+
+    it('does not inject translations for static-only t() calls', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const msg = t('Hello world')
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        outputDir: './idioma',
+        translations: {
+          '003B4Ntk': { en: 'Hello world', es: 'Hola mundo' },
+        },
+      });
+
+      // Should NOT inject translations import for static-only files
+      expect(result).not.toContain('__$translations');
+      expect(result).not.toContain('./idioma/translations.js');
+    });
+
+    it('injects translations when file has both static and dynamic t() calls', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const staticMsg = t('Hello world')
+        const dynamicKey = getKey()
+        const dynamicMsg = t(dynamicKey)
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        outputDir: './idioma',
+        translations: {
+          '003B4Ntk': { en: 'Hello world', es: 'Hola mundo' },
+        },
+      });
+
+      // Static call should be inlined
+      expect(result).toContain('Hola mundo');
+      // Dynamic call should trigger translations injection
+      expect(result).toContain('__$translations');
+    });
   });
 });

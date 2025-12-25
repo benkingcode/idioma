@@ -31,6 +31,10 @@ interface PluginState {
   idiomaUsed: boolean;
   idiomaKeys: Set<string>;
   chunkId: string;
+  /** Whether this file has dynamic t() calls (non-literal first arg) */
+  hasDynamicT: boolean;
+  /** Paths to createT() calls that need translations injected */
+  createTCalls: NodePath<t.CallExpression>[];
 }
 
 /**
@@ -63,64 +67,94 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       this.chunkId = opts.projectRoot
         ? getChunkId(filename, opts.projectRoot)
         : 'unknown';
+      this.hasDynamicT = false;
+      this.createTCalls = [];
     },
 
     visitor: {
       Program: {
         exit(path, state) {
-          const { opts, idiomaUsed, chunkId } = state;
+          const { opts, idiomaUsed, chunkId, hasDynamicT, createTCalls } =
+            state;
 
-          // Only inject in production suspense mode when Trans was used
-          if (opts.mode !== 'production' || !opts.useSuspense || !idiomaUsed) {
-            return;
+          // Handle dynamic t() calls - inject translations for runtime lookup
+          if (
+            opts.mode === 'production' &&
+            hasDynamicT &&
+            createTCalls.length > 0 &&
+            opts.outputDir
+          ) {
+            // Inject: import { translations as __$translations } from '{outputDir}/translations.js'
+            const translationsImport = t.importDeclaration(
+              [
+                t.importSpecifier(
+                  t.identifier('__$translations'),
+                  t.identifier('translations'),
+                ),
+              ],
+              t.stringLiteral(`${opts.outputDir}/translations.js`),
+            );
+            path.unshiftContainer('body', [translationsImport]);
+
+            // Modify all createT(locale) calls to createT(locale, __$translations)
+            for (const callPath of createTCalls) {
+              const args = callPath.node.arguments;
+              // Only add if not already provided
+              if (args.length === 1) {
+                args.push(t.identifier('__$translations'));
+              }
+            }
           }
 
-          const { locales, outputDir } = opts;
-          if (!locales || !outputDir) {
-            return;
+          // Handle Suspense mode - inject chunk loaders
+          if (opts.mode === 'production' && opts.useSuspense && idiomaUsed) {
+            const { locales, outputDir } = opts;
+            if (!locales || !outputDir) {
+              return;
+            }
+
+            // Inject import for __TransSuspense
+            const importDecl = t.importDeclaration(
+              [
+                t.importSpecifier(
+                  t.identifier('__TransSuspense'),
+                  t.identifier('__TransSuspense'),
+                ),
+              ],
+              t.stringLiteral('@idioma/react/runtime-suspense'),
+            );
+
+            // Inject __$idiomaChunk constant
+            const chunkDecl = t.variableDeclaration('const', [
+              t.variableDeclarator(
+                t.identifier('__$idiomaChunk'),
+                t.stringLiteral(chunkId),
+              ),
+            ]);
+
+            // Inject __$idiomaLoad object with dynamic imports
+            const loaderProps = locales.map((locale) =>
+              t.objectProperty(
+                t.identifier(locale),
+                t.arrowFunctionExpression(
+                  [],
+                  t.callExpression(t.import(), [
+                    t.stringLiteral(`${outputDir}/chunks/${chunkId}.${locale}`),
+                  ]),
+                ),
+              ),
+            );
+
+            const loadDecl = t.variableDeclaration('const', [
+              t.variableDeclarator(
+                t.identifier('__$idiomaLoad'),
+                t.objectExpression(loaderProps),
+              ),
+            ]);
+
+            // Insert at the beginning of the program
+            path.unshiftContainer('body', [importDecl, chunkDecl, loadDecl]);
           }
-
-          // Inject import for __TransSuspense
-          const importDecl = t.importDeclaration(
-            [
-              t.importSpecifier(
-                t.identifier('__TransSuspense'),
-                t.identifier('__TransSuspense'),
-              ),
-            ],
-            t.stringLiteral('@idioma/react/runtime-suspense'),
-          );
-
-          // Inject __$idiomaChunk constant
-          const chunkDecl = t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier('__$idiomaChunk'),
-              t.stringLiteral(chunkId),
-            ),
-          ]);
-
-          // Inject __$idiomaLoad object with dynamic imports
-          const loaderProps = locales.map((locale) =>
-            t.objectProperty(
-              t.identifier(locale),
-              t.arrowFunctionExpression(
-                [],
-                t.callExpression(t.import(), [
-                  t.stringLiteral(`${outputDir}/chunks/${chunkId}.${locale}`),
-                ]),
-              ),
-            ),
-          );
-
-          const loadDecl = t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier('__$idiomaLoad'),
-              t.objectExpression(loaderProps),
-            ),
-          ]);
-
-          // Insert at the beginning of the program
-          path.unshiftContainer('body', [importDecl, chunkDecl, loadDecl]);
         },
       },
 
@@ -133,6 +167,12 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         const { opts, filename } = state;
         const callee = path.node.callee;
 
+        // Track createT() calls for potential translation injection
+        if (t.isIdentifier(callee) && callee.name === 'createT') {
+          state.createTCalls.push(path);
+          return;
+        }
+
         // Only handle calls like t('string')
         if (!t.isIdentifier(callee) || callee.name !== 't') {
           return;
@@ -142,8 +182,9 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         const args = path.node.arguments;
         const sourceArg = args[0];
 
-        // Skip if not a string literal (dynamic strings can't be inlined)
+        // Dynamic strings can't be inlined - mark for runtime translations
         if (!t.isStringLiteral(sourceArg)) {
+          state.hasDynamicT = true;
           return;
         }
 

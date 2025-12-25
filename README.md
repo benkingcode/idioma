@@ -275,7 +275,7 @@ export function formatApiError(code: string, locale: string) {
 }
 ```
 
-**Bundle splitting:** In production, Babel inlines only the translations each file uses—no full bundle required. Dynamic strings (variables) fall back to source text.
+**Bundle splitting:** In production, Babel inlines translations at each call site. Static strings (`t('literal')`) get optimal tree-shaking. Dynamic strings (`t(variable)`) trigger an automatic translations import for runtime lookup—Babel injects this only in files that need it.
 
 ## Usage
 
