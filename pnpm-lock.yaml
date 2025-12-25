@@ -90,6 +90,9 @@ importers:
       '@types/gettext-parser':
         specifier: ^4.0.4
         version: 4.0.4
+      '@types/murmurhash-js':
+        specifier: ^1.0.6
+        version: 1.0.6
       next:
         specifier: ^16.1.1
         version: 16.1.1(@babel/core@7.28.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -124,6 +127,9 @@ importers:
       '@testing-library/react':
         specifier: ^16.0.0
         version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/murmurhash-js':
+        specifier: ^1.0.6
+        version: 1.0.6
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.7
@@ -944,6 +950,9 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/murmurhash-js@1.0.6':
+    resolution: {integrity: sha512-P2RRwRpevEKO0FrK5xNjxBywg0Br24tEv8K2+iWg56PtcCUNGAkaaOWKBQiUpofA8H/gmgdHXrcvSgp2uXCVAQ==}
 
   '@types/node-fetch@2.6.13':
     resolution: {integrity: sha512-QGpRVpzSaUs30JBSGPjOg4Uveu384erbHBoT1zeONvyCfwQxIkUshLAOqN/k9EjGviPRmWTTe6aH2qySWKTVSw==}
@@ -2695,6 +2704,8 @@ snapshots:
       '@types/readable-stream': 4.0.23
 
   '@types/json-schema@7.0.15': {}
+
+  '@types/murmurhash-js@1.0.6': {}
 
   '@types/node-fetch@2.6.13':
     dependencies:
