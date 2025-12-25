@@ -6,17 +6,46 @@ import { generateKey } from './server/generateKey';
 type MessageFunction = (args: Record<string, unknown>) => string;
 type Translations = Record<string, Record<string, string | MessageFunction>>;
 
+// =============================================================================
+// Helper Types for Strict Typing
+// =============================================================================
+
+// --- Key-only mode helpers ---
+
+/** Keys in MessageValues that have at least one required value */
+type KeysWithValues<MV extends Record<string, Record<string, unknown>>> = {
+  [K in keyof MV]: MV[K] extends Record<string, never> ? never : K;
+}[keyof MV];
+
+/** Keys in MessageValues that have no required values */
+type KeysWithoutValues<MV extends Record<string, Record<string, unknown>>> = {
+  [K in keyof MV]: MV[K] extends Record<string, never> ? K : never;
+}[keyof MV];
+
+// --- Source text mode helpers ---
+
 /**
- * Key-only mode arguments: t({ id: "welcome", values: { name }, context: "modal", ns: "common" })
+ * Recursively extract placeholder names from a template string.
+ * "Hello {name}, you have {count} items" → "name" | "count"
  */
-export interface KeyOnlyArgs {
-  id: string;
-  values?: Record<string, unknown>;
-  /** Translator context (saved in PO for human reference, not used in key lookup) */
-  context?: string;
-  /** Namespace for scoped lookups (placeholder for future) */
-  ns?: string;
-}
+type ExtractPlaceholders<S extends string> =
+  S extends `${infer _}{${infer Key}}${infer Rest}`
+    ? Key | ExtractPlaceholders<Rest>
+    : never;
+
+/**
+ * Build the required values object from extracted placeholders.
+ * "Hello {name}" → { name: string | number }
+ * "No placeholders" → undefined
+ */
+type PlaceholderValues<S extends string> =
+  ExtractPlaceholders<S> extends never
+    ? undefined
+    : { [K in ExtractPlaceholders<S>]: string | number };
+
+/** Check if a string has any placeholders */
+type HasPlaceholders<S extends string> =
+  ExtractPlaceholders<S> extends never ? false : true;
 
 /**
  * Source text mode options: t("Submit", undefined, { context: "button", ns: "common" })
@@ -30,15 +59,51 @@ export interface SourceTextOptions {
 
 /**
  * Type for the t function returned by useT.
- * Supports both source text mode and key-only mode.
+ * Supports both source text mode and key-only mode with full type safety.
+ *
+ * @template SK - StringOnlyKey union (valid translation keys)
+ * @template MV - MessageValues interface (maps keys to required values)
  */
-export type TFunction = {
-  (args: KeyOnlyArgs): string;
-  (source: string): string;
-  (source: string, values: Record<string, unknown>): string;
-  (
-    source: string,
-    values: Record<string, unknown> | undefined,
+export type TFunction<
+  SK extends string = string,
+  MV extends Record<string, Record<string, unknown>> = Record<
+    string,
+    Record<string, unknown>
+  >,
+> = {
+  // === Key-only mode ===
+
+  // Keys that require values
+  <K extends SK & string>(
+    args: K extends KeysWithValues<MV>
+      ? { id: K; values: MV[K]; context?: string; ns?: string }
+      : K extends KeysWithoutValues<MV>
+        ? { id: K; values?: never; context?: string; ns?: string }
+        : {
+            id: K;
+            values?: Record<string, unknown>;
+            context?: string;
+            ns?: string;
+          },
+  ): string;
+
+  // === Source text mode ===
+
+  // Source text WITH placeholders - values required
+  <S extends string>(
+    source: HasPlaceholders<S> extends true ? S : never,
+    values: PlaceholderValues<S>,
+  ): string;
+
+  // Source text WITHOUT placeholders - no values
+  <S extends string>(
+    source: HasPlaceholders<S> extends false ? S : never,
+  ): string;
+
+  // Source text with options (3rd arg)
+  <S extends string>(
+    source: S,
+    values: PlaceholderValues<S>,
     options: SourceTextOptions,
   ): string;
 };
@@ -66,8 +131,22 @@ export type TFunction = {
  * t({ id: 'welcome' })  // key-only mode
  * t({ id: 'greeting', values: { name: 'Ben' }, ns: 'common' })  // with ns
  */
-export function createUseT(translations: Translations) {
-  return function useT(): TFunction {
+// Internal runtime type for key-only args (untyped at runtime)
+interface KeyOnlyArgsRuntime {
+  id: string;
+  values?: Record<string, unknown>;
+  context?: string;
+  ns?: string;
+}
+
+export function createUseT<
+  SK extends string = string,
+  MV extends Record<string, Record<string, unknown>> = Record<
+    string,
+    Record<string, unknown>
+  >,
+>(translations: Translations): () => TFunction<SK, MV> {
+  return function useT(): TFunction<SK, MV> {
     const ctx = useContext(IdiomaContext);
     if (!ctx) {
       throw new Error(
@@ -80,7 +159,7 @@ export function createUseT(translations: Translations) {
 
     return useCallback(
       (
-        sourceOrArgs: string | KeyOnlyArgs,
+        sourceOrArgs: string | KeyOnlyArgsRuntime,
         values?: Record<string, unknown>,
         options?: SourceTextOptions,
       ): string => {
@@ -126,6 +205,6 @@ export function createUseT(translations: Translations) {
           : msg;
       },
       [locale],
-    ) as TFunction;
+    ) as TFunction<SK, MV>;
   };
 }
