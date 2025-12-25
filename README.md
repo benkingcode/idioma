@@ -187,6 +187,25 @@ The client-side `useT` hook uses the same API, so you can share translation patt
 </Trans>
 ```
 
+### Key-only mode
+
+Use explicit keys instead of source text:
+
+```tsx
+<Trans id="welcome.hero" />
+<Trans id="greeting" values={{ name: 'Ben' }} />
+<Trans id="cart.items" values={{ count: 3 }} components={[<strong />]} />
+```
+
+### Context
+
+Add translator context that affects key generation (same text, different context = different key):
+
+```tsx
+<Trans context="button">Submit</Trans>
+<Trans context="form.title">Submit</Trans>
+```
+
 ### Pluralization
 
 ```tsx
@@ -195,6 +214,20 @@ import { Plural, Trans } from './src/idioma';
 <Trans>
   You have <Plural value={count} one="# item" other="# items" /> in your cart
 </Trans>;
+```
+
+The `#` placeholder is replaced with the numeric value. Full plural forms for different languages:
+
+```tsx
+<Plural
+  value={count}
+  zero="No items" // 0 items (some languages)
+  one="# item" // 1 item
+  two="# items" // 2 items (Arabic, Welsh)
+  few="# items" // 2-4 items (Slavic languages)
+  many="# items" // 5+ items (Slavic, Arabic)
+  other="# items" // Required fallback
+/>
 ```
 
 ### Imperative usage with useT
@@ -223,22 +256,102 @@ function Greeting({ name }) {
 }
 ```
 
+### Pluralization with useT
+
+Use the `plural()` function for pluralization in imperative code:
+
+```tsx
+import { plural, useT } from './src/idioma';
+
+function CartSummary({ count }: { count: number }) {
+  const t = useT();
+  return (
+    <p>{t(`You have ${plural(count, { one: '# item', other: '# items' })}`)}</p>
+  );
+}
+```
+
+### useLocale
+
+Get the current locale:
+
+```tsx
+import { useLocale } from './src/idioma';
+
+function LanguageSwitcher() {
+  const locale = useLocale();
+  return <span>Current: {locale}</span>;
+}
+```
+
+### Namespaces
+
+Organize translations into namespaces for large apps:
+
+```tsx
+// In components
+<Trans ns="marketing">Welcome to our platform</Trans>;
+
+// With useT
+const t = useT();
+t('Subscribe now', undefined, { ns: 'marketing' });
+```
+
 ## CLI Commands
 
+Run via npx or your package manager:
+
 ```bash
-# Extract messages from source files to PO
-idioma extract
+npx idioma <command>
+pnpm idioma <command>
+```
 
-# Compile PO files to TypeScript
+### extract
+
+Extract messages from source files to PO:
+
+```bash
+idioma extract           # Extract all messages
+idioma extract --clean   # Remove unused messages
+idioma extract --watch   # Watch for changes
+```
+
+### compile
+
+Compile PO files to TypeScript:
+
+```bash
 idioma compile
+```
 
-# AI-powered translation
-idioma translate --locale es
+### translate
 
-# Validate translations
-idioma check
+AI-powered translation (requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`):
 
-# Show translation statistics
+```bash
+idioma translate --locale es              # Translate missing messages to Spanish
+idioma translate --locale es --force      # Retranslate all messages
+idioma translate --locale es --dry-run    # Preview without saving
+idioma translate --locale es --provider openai  # Use OpenAI instead of Anthropic
+idioma translate --locale es --mark-ai    # Mark translations with ai-translated flag (default: true)
+```
+
+### check
+
+Validate translation completeness:
+
+```bash
+idioma check              # Check all locales
+idioma check --locale es  # Check specific locale
+```
+
+Exits with code 1 if translations are incomplete.
+
+### stats
+
+Show translation statistics:
+
+```bash
 idioma stats
 ```
 
@@ -264,17 +377,44 @@ export default defineConfig({
   // Enable Suspense-based lazy loading (React 19+)
   useSuspense: false,
 
-  // Files to scan for messages
+  // Files to scan for messages (default: ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'])
   sourcePatterns: ['src/**/*.tsx', 'src/**/*.jsx'],
 
   // AI translation config
   ai: {
     provider: 'anthropic', // or 'openai'
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-20250514', // default: claude-sonnet-4-20250514 (Anthropic) or gpt-4o (OpenAI)
     // Uses ANTHROPIC_API_KEY or OPENAI_API_KEY env var
   },
 });
 ```
+
+## PO File Format
+
+Idioma uses the standard [gettext PO format](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html) with ICU MessageFormat in translations:
+
+```po
+# locales/es.po
+
+# Simple message
+msgid "Hello {name}"
+msgstr "Hola {name}"
+
+# With translator context
+#. context: button
+msgid "Submit"
+msgstr "Enviar"
+
+# Pluralization (ICU format)
+msgid "{count, plural, one {# item} other {# items}}"
+msgstr "{count, plural, one {# artículo} other {# artículos}}"
+
+# Component interpolation
+msgid "Read our <0>terms</0> and <1>privacy policy</1>"
+msgstr "Lee nuestros <0>términos</0> y <1>política de privacidad</1>"
+```
+
+PO files work with translation management systems like Phrase, Lokalise, and Crowdin.
 
 ## Suspense Mode (React 19+)
 
@@ -330,6 +470,33 @@ React context provides locale, renders translated text
 ```
 
 The Babel plugin extracts messages during build, generates content-addressed keys, and transforms components to use the compiled translation object.
+
+## How Keys Work
+
+Idioma uses content-addressable keys—the message text itself determines the key:
+
+1. **Murmurhash3** generates a 32-bit hash from the source message
+2. **Base62 encoding** (0-9, A-Z, a-z) produces compact 8-character keys
+3. Keys are **deterministic**: same input always produces the same key
+
+```
+"Hello {name}" → murmurhash3 → base62 → "a7Fk29xQ"
+```
+
+The `context` prop creates different keys for identical text:
+
+```tsx
+<Trans>Submit</Trans>                        // → "xK9mP2nL"
+<Trans context="button">Submit</Trans>       // → "r4Yt8wQz" (different key)
+```
+
+This enables translators to provide different translations for the same source text based on context.
+
+## Missing Translations
+
+When a translation is missing, Idioma falls back to the source text. This ensures your app always renders something meaningful, even for incomplete translations.
+
+Use `idioma check` to identify missing translations before deployment.
 
 ## Comparison
 
