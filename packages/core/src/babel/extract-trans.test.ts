@@ -143,4 +143,81 @@ describe('extractTransMessage', () => {
 
     expect(messages[0].key).not.toBe(messages[1].key);
   });
+
+  // Namespace support tests
+  describe('with namespace', () => {
+    it('extracts Trans with ns prop', () => {
+      const messages = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const x = <Trans ns="auth">Login</Trans>
+      `);
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].source).toBe('Login');
+      expect(messages[0].namespace).toBe('auth');
+    });
+
+    it('generates different keys for same message in different namespaces', () => {
+      const messages = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const x = <Trans ns="auth">Submit</Trans>
+        const y = <Trans ns="forms">Submit</Trans>
+      `);
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0].key).not.toBe(messages[1].key);
+    });
+
+    it('generates different keys with vs without namespace', () => {
+      const messages = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Submit</Trans>
+        const y = <Trans ns="auth">Submit</Trans>
+      `);
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0].key).not.toBe(messages[1].key);
+      expect(messages[0].namespace).toBeUndefined();
+      expect(messages[1].namespace).toBe('auth');
+    });
+
+    it('extracts Trans with both ns and context', () => {
+      const messages = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const x = <Trans ns="auth" context="button">Submit</Trans>
+      `);
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0].namespace).toBe('auth');
+      expect(messages[0].context).toBe('button');
+    });
+
+    it('generates unique keys for namespace + context combinations', () => {
+      const messages = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const a = <Trans ns="auth" context="button">Submit</Trans>
+        const b = <Trans ns="auth" context="link">Submit</Trans>
+        const c = <Trans ns="forms" context="button">Submit</Trans>
+      `);
+
+      expect(messages).toHaveLength(3);
+      expect(messages[0].key).not.toBe(messages[1].key);
+      expect(messages[0].key).not.toBe(messages[2].key);
+      expect(messages[1].key).not.toBe(messages[2].key);
+    });
+
+    it('generates consistent keys for same namespace', () => {
+      const messages1 = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const x = <Trans ns="auth">Login</Trans>
+      `);
+
+      const messages2 = extractFromCode(`
+        import { Trans } from '@idioma/react'
+        const y = <Trans ns="auth">Login</Trans>
+      `);
+
+      expect(messages1[0].key).toBe(messages2[0].key);
+    });
+  });
 });

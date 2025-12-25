@@ -16,6 +16,8 @@ export interface Message {
   flags?: string[];
   /** Context (msgctxt) if explicitly provided */
   context?: string;
+  /** Namespace for organizing translations */
+  namespace?: string;
 }
 
 /**
@@ -24,6 +26,8 @@ export interface Message {
 export interface Catalog {
   /** The locale code (e.g., 'es', 'fr', 'de') */
   locale: string;
+  /** The namespace this catalog belongs to (undefined for non-namespaced) */
+  namespace?: string;
   /** Headers from the PO file */
   headers: Record<string, string>;
   /** Messages keyed by their msgid (or msgctxt\u0004msgid if context exists) */

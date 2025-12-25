@@ -166,10 +166,26 @@ export function createUseT<
         values?: Record<string, unknown>,
         options?: SourceTextOptions,
       ): string => {
+        // Helper to get locale messages from the right place (namespace or top-level)
+        const getLocaleMessages = (
+          key: string,
+          ns?: string,
+        ): Record<string, string | MessageFunction> | undefined => {
+          if (ns) {
+            // Look in __ns.{namespace}.{key}
+            const nsTranslations = (
+              translations as unknown as { __ns?: Record<string, Translations> }
+            ).__ns;
+            return nsTranslations?.[ns]?.[key];
+          }
+          // Look at top level
+          return translations[key];
+        };
+
         // Key-only mode: t({ id: 'welcome', values: { name }, ns: 'common' })
         if (typeof sourceOrArgs === 'object') {
-          const { id, values: keyValues } = sourceOrArgs;
-          const localeMessages = translations[id];
+          const { id, values: keyValues, ns } = sourceOrArgs;
+          const localeMessages = getLocaleMessages(id, ns);
           if (!localeMessages) return id;
 
           const msg =
@@ -179,11 +195,11 @@ export function createUseT<
           return keyValues ? interpolateValues(msg, keyValues) : msg;
         }
 
-        // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button' })
+        // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button', ns: 'auth' })
         const source = sourceOrArgs;
-        const { context } = options || {};
-        const key = generateKey(source, context);
-        const localeMessages = translations[key];
+        const { context, ns } = options || {};
+        const key = generateKey(source, context, ns);
+        const localeMessages = getLocaleMessages(key, ns);
 
         if (!localeMessages) {
           // Fallback: interpolate source text if values provided

@@ -193,10 +193,30 @@ function transformTransComponent(
     Record<string, string | ((args: Record<string, unknown>) => string)>
   >,
 ): void {
-  const { key, source, placeholders, components } = extracted;
+  const { key, source, placeholders, components, namespace } = extracted;
 
-  // Get translations for this key
-  const messageTranslations = translations[key] || {};
+  // Get translations for this key (namespace-aware)
+  let messageTranslations: Record<
+    string,
+    string | ((args: Record<string, unknown>) => string)
+  > = {};
+  if (namespace) {
+    // Look in __ns.{namespace}.{key}
+    const nsTranslations = (
+      translations as unknown as {
+        __ns?: Record<
+          string,
+          Record<
+            string,
+            Record<string, string | ((args: Record<string, unknown>) => string)>
+          >
+        >;
+      }
+    ).__ns;
+    messageTranslations = nsTranslations?.[namespace]?.[key] || {};
+  } else {
+    messageTranslations = translations[key] || {};
+  }
 
   // Build the __t prop (translations object)
   const tEntries: t.ObjectProperty[] = [];
@@ -231,6 +251,13 @@ function transformTransComponent(
       t.jsxExpressionContainer(t.objectExpression(tEntries)),
     ),
   ];
+
+  // Add __ns if there is a namespace
+  if (namespace) {
+    props.push(
+      t.jsxAttribute(t.jsxIdentifier('__ns'), t.stringLiteral(namespace)),
+    );
+  }
 
   // Add __a if there are placeholders
   if (Object.keys(placeholders).length > 0) {
@@ -291,7 +318,7 @@ function transformTransSuspense(
   path: NodePath<t.JSXElement>,
   extracted: ExtractedMessage,
 ): void {
-  const { key, placeholders, components } = extracted;
+  const { key, placeholders, components, namespace } = extracted;
 
   // Build props array
   const props: t.JSXAttribute[] = [
@@ -308,6 +335,13 @@ function transformTransSuspense(
       t.jsxExpressionContainer(t.identifier('__$idiomaLoad')),
     ),
   ];
+
+  // Add __ns if there is a namespace
+  if (namespace) {
+    props.push(
+      t.jsxAttribute(t.jsxIdentifier('__ns'), t.stringLiteral(namespace)),
+    );
+  }
 
   // Add __a if there are placeholders
   if (Object.keys(placeholders).length > 0) {

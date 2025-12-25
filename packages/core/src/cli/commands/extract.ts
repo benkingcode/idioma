@@ -14,6 +14,7 @@ export interface ExtractedMessage {
   source: string;
   location: string;
   context?: string;
+  namespace?: string;
 }
 
 export interface ExtractOptions {
@@ -60,8 +61,15 @@ export async function extractMessages(
   // Ensure locale directory exists
   await fs.mkdir(localeDir, { recursive: true });
 
-  // Convert to catalog
-  const extractedCatalog = messagesToCatalog(messages, defaultLocale);
+  // Group messages by namespace (undefined for non-namespaced)
+  const messagesByNamespace = new Map<string | undefined, ExtractedMessage[]>();
+  for (const msg of messages) {
+    const ns = msg.namespace;
+    if (!messagesByNamespace.has(ns)) {
+      messagesByNamespace.set(ns, []);
+    }
+    messagesByNamespace.get(ns)!.push(msg);
+  }
 
   // Get all locales to update
   const allLocales = locales ?? [defaultLocale];
@@ -69,39 +77,56 @@ export async function extractMessages(
     allLocales.unshift(defaultLocale);
   }
 
-  // Update PO files for each locale
+  // Update PO files for each locale and namespace
   for (const locale of allLocales) {
-    const poPath = join(localeDir, `${locale}.po`);
+    for (const [namespace, nsMessages] of messagesByNamespace) {
+      // Determine the path based on namespace
+      let poPath: string;
+      if (namespace === undefined) {
+        // Non-namespaced: locales/{locale}.po
+        poPath = join(localeDir, `${locale}.po`);
+      } else {
+        // Namespaced: locales/{locale}/{namespace}.po
+        const nsDir = join(localeDir, locale);
+        await fs.mkdir(nsDir, { recursive: true });
+        poPath = join(nsDir, `${namespace}.po`);
+      }
 
-    let existingCatalog: Catalog;
-    try {
-      existingCatalog = await loadPoFile(poPath, locale);
-    } catch {
-      // No existing file, create empty catalog
-      existingCatalog = {
-        locale,
-        messages: new Map(),
-        headers: {
-          Language: locale,
-        },
-      };
-    }
+      // Convert messages to catalog
+      const extractedCatalog = messagesToCatalog(nsMessages, locale, namespace);
 
-    // Merge extracted with existing (modifies existingCatalog in-place)
-    mergeCatalogs(existingCatalog, extractedCatalog, {
-      clean: clean ?? false,
-    });
+      let existingCatalog: Catalog;
+      try {
+        existingCatalog = await loadPoFile(poPath, locale);
+        existingCatalog.namespace = namespace;
+      } catch {
+        // No existing file, create empty catalog
+        existingCatalog = {
+          locale,
+          namespace,
+          messages: new Map(),
+          headers: {
+            Language: locale,
+          },
+        };
+      }
 
-    // For the default locale, copy source to translation if empty
-    if (locale === defaultLocale) {
-      for (const [key, msg] of existingCatalog.messages) {
-        if (!msg.translation) {
-          msg.translation = msg.source;
+      // Merge extracted with existing (modifies existingCatalog in-place)
+      mergeCatalogs(existingCatalog, extractedCatalog, {
+        clean: clean ?? false,
+      });
+
+      // For the default locale, copy source to translation if empty
+      if (locale === defaultLocale) {
+        for (const [, msg] of existingCatalog.messages) {
+          if (!msg.translation) {
+            msg.translation = msg.source;
+          }
         }
       }
-    }
 
-    await writePoFile(poPath, existingCatalog);
+      await writePoFile(poPath, existingCatalog);
+    }
   }
 
   return { messages, files: files.length };
@@ -131,7 +156,9 @@ async function extractFromFile(
                 const opening = path.node.openingElement;
                 if (!isTransComponent(opening)) return;
 
-                const { id, context, source } = parseTransElement(path.node);
+                const { id, context, namespace, source } = parseTransElement(
+                  path.node,
+                );
                 if (!source) return;
 
                 // Use source as key (matches PO format) or explicit id
@@ -144,6 +171,7 @@ async function extractFromFile(
                   source,
                   location: `${filename}:${line}`,
                   context,
+                  namespace,
                 });
               },
             },
@@ -170,13 +198,15 @@ function isTransComponent(opening: t.JSXOpeningElement): boolean {
 function parseTransElement(element: t.JSXElement): {
   id?: string;
   context?: string;
+  namespace?: string;
   source?: string;
 } {
   const opening = element.openingElement;
   let id: string | undefined;
   let context: string | undefined;
+  let namespace: string | undefined;
 
-  // Extract id and context from props
+  // Extract id, context, and ns from props
   for (const attr of opening.attributes) {
     if (attr.type !== 'JSXAttribute') continue;
     if (attr.name.type !== 'JSXIdentifier') continue;
@@ -188,12 +218,15 @@ function parseTransElement(element: t.JSXElement): {
     if (name === 'context' && attr.value?.type === 'StringLiteral') {
       context = attr.value.value;
     }
+    if (name === 'ns' && attr.value?.type === 'StringLiteral') {
+      namespace = attr.value.value;
+    }
   }
 
   // Serialize children to source string
   const source = serializeChildren(element.children);
 
-  return { id, context, source };
+  return { id, context, namespace, source };
 }
 
 function serializeChildren(children: t.JSXElement['children']): string {
@@ -244,9 +277,11 @@ function serializeMemberExpression(expr: t.MemberExpression): string {
 function messagesToCatalog(
   messages: ExtractedMessage[],
   locale: string,
+  namespace?: string,
 ): Catalog {
   const catalog: Catalog = {
     locale,
+    namespace,
     messages: new Map(),
     headers: {
       Language: locale,
@@ -260,6 +295,7 @@ function messagesToCatalog(
       translation: '',
       references: [msg.location],
       context: msg.context,
+      namespace: msg.namespace,
     };
 
     // If message with same key exists, merge references

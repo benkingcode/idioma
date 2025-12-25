@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs';
+import { basename, join } from 'path';
 import * as gettextParser from 'gettext-parser';
 import type { Catalog, Message } from './types';
 
@@ -162,4 +163,59 @@ export async function writePoFile(
 ): Promise<void> {
   const content = serializePoString(catalog);
   await fs.writeFile(path, content, 'utf-8');
+}
+
+/**
+ * Load all catalogs for a locale, supporting both flat and namespaced structures.
+ *
+ * Flat structure: locales/{locale}.po
+ * Namespaced structure: locales/{locale}/{namespace}.po
+ * Hybrid: both flat file and namespace directory can coexist
+ *
+ * @param localeDir - The base locale directory (e.g., "locales")
+ * @param locale - The locale code (e.g., "en", "es")
+ * @returns Map from namespace (or undefined for flat) to Catalog
+ */
+export async function loadLocaleCatalogs(
+  localeDir: string,
+  locale: string,
+): Promise<Map<string | undefined, Catalog>> {
+  const catalogs = new Map<string | undefined, Catalog>();
+
+  // Check for flat file: locales/{locale}.po
+  const flatPath = join(localeDir, `${locale}.po`);
+  try {
+    const stat = await fs.stat(flatPath);
+    if (stat.isFile()) {
+      const content = await fs.readFile(flatPath, 'utf-8');
+      const catalog = parsePoString(content, locale);
+      catalog.namespace = undefined;
+      catalogs.set(undefined, catalog);
+    }
+  } catch {
+    // File doesn't exist, that's fine
+  }
+
+  // Check for namespace directory: locales/{locale}/
+  const nsDir = join(localeDir, locale);
+  try {
+    const stat = await fs.stat(nsDir);
+    if (stat.isDirectory()) {
+      const files = await fs.readdir(nsDir);
+      for (const file of files) {
+        if (file.endsWith('.po')) {
+          const namespace = basename(file, '.po');
+          const filePath = join(nsDir, file);
+          const content = await fs.readFile(filePath, 'utf-8');
+          const catalog = parsePoString(content, locale);
+          catalog.namespace = namespace;
+          catalogs.set(namespace, catalog);
+        }
+      }
+    }
+  } catch {
+    // Directory doesn't exist, that's fine
+  }
+
+  return catalogs;
 }

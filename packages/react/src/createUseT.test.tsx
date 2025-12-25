@@ -36,6 +36,15 @@ const translations = {
     es: ({ count }: { count: number }) =>
       count === 1 ? '1 artículo' : `${count} artículos`,
   },
+  // Namespaced translations (under __ns.{namespace}.{key})
+  __ns: {
+    common: {
+      greeting: {
+        en: 'Hello (common)',
+        es: 'Hola (common)',
+      },
+    },
+  },
 };
 
 const useT = createUseT(translations);
@@ -251,7 +260,7 @@ describe('createUseT', () => {
       expect(screen.getByTestId('result').textContent).toBe('nonexistent.key');
     });
 
-    it('accepts ns option (placeholder for future namespacing)', () => {
+    it('looks up translations in the specified namespace', () => {
       function TestComponent() {
         const t = useT();
         return (
@@ -259,14 +268,14 @@ describe('createUseT', () => {
         );
       }
 
-      // ns is currently a no-op but should be accepted without error
+      // With ns: 'common', looks up in translations.__ns.common.greeting
       render(
         <IdiomaProvider locale="es">
           <TestComponent />
         </IdiomaProvider>,
       );
 
-      expect(screen.getByTestId('result').textContent).toBe('Hola');
+      expect(screen.getByTestId('result').textContent).toBe('Hola (common)');
     });
   });
 

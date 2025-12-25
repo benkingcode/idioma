@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import { analyzeIcuMessage, compileIcuToFunction } from '../icu/compiler';
-import { loadPoFile } from '../po/parser';
+import { loadLocaleCatalogs, loadPoFile } from '../po/parser';
 import type { Catalog, Message } from '../po/types';
 import { analyzeChunksFromCatalogs } from './chunk-analysis';
 import { generateChunkModules } from './generate-chunks';
@@ -36,6 +36,8 @@ export interface CompiledMessage {
   variables: string[];
   /** Number of component tags (<0>...</0>, <1>...</1>, etc.) */
   componentCount: number;
+  /** Optional namespace */
+  namespace?: string;
 }
 
 /**
@@ -80,51 +82,97 @@ export async function compileTranslations(
   // Ensure output directory exists
   await fs.mkdir(outputDir, { recursive: true });
 
-  // Find all .po files
+  // Detect all locales (from flat .po files and namespace directories)
   const files = await fs.readdir(localeDir);
-  const poFiles = files.filter((f) => f.endsWith('.po'));
+  const detectedLocales = new Set<string>();
 
-  if (poFiles.length === 0) {
-    throw new Error(`No .po files found in ${localeDir}`);
+  for (const file of files) {
+    if (file.endsWith('.po')) {
+      // Flat PO file: {locale}.po
+      detectedLocales.add(basename(file, '.po'));
+    } else {
+      // Check if it's a directory (namespace directory)
+      const stat = await fs.stat(join(localeDir, file)).catch(() => null);
+      if (stat?.isDirectory()) {
+        detectedLocales.add(file);
+      }
+    }
   }
 
-  // Load all catalogs
+  if (detectedLocales.size === 0) {
+    throw new Error(`No .po files or locale directories found in ${localeDir}`);
+  }
+
+  // Load all catalogs (both flat and namespaced)
+  // Structure: locale -> (namespace | undefined) -> Catalog
+  const allCatalogs = new Map<string, Map<string | undefined, Catalog>>();
+  const detectedNamespaces = new Set<string>();
+
+  for (const locale of detectedLocales) {
+    const localeCatalogs = await loadLocaleCatalogs(localeDir, locale);
+    allCatalogs.set(locale, localeCatalogs);
+
+    // Track namespaces
+    for (const ns of localeCatalogs.keys()) {
+      if (ns !== undefined) {
+        detectedNamespaces.add(ns);
+      }
+    }
+  }
+
+  // For backwards compatibility, also create a flat catalog map for chunk analysis
   const catalogs = new Map<string, Catalog>();
-  for (const file of poFiles) {
-    const locale = basename(file, '.po');
-    const catalog = await loadPoFile(join(localeDir, file), locale);
-    catalogs.set(locale, catalog);
+  for (const [locale, nsCatalogs] of allCatalogs) {
+    // Merge all catalogs for a locale into one for chunk analysis
+    const mergedCatalog: Catalog = {
+      locale,
+      messages: new Map(),
+      headers: {},
+    };
+    for (const [, catalog] of nsCatalogs) {
+      for (const [key, msg] of catalog.messages) {
+        mergedCatalog.messages.set(key, msg);
+      }
+    }
+    catalogs.set(locale, mergedCatalog);
   }
 
   // Collect all unique message keys across catalogs
+  // Key format: {namespace}:{key} or just {key} for non-namespaced
   const allMessages = new Map<string, CompiledMessage>();
 
-  for (const [locale, catalog] of catalogs) {
-    for (const [key, message] of catalog.messages) {
-      if (!allMessages.has(key)) {
-        const analysis = analyzeIcuMessage(message.source);
-        allMessages.set(key, {
-          key,
-          translations: {},
-          isIcu: analysis.hasPlural || analysis.hasSelect,
-          variables: analysis.variables,
-          componentCount: countComponentTags(message.source),
-        });
-      }
+  for (const [locale, nsCatalogs] of allCatalogs) {
+    for (const [namespace, catalog] of nsCatalogs) {
+      for (const [key, message] of catalog.messages) {
+        // Create a unique composite key for internal tracking
+        const compositeKey = namespace ? `${namespace}:${key}` : key;
 
-      const compiled = allMessages.get(key)!;
+        if (!allMessages.has(compositeKey)) {
+          const analysis = analyzeIcuMessage(message.source);
+          allMessages.set(compositeKey, {
+            key,
+            translations: {},
+            isIcu: analysis.hasPlural || analysis.hasSelect,
+            variables: analysis.variables,
+            componentCount: countComponentTags(message.source),
+            namespace,
+          });
+        }
 
-      // Compile the translation
-      if (message.translation) {
-        if (compiled.isIcu || message.flags?.includes('icu-format')) {
-          // Compile ICU to function string
-          compiled.translations[locale] = compileIcuToFunctionString(
-            message.translation,
-            locale,
-          );
-          compiled.isIcu = true;
-        } else {
-          compiled.translations[locale] = message.translation;
+        const compiled = allMessages.get(compositeKey)!;
+
+        // Compile the translation
+        if (message.translation) {
+          if (compiled.isIcu || message.flags?.includes('icu-format')) {
+            // Compile ICU to function string
+            compiled.translations[locale] = compileIcuToFunctionString(
+              message.translation,
+              locale,
+            );
+            compiled.isIcu = true;
+          } else {
+            compiled.translations[locale] = message.translation;
+          }
         }
       }
     }
@@ -192,15 +240,51 @@ async function generateTranslationsJs(
   content += '// Do not edit directly\n\n';
   content += 'export const translations = {\n';
 
-  for (const [key, msg] of messages) {
-    content += `  ${JSON.stringify(key)}: {\n`;
+  // Separate messages by namespace
+  const nonNamespaced: CompiledMessage[] = [];
+  const byNamespace = new Map<string, CompiledMessage[]>();
+
+  for (const [, msg] of messages) {
+    if (msg.namespace) {
+      if (!byNamespace.has(msg.namespace)) {
+        byNamespace.set(msg.namespace, []);
+      }
+      byNamespace.get(msg.namespace)!.push(msg);
+    } else {
+      nonNamespaced.push(msg);
+    }
+  }
+
+  // Output non-namespaced messages at top level
+  for (const msg of nonNamespaced) {
+    content += `  ${JSON.stringify(msg.key)}: {\n`;
     for (const [locale, translation] of Object.entries(msg.translations)) {
       if (msg.isIcu && translation.startsWith('(args)')) {
-        // Function translation
         content += `    ${JSON.stringify(locale)}: ${translation},\n`;
       } else {
         content += `    ${JSON.stringify(locale)}: ${JSON.stringify(translation)},\n`;
       }
+    }
+    content += '  },\n';
+  }
+
+  // Output namespaced messages under __ns
+  if (byNamespace.size > 0) {
+    content += '  __ns: {\n';
+    for (const [namespace, msgs] of byNamespace) {
+      content += `    ${JSON.stringify(namespace)}: {\n`;
+      for (const msg of msgs) {
+        content += `      ${JSON.stringify(msg.key)}: {\n`;
+        for (const [locale, translation] of Object.entries(msg.translations)) {
+          if (msg.isIcu && translation.startsWith('(args)')) {
+            content += `        ${JSON.stringify(locale)}: ${translation},\n`;
+          } else {
+            content += `        ${JSON.stringify(locale)}: ${JSON.stringify(translation)},\n`;
+          }
+        }
+        content += '      },\n';
+      }
+      content += '    },\n';
     }
     content += '  },\n';
   }

@@ -11,6 +11,11 @@ export interface IdiomaConfig {
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
   locales?: string[];
+  /**
+   * List of namespaces (auto-detected from {locale}/*.po subdirectories if not specified).
+   * Namespaces allow organizing translations into logical groups.
+   */
+  namespaces?: string[];
   /** Glob patterns for source files to extract from */
   sourcePatterns?: string[];
   /**

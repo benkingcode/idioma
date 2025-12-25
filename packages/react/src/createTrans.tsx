@@ -124,17 +124,29 @@ export function createTrans<
     }
 
     // Key-only mode: lookup from translations
-    const { id, values, components } = props as TransKeyOnlyModeProps<
+    const { id, values, components, ns } = props as TransKeyOnlyModeProps<
       TK,
       MV,
       MC
-    >;
+    > & { ns?: string };
 
     if (!id) {
       throw new Error('[idioma] Trans requires either children or id prop');
     }
 
-    const localeMessages = translations[id];
+    // Get locale messages from the right place (namespace or top-level)
+    let localeMessages: LocaleMessages | undefined;
+    if (ns) {
+      // Look in __ns.{namespace}.{id}
+      const nsTranslations = (
+        translations as unknown as { __ns?: Record<string, Translations> }
+      ).__ns;
+      localeMessages = nsTranslations?.[ns]?.[id];
+    } else {
+      // Look at top level
+      localeMessages = translations[id];
+    }
+
     if (!localeMessages) {
       return id; // Fallback to key
     }

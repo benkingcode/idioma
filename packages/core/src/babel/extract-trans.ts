@@ -10,6 +10,8 @@ export interface ExtractedMessage {
   source: string;
   /** Optional context */
   context?: string;
+  /** Optional namespace */
+  namespace?: string;
   /** Placeholder mappings */
   placeholders: Record<string, string>;
   /** Component names */
@@ -41,6 +43,7 @@ export function extractTransMessage(
   // Get props
   const idProp = getStringProp(opening, 'id');
   const contextProp = getStringProp(opening, 'context');
+  const nsProp = getStringProp(opening, 'ns');
 
   // Skip key-only Trans (self-closing or empty)
   const children = path.node.children;
@@ -56,8 +59,8 @@ export function extractTransMessage(
     return null;
   }
 
-  // Generate or use explicit key
-  const key = idProp || generateKey(serialized.message, contextProp);
+  // Generate or use explicit key (namespace affects the key hash)
+  const key = idProp || generateKey(serialized.message, contextProp, nsProp);
 
   // Get line number for reference
   const line = path.node.loc?.start.line || 0;
@@ -72,6 +75,10 @@ export function extractTransMessage(
 
   if (contextProp) {
     result.context = contextProp;
+  }
+
+  if (nsProp) {
+    result.namespace = nsProp;
   }
 
   if (serialized.comments && serialized.comments.length > 0) {

@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  loadLocaleCatalogs,
   loadPoFile,
   parsePoString,
   serializePoString,
@@ -228,6 +229,119 @@ msgstr "Speichern"
       const written = await fs.readFile(filePath, 'utf-8');
       expect(written).toContain('msgid "Save"');
       expect(written).toContain('msgstr "Speichern"');
+    });
+  });
+
+  describe('loadLocaleCatalogs', () => {
+    it('loads flat structure (locales/{locale}.po)', async () => {
+      // Create flat structure
+      const localesDir = join(tempDir, 'flat-locales');
+      await fs.mkdir(localesDir, { recursive: true });
+
+      const poContent = `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`;
+      await fs.writeFile(join(localesDir, 'en.po'), poContent);
+
+      const catalogs = await loadLocaleCatalogs(localesDir, 'en');
+
+      expect(catalogs.size).toBe(1);
+      expect(catalogs.has(undefined)).toBe(true); // No namespace
+      const catalog = catalogs.get(undefined)!;
+      expect(catalog.locale).toBe('en');
+      expect(catalog.namespace).toBeUndefined();
+      expect(catalog.messages.get('Hello')).toBeDefined();
+    });
+
+    it('loads namespaced structure (locales/{locale}/{namespace}.po)', async () => {
+      // Create namespaced structure
+      const localesDir = join(tempDir, 'ns-locales');
+      const enDir = join(localesDir, 'en');
+      await fs.mkdir(enDir, { recursive: true });
+
+      const authPo = `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Login"
+msgstr "Login"
+`;
+      const dashPo = `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+`;
+      await fs.writeFile(join(enDir, 'auth.po'), authPo);
+      await fs.writeFile(join(enDir, 'dashboard.po'), dashPo);
+
+      const catalogs = await loadLocaleCatalogs(localesDir, 'en');
+
+      expect(catalogs.size).toBe(2);
+      expect(catalogs.has('auth')).toBe(true);
+      expect(catalogs.has('dashboard')).toBe(true);
+
+      const authCatalog = catalogs.get('auth')!;
+      expect(authCatalog.namespace).toBe('auth');
+      expect(authCatalog.messages.get('Login')).toBeDefined();
+
+      const dashCatalog = catalogs.get('dashboard')!;
+      expect(dashCatalog.namespace).toBe('dashboard');
+      expect(dashCatalog.messages.get('Dashboard')).toBeDefined();
+    });
+
+    it('loads hybrid structure (both flat and namespaced)', async () => {
+      // Create hybrid structure
+      const localesDir = join(tempDir, 'hybrid-locales');
+      const enDir = join(localesDir, 'en');
+      await fs.mkdir(enDir, { recursive: true });
+
+      // Flat file for non-namespaced messages
+      const flatPo = `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`;
+      // Namespaced file
+      const authPo = `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Login"
+msgstr "Login"
+`;
+      await fs.writeFile(join(localesDir, 'en.po'), flatPo);
+      await fs.writeFile(join(enDir, 'auth.po'), authPo);
+
+      const catalogs = await loadLocaleCatalogs(localesDir, 'en');
+
+      expect(catalogs.size).toBe(2);
+      expect(catalogs.has(undefined)).toBe(true); // Flat
+      expect(catalogs.has('auth')).toBe(true); // Namespaced
+
+      expect(catalogs.get(undefined)!.messages.get('Hello')).toBeDefined();
+      expect(catalogs.get('auth')!.messages.get('Login')).toBeDefined();
+    });
+
+    it('returns empty map when no files exist', async () => {
+      const localesDir = join(tempDir, 'empty-locales');
+      await fs.mkdir(localesDir, { recursive: true });
+
+      const catalogs = await loadLocaleCatalogs(localesDir, 'en');
+
+      expect(catalogs.size).toBe(0);
     });
   });
 });
