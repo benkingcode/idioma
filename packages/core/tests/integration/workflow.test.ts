@@ -91,18 +91,18 @@ describe('End-to-End Workflow', () => {
     const esPo = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
     expect(esPo).toContain(`msgid "${helloKey}"`);
 
-    // Step 3: Add Spanish translations (replace source text with translated text)
+    // Step 3: Add Spanish translations (fill in empty msgstr values)
     const translatedEsPo = esPo
       .replace(
-        `msgid "${helloKey}"\nmsgstr "Hello world"`,
+        `msgid "${helloKey}"\nmsgstr ""`,
         `msgid "${helloKey}"\nmsgstr "Hola mundo"`,
       )
       .replace(
-        `msgid "${welcomeKey}"\nmsgstr "Welcome to our app"`,
+        `msgid "${welcomeKey}"\nmsgstr ""`,
         `msgid "${welcomeKey}"\nmsgstr "Bienvenido a nuestra app"`,
       )
       .replace(
-        `msgid "${greetingKey}"\nmsgstr "Hello {name}!"`,
+        `msgid "${greetingKey}"\nmsgstr ""`,
         `msgid "${greetingKey}"\nmsgstr "¡Hola {name}!"`,
       );
 
@@ -224,10 +224,10 @@ describe('End-to-End Workflow', () => {
 
     const helloKey = firstExtract.messages[0].key;
 
-    // Add translation - replace the source text msgstr with translation
+    // Add translation - fill in empty msgstr with translation
     const esPo = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
     const translated = esPo.replace(
-      `msgid "${helloKey}"\nmsgstr "Hello"`,
+      `msgid "${helloKey}"\nmsgstr ""`,
       `msgid "${helloKey}"\nmsgstr "Hola"`,
     );
     await fs.writeFile(join(localeDir, 'es.po'), translated);

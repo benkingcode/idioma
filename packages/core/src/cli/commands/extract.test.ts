@@ -266,6 +266,38 @@ msgstr "Hola mundo"
     expect(content).toContain('msgstr "Welcome to our app"');
   });
 
+  it('leaves msgstr empty for non-default locales on new messages', async () => {
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      `
+      import { Trans } from '@idioma/react'
+      export function App() {
+        return <Trans>Hello world</Trans>
+      }
+      `,
+    );
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      locales: ['en', 'es'],
+    });
+
+    // Default locale should have source text as msgstr
+    const enContent = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
+    expect(enContent).toContain(`msgid "${result.messages[0].key}"`);
+    expect(enContent).toContain('msgstr "Hello world"');
+
+    // Non-default locale should have EMPTY msgstr (ready for translation)
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain(`msgid "${result.messages[0].key}"`);
+    // The msgstr should be empty, not the English source text
+    expect(esContent).not.toContain('msgstr "Hello world"');
+    expect(esContent).toContain('msgstr ""');
+  });
+
   it('removes unused messages with clean option', async () => {
     // Create existing PO with old message (using a hash-like key)
     await fs.writeFile(

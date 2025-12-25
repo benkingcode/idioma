@@ -95,7 +95,12 @@ export async function extractMessages(
       }
 
       // Convert messages to catalog
-      const extractedCatalog = messagesToCatalog(nsMessages, locale, namespace);
+      const extractedCatalog = messagesToCatalog(
+        nsMessages,
+        locale,
+        namespace,
+        defaultLocale,
+      );
 
       let existingCatalog: Catalog;
       try {
@@ -117,15 +122,6 @@ export async function extractMessages(
       mergeCatalogs(existingCatalog, extractedCatalog, {
         clean: clean ?? false,
       });
-
-      // For the default locale, copy source to translation if empty
-      if (locale === defaultLocale) {
-        for (const [, msg] of existingCatalog.messages) {
-          if (!msg.translation) {
-            msg.translation = msg.source;
-          }
-        }
-      }
 
       await writePoFile(poPath, existingCatalog);
     }
@@ -278,7 +274,8 @@ function serializeMemberExpression(expr: t.MemberExpression): string {
 function messagesToCatalog(
   messages: ExtractedMessage[],
   locale: string,
-  namespace?: string,
+  namespace: string | undefined,
+  defaultLocale: string,
 ): Catalog {
   const catalog: Catalog = {
     locale,
@@ -293,7 +290,8 @@ function messagesToCatalog(
     const message: Message = {
       key: msg.key,
       source: msg.key, // msgid = key (hash or explicit id)
-      translation: msg.source, // msgstr = source text (fallback)
+      // Default locale gets source text as fallback; other locales start empty
+      translation: locale === defaultLocale ? msg.source : '',
       references: [msg.location],
       context: msg.context,
       namespace: msg.namespace,
