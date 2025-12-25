@@ -1,6 +1,7 @@
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';
+import { generateKey } from './server/generateKey';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MessageFunction = (args: any) => string;
@@ -12,19 +13,48 @@ export interface UseTOptions {
 }
 
 /**
+ * Key-only mode arguments: t({ id: "welcome", values: { name } })
+ */
+export interface KeyOnlyArgs {
+  id: string;
+  values?: Record<string, unknown>;
+}
+
+/**
+ * Source text mode options: t("Submit", { context: "button", name: "Ben" })
+ */
+export interface SourceTextOptions extends Record<string, unknown> {
+  context?: string;
+}
+
+/**
+ * Type for the t function returned by __useT.
+ * Supports both source text mode and key-only mode.
+ */
+export type UseTFunction = {
+  (args: KeyOnlyArgs): string;
+  (source: string, options?: SourceTextOptions): string;
+};
+
+/**
  * Internal useT hook used by Babel-compiled output.
  * Not intended for direct use - import useT from the generated idioma/ folder instead.
+ *
+ * Supports both source text mode and key-only mode:
+ * - Source text: t('Hello world!') - hashes and looks up
+ * - Key-only: t({ id: 'welcome' }) - direct key lookup
  *
  * @example
  * // Compiled output:
  * const t = __useT(__$idioma)
- * const label = t("key")
- * const greeting = t("welcome", { name })
+ * const label = t('Hello world!')
+ * const greeting = t('Hello {name}', { name })
+ * const byId = t({ id: 'key' })
  */
 export function __useT(
   translations: Translations,
   _options?: UseTOptions,
-): (key: string, args?: Record<string, unknown>) => string {
+): UseTFunction {
   const context = useContext(IdiomaContext);
   if (!context) {
     throw new Error(
@@ -35,34 +65,51 @@ export function __useT(
 
   const { locale } = context;
 
-  // Return a translator function that closes over locale
   return useCallback(
-    (key: string, args?: Record<string, unknown>): string => {
-      const localeMessages = translations[key];
-      if (!localeMessages) {
-        // Key not found - return key as fallback
-        return key;
+    (
+      sourceOrArgs: string | KeyOnlyArgs,
+      options?: SourceTextOptions,
+    ): string => {
+      // Key-only mode: t({ id: 'welcome', values: { name } })
+      if (typeof sourceOrArgs === 'object') {
+        const { id, values } = sourceOrArgs;
+        const localeMessages = translations[id];
+        if (!localeMessages) return id;
+
+        const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
+        if (msg === undefined) return id;
+        if (typeof msg === 'function') return msg(values || {});
+        return values ? interpolateValues(msg, values) : msg;
       }
 
-      const msg = localeMessages[locale];
+      // Source text mode: t('Hello {name}', { name: 'Ben', context: 'button' })
+      const source = sourceOrArgs;
+      const { context: ctx, ...values } = options || {};
+      const key = generateKey(source, ctx);
+      const localeMessages = translations[key];
+
+      if (!localeMessages) {
+        // Fallback: interpolate source text if values provided
+        return Object.keys(values).length > 0
+          ? interpolateValues(source, values)
+          : source;
+      }
+
+      const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
       if (msg === undefined) {
-        // Locale not found - try to find any available message
-        const fallback = Object.values(localeMessages)[0];
-        if (fallback === undefined) {
-          return key;
-        }
-        if (typeof fallback === 'function') {
-          return fallback(args || {});
-        }
-        return args ? interpolateValues(fallback, args) : fallback;
+        return Object.keys(values).length > 0
+          ? interpolateValues(source, values)
+          : source;
       }
 
       if (typeof msg === 'function') {
-        return msg(args || {});
+        return msg(values || {});
       }
 
-      return args ? interpolateValues(msg, args) : msg;
+      return Object.keys(values).length > 0
+        ? interpolateValues(msg, values)
+        : msg;
     },
     [translations, locale],
-  );
+  ) as UseTFunction;
 }

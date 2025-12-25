@@ -1,12 +1,28 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createIdiomaProvider } from './context';
+import { generateKey } from './server/generateKey';
 import { __useT } from './useT';
 
 const IdiomaProvider = createIdiomaProvider();
 
 describe('__useT', () => {
+  // Translations keyed by hash for source text mode
   const translations = {
+    // Source text translations (keyed by hash)
+    [generateKey('Hello world!')]: {
+      en: 'Hello world!',
+      es: '¡Hola mundo!',
+    },
+    [generateKey('Hello {name}')]: {
+      en: 'Hello {name}',
+      es: 'Hola {name}',
+    },
+    [generateKey('Submit', 'button')]: {
+      en: 'Submit',
+      es: 'Enviar',
+    },
+    // Key-only translations (manual ids)
     greeting: {
       en: 'Hello',
       es: 'Hola',
@@ -23,102 +39,165 @@ describe('__useT', () => {
     },
   };
 
-  it('returns a translator function', () => {
-    function TestComponent() {
-      const t = __useT(translations);
-      return <div data-testid="result">{t('greeting')}</div>;
-    }
+  describe('source text mode', () => {
+    it('translates source text for given locale', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return <div data-testid="result">{t('Hello world!')}</div>;
+      }
 
-    render(
-      <IdiomaProvider locale="en">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getByTestId('result').textContent).toBe('Hello');
-  });
-
-  it('translates to the current locale', () => {
-    function TestComponent() {
-      const t = __useT(translations);
-      return <div data-testid="result">{t('greeting')}</div>;
-    }
-
-    render(
-      <IdiomaProvider locale="es">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getByTestId('result').textContent).toBe('Hola');
-  });
-
-  it('interpolates values', () => {
-    function TestComponent() {
-      const t = __useT(translations);
-      return (
-        <div data-testid="result">{t('greeting.name', { name: 'Ben' })}</div>
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
       );
-    }
 
-    render(
-      <IdiomaProvider locale="en">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
+      expect(screen.getByTestId('result').textContent).toBe('¡Hola mundo!');
+    });
 
-    expect(screen.getByTestId('result').textContent).toBe('Hello Ben!');
+    it('interpolates values in source text mode', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return (
+          <div data-testid="result">{t('Hello {name}', { name: 'Ben' })}</div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
+    });
+
+    it('uses context to generate different key', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return (
+          <div data-testid="result">{t('Submit', { context: 'button' })}</div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Enviar');
+    });
   });
 
-  it('handles function messages (compiled plurals)', () => {
-    function TestComponent() {
-      const t = __useT(translations);
-      return <div data-testid="result">{t('items.count', { count: 5 })}</div>;
-    }
+  describe('key-only mode', () => {
+    it('returns a translator function', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return <div data-testid="result">{t({ id: 'greeting' })}</div>;
+      }
 
-    render(
-      <IdiomaProvider locale="en">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
 
-    expect(screen.getByTestId('result').textContent).toBe('5 items');
-  });
+      expect(screen.getByTestId('result').textContent).toBe('Hello');
+    });
 
-  it('handles function messages with count of 1', () => {
-    function TestComponent() {
-      const t = __useT(translations);
-      return <div data-testid="result">{t('items.count', { count: 1 })}</div>;
-    }
+    it('translates to the current locale', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return <div data-testid="result">{t({ id: 'greeting' })}</div>;
+      }
 
-    render(
-      <IdiomaProvider locale="en">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
 
-    expect(screen.getByTestId('result').textContent).toBe('1 item');
-  });
+      expect(screen.getByTestId('result').textContent).toBe('Hola');
+    });
 
-  it('returns key if translation is missing', () => {
-    function TestComponent() {
-      const t = __useT(translations);
-      return <div data-testid="result">{t('nonexistent.key')}</div>;
-    }
+    it('interpolates values', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return (
+          <div data-testid="result">
+            {t({ id: 'greeting.name', values: { name: 'Ben' } })}
+          </div>
+        );
+      }
 
-    render(
-      <IdiomaProvider locale="en">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
 
-    expect(screen.getByTestId('result').textContent).toBe('nonexistent.key');
+      expect(screen.getByTestId('result').textContent).toBe('Hello Ben!');
+    });
+
+    it('handles function messages (compiled plurals)', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return (
+          <div data-testid="result">
+            {t({ id: 'items.count', values: { count: 5 } })}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('5 items');
+    });
+
+    it('handles function messages with count of 1', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return (
+          <div data-testid="result">
+            {t({ id: 'items.count', values: { count: 1 } })}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('1 item');
+    });
+
+    it('returns id if translation is missing', () => {
+      function TestComponent() {
+        const t = __useT(translations);
+        return <div data-testid="result">{t({ id: 'nonexistent.key' })}</div>;
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('nonexistent.key');
+    });
   });
 
   it('updates when locale changes', () => {
     function TestComponent() {
       const t = __useT(translations);
-      return <div data-testid="result">{t('greeting')}</div>;
+      return <div data-testid="result">{t({ id: 'greeting' })}</div>;
     }
 
     const { rerender } = render(

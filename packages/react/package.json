@@ -17,6 +17,10 @@
     "./runtime-suspense": {
       "types": "./dist/runtime-suspense/index.d.ts",
       "import": "./dist/runtime-suspense/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
     }
   },
   "files": [
@@ -45,5 +49,8 @@
     "localization",
     "translation"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "murmurhash-js": "^1.0.0"
+  }
 }

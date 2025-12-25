@@ -15,6 +15,7 @@
 - **Instant switching** — All locales bundled by default, or lazy-load with Suspense
 - **Vite plugin** — HMR for translations, zero config
 - **Next.js plugin** — Works with App Router and Pages Router
+- **React Server Components** — Native RSC support with async translations
 
 ## Quick Start
 
@@ -115,7 +116,51 @@ export default function RootLayout({ children }) {
 }
 ```
 
-Works with both App Router (including React Server Components) and Pages Router.
+Works with both App Router and Pages Router.
+
+## React Server Components
+
+For translations in React Server Components (RSC), use `createServerT`:
+
+```tsx
+// app/page.tsx (Server Component)
+import { createServerT } from '@/idioma/server';
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = createServerT(locale);
+
+  return (
+    <div>
+      <h1>{await t('Welcome to our app')}</h1>
+      <p>{await t('Hello {name}', { name: 'Ben' })}</p>
+    </div>
+  );
+}
+```
+
+The `t` function supports:
+
+```ts
+// Source text (auto-hashed to key)
+await t('Hello world!');
+
+// With values
+await t('Hello {name}', { name: 'Ben' });
+
+// Key-only mode (like <Trans id="...">)
+await t({ id: 'welcome' });
+await t({ id: 'greeting', values: { name: 'Ben' } });
+
+// With context (changes hash)
+await t('Submit', { context: 'button' });
+```
+
+The client-side `useT` hook uses the same API, so you can share translation patterns between server and client components.
 
 ## Usage
 
@@ -157,7 +202,12 @@ import { useT } from './src/idioma';
 
 function SearchInput() {
   const t = useT();
-  return <input placeholder={t`Search...`} />;
+  return <input placeholder={t('Search...')} />;
+}
+
+function Greeting({ name }) {
+  const t = useT();
+  return <span>{t('Hello {name}', { name })}</span>;
 }
 ```
 
