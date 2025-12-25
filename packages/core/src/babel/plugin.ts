@@ -23,6 +23,40 @@ function parseFunctionToAst(fnSource: string): t.Expression {
   return t.stringLiteral(fnSource);
 }
 
+/**
+ * Parse an expression string into an AST expression.
+ * Used for reconstructing placeholder values from serialized expressions.
+ *
+ * Examples:
+ * - "name" → t.identifier('name')
+ * - "user.name" → MemberExpression(user, name)
+ * - "data.nested.value" → MemberExpression(MemberExpression(data, nested), value)
+ * - "items[0]" → MemberExpression(items, 0, computed=true)
+ */
+function parseExpressionToAst(expr: string): t.Expression {
+  // Fast path: simple identifier (e.g., "name", "_value", "$ref")
+  if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(expr)) {
+    return t.identifier(expr);
+  }
+
+  // Parse complex expressions (member expressions, array access, etc.)
+  try {
+    const code = `(${expr})`;
+    const ast = babelParse(code, { sourceType: 'module' });
+    const stmt = ast.program.body[0];
+    if (t.isExpressionStatement(stmt)) {
+      return stmt.expression;
+    }
+  } catch {
+    // If parsing fails, fall back to identifier with warning
+    console.warn(`[idioma] Unable to parse expression: ${expr}`);
+  }
+
+  // Fallback: extract first identifier (legacy behavior for truly unparseable cases)
+  const firstPart = expr.split('.')[0]?.split('[')[0] || 'undefined';
+  return t.identifier(firstPart);
+}
+
 export interface IdiomaPluginOptions {
   /** Plugin mode: 'development' or 'production' */
   mode?: 'development' | 'production';
@@ -443,6 +477,54 @@ function isTransComponent(
 }
 
 /**
+ * Build common props (__ns, __a, __c) shared by both Trans and TransSuspense transforms.
+ * Extracts the duplicated logic for namespace, placeholders, and components.
+ */
+function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
+  const { placeholders, components, namespace } = extracted;
+  const props: t.JSXAttribute[] = [];
+
+  // Add __ns if there is a namespace
+  if (namespace) {
+    props.push(
+      t.jsxAttribute(t.jsxIdentifier('__ns'), t.stringLiteral(namespace)),
+    );
+  }
+
+  // Add __a if there are placeholders
+  if (Object.keys(placeholders).length > 0) {
+    const aEntries: t.ObjectProperty[] = [];
+    for (const [name, expr] of Object.entries(placeholders)) {
+      // Parse expression string to AST (handles identifiers, member expressions, array access)
+      aEntries.push(
+        t.objectProperty(t.stringLiteral(name), parseExpressionToAst(expr)),
+      );
+    }
+
+    props.push(
+      t.jsxAttribute(
+        t.jsxIdentifier('__a'),
+        t.jsxExpressionContainer(t.objectExpression(aEntries)),
+      ),
+    );
+  }
+
+  // Add __c if there are components
+  if (components.length > 0) {
+    const componentElements = components.map((name) => t.identifier(name));
+
+    props.push(
+      t.jsxAttribute(
+        t.jsxIdentifier('__c'),
+        t.jsxExpressionContainer(t.arrayExpression(componentElements)),
+      ),
+    );
+  }
+
+  return props;
+}
+
+/**
  * Transform a Trans component to __Trans with translation props
  */
 function transformTransComponent(
@@ -502,62 +584,16 @@ function transformTransComponent(
     );
   }
 
-  // Build props array
+  // Build props array: __t (translations) + common props (__ns, __a, __c)
   const props: t.JSXAttribute[] = [
     // __t: translations object
     t.jsxAttribute(
       t.jsxIdentifier('__t'),
       t.jsxExpressionContainer(t.objectExpression(tEntries)),
     ),
+    // Add common props (__ns, __a, __c)
+    ...buildCommonTransProps(extracted),
   ];
-
-  // Add __ns if there is a namespace
-  if (namespace) {
-    props.push(
-      t.jsxAttribute(t.jsxIdentifier('__ns'), t.stringLiteral(namespace)),
-    );
-  }
-
-  // Add __a if there are placeholders
-  if (Object.keys(placeholders).length > 0) {
-    const aEntries: t.ObjectProperty[] = [];
-    for (const [name, expr] of Object.entries(placeholders)) {
-      // For simple identifiers, reference the variable directly
-      if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(expr)) {
-        aEntries.push(
-          t.objectProperty(t.stringLiteral(name), t.identifier(expr)),
-        );
-      } else {
-        // For complex expressions, we'd need to preserve the original expression
-        // For now, just use the string representation
-        aEntries.push(
-          t.objectProperty(
-            t.stringLiteral(name),
-            t.identifier(expr.split('.')[0] || 'undefined'),
-          ),
-        );
-      }
-    }
-
-    props.push(
-      t.jsxAttribute(
-        t.jsxIdentifier('__a'),
-        t.jsxExpressionContainer(t.objectExpression(aEntries)),
-      ),
-    );
-  }
-
-  // Add __c if there are components
-  if (components.length > 0) {
-    const componentElements = components.map((name) => t.identifier(name));
-
-    props.push(
-      t.jsxAttribute(
-        t.jsxIdentifier('__c'),
-        t.jsxExpressionContainer(t.arrayExpression(componentElements)),
-      ),
-    );
-  }
 
   // Create the new __Trans element
   const newElement = t.jsxElement(
@@ -577,9 +613,9 @@ function transformTransSuspense(
   path: NodePath<t.JSXElement>,
   extracted: ExtractedMessage,
 ): void {
-  const { key, placeholders, components, namespace } = extracted;
+  const { key } = extracted;
 
-  // Build props array
+  // Build props array: suspense props (__key, __chunk, __load) + common props (__ns, __a, __c)
   const props: t.JSXAttribute[] = [
     // __key: translation key
     t.jsxAttribute(t.jsxIdentifier('__key'), t.stringLiteral(key)),
@@ -593,54 +629,9 @@ function transformTransSuspense(
       t.jsxIdentifier('__load'),
       t.jsxExpressionContainer(t.identifier('__$idiomaLoad')),
     ),
+    // Add common props (__ns, __a, __c)
+    ...buildCommonTransProps(extracted),
   ];
-
-  // Add __ns if there is a namespace
-  if (namespace) {
-    props.push(
-      t.jsxAttribute(t.jsxIdentifier('__ns'), t.stringLiteral(namespace)),
-    );
-  }
-
-  // Add __a if there are placeholders
-  if (Object.keys(placeholders).length > 0) {
-    const aEntries: t.ObjectProperty[] = [];
-    for (const [name, expr] of Object.entries(placeholders)) {
-      // For simple identifiers, reference the variable directly
-      if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(expr)) {
-        aEntries.push(
-          t.objectProperty(t.stringLiteral(name), t.identifier(expr)),
-        );
-      } else {
-        // For complex expressions, use the first part
-        aEntries.push(
-          t.objectProperty(
-            t.stringLiteral(name),
-            t.identifier(expr.split('.')[0] || 'undefined'),
-          ),
-        );
-      }
-    }
-
-    props.push(
-      t.jsxAttribute(
-        t.jsxIdentifier('__a'),
-        t.jsxExpressionContainer(t.objectExpression(aEntries)),
-      ),
-    );
-  }
-
-  // Add __c if there are components
-  if (components.length > 0) {
-    const componentElements = components.map((name) => t.identifier(name));
-
-    props.push(
-      t.jsxAttribute(
-        t.jsxIdentifier('__c'),
-        t.jsxExpressionContainer(t.arrayExpression(componentElements)),
-      ),
-    );
-  }
 
   // Create the new __TransSuspense element
   const newElement = t.jsxElement(

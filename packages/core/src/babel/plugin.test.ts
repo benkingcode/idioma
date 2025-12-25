@@ -43,6 +43,77 @@ describe('Idioma Babel Plugin', () => {
   });
 
   describe('production mode', () => {
+    describe('member expression handling', () => {
+      it('handles member expression placeholder in __a prop', () => {
+        const code = `
+          import { Trans } from '@idioma/react'
+          const x = <Trans>Hello {user.name}</Trans>
+        `;
+
+        const result = transform(code, {
+          mode: 'production',
+          translations: {},
+        });
+
+        // Should produce __a={{ "user.name": user.name }} not __a={{ "user.name": user }}
+        expect(result).toContain('__a');
+        // The VALUE should be user.name (member expression), not just user
+        // Match pattern: "user.name": user.name  (key: value)
+        expect(result).toMatch(/"user\.name":\s*user\.name/);
+      });
+
+      it('handles nested member expression', () => {
+        const code = `
+          import { Trans } from '@idioma/react'
+          const x = <Trans>Value: {data.nested.value}</Trans>
+        `;
+
+        const result = transform(code, {
+          mode: 'production',
+          translations: {},
+        });
+
+        expect(result).toContain('__a');
+        // The VALUE should be data.nested.value, not just data
+        expect(result).toMatch(/"data\.nested\.value":\s*data\.nested\.value/);
+      });
+
+      it('handles member expression in suspense mode', () => {
+        const code = `
+          import { Trans } from '@idioma/react'
+          const x = <Trans>Hello {user.name}</Trans>
+        `;
+
+        const result = transform(code, {
+          mode: 'production',
+          useSuspense: true,
+          locales: ['en', 'es'],
+          outputDir: './idioma',
+          projectRoot: '/project',
+        });
+
+        expect(result).toContain('__a');
+        // The VALUE should be user.name, not just user
+        expect(result).toMatch(/"user\.name":\s*user\.name/);
+      });
+
+      it('handles array access expression', () => {
+        const code = `
+          import { Trans } from '@idioma/react'
+          const x = <Trans>First item: {items[0]}</Trans>
+        `;
+
+        const result = transform(code, {
+          mode: 'production',
+          translations: {},
+        });
+
+        expect(result).toContain('__a');
+        // Array access is a MemberExpression, key is "items[0]", value is items[0]
+        expect(result).toMatch(/"items\[0\]":\s*items\[0\]/);
+      });
+    });
+
     it('transforms Trans to __Trans with translations', () => {
       const code = `
         import { Trans } from '@idioma/react'

@@ -365,14 +365,14 @@ function generatePluralCode(el: PluralElement, locale: string): string {
 
   // Generate exact match checks
   for (const [value, option] of exactMatches) {
-    const optionCode = generateCodeForPluralOption(option, locale, 'av');
+    const optionCode = generateCodeForOption(option, locale, 'av');
     code += `if (v === ${value}) { ${optionCode} } `;
   }
 
   // Special handling for zero category when value is 0
   const zeroOption = el.options.zero;
   if (zeroOption && !exactMatches.some(([v]) => v === 0)) {
-    const optionCode = generateCodeForPluralOption(zeroOption, locale, 'av');
+    const optionCode = generateCodeForOption(zeroOption, locale, 'av');
     code += `if (v === 0) { ${optionCode} } `;
   }
 
@@ -386,7 +386,7 @@ function generatePluralCode(el: PluralElement, locale: string): string {
   for (const cat of categories) {
     const option = el.options[cat];
     if (option) {
-      const optionCode = generateCodeForPluralOption(option, locale, 'av');
+      const optionCode = generateCodeForOption(option, locale, 'av');
       if (cat === 'other') {
         // 'other' is the fallback - it always matches so no if needed
         code += `${optionCode} `;
@@ -407,12 +407,13 @@ function generatePluralCode(el: PluralElement, locale: string): string {
 }
 
 /**
- * Generate code for a plural option (the content inside one/other/etc.)
+ * Generate code for a plural/select option (the content inside one/other/etc.)
+ * Handles # (pound) substitution for plural values when valueExpr is provided.
  */
-function generateCodeForPluralOption(
+function generateCodeForOption(
   option: PluralOrSelectOption,
   locale: string,
-  valueExpr: string,
+  valueExpr?: string,
 ): string {
   const parts: string[] = [];
 
@@ -425,7 +426,10 @@ function generateCodeForPluralOption(
         parts.push(`String(args.${el.value} ?? '')`);
         break;
       case TYPE.pound:
-        parts.push(`String(${valueExpr})`);
+        // # in plural - substitute with the plural value
+        if (valueExpr) {
+          parts.push(`String(${valueExpr})`);
+        }
         break;
       case TYPE.plural:
         parts.push(generatePluralCode(el as PluralElement, locale));
@@ -460,14 +464,14 @@ function generateSelectCode(el: SelectElement, locale: string): string {
   for (const [key, option] of Object.entries(el.options)) {
     if (key === 'other') continue; // Handle 'other' as fallback
 
-    const optionCode = generateCodeForSelectOption(option, locale);
+    const optionCode = generateCodeForOption(option, locale);
     code += `if (sv === '${key}') { ${optionCode} } `;
   }
 
   // 'other' is the fallback
   const otherOption = el.options.other;
   if (otherOption) {
-    const optionCode = generateCodeForSelectOption(otherOption, locale);
+    const optionCode = generateCodeForOption(otherOption, locale);
     code += `${optionCode} `;
   } else {
     // Only add fallback if there's no 'other' case
@@ -476,44 +480,6 @@ function generateSelectCode(el: SelectElement, locale: string): string {
   code += `})(String(args.${varName} ?? ''))`;
 
   return code;
-}
-
-/**
- * Generate code for a select option.
- */
-function generateCodeForSelectOption(
-  option: PluralOrSelectOption,
-  locale: string,
-): string {
-  const parts: string[] = [];
-
-  for (const el of option.value) {
-    switch (el.type) {
-      case TYPE.literal:
-        parts.push(JSON.stringify((el as LiteralElement).value));
-        break;
-      case TYPE.argument:
-        parts.push(`String(args.${el.value} ?? '')`);
-        break;
-      case TYPE.plural:
-        parts.push(generatePluralCode(el as PluralElement, locale));
-        break;
-      case TYPE.select:
-        parts.push(generateSelectCode(el as SelectElement, locale));
-        break;
-      default:
-        parts.push(`String(args.${(el as { value: string }).value} ?? '')`);
-        break;
-    }
-  }
-
-  if (parts.length === 0) {
-    return "return ''";
-  }
-  if (parts.length === 1) {
-    return `return ${parts[0]}`;
-  }
-  return `return ${parts.join(' + ')}`;
 }
 
 async function generateTranslationsJs(
