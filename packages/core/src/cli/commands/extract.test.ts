@@ -128,7 +128,7 @@ describe('Extract Command', () => {
       `,
     );
 
-    await extractMessages({
+    const result = await extractMessages({
       cwd: tempDir,
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
@@ -138,7 +138,8 @@ describe('Extract Command', () => {
     const poPath = join(localeDir, 'en.po');
     const content = await fs.readFile(poPath, 'utf-8');
 
-    expect(content).toContain('msgid "Hello world"');
+    // msgid is the hash key, msgstr is the source text
+    expect(content).toContain(`msgid "${result.messages[0].key}"`);
     expect(content).toContain('msgstr "Hello world"');
   });
 
@@ -204,8 +205,69 @@ msgstr "Hola mundo"
     expect(content).toContain('#: src/App.tsx');
   });
 
+  it('uses hash as msgid for inline Trans, source as msgstr', async () => {
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      `
+      import { Trans } from '@idioma/react'
+      export function App() {
+        return <Trans>Hello world</Trans>
+      }
+      `,
+    );
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+    });
+
+    // Key should be a hash, not the source text
+    expect(result.messages[0].key).not.toBe('Hello world');
+    expect(result.messages[0].key).toMatch(/^[0-9A-Za-z]+$/); // base62 hash format
+    expect(result.messages[0].source).toBe('Hello world');
+
+    // PO file should have hash as msgid, source as msgstr
+    const poPath = join(localeDir, 'en.po');
+    const content = await fs.readFile(poPath, 'utf-8');
+
+    // msgid should be the hash, not "Hello world"
+    expect(content).not.toContain('msgid "Hello world"');
+    expect(content).toContain(`msgid "${result.messages[0].key}"`);
+    // msgstr should be the source text as fallback
+    expect(content).toContain('msgstr "Hello world"');
+  });
+
+  it('uses explicit id as msgid when id prop provided', async () => {
+    await fs.writeFile(
+      join(srcDir, 'Page.tsx'),
+      `
+      import { Trans } from '@idioma/react'
+      export function Page() {
+        return <Trans id="welcome.message">Welcome to our app</Trans>
+      }
+      `,
+    );
+
+    await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+    });
+
+    const poPath = join(localeDir, 'en.po');
+    const content = await fs.readFile(poPath, 'utf-8');
+
+    // msgid should be the explicit key
+    expect(content).toContain('msgid "welcome.message"');
+    // msgstr should be the source text as fallback
+    expect(content).toContain('msgstr "Welcome to our app"');
+  });
+
   it('removes unused messages with clean option', async () => {
-    // Create existing PO with old message
+    // Create existing PO with old message (using a hash-like key)
     await fs.writeFile(
       join(localeDir, 'en.po'),
       `
@@ -213,7 +275,7 @@ msgid ""
 msgstr ""
 "Language: en\\n"
 
-msgid "Old message"
+msgid "oldHashKey"
 msgstr "Old message"
 `,
     );
@@ -228,7 +290,7 @@ msgstr "Old message"
       `,
     );
 
-    await extractMessages({
+    const result = await extractMessages({
       cwd: tempDir,
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
@@ -238,7 +300,10 @@ msgstr "Old message"
 
     const content = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
 
-    expect(content).toContain('msgid "New message"');
-    expect(content).not.toContain('msgid "Old message"');
+    // New message should exist with hash as msgid
+    expect(content).toContain(`msgid "${result.messages[0].key}"`);
+    expect(content).toContain('msgstr "New message"');
+    // Old message should be removed
+    expect(content).not.toContain('msgid "oldHashKey"');
   });
 });

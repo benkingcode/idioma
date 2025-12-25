@@ -1,8 +1,8 @@
 import { utimes } from 'fs/promises';
 import { watch, type FSWatcher } from 'chokidar';
 import { join, resolve } from 'pathe';
-import { compileTranslations } from '../compiler/compile';
-import { ensureGitignore } from '../utils/gitignore';
+import { compileTranslations } from '../compiler/compile.js';
+import { ensureGitignore } from '../utils/gitignore.js';
 
 export interface IdiomaMetroOptions {
   /**

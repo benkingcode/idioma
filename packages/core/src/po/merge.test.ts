@@ -287,4 +287,112 @@ msgstr ""
       'This is a greeting',
     ]);
   });
+
+  it('updates context on existing messages', () => {
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "Submit"
+msgstr "Enviar"
+`,
+      'es',
+    );
+
+    // Extracted now has context
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+
+msgctxt "button"
+msgid "Submit"
+msgstr ""
+`,
+      'es',
+    );
+
+    // Note: This tests the bug where context wasn't being updated
+    // The keys are different (Submit vs button\u0004Submit) so this adds a new message
+    // But if we had an existing message with the SAME key, context should be updated
+    const result = mergeCatalogs(existing, extracted);
+
+    // For now, this is an add since the keys differ
+    expect(result.added).toContain('button\u0004Submit');
+  });
+
+  it('preserves context when merging existing message with same context', () => {
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "button"
+msgid "Submit"
+msgstr "Enviar"
+`,
+      'es',
+    );
+
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+
+msgctxt "button"
+msgid "Submit"
+msgstr ""
+`,
+      'es',
+    );
+
+    mergeCatalogs(existing, extracted);
+
+    const msg = existing.messages.get('button\u0004Submit');
+    expect(msg?.context).toBe('button');
+    expect(msg?.translation).toBe('Enviar');
+  });
+
+  it('updates context property when merging existing messages', () => {
+    // Simulate a case where existing message has stale/missing context property
+    // but the extracted message has the correct context
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "button"
+msgid "Submit"
+msgstr "Enviar"
+`,
+      'es',
+    );
+
+    // Manually corrupt the context property to simulate stale data
+    const msg = existing.messages.get('button\u0004Submit')!;
+    msg.context = undefined; // Context property is missing
+
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+
+msgctxt "button"
+msgid "Submit"
+msgstr ""
+`,
+      'es',
+    );
+
+    mergeCatalogs(existing, extracted);
+
+    // Context should be restored from extracted message
+    const updatedMsg = existing.messages.get('button\u0004Submit');
+    expect(updatedMsg?.context).toBe('button');
+    expect(updatedMsg?.translation).toBe('Enviar'); // Translation preserved
+  });
 });

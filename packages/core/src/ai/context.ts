@@ -2,7 +2,7 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import type { Catalog, Message } from '../po/types';
+import type { Catalog, Message } from '../po/types.js';
 
 /**
  * Prefix used to identify AI-generated context comments in PO files.

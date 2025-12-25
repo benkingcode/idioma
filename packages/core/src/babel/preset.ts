@@ -1,4 +1,4 @@
-import type { IdiomaPluginOptions } from './plugin';
+import type { IdiomaPluginOptions } from './plugin.js';
 
 export interface IdiomaBabelPresetOptions {
   /** Enable Suspense-based lazy loading */

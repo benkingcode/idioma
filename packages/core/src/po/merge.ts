@@ -1,4 +1,4 @@
-import type { Catalog, MergeOptions, MergeResult } from './types';
+import type { Catalog, MergeOptions, MergeResult } from './types.js';
 
 /**
  * Merge extracted messages into an existing catalog.
@@ -39,16 +39,17 @@ export function mergeCatalogs(
     const existingMsg = existing.messages.get(key);
 
     if (!existingMsg) {
-      // New message - add it
+      // New message - add it with source text as initial translation (fallback)
       existing.messages.set(key, {
         ...extractedMsg,
-        translation: '', // New messages are untranslated
+        // Keep extractedMsg.translation as the initial value (source text fallback)
       });
       result.added.push(key);
     } else {
-      // Existing message - update references and comments but preserve translation
+      // Existing message - update references, comments, and context but preserve translation
       existingMsg.references = extractedMsg.references;
       existingMsg.comments = extractedMsg.comments;
+      existingMsg.context = extractedMsg.context;
 
       // Track as updated if references changed
       result.updated.push(key);

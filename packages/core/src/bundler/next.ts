@@ -1,8 +1,8 @@
 import { join } from 'path';
 import type { NextConfig } from 'next';
 import type { Compiler, Configuration as WebpackConfiguration } from 'webpack';
-import { compileTranslations } from '../compiler/compile';
-import { ensureGitignore } from '../utils/gitignore';
+import { compileTranslations } from '../compiler/compile.js';
+import { ensureGitignore } from '../utils/gitignore.js';
 
 export interface IdiomaNextOptions {
   /**

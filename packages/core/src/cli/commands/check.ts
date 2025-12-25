@@ -1,8 +1,8 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import { defineCommand } from 'citty';
-import { loadPoFile } from '../../po/parser';
-import { getIdiomaPaths, loadConfig } from '../config';
+import { loadPoFile } from '../../po/parser.js';
+import { getIdiomaPaths, loadConfig } from '../config.js';
 
 export interface MissingTranslation {
   locale: string;

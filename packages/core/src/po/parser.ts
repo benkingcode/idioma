@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import * as gettextParser from 'gettext-parser';
-import type { Catalog, Message } from './types';
+import type { Catalog, Message } from './types.js';
 
 // Context separator used in PO files (ASCII end-of-transmission)
 const CONTEXT_SEPARATOR = '\u0004';

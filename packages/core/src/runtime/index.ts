@@ -7,4 +7,4 @@
  * @packageDocumentation
  */
 
-export { createT } from './createT';
+export { createT } from './createT.js';

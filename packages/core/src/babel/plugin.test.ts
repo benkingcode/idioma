@@ -129,6 +129,50 @@ describe('Idioma Babel Plugin', () => {
       // Should import __Trans from runtime
       expect(result).toContain('__Trans');
     });
+
+    it('injects __Trans import for non-suspense production mode', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        translations: {
+          '00000000': {
+            en: 'Hello world',
+            es: 'Hola mundo',
+          },
+        },
+      });
+
+      // Should inject import { __Trans } from '@idioma/react'
+      expect(result).toContain('import { __Trans } from "@idioma/react"');
+    });
+
+    it('does not inject __Trans import in development mode', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(code, { mode: 'development' });
+
+      expect(result).not.toContain('import { __Trans }');
+    });
+
+    it('does not inject __Trans import when no Trans is used', () => {
+      const code = `
+        const x = <div>Hello</div>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        translations: {},
+      });
+
+      expect(result).not.toContain('__Trans');
+    });
   });
 
   describe('extraction', () => {

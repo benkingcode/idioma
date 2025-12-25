@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
-import { compileTranslations } from '../../compiler/compile';
-import { ensureGitignore } from '../../utils/gitignore';
-import { getIdiomaPaths, loadConfig } from '../config';
+import { compileTranslations } from '../../compiler/compile.js';
+import { ensureGitignore } from '../../utils/gitignore.js';
+import { getIdiomaPaths, loadConfig } from '../config.js';
 
 export interface CompileResult {
   messageCount: number;

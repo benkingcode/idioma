@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import type { Catalog } from '../po/types';
-import type { ChunkAnalysis } from './chunk-analysis';
+import type { Catalog } from '../po/types.js';
+import type { ChunkAnalysis } from './chunk-analysis.js';
 
 export interface GenerateChunksOptions {
   /** Output directory for compiled translations */

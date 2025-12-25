@@ -1,10 +1,10 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
-import { analyzeIcuMessage, compileIcuToFunction } from '../icu/compiler';
-import { loadLocaleCatalogs, loadPoFile } from '../po/parser';
-import type { Catalog, Message } from '../po/types';
-import { analyzeChunksFromCatalogs } from './chunk-analysis';
-import { generateChunkModules } from './generate-chunks';
+import { analyzeIcuMessage, compileIcuToFunction } from '../icu/compiler.js';
+import { loadLocaleCatalogs, loadPoFile } from '../po/parser.js';
+import type { Catalog, Message } from '../po/types.js';
+import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
+import { generateChunkModules } from './generate-chunks.js';
 
 export interface CompileOptions {
   /** Directory containing .po files */

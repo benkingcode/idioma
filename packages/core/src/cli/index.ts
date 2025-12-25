@@ -1,9 +1,13 @@
 import { defineCommand, runMain } from 'citty';
-import { checkCommand } from './commands/check';
-import { compileCommand } from './commands/compile';
-import { extractCommand } from './commands/extract';
-import { statsCommand } from './commands/stats';
-import { translateCommand } from './commands/translate';
+import { config as loadDotenv } from 'dotenv';
+import { checkCommand } from './commands/check.js';
+import { compileCommand } from './commands/compile.js';
+import { extractCommand } from './commands/extract.js';
+import { statsCommand } from './commands/stats.js';
+import { translateCommand } from './commands/translate.js';
+
+// Load .env file from current working directory
+loadDotenv({ quiet: true });
 
 const main = defineCommand({
   meta: {

@@ -1,7 +1,7 @@
 import type { NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
-import { generateKey } from '../keys/generator';
-import { serializeJsxChildren } from './serialize';
+import { generateKey } from '../keys/generator.js';
+import { serializeJsxChildren } from './serialize.js';
 
 export interface ExtractedMessage {
   /** The message key (explicit id or generated hash) */

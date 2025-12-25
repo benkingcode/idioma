@@ -1,6 +1,6 @@
-import type { ExtractedMessage } from '../babel/extract-trans';
-import type { Catalog } from '../po/types';
-import { getChunkId } from './chunk-id';
+import type { ExtractedMessage } from '../babel/extract-trans.js';
+import type { Catalog } from '../po/types.js';
+import { getChunkId } from './chunk-id.js';
 
 export interface ChunkInfo {
   /** Unique chunk identifier */

@@ -1,9 +1,9 @@
 import type { NodePath, PluginObj } from '@babel/core';
 import * as t from '@babel/types';
-import { getChunkId } from '../compiler/chunk-id';
-import { generateKey } from '../keys/generator';
-import { extractTransMessage, type ExtractedMessage } from './extract-trans';
-import { serializeJsxChildren } from './serialize';
+import { getChunkId } from '../compiler/chunk-id.js';
+import { generateKey } from '../keys/generator.js';
+import { extractTransMessage, type ExtractedMessage } from './extract-trans.js';
+import { serializeJsxChildren } from './serialize.js';
 
 export interface IdiomaPluginOptions {
   /** Plugin mode: 'development' or 'production' */
@@ -154,6 +154,20 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
             // Insert at the beginning of the program
             path.unshiftContainer('body', [importDecl, chunkDecl, loadDecl]);
+          }
+
+          // Handle non-Suspense production mode - inject __Trans import
+          if (opts.mode === 'production' && !opts.useSuspense && idiomaUsed) {
+            const transImport = t.importDeclaration(
+              [
+                t.importSpecifier(
+                  t.identifier('__Trans'),
+                  t.identifier('__Trans'),
+                ),
+              ],
+              t.stringLiteral('@idioma/react'),
+            );
+            path.unshiftContainer('body', [transImport]);
           }
         },
       },
@@ -326,13 +340,12 @@ function transformTransComponent(
 ): void {
   const { key, source, placeholders, components, namespace } = extracted;
 
-  // Get translations for this key (namespace-aware)
+  // Get translations for this message using the key (hash or explicit id)
   let messageTranslations: Record<
     string,
     string | ((args: Record<string, unknown>) => string)
   > = {};
   if (namespace) {
-    // Look in __ns.{namespace}.{key}
     const nsTranslations = (
       translations as unknown as {
         __ns?: Record<

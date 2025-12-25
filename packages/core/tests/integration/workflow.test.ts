@@ -71,28 +71,39 @@ describe('End-to-End Workflow', () => {
     expect(extractResult.messages.length).toBe(3);
     expect(extractResult.files).toBe(2);
 
-    // Verify PO files were created
+    // Verify PO files were created with hash-based msgid and source as msgstr
     const enPo = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
-    expect(enPo).toContain('msgid "Hello world"');
-    expect(enPo).toContain('msgid "Welcome to our app"');
-    expect(enPo).toContain('msgid "Hello {name}!"');
+    expect(enPo).toContain('msgstr "Hello world"');
+    expect(enPo).toContain('msgstr "Welcome to our app"');
+    expect(enPo).toContain('msgstr "Hello {name}!"');
+
+    // Get the hash keys for adding translations
+    const helloKey = extractResult.messages.find(
+      (m) => m.source === 'Hello world',
+    )!.key;
+    const welcomeKey = extractResult.messages.find(
+      (m) => m.source === 'Welcome to our app',
+    )!.key;
+    const greetingKey = extractResult.messages.find(
+      (m) => m.source === 'Hello {name}!',
+    )!.key;
 
     const esPo = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
-    expect(esPo).toContain('msgid "Hello world"');
+    expect(esPo).toContain(`msgid "${helloKey}"`);
 
-    // Step 3: Add Spanish translations
+    // Step 3: Add Spanish translations (replace source text with translated text)
     const translatedEsPo = esPo
       .replace(
-        'msgid "Hello world"\nmsgstr ""',
-        'msgid "Hello world"\nmsgstr "Hola mundo"',
+        `msgid "${helloKey}"\nmsgstr "Hello world"`,
+        `msgid "${helloKey}"\nmsgstr "Hola mundo"`,
       )
       .replace(
-        'msgid "Welcome to our app"\nmsgstr ""',
-        'msgid "Welcome to our app"\nmsgstr "Bienvenido a nuestra app"',
+        `msgid "${welcomeKey}"\nmsgstr "Welcome to our app"`,
+        `msgid "${welcomeKey}"\nmsgstr "Bienvenido a nuestra app"`,
       )
       .replace(
-        'msgid "Hello {name}!"\nmsgstr ""',
-        'msgid "Hello {name}!"\nmsgstr "¡Hola {name}!"',
+        `msgid "${greetingKey}"\nmsgstr "Hello {name}!"`,
+        `msgid "${greetingKey}"\nmsgstr "¡Hola {name}!"`,
       );
 
     await fs.writeFile(join(localeDir, 'es.po'), translatedEsPo);
@@ -162,8 +173,9 @@ describe('End-to-End Workflow', () => {
     expect(result.messages[0].key).toBe('page.title');
 
     const enPo = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
-    // When using explicit ID as key, the source becomes msgid
-    expect(enPo).toContain('msgid "Welcome"');
+    // Explicit ID becomes msgid, source becomes msgstr
+    expect(enPo).toContain('msgid "page.title"');
+    expect(enPo).toContain('msgstr "Welcome"');
   });
 
   it('handles component interpolation', async () => {
@@ -202,7 +214,7 @@ describe('End-to-End Workflow', () => {
       `,
     );
 
-    await extractMessages({
+    const firstExtract = await extractMessages({
       cwd: tempDir,
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
@@ -210,11 +222,13 @@ describe('End-to-End Workflow', () => {
       locales: ['en', 'es'],
     });
 
-    // Add translation - replace the specific empty msgstr for Hello
+    const helloKey = firstExtract.messages[0].key;
+
+    // Add translation - replace the source text msgstr with translation
     const esPo = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
     const translated = esPo.replace(
-      'msgid "Hello"\nmsgstr ""',
-      'msgid "Hello"\nmsgstr "Hola"',
+      `msgid "${helloKey}"\nmsgstr "Hello"`,
+      `msgid "${helloKey}"\nmsgstr "Hola"`,
     );
     await fs.writeFile(join(localeDir, 'es.po'), translated);
 
@@ -232,7 +246,7 @@ describe('End-to-End Workflow', () => {
       `,
     );
 
-    await extractMessages({
+    const secondExtract = await extractMessages({
       cwd: tempDir,
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
@@ -240,10 +254,14 @@ describe('End-to-End Workflow', () => {
       locales: ['en', 'es'],
     });
 
+    const worldKey = secondExtract.messages.find(
+      (m) => m.source === 'World',
+    )!.key;
+
     // Verify existing translation preserved
     const updatedEs = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
     expect(updatedEs).toContain('msgstr "Hola"');
-    expect(updatedEs).toContain('msgid "World"');
+    expect(updatedEs).toContain(`msgid "${worldKey}"`);
   });
 
   it('reports stats correctly', async () => {
@@ -291,7 +309,7 @@ msgstr ""
   });
 
   it('clean option removes unused messages', async () => {
-    // Create initial PO with messages
+    // Create initial PO with messages (using a hash-like key)
     await fs.writeFile(
       join(localeDir, 'en.po'),
       `
@@ -299,7 +317,7 @@ msgid ""
 msgstr ""
 "Language: en\\n"
 
-msgid "Old message"
+msgid "oldHashKey"
 msgstr "Old message"
 `,
     );
@@ -314,7 +332,7 @@ msgstr "Old message"
     );
 
     // Extract with clean option
-    await extractMessages({
+    const result = await extractMessages({
       cwd: tempDir,
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
@@ -323,7 +341,10 @@ msgstr "Old message"
     });
 
     const enPo = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
-    expect(enPo).toContain('msgid "New message"');
-    expect(enPo).not.toContain('msgid "Old message"');
+    // New message with hash key and source as msgstr
+    expect(enPo).toContain(`msgid "${result.messages[0].key}"`);
+    expect(enPo).toContain('msgstr "New message"');
+    // Old message should be removed
+    expect(enPo).not.toContain('msgid "oldHashKey"');
   });
 });

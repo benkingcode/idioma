@@ -5,15 +5,15 @@ import {
   createOpenAIContextProvider,
   generateContextForCatalog,
   type ContextProvider,
-} from '../../ai/context';
+} from '../../ai/context.js';
 import {
   createAnthropicProvider,
   createOpenAIProvider,
   type MessageToTranslate,
   type TranslationProvider,
-} from '../../ai/provider';
-import { loadPoFile, writePoFile } from '../../po/parser';
-import { getIdiomaPaths, loadConfig } from '../config';
+} from '../../ai/provider.js';
+import { loadPoFile, writePoFile } from '../../po/parser.js';
+import { getIdiomaPaths, loadConfig } from '../config.js';
 
 export interface TranslateResult {
   translated: number;

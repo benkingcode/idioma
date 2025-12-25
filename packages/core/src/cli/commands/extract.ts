@@ -3,12 +3,13 @@ import { join, relative } from 'path';
 import * as babel from '@babel/core';
 import type * as t from '@babel/types';
 import { defineCommand } from 'citty';
-import { glob } from 'fast-glob';
-import { mergeCatalogs } from '../../po/merge';
-import { loadPoFile, writePoFile } from '../../po/parser';
-import type { Catalog, Message } from '../../po/types';
-import { ensureGitignore } from '../../utils/gitignore';
-import { getIdiomaPaths, loadConfig } from '../config';
+import fg from 'fast-glob';
+import { generateKey } from '../../keys/generator.js';
+import { mergeCatalogs } from '../../po/merge.js';
+import { loadPoFile, writePoFile } from '../../po/parser.js';
+import type { Catalog, Message } from '../../po/types.js';
+import { ensureGitignore } from '../../utils/gitignore.js';
+import { getIdiomaPaths, loadConfig } from '../config.js';
 
 export interface ExtractedMessage {
   key: string;
@@ -42,7 +43,7 @@ export async function extractMessages(
     options;
 
   // Find all source files
-  const files = await glob(sourcePatterns, {
+  const files = await fg(sourcePatterns, {
     cwd,
     absolute: true,
     ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts'],
@@ -162,9 +163,8 @@ async function extractFromFile(
                 );
                 if (!source) return;
 
-                // Use source as key (matches PO format) or explicit id
-                // The generateKey is for compile-time optimization
-                const key = id || source;
+                // Use explicit id or generate hash key from source
+                const key = id || generateKey(source, context, namespace);
                 const line = path.node.loc?.start.line ?? 1;
 
                 messages.push({
@@ -292,8 +292,8 @@ function messagesToCatalog(
   for (const msg of messages) {
     const message: Message = {
       key: msg.key,
-      source: msg.source,
-      translation: '',
+      source: msg.key, // msgid = key (hash or explicit id)
+      translation: msg.source, // msgstr = source text (fallback)
       references: [msg.location],
       context: msg.context,
       namespace: msg.namespace,

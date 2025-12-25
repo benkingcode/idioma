@@ -1,4 +1,4 @@
-import { generateKey } from '../keys/generator';
+import { generateKey } from '../keys/generator.js';
 
 /** Translations object shape from compiler */
 type TranslationsMap = Record<string, Record<string, string>>;
