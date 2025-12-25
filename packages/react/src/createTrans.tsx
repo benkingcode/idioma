@@ -25,14 +25,9 @@ export interface TransInlineModeProps {
 }
 
 /**
- * Key-only mode props - when looking up by id.
- * Requires id, optionally values and components based on the message.
+ * Base props for key-only mode.
  */
-export interface TransKeyOnlyModeProps<
-  K extends string,
-  MV extends Record<string, Record<string, unknown>>,
-  MC extends Record<string, TransComponent[]>,
-> {
+interface TransKeyOnlyBaseProps<K extends string> {
   /** Translation key - must be a valid key from PO */
   id: K;
   /** No children allowed in key-only mode */
@@ -41,11 +36,44 @@ export interface TransKeyOnlyModeProps<
   context?: never;
   /** Namespace for large apps */
   ns?: string;
-  /** Values for {name} placeholders - required if message has placeholders */
-  values?: K extends keyof MV ? MV[K] : Record<string, unknown>;
-  /** Components for <0>...</0> tags - required if message has tags */
-  components?: K extends keyof MC ? MC[K] : TransComponent[];
 }
+
+/**
+ * Conditional values prop - required if message has placeholders.
+ */
+type TransValuesProps<
+  K extends string,
+  MV extends Record<string, Record<string, unknown>>,
+> = K extends keyof MV
+  ? MV[K] extends Record<string, never>
+    ? { values?: never }
+    : { values: MV[K] }
+  : { values?: Record<string, unknown> };
+
+/**
+ * Conditional components prop - required if message has component tags.
+ */
+type TransComponentsProps<
+  K extends string,
+  MC extends Record<string, TransComponent[]>,
+> = K extends keyof MC
+  ? MC[K] extends []
+    ? { components?: never }
+    : { components: MC[K] }
+  : { components?: TransComponent[] };
+
+/**
+ * Key-only mode props - when looking up by id.
+ * Values are required if the message has {placeholders}.
+ * Components are required if the message has <0>tags</0>.
+ */
+export type TransKeyOnlyModeProps<
+  K extends string,
+  MV extends Record<string, Record<string, unknown>>,
+  MC extends Record<string, TransComponent[]>,
+> = TransKeyOnlyBaseProps<K> &
+  TransValuesProps<K, MV> &
+  TransComponentsProps<K, MC>;
 
 /**
  * Creates a typed Trans component that supports both inline and key-only modes.
