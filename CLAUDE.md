@@ -56,7 +56,7 @@ pnpm install
 # Build all packages
 pnpm build
 
-# Run all tests
+# Run all tests (unit tests via Vitest)
 pnpm test
 
 # Run a single test file
@@ -67,6 +67,10 @@ pnpm typecheck
 
 # Clean build artifacts
 pnpm clean
+
+# E2E tests (Playwright) - run from repo root
+pnpm test:e2e            # Run all e2e tests
+pnpm test:e2e:ui         # Run with Playwright UI
 ```
 
 ## Architecture
@@ -78,19 +82,22 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 **@idioma/core** (`packages/core/`) - Build tools and CLI
 
 - `babel/` - Babel plugin that transforms `<Trans>` components and extracts messages
-- `bundler/` - Vite plugin that compiles PO files and injects Babel transforms
+- `bundler/` - Vite, Next.js, and Metro plugins for build integration
 - `cli/` - CLI commands: `extract`, `compile`, `check`, `stats`, `translate`
 - `compiler/` - Compiles PO files to JS/TS with typed exports
 - `icu/` - ICU MessageFormat parser and compiler
 - `po/` - PO file parser and merge utilities
 - `keys/` - Message key generation (murmurhash-based)
+- `ai/` - AI translation: context generation from source code, provider abstraction (Anthropic/OpenAI)
 
 **@idioma/react** (`packages/react/`) - Runtime components
 
-- `Trans` component and `__Trans` (compiled output)
-- `__useT` hook (compiled output consumes this)
+- `Trans` component and `createTrans` factory (compiled output uses `__Trans`)
+- `useT` hook and `createUseT` factory (compiled output uses `__useT`)
 - `IdiomaContext` and `IdiomaProvider` for locale state
 - `interpolate` for placeholder/tag substitution
+- `runtime-suspense/` - Suspense-based lazy loading (React 19+)
+- `server/` - Server-side rendering utilities
 
 ### Compilation Flow
 
