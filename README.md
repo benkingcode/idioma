@@ -12,7 +12,7 @@
 - **AI translation** — Automatic context generation from source code + translation with Claude or GPT
 - **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
 - **Type-safe output** — Generated TypeScript with full autocomplete
-- **Instant switching** — All locales bundled by default, or lazy-load with Suspense
+- **Tree-shaken bundles** — Only translations for components on each page ship; opt into Suspense to load one locale at a time
 - **Vite plugin** — HMR for translations, zero config
 - **Next.js plugin** — Works with App Router and Pages Router
 - **React Server Components** — Native RSC support with async translations
@@ -439,9 +439,28 @@ msgstr "Lee nuestros <0>términos</0> y <1>política de privacidad</1>"
 
 PO files work with translation management systems like Phrase, Lokalise, and Crowdin.
 
+## Bundle Optimization
+
+Idioma automatically tree-shakes translations at the component level. Only the translations used by components on a given page are included in that page's bundle.
+
+**How it works:**
+
+1. The Babel plugin transforms each `<Trans>` to reference specific translation keys
+2. Each source file's translations are compiled to a separate chunk
+3. The bundler includes only the chunks imported by components on each route
+
+This means a 10,000-message app doesn't ship 10,000 messages to every page—each page gets only what it needs.
+
+**What gets bundled:**
+
+- ✅ Translations for components rendered on the page
+- ❌ Translations for components on other routes
+
+By default, all locale variants for those keys are included (enabling instant locale switching). For apps where initial bundle size is critical, Suspense mode loads only the active locale.
+
 ## Suspense Mode (React 19+)
 
-For large apps, you can enable Suspense-based lazy loading to reduce bundle size. Instead of inlining all locales, translations load via dynamic imports per code-split chunk.
+For apps where initial load size is critical, Suspense mode takes optimization further: instead of bundling all locale variants, it loads only the active locale via dynamic imports.
 
 ```ts
 // idioma.config.ts
@@ -468,11 +487,12 @@ import { IdiomaProvider } from './src/idioma';
 
 **Trade-offs:**
 
-|               | Default mode        | Suspense mode             |
-| ------------- | ------------------- | ------------------------- |
-| Bundle size   | All locales inlined | Dynamic imports per chunk |
-| Locale switch | Instant             | Suspends until loaded     |
-| React version | 18+                 | 19+ (uses `use` hook)     |
+|                      | Default mode           | Suspense mode          |
+| -------------------- | ---------------------- | ---------------------- |
+| Translations bundled | Per-page (tree-shaken) | Per-page (tree-shaken) |
+| Locales bundled      | All locales            | Active locale only     |
+| Locale switch        | Instant                | Suspends until loaded  |
+| React version        | 18+                    | 19+ (uses `use` hook)  |
 
 ## How It Works
 
