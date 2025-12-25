@@ -1,6 +1,14 @@
 // Main public exports for @idioma/react
 
-// Context and Provider
+// Factory functions for generated idioma/ folder
+export {
+  createTrans,
+  type TransInlineModeProps,
+  type TransKeyOnlyModeProps,
+} from './createTrans';
+export { createUseT, type TFunction } from './createUseT';
+
+// Context and Provider factories
 export {
   createIdiomaProvider,
   createUseLocale,
@@ -9,7 +17,7 @@ export {
   type IdiomaProviderProps,
 } from './context';
 
-// Pluralization (dev-time)
+// Pluralization (re-exported by generated idioma/)
 export {
   Plural,
   plural,
@@ -17,7 +25,7 @@ export {
   type PluralProps,
 } from './pluralization';
 
-// Runtime internals (used by compiled code)
+// Runtime internals (used by Babel-compiled code)
 export { __Trans, type TransProps } from './Trans';
 export { __useT, type UseTOptions } from './useT';
 export {

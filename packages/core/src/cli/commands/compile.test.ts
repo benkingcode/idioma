@@ -169,7 +169,11 @@ msgstr "Hello"
     });
 
     const content = await fs.readFile(join(outputDir, 'index.ts'), 'utf-8');
-    expect(content).toContain('export { translations }');
+    expect(content).toContain('export const Trans = createTrans');
+    expect(content).toContain('export const useT = createUseT');
+    expect(content).toContain(
+      'export const IdiomaProvider = createIdiomaProvider',
+    );
     expect(content).toContain('export type {');
   });
 

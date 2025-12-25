@@ -2,6 +2,38 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Test-Driven Development (TDD)
+
+**TDD is mandatory for all code changes in this repository.**
+
+Follow the red-green-refactor cycle:
+
+1. **Red**: Write a failing test first that defines the expected behavior
+2. **Green**: Write the minimum code necessary to make the test pass
+3. **Refactor**: Clean up the code while keeping tests green
+
+### TDD Workflow
+
+1. Before implementing any feature or fix, write tests that specify the desired behavior
+2. Run the test to confirm it fails (this validates the test is meaningful)
+3. Implement the code to make the test pass
+4. Run all related tests to ensure nothing broke
+5. Refactor if needed, re-running tests after each change
+
+### Practical Guidelines
+
+- **New features**: Write tests for the expected API/behavior before writing the implementation
+- **Bug fixes**: Write a test that reproduces the bug before fixing it
+- **Refactoring**: Ensure comprehensive tests exist before refactoring; run them frequently during the process
+
+```bash
+# Run tests in watch mode during development
+pnpm test --watch
+
+# Run a specific test file
+pnpm test packages/core/src/babel/plugin.test.ts
+```
+
 ## Commands
 
 ```bash

@@ -118,7 +118,8 @@ describe('End-to-End Workflow', () => {
     expect(typesTs).toContain('"es"');
 
     const indexTs = await fs.readFile(join(outputDir, 'index.ts'), 'utf-8');
-    expect(indexTs).toContain('export { translations }');
+    expect(indexTs).toContain('export const Trans = createTrans');
+    expect(indexTs).toContain('export const useT = createUseT');
 
     // Step 5: Check translations
     const checkResult = await runCheck({ localeDir });
