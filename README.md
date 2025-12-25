@@ -2,7 +2,7 @@
 
 **AI-first, compile-time i18n for React. Write in English, ship in every language.**
 
-~800 bytes runtime. No manual keys. AI-powered translation.
+~800 bytes runtime. No manual keys. AI-powered translation that understands your codebase and key context.
 
 ## Features
 
