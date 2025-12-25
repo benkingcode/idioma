@@ -14,6 +14,7 @@
 - **Type-safe output** — Generated TypeScript with full autocomplete
 - **Instant switching** — All locales bundled by default, or lazy-load with Suspense
 - **Vite plugin** — HMR for translations, zero config
+- **Next.js plugin** — Works with App Router and Pages Router
 
 ## Quick Start
 
@@ -70,6 +71,51 @@ function Greeting({ name }) {
   return <Trans>Hello {name}!</Trans>;
 }
 ```
+
+## Next.js
+
+Add the Next.js plugin to your config:
+
+```js
+// next.config.mjs
+import { withIdioma } from '@idioma/core/next';
+
+export default withIdioma({
+  localeDir: './locales',
+  outputDir: './src/idioma',
+  defaultLocale: 'en',
+})({
+  // your other Next.js config
+});
+```
+
+Add the Babel preset:
+
+```js
+// babel.config.js
+module.exports = {
+  presets: ['next/babel', '@idioma/core/babel-preset'],
+};
+```
+
+Set up the provider in your root layout:
+
+```tsx
+// app/layout.tsx (App Router)
+import { IdiomaProvider } from '@/idioma';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <IdiomaProvider locale="en">{children}</IdiomaProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Works with both App Router (including React Server Components) and Pages Router.
 
 ## Usage
 
@@ -237,7 +283,7 @@ The Babel plugin extracts messages during build, generates content-addressed key
 
 ## Packages
 
-- **@idioma/core** — Babel plugin, Vite plugin, CLI, PO compiler
+- **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, CLI, PO compiler
 - **@idioma/react** — Runtime components (~800 bytes gzipped)
 
 ## License
