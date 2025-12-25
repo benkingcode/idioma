@@ -17,6 +17,7 @@
 - **Next.js plugin** — Works with App Router and Pages Router
 - **React Native / Metro** — First-class React Native support with Metro bundler
 - **React Server Components** — Native RSC support with async translations
+- **Plain JS support** — `createT` for Zod schemas, error handling, and non-React code
 
 ## Quick Start
 
@@ -228,6 +229,58 @@ await t({ id: 'submit', context: 'modal' }); // context for translator reference
 ```
 
 The client-side `useT` hook uses the same API, so you can share translation patterns between server and client components.
+
+## Plain JavaScript (Outside React)
+
+For translations in utility functions, validation schemas, error messages, or any code outside React components, use `createT`:
+
+```typescript
+// utils/validation.ts
+import { createT } from '@/idioma/plain';
+
+export function createUserSchema(locale: string) {
+  const t = createT(locale);
+
+  return z.object({
+    email: z.string().email(t('Invalid email address')),
+    password: z
+      .string()
+      .min(8, t('Password must be at least {min} characters', { min: 8 })),
+  });
+}
+
+// Usage
+const schema = createUserSchema('es');
+schema.parse(formData); // Errors in Spanish
+```
+
+Works great for:
+
+- **Zod/Yup schemas** — Localized validation messages
+- **Error handling** — Translated error classes
+- **Utility functions** — Any non-React code that needs i18n
+- **Constants** — Lazy-evaluated translated labels
+
+```typescript
+// Custom error class
+import { createT } from '@/idioma/plain';
+
+export class AppError extends Error {
+  constructor(code: string, locale: string, values?: Record<string, unknown>) {
+    const t = createT(locale);
+    super(t({ id: `errors.${code}`, values }));
+    this.name = 'AppError';
+  }
+}
+
+// API response helper
+export function formatApiError(code: string, locale: string) {
+  const t = createT(locale);
+  return { success: false, message: t(`error.${code}`) };
+}
+```
+
+**Bundle splitting:** In production, Babel inlines only the translations each file uses—no full bundle required. Dynamic strings (variables) fall back to source text.
 
 ## Usage
 

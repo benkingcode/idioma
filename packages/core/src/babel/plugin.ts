@@ -124,6 +124,96 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         },
       },
 
+      /**
+       * Transform t() calls from createT.
+       * In production: inlines translations as second argument.
+       * In development: optionally extracts messages.
+       */
+      CallExpression(path: NodePath<t.CallExpression>, state) {
+        const { opts, filename } = state;
+        const callee = path.node.callee;
+
+        // Only handle calls like t('string')
+        if (!t.isIdentifier(callee) || callee.name !== 't') {
+          return;
+        }
+
+        // Get the first argument (source string)
+        const args = path.node.arguments;
+        const sourceArg = args[0];
+
+        // Skip if not a string literal (dynamic strings can't be inlined)
+        if (!t.isStringLiteral(sourceArg)) {
+          return;
+        }
+
+        const source = sourceArg.value;
+        const key = generateKey(source);
+
+        // Extract message if callback provided
+        if (opts.onExtract) {
+          const line = path.node.loc?.start.line || 0;
+          opts.onExtract({
+            key,
+            source,
+            context: undefined,
+            placeholders: {},
+            components: [],
+            references: [`${filename}:${line}`],
+          });
+        }
+
+        // In development mode, don't transform
+        if (opts.mode !== 'production') {
+          return;
+        }
+
+        // Production mode: inline translations
+        const translations = opts.translations || {};
+        const localeMessages = translations[key];
+
+        // If no translations found, leave unchanged
+        if (!localeMessages) {
+          return;
+        }
+
+        // Build the inlined translations object: { [key]: { en: '...', es: '...' } }
+        const translationEntries = Object.entries(localeMessages).map(
+          ([locale, msg]) =>
+            t.objectProperty(
+              t.stringLiteral(locale),
+              typeof msg === 'string'
+                ? t.stringLiteral(msg)
+                : t.stringLiteral(String(msg)),
+            ),
+        );
+
+        const inlinedObject = t.objectExpression([
+          t.objectProperty(
+            t.stringLiteral(key),
+            t.objectExpression(translationEntries),
+          ),
+        ]);
+
+        // Check if there's already a second argument (values)
+        const existingSecondArg = args[1];
+        if (existingSecondArg) {
+          // If second arg exists and is an object (values), shift it to third position
+          // t('source', { values }) -> t('source', { inlined }, { values })
+          args[1] = inlinedObject;
+          if (
+            !t.isNullLiteral(existingSecondArg) &&
+            !t.isIdentifier(existingSecondArg, { name: 'undefined' })
+          ) {
+            // Only keep values if it's not null/undefined
+            args[2] = existingSecondArg;
+          }
+        } else {
+          // No values, just add inlined object
+          args.push(inlinedObject);
+        }
+      },
+
       JSXElement(path: NodePath<t.JSXElement>, state) {
         const { opts, filename } = state;
         const mode = opts.mode || 'development';

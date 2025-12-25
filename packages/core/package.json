@@ -29,6 +29,10 @@
     "./metro": {
       "types": "./dist/bundler/metro.d.ts",
       "import": "./dist/bundler/metro.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
     }
   },
   "bin": {

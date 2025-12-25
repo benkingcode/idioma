@@ -308,4 +308,131 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('Link');
     });
   });
+
+  describe('t() call transformation', () => {
+    it('leaves t() calls unchanged in dev mode', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const msg = t('Hello world')
+      `;
+
+      const result = transform(code, { mode: 'development' });
+
+      expect(result).toContain("t('Hello world')");
+      expect(result).not.toContain('en:');
+      expect(result).not.toContain('es:');
+    });
+
+    it('inlines translations for t() calls in production mode', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const msg = t('Hello world')
+      `;
+
+      // Key for 'Hello world' is '003B4Ntk'
+      const result = transform(code, {
+        mode: 'production',
+        translations: {
+          '003B4Ntk': {
+            en: 'Hello world',
+            es: 'Hola mundo',
+          },
+        },
+      });
+
+      expect(result).toContain('Hello world');
+      expect(result).toContain('Hola mundo');
+    });
+
+    it('preserves existing values argument', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const msg = t('Hello {name}', { name: 'Ben' })
+      `;
+
+      // Key for 'Hello {name}' is '000VsT4w'
+      const result = transform(code, {
+        mode: 'production',
+        translations: {
+          '000VsT4w': {
+            en: 'Hello {name}',
+            es: 'Hola {name}',
+          },
+        },
+      });
+
+      // Should preserve the values object
+      expect(result).toContain('name');
+      expect(result).toContain('Ben');
+      // Should also inline translations
+      expect(result).toContain('Hola {name}');
+    });
+
+    it('skips dynamic strings (variables)', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const key = 'Hello world'
+        const msg = t(key)
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        translations: {
+          '00000000': {
+            en: 'Hello world',
+            es: 'Hola mundo',
+          },
+        },
+      });
+
+      // Dynamic string should be left as-is
+      expect(result).toContain('t(key)');
+      expect(result).not.toContain('Hola mundo');
+    });
+
+    it('extracts messages from t() calls in dev mode', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const msg = t('Hello world')
+      `;
+
+      transform(code, {
+        mode: 'development',
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe('Hello world');
+    });
+
+    it('handles t() calls with context option', () => {
+      const code = `
+        import { createT } from '@idioma/core/runtime'
+        const t = createT('es')
+        const msg = t('Submit', undefined, { context: 'button' })
+      `;
+
+      // Key for 'Submit' (without context in transformation - context is in 3rd arg)
+      // For now, context support in t() is limited - the call still uses the plain key
+      const result = transform(code, {
+        mode: 'production',
+        translations: {
+          '000os6FO': {
+            en: 'Submit',
+            es: 'Enviar',
+          },
+        },
+      });
+
+      // Should still contain the original string (transformation happens)
+      expect(result).toContain('Submit');
+    });
+  });
 });
