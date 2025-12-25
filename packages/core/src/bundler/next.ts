@@ -1,12 +1,15 @@
+import { join } from 'path';
 import type { NextConfig } from 'next';
 import type { Compiler, Configuration as WebpackConfiguration } from 'webpack';
 import { compileTranslations } from '../compiler/compile';
+import { ensureGitignore } from '../utils/gitignore';
 
 export interface IdiomaNextOptions {
-  /** Directory containing .po files */
-  localeDir: string;
-  /** Output directory for compiled translations */
-  outputDir: string;
+  /**
+   * Base directory for Idioma files.
+   * PO files are in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   */
+  idiomaDir: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -24,7 +27,13 @@ interface WebpackContext {
   isServer: boolean;
 }
 
-interface IdiomaWebpackPluginOptions extends IdiomaNextOptions {
+interface IdiomaWebpackPluginOptions {
+  idiomaDir: string;
+  localeDir: string;
+  outputDir: string;
+  defaultLocale: string;
+  locales?: string[];
+  useSuspense?: boolean;
   dev: boolean;
   projectRoot: string;
 }
@@ -53,6 +62,9 @@ class IdiomaWebpackPlugin {
         }
 
         try {
+          // Ensure .gitignore exists
+          await ensureGitignore(this.options.idiomaDir);
+
           await compileTranslations({
             localeDir: this.options.localeDir,
             outputDir: this.options.outputDir,
@@ -113,8 +125,7 @@ class IdiomaWebpackPlugin {
  * import { withIdioma } from '@idioma/core/next';
  *
  * export default withIdioma({
- *   localeDir: './locales',
- *   outputDir: './src/idioma',
+ *   idiomaDir: './src/idioma',
  *   defaultLocale: 'en',
  * })({
  *   // your other Next.js config
@@ -123,7 +134,11 @@ class IdiomaWebpackPlugin {
 export function withIdioma(
   options: IdiomaNextOptions,
 ): (nextConfig?: NextConfig) => NextConfig {
-  const { localeDir, outputDir, defaultLocale, locales, useSuspense } = options;
+  const { idiomaDir, defaultLocale, locales, useSuspense } = options;
+
+  // Compute derived paths
+  const localeDir = join(idiomaDir, 'locales');
+  const outputDir = idiomaDir;
 
   let pluginAdded = false;
   const projectRoot = process.cwd();
@@ -145,6 +160,7 @@ export function withIdioma(
           config.plugins = config.plugins ?? [];
           config.plugins.push(
             new IdiomaWebpackPlugin({
+              idiomaDir,
               localeDir,
               outputDir,
               defaultLocale,

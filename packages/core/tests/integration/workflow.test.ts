@@ -10,14 +10,17 @@ import { runStats } from '../../src/cli/commands/stats';
 describe('End-to-End Workflow', () => {
   let tempDir: string;
   let srcDir: string;
+  let idiomaDir: string;
   let localeDir: string;
   let outputDir: string;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-e2e-'));
     srcDir = join(tempDir, 'src');
-    localeDir = join(tempDir, 'locales');
-    outputDir = join(tempDir, 'idioma');
+    // New folder structure: idiomaDir contains locales/ and .generated/
+    idiomaDir = join(tempDir, 'idioma');
+    localeDir = join(idiomaDir, 'locales');
+    outputDir = idiomaDir;
     await fs.mkdir(srcDir, { recursive: true });
     await fs.mkdir(localeDir, { recursive: true });
   });
@@ -104,22 +107,28 @@ describe('End-to-End Workflow', () => {
     expect(compileResult.locales).toContain('en');
     expect(compileResult.locales).toContain('es');
 
-    // Verify compiled output
+    // Verify compiled output - internal files go to .generated/
     const translationsJs = await fs.readFile(
-      join(outputDir, 'translations.js'),
+      join(outputDir, '.generated', 'translations.js'),
       'utf-8',
     );
     expect(translationsJs).toContain('Hello world');
     expect(translationsJs).toContain('Hola mundo');
 
-    const typesTs = await fs.readFile(join(outputDir, 'types.ts'), 'utf-8');
+    const typesTs = await fs.readFile(
+      join(outputDir, '.generated', 'types.ts'),
+      'utf-8',
+    );
     expect(typesTs).toContain('Locale');
     expect(typesTs).toContain('"en"');
     expect(typesTs).toContain('"es"');
 
+    // User-facing files stay at the root
     const indexTs = await fs.readFile(join(outputDir, 'index.ts'), 'utf-8');
     expect(indexTs).toContain('export const Trans = createTrans');
     expect(indexTs).toContain('export const useT = createUseT');
+    // index.ts should import from .generated/
+    expect(indexTs).toContain('./.generated/translations.js');
 
     // Step 5: Check translations
     const checkResult = await runCheck({ localeDir });

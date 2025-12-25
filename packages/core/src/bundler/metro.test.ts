@@ -15,6 +15,11 @@ vi.mock('../compiler/compile', () => ({
   compileTranslations: vi.fn().mockResolvedValue(undefined),
 }));
 
+// Mock ensureGitignore
+vi.mock('../utils/gitignore', () => ({
+  ensureGitignore: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Mock chokidar
 const mockWatcher = {
   on: vi.fn().mockReturnThis(),
@@ -34,8 +39,7 @@ const mockCompileTranslations = compileTranslations as Mock;
 
 describe('withIdioma', () => {
   const defaultOptions: IdiomaMetroOptions = {
-    localeDir: './locales',
-    outputDir: './src/idioma',
+    idiomaDir: './src/idioma',
     defaultLocale: 'en',
   };
 
@@ -60,7 +64,7 @@ describe('withIdioma', () => {
     await wrapper({ projectRoot: '/test' });
 
     expect(mockCompileTranslations).toHaveBeenCalledWith({
-      localeDir: '/test/locales',
+      localeDir: '/test/src/idioma/locales',
       outputDir: '/test/src/idioma',
       defaultLocale: 'en',
       locales: undefined,
@@ -110,8 +114,7 @@ describe('withIdioma', () => {
 
   it('accepts all configuration options', async () => {
     const options: IdiomaMetroOptions = {
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
       locales: ['en', 'es', 'fr'],
       watch: false,
@@ -132,8 +135,7 @@ describe('withIdioma', () => {
 
 describe('Metro watcher', () => {
   const defaultOptions: IdiomaMetroOptions = {
-    localeDir: './locales',
-    outputDir: './src/idioma',
+    idiomaDir: './src/idioma',
     defaultLocale: 'en',
   };
 
@@ -153,7 +155,7 @@ describe('Metro watcher', () => {
     await wrapper({ projectRoot: '/test' });
 
     expect(watch).toHaveBeenCalledWith(
-      '/test/locales/**/*.po',
+      '/test/src/idioma/locales/**/*.po',
       expect.objectContaining({
         ignoreInitial: true,
       }),
@@ -194,7 +196,7 @@ describe('Metro watcher', () => {
     mockCompileTranslations.mockClear();
 
     // Simulate file change
-    await changeHandler('/test/locales/es.po');
+    await changeHandler('/test/src/idioma/locales/es.po');
 
     expect(mockCompileTranslations).toHaveBeenCalled();
   });
@@ -214,7 +216,7 @@ describe('Metro watcher', () => {
     mockCompileTranslations.mockClear();
 
     // Simulate file add
-    await addHandler('/test/locales/fr.po');
+    await addHandler('/test/src/idioma/locales/fr.po');
 
     expect(mockCompileTranslations).toHaveBeenCalled();
   });
@@ -231,7 +233,7 @@ describe('Metro watcher', () => {
     );
     const changeHandler = changeCall![1];
 
-    await changeHandler('/test/locales/es.po');
+    await changeHandler('/test/src/idioma/locales/es.po');
 
     expect(utimes).toHaveBeenCalledWith(
       '/test/src/idioma/index.ts',
@@ -252,8 +254,7 @@ describe('error handling', () => {
     mockCompileTranslations.mockRejectedValueOnce(new Error('Compile failed'));
 
     const wrapper = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
 
@@ -272,8 +273,7 @@ describe('error handling', () => {
     (utimes as Mock).mockRejectedValueOnce(new Error('File not found'));
 
     const wrapper = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
     await wrapper({ projectRoot: '/test' });
@@ -285,6 +285,8 @@ describe('error handling', () => {
     const changeHandler = changeCall![1];
 
     // Should not throw
-    await expect(changeHandler('/test/locales/es.po')).resolves.not.toThrow();
+    await expect(
+      changeHandler('/test/src/idioma/locales/es.po'),
+    ).resolves.not.toThrow();
   });
 });

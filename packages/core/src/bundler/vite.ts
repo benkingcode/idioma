@@ -1,11 +1,14 @@
+import { join } from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { compileTranslations } from '../compiler/compile';
+import { ensureGitignore } from '../utils/gitignore';
 
 export interface IdiomaViteOptions {
-  /** Directory containing .po files */
-  localeDir: string;
-  /** Output directory for compiled translations */
-  outputDir: string;
+  /**
+   * Base directory for Idioma files.
+   * PO files are in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   */
+  idiomaDir: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -32,8 +35,11 @@ export interface IdiomaViteOptions {
  * - Supports Suspense mode for lazy loading translations
  */
 export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
-  const { localeDir, outputDir, defaultLocale, locales, watch, useSuspense } =
-    options;
+  const { idiomaDir, defaultLocale, locales, watch, useSuspense } = options;
+
+  // Compute derived paths
+  const localeDir = join(idiomaDir, 'locales');
+  const outputDir = idiomaDir;
 
   let config: ResolvedConfig;
   let isDevMode = false;
@@ -41,6 +47,9 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
 
   async function compile() {
     try {
+      // Ensure .gitignore exists
+      await ensureGitignore(idiomaDir);
+
       await compileTranslations({
         localeDir,
         outputDir,

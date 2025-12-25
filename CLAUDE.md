@@ -108,11 +108,27 @@ Projects use `idioma.config.ts`:
 import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
-  localeDir: './locales',
-  outputDir: './src/idioma',
+  idiomaDir: './src/idioma',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
 });
+```
+
+### Folder Structure
+
+The `idiomaDir` contains all Idioma files:
+
+```
+src/idioma/
+├── .gitignore           # Auto-generated (ignores .generated/)
+├── locales/             # PO files (git tracked)
+│   ├── en.po
+│   └── es.po
+├── index.ts             # User import: Trans, useT, etc.
+├── plain.ts             # User import: createT (non-React)
+└── .generated/          # Internal files (gitignored)
+    ├── translations.js
+    └── types.ts
 ```
 
 ### Key Conventions

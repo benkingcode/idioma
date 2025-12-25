@@ -2,12 +2,14 @@ import { utimes } from 'fs/promises';
 import { watch, type FSWatcher } from 'chokidar';
 import { join, resolve } from 'pathe';
 import { compileTranslations } from '../compiler/compile';
+import { ensureGitignore } from '../utils/gitignore';
 
 export interface IdiomaMetroOptions {
-  /** Directory containing .po files */
-  localeDir: string;
-  /** Output directory for compiled translations */
-  outputDir: string;
+  /**
+   * Base directory for Idioma files.
+   * PO files are in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   */
+  idiomaDir: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -44,8 +46,7 @@ interface MetroConfig {
  * const config = getDefaultConfig(__dirname);
  *
  * module.exports = withIdioma({
- *   localeDir: './locales',
- *   outputDir: './src/idioma',
+ *   idiomaDir: './src/idioma',
  *   defaultLocale: 'en',
  * })(config);
  */
@@ -53,19 +54,27 @@ export function withIdioma(
   options: IdiomaMetroOptions,
 ): (config: MetroConfig) => Promise<MetroConfig> {
   const {
-    localeDir,
-    outputDir,
+    idiomaDir,
     defaultLocale,
     locales,
     watch: enableWatch = true,
     useSuspense,
   } = options;
 
+  // Compute derived paths
+  const localeDir = join(idiomaDir, 'locales');
+  const outputDir = idiomaDir;
+
   let watcher: FSWatcher | null = null;
   let projectRoot = '';
 
   async function compile(): Promise<void> {
     try {
+      const resolvedIdiomaDir = resolve(projectRoot, idiomaDir);
+
+      // Ensure .gitignore exists
+      await ensureGitignore(resolvedIdiomaDir);
+
       await compileTranslations({
         localeDir: resolve(projectRoot, localeDir),
         outputDir: resolve(projectRoot, outputDir),

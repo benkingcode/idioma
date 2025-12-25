@@ -79,8 +79,10 @@ export async function compileTranslations(
     projectRoot,
   } = options;
 
-  // Ensure output directory exists
+  // Ensure output directories exist
   await fs.mkdir(outputDir, { recursive: true });
+  const generatedDir = join(outputDir, '.generated');
+  await fs.mkdir(generatedDir, { recursive: true });
 
   // Detect all locales (from flat .po files and namespace directories)
   const files = await fs.readdir(localeDir);
@@ -178,30 +180,31 @@ export async function compileTranslations(
     }
   }
 
-  // Generate output files
-  await generateTranslationsJs(outputDir, allMessages);
-  await generateTypesTs(outputDir, allMessages, [...catalogs.keys()]);
+  // Generate internal files to .generated/
+  await generateTranslationsJs(generatedDir, allMessages);
+  await generateTypesTs(generatedDir, allMessages, [...catalogs.keys()]);
 
   // Generate suspense-specific files or standard index
   if (useSuspense && locales && projectRoot) {
     // Analyze chunks from catalog references
     const chunkAnalysis = analyzeChunksFromCatalogs(catalogs, projectRoot);
 
-    // Generate chunk files
+    // Generate chunk files to .generated/
     await generateChunkModules({
-      outputDir,
+      outputDir: generatedDir,
       locales,
       analysis: chunkAnalysis,
       catalogs,
     });
 
-    // Generate suspense-aware index.ts
+    // Generate suspense-aware index.ts (user-facing, at outputDir root)
     await generateIndexTsSuspense(outputDir, locales);
   } else {
+    // Generate standard index.ts (user-facing, at outputDir root)
     await generateIndexTs(outputDir);
   }
 
-  // Generate plain.ts for imperative translation (non-React, RSC, etc.)
+  // Generate plain.ts for imperative translation (user-facing, at outputDir root)
   await generatePlainTs(outputDir);
 }
 
@@ -372,14 +375,14 @@ import {
   Plural,
   plural,
 } from '@idioma/react';
-import { translations } from './translations.js';
+import { translations } from './.generated/translations.js';
 import type {
   Locale,
   MessageComponents,
   MessageValues,
   StringOnlyKey,
   TranslationKey,
-} from './types';
+} from './.generated/types';
 
 export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>(translations);
 export const useT = createUseT<StringOnlyKey, MessageValues>(translations);
@@ -418,7 +421,7 @@ import type {
   MessageValues,
   StringOnlyKey,
   TranslationKey,
-} from './types';
+} from './.generated/types';
 
 const config = {
   locales: ${JSON.stringify(locales)} as const,
@@ -446,7 +449,7 @@ async function generatePlainTs(outputDir: string): Promise<void> {
 // Do not edit directly
 // Plain JavaScript translation utilities (no React dependency)
 
-import type { StringOnlyKey, MessageValues } from './types';
+import type { StringOnlyKey, MessageValues } from './.generated/types';
 
 // Re-export createT from runtime.
 // In production, Babel inlines translations at each call site.

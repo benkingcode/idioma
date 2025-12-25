@@ -7,7 +7,8 @@ import { glob } from 'fast-glob';
 import { mergeCatalogs } from '../../po/merge';
 import { loadPoFile, writePoFile } from '../../po/parser';
 import type { Catalog, Message } from '../../po/types';
-import { loadConfig } from '../config';
+import { ensureGitignore } from '../../utils/gitignore';
+import { getIdiomaPaths, loadConfig } from '../config';
 
 export interface ExtractedMessage {
   key: string;
@@ -330,11 +331,15 @@ export const extractCommand = defineCommand({
   async run({ args }) {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
+    const { localeDir } = getIdiomaPaths(config);
+
+    // Ensure .gitignore exists in the idioma directory
+    await ensureGitignore(config.idiomaDir);
 
     const result = await extractMessages({
       cwd,
       sourcePatterns: config.sourcePatterns ?? ['**/*.tsx', '**/*.jsx'],
-      localeDir: config.localeDir,
+      localeDir,
       defaultLocale: config.defaultLocale,
       locales: config.locales,
       clean: args.clean,

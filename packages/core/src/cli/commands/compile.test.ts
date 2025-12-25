@@ -39,10 +39,14 @@ msgstr "Hello"
       defaultLocale: 'en',
     });
 
-    const files = await fs.readdir(outputDir);
-    expect(files).toContain('translations.js');
-    expect(files).toContain('types.ts');
-    expect(files).toContain('index.ts');
+    // User-facing files at outputDir root
+    const rootFiles = await fs.readdir(outputDir);
+    expect(rootFiles).toContain('index.ts');
+
+    // Internal files in .generated/
+    const generatedFiles = await fs.readdir(join(outputDir, '.generated'));
+    expect(generatedFiles).toContain('translations.js');
+    expect(generatedFiles).toContain('types.ts');
   });
 
   it('generates translations.js with all locales', async () => {
@@ -76,7 +80,7 @@ msgstr "Hola"
     });
 
     const content = await fs.readFile(
-      join(outputDir, 'translations.js'),
+      join(outputDir, '.generated', 'translations.js'),
       'utf-8',
     );
     expect(content).toContain('Hello');
@@ -115,7 +119,10 @@ msgstr "Bonjour"
       defaultLocale: 'en',
     });
 
-    const content = await fs.readFile(join(outputDir, 'types.ts'), 'utf-8');
+    const content = await fs.readFile(
+      join(outputDir, '.generated', 'types.ts'),
+      'utf-8',
+    );
     expect(content).toContain('Locale');
     expect(content).toContain('"en"');
     expect(content).toContain('"fr"');
@@ -143,7 +150,10 @@ msgstr "Goodbye"
       defaultLocale: 'en',
     });
 
-    const content = await fs.readFile(join(outputDir, 'types.ts'), 'utf-8');
+    const content = await fs.readFile(
+      join(outputDir, '.generated', 'types.ts'),
+      'utf-8',
+    );
     expect(content).toContain('TranslationKey');
     expect(content).toContain('"Hello"');
     expect(content).toContain('"Goodbye"');
@@ -175,6 +185,8 @@ msgstr "Hello"
       'export const IdiomaProvider = createIdiomaProvider',
     );
     expect(content).toContain('export type {');
+    // index.ts should import from .generated/
+    expect(content).toContain('./.generated/translations.js');
   });
 
   it('returns compile result with stats', async () => {

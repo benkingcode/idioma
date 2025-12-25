@@ -49,7 +49,7 @@ msgstr "Hello"
     expect(stats.isDirectory()).toBe(true);
   });
 
-  it('generates translations.js with message data', async () => {
+  it('generates translations.js with message data in .generated/', async () => {
     await createPoFile(
       'en',
       `
@@ -80,7 +80,7 @@ msgstr "Hola"
       defaultLocale: 'en',
     });
 
-    const translationsPath = join(outputDir, 'translations.js');
+    const translationsPath = join(outputDir, '.generated', 'translations.js');
     const content = await fs.readFile(translationsPath, 'utf-8');
 
     expect(content).toContain('Hello');
@@ -88,7 +88,7 @@ msgstr "Hola"
     expect(content).toContain('export');
   });
 
-  it('generates types.ts with TypeScript definitions', async () => {
+  it('generates types.ts with TypeScript definitions in .generated/', async () => {
     await createPoFile(
       'en',
       `
@@ -107,14 +107,14 @@ msgstr "Hello {name}"
       defaultLocale: 'en',
     });
 
-    const typesPath = join(outputDir, 'types.ts');
+    const typesPath = join(outputDir, '.generated', 'types.ts');
     const content = await fs.readFile(typesPath, 'utf-8');
 
     expect(content).toContain('interface');
     expect(content).toContain('name');
   });
 
-  it('generates index.ts with exports', async () => {
+  it('generates index.ts with exports at outputDir root', async () => {
     await createPoFile(
       'en',
       `
@@ -137,7 +137,7 @@ msgstr "Hello"
     const content = await fs.readFile(indexPath, 'utf-8');
 
     expect(content).toContain('export');
-    expect(content).toContain('translations');
+    expect(content).toContain('./.generated/translations.js');
   });
 
   it('compiles ICU plural messages to functions', async () => {
@@ -160,7 +160,7 @@ msgstr "{count, plural, one {# item} other {# items}}"
       defaultLocale: 'en',
     });
 
-    const translationsPath = join(outputDir, 'translations.js');
+    const translationsPath = join(outputDir, '.generated', 'translations.js');
     const content = await fs.readFile(translationsPath, 'utf-8');
 
     // Compiled plural should be an arrow function
@@ -191,12 +191,12 @@ msgstr "Hello"
         projectRoot: tempDir,
       });
 
-      const chunksDir = join(outputDir, 'chunks');
+      const chunksDir = join(outputDir, '.generated', 'chunks');
       const stats = await fs.stat(chunksDir);
       expect(stats.isDirectory()).toBe(true);
     });
 
-    it('generates chunk files per locale', async () => {
+    it('generates chunk files per locale in .generated/', async () => {
       await createPoFile(
         'en',
         `
@@ -232,12 +232,12 @@ msgstr "Hola"
         projectRoot: tempDir,
       });
 
-      const files = await fs.readdir(join(outputDir, 'chunks'));
+      const files = await fs.readdir(join(outputDir, '.generated', 'chunks'));
       expect(files.some((f) => f.endsWith('.en.ts'))).toBe(true);
       expect(files.some((f) => f.endsWith('.es.ts'))).toBe(true);
     });
 
-    it('generates manifest.json', async () => {
+    it('generates manifest.json in .generated/', async () => {
       await createPoFile(
         'en',
         `
@@ -261,7 +261,10 @@ msgstr "Hello"
       });
 
       const manifest = JSON.parse(
-        await fs.readFile(join(outputDir, 'manifest.json'), 'utf-8'),
+        await fs.readFile(
+          join(outputDir, '.generated', 'manifest.json'),
+          'utf-8',
+        ),
       );
       expect(manifest.chunks).toBeDefined();
     });

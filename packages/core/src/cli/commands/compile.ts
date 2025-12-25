@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import { compileTranslations } from '../../compiler/compile';
-import { loadConfig } from '../config';
+import { ensureGitignore } from '../../utils/gitignore';
+import { getIdiomaPaths, loadConfig } from '../config';
 
 export interface CompileResult {
   messageCount: number;
@@ -35,8 +36,8 @@ export async function runCompile(
   const poFiles = files.filter((f) => f.endsWith('.po'));
   const locales = poFiles.map((f) => f.replace('.po', ''));
 
-  // Count messages from the translations file
-  const translationsPath = join(outputDir, 'translations.js');
+  // Count messages from the translations file (in .generated/)
+  const translationsPath = join(outputDir, '.generated', 'translations.js');
   const content = await fs.readFile(translationsPath, 'utf-8');
   const messageCount = (content.match(/^\s*"/gm) || []).length / 2;
 
@@ -55,12 +56,16 @@ export const compileCommand = defineCommand({
   async run() {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
+    const { localeDir, outputDir } = getIdiomaPaths(config);
+
+    // Ensure .gitignore exists in the idioma directory
+    await ensureGitignore(config.idiomaDir);
 
     console.log('Compiling translations...');
 
     const result = await runCompile({
-      localeDir: config.localeDir,
-      outputDir: config.outputDir,
+      localeDir,
+      outputDir,
       defaultLocale: config.defaultLocale,
     });
 

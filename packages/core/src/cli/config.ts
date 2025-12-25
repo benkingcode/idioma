@@ -3,10 +3,11 @@ import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 
 export interface IdiomaConfig {
-  /** Directory containing .po files */
-  localeDir: string;
-  /** Output directory for compiled translations */
-  outputDir: string;
+  /**
+   * Base directory for Idioma files.
+   * PO files go in {idiomaDir}/locales/, generated files in {idiomaDir}/
+   */
+  idiomaDir: string;
   /** Default/source locale */
   defaultLocale: string;
   /** List of supported locales (auto-detected from PO files if not specified) */
@@ -48,6 +49,21 @@ const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'];
  */
 export function defineConfig(config: IdiomaConfig): IdiomaConfig {
   return config;
+}
+
+/**
+ * Compute derived paths from idiomaDir.
+ * - localeDir: where PO files are stored
+ * - outputDir: where generated files go (same as idiomaDir)
+ */
+export function getIdiomaPaths(config: IdiomaConfig): {
+  localeDir: string;
+  outputDir: string;
+} {
+  return {
+    localeDir: join(config.idiomaDir, 'locales'),
+    outputDir: config.idiomaDir,
+  };
 }
 
 /**

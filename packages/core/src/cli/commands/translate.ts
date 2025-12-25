@@ -13,7 +13,7 @@ import {
   type TranslationProvider,
 } from '../../ai/provider';
 import { loadPoFile, writePoFile } from '../../po/parser';
-import { loadConfig } from '../config';
+import { getIdiomaPaths, loadConfig } from '../config';
 
 export interface TranslateResult {
   translated: number;
@@ -245,13 +245,15 @@ export const translateCommand = defineCommand({
       }
     }
 
+    const { localeDir } = getIdiomaPaths(config);
+
     console.log(`Translating to ${args.locale} using ${provider.name}...`);
     if (autoContext && contextProvider) {
       console.log('Auto-context generation enabled');
     }
 
     const result = await runTranslate({
-      localeDir: config.localeDir,
+      localeDir,
       defaultLocale: config.defaultLocale,
       targetLocale: args.locale as string,
       provider,

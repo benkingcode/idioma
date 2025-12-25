@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import { defineCommand } from 'citty';
 import { loadPoFile } from '../../po/parser';
-import { loadConfig } from '../config';
+import { getIdiomaPaths, loadConfig } from '../config';
 
 export interface MissingTranslation {
   locale: string;
@@ -110,9 +110,10 @@ export const checkCommand = defineCommand({
   async run({ args }) {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
+    const { localeDir } = getIdiomaPaths(config);
 
     const result = await runCheck({
-      localeDir: config.localeDir,
+      localeDir,
       locale: args.locale,
     });
 

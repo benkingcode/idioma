@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import idiomaVitePlugin, { type IdiomaViteOptions } from './vite';
+
+// Mock ensureGitignore
+vi.mock('../utils/gitignore', () => ({
+  ensureGitignore: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('Idioma Vite Plugin', () => {
   it('creates a plugin with correct name', () => {
     const plugin = idiomaVitePlugin({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
 
@@ -14,8 +18,7 @@ describe('Idioma Vite Plugin', () => {
 
   it('returns plugin object with expected hooks', () => {
     const plugin = idiomaVitePlugin({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
 
@@ -26,8 +29,7 @@ describe('Idioma Vite Plugin', () => {
 
   it('accepts all configuration options', () => {
     const options: IdiomaViteOptions = {
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
       locales: ['en', 'es', 'fr'],
       watch: true,
@@ -40,8 +42,7 @@ describe('Idioma Vite Plugin', () => {
 
   it('has enforce: pre for early processing', () => {
     const plugin = idiomaVitePlugin({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
 

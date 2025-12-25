@@ -45,11 +45,20 @@ Create a config file:
 import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
-  localeDir: './locales',
-  outputDir: './src/idioma',
+  idiomaDir: './src/idioma',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
 });
+```
+
+This creates a folder structure:
+
+```
+src/idioma/
+├── locales/      # PO files (git tracked)
+├── index.ts      # Trans, useT, etc.
+├── plain.ts      # createT (non-React)
+└── .generated/   # Internal files (gitignored)
 ```
 
 Set up the provider:
@@ -84,8 +93,7 @@ Add the Next.js plugin to your config:
 import { withIdioma } from '@idioma/core/next';
 
 export default withIdioma({
-  localeDir: './locales',
-  outputDir: './src/idioma',
+  idiomaDir: './src/idioma',
   defaultLocale: 'en',
 })({
   // your other Next.js config
@@ -132,8 +140,7 @@ const { withIdioma } = require('@idioma/core/metro');
 const config = getDefaultConfig(__dirname);
 
 module.exports = withIdioma({
-  localeDir: './locales',
-  outputDir: './src/idioma',
+  idiomaDir: './src/idioma',
   defaultLocale: 'en',
 })(config);
 ```
@@ -488,11 +495,9 @@ idioma stats
 import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
-  // Where PO files are stored
-  localeDir: './locales',
-
-  // Where compiled translations go
-  outputDir: './src/idioma',
+  // Base directory for all Idioma files
+  // PO files go in {idiomaDir}/locales/, generated files in {idiomaDir}/
+  idiomaDir: './src/idioma',
 
   // Source language
   defaultLocale: 'en',
@@ -578,8 +583,7 @@ For apps where initial load size is critical, Suspense mode takes optimization f
 ```ts
 // idioma.config.ts
 export default defineConfig({
-  localeDir: './locales',
-  outputDir: './src/idioma',
+  idiomaDir: './src/idioma',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
   useSuspense: true, // Enable lazy loading

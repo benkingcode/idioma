@@ -2,17 +2,20 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { compileTranslations } from '../compiler/compile';
 import { withIdioma, type IdiomaNextOptions } from './next';
 
-// Mock compileTranslations
+// Mock compileTranslations and ensureGitignore
 vi.mock('../compiler/compile', () => ({
   compileTranslations: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../utils/gitignore', () => ({
+  ensureGitignore: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockCompileTranslations = compileTranslations as Mock;
 
 describe('withIdioma', () => {
   const defaultOptions: IdiomaNextOptions = {
-    localeDir: './locales',
-    outputDir: './src/idioma',
+    idiomaDir: './src/idioma',
     defaultLocale: 'en',
   };
 
@@ -71,8 +74,7 @@ describe('withIdioma', () => {
 
   it('accepts all configuration options', () => {
     const options: IdiomaNextOptions = {
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
       locales: ['en', 'es', 'fr'],
       useSuspense: true,
@@ -137,8 +139,7 @@ describe('IdiomaWebpackPlugin', () => {
 
   it('compiles translations on beforeCompile hook', async () => {
     const plugin = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -179,7 +180,7 @@ describe('IdiomaWebpackPlugin', () => {
     await beforeCompileCallback({}, callback);
 
     expect(mockCompileTranslations).toHaveBeenCalledWith({
-      localeDir: './locales',
+      localeDir: 'src/idioma/locales',
       outputDir: './src/idioma',
       defaultLocale: 'en',
       locales: undefined,
@@ -191,8 +192,7 @@ describe('IdiomaWebpackPlugin', () => {
 
   it('only compiles once per build', async () => {
     const plugin = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -234,8 +234,7 @@ describe('IdiomaWebpackPlugin', () => {
 
   it('sets up watchRun hook in dev mode', () => {
     const plugin = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -266,8 +265,7 @@ describe('IdiomaWebpackPlugin', () => {
 
   it('recompiles when PO files change in dev mode', async () => {
     const plugin = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -301,7 +299,7 @@ describe('IdiomaWebpackPlugin', () => {
 
     // Simulate watching with PO file change
     const mockWatching = {
-      modifiedFiles: new Set(['./locales/en.po']),
+      modifiedFiles: new Set(['./src/idioma/locales/en.po']),
     };
 
     const callback = vi.fn();
@@ -313,8 +311,7 @@ describe('IdiomaWebpackPlugin', () => {
 
   it('does not recompile when non-PO files change', async () => {
     const plugin = withIdioma({
-      localeDir: './locales',
-      outputDir: './src/idioma',
+      idiomaDir: './src/idioma',
       defaultLocale: 'en',
     });
     const config = plugin({});

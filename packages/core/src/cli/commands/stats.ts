@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import { defineCommand } from 'citty';
 import { loadPoFile } from '../../po/parser';
-import { loadConfig } from '../config';
+import { getIdiomaPaths, loadConfig } from '../config';
 
 export interface LocaleStats {
   locale: string;
@@ -99,9 +99,10 @@ export const statsCommand = defineCommand({
   async run() {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
+    const { localeDir } = getIdiomaPaths(config);
 
     const result = await runStats({
-      localeDir: config.localeDir,
+      localeDir,
     });
 
     console.log(`Translation Statistics`);
