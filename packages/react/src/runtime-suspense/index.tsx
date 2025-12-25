@@ -20,6 +20,7 @@ import {
   renderMessage,
   type TransComponent,
 } from '../interpolate';
+import { generateKey } from '../server/generateKey';
 
 // ============ React Version Check ============
 
@@ -289,10 +290,16 @@ export function __useTSuspense(
   // use() suspends until promise resolves
   const translations = use(getTranslations(locale, chunk, loader));
 
-  return (key: string, values?: Record<string, unknown>) => {
+  return (source: string, values?: Record<string, unknown>) => {
+    // Generate hash key from source message
+    const key = generateKey(source);
     const msg = translations[key];
     if (msg === undefined) {
-      return key;
+      // Fallback: return source with values interpolated if possible
+      if (values && Object.keys(values).length > 0) {
+        return interpolateValues(source, values);
+      }
+      return source;
     }
     // Handle ICU-compiled functions
     if (typeof msg === 'function') {

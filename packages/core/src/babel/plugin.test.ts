@@ -661,4 +661,178 @@ describe('Idioma Babel Plugin', () => {
       );
     });
   });
+
+  describe('useT suspense mode', () => {
+    const suspenseOptions = {
+      useSuspense: true,
+      locales: ['en', 'es'],
+      outputDir: './idioma',
+      projectRoot: '/project',
+    };
+
+    it('transforms useT() to __useTSuspense with chunk and loader in production', () => {
+      const code = `
+        import { useT } from './idioma'
+        function MyComponent() {
+          const t = useT()
+          return t('Hello')
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        ...suspenseOptions,
+      });
+
+      expect(result).toContain('__useTSuspense');
+      expect(result).toContain('__$idiomaChunk');
+      expect(result).toContain('__$idiomaLoad');
+    });
+
+    it('transforms useT() to __useTSuspense in development mode too', () => {
+      const code = `
+        import { useT } from './idioma'
+        function MyComponent() {
+          const t = useT()
+          return t('Hello')
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'development',
+        ...suspenseOptions,
+      });
+
+      // Unlike Trans, useT should transform in dev mode too for suspense
+      expect(result).toContain('__useTSuspense');
+      expect(result).toContain('__$idiomaChunk');
+      expect(result).toContain('__$idiomaLoad');
+    });
+
+    it('imports __useTSuspense from runtime-suspense', () => {
+      const code = `
+        import { useT } from './idioma'
+        const t = useT()
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        ...suspenseOptions,
+      });
+
+      expect(result).toContain('import {');
+      expect(result).toContain('__useTSuspense');
+      expect(result).toContain('@idioma/react/runtime-suspense');
+    });
+
+    it('injects chunk and loader when only useT is used (no Trans)', () => {
+      const code = `
+        import { useT } from './idioma'
+        function MyComponent() {
+          const t = useT()
+          return t('Hello')
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        ...suspenseOptions,
+      });
+
+      expect(result).toContain('__$idiomaChunk');
+      expect(result).toContain('__$idiomaLoad');
+      expect(result).toContain('import(');
+      // Dynamic imports for each locale
+      expect(result).toContain('.en');
+      expect(result).toContain('.es');
+    });
+
+    it('handles multiple useT calls in same file', () => {
+      const code = `
+        import { useT } from './idioma'
+        function A() { const t = useT(); return t('A') }
+        function B() { const t = useT(); return t('B') }
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        ...suspenseOptions,
+      });
+
+      // Both should be transformed
+      const useTMatches = result.match(/__useTSuspense\(/g);
+      expect(useTMatches?.length).toBe(2);
+
+      // Only one chunk declaration (shared)
+      const chunkMatches = result.match(/const __\$idiomaChunk/g);
+      expect(chunkMatches?.length).toBe(1);
+    });
+
+    it('handles mixed Trans and useT in same file', () => {
+      const code = `
+        import { Trans, useT } from './idioma'
+        function MyComponent() {
+          const t = useT()
+          return <div><Trans>Hello</Trans>{t('World')}</div>
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        ...suspenseOptions,
+      });
+
+      expect(result).toContain('__TransSuspense');
+      expect(result).toContain('__useTSuspense');
+      // Only one set of chunk/loader injected
+      const chunkMatches = result.match(/const __\$idiomaChunk/g);
+      expect(chunkMatches?.length).toBe(1);
+    });
+
+    it('handles aliased useT import', () => {
+      const code = `
+        import { useT as useTranslation } from './idioma'
+        function MyComponent() {
+          const t = useTranslation()
+          return t('Hello')
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        ...suspenseOptions,
+      });
+
+      expect(result).toContain('__useTSuspense');
+    });
+
+    it('does not transform useT in non-suspense mode', () => {
+      const code = `
+        import { useT } from './idioma'
+        const t = useT()
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: false,
+      });
+
+      expect(result).toContain('useT()');
+      expect(result).not.toContain('__useTSuspense');
+    });
+
+    it('does not transform useT when useSuspense is not set', () => {
+      const code = `
+        import { useT } from './idioma'
+        const t = useT()
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+      });
+
+      expect(result).toContain('useT()');
+      expect(result).not.toContain('__useTSuspense');
+    });
+  });
 });

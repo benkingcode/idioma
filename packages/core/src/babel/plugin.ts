@@ -53,6 +53,8 @@ interface PluginState {
   hasDynamicT: boolean;
   /** Paths to createT() calls that need translations injected */
   createTCalls: NodePath<t.CallExpression>[];
+  /** Local name of useT import (tracks aliased imports) */
+  useTImportName: string | null;
 }
 
 /**
@@ -87,6 +89,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         : 'unknown';
       this.hasDynamicT = false;
       this.createTCalls = [];
+      this.useTImportName = null;
     },
 
     visitor: {
@@ -146,12 +149,16 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
               chunkRelPath = './' + chunkRelPath;
             }
 
-            // Inject import for __TransSuspense
+            // Inject imports for suspense runtime (__TransSuspense and __useTSuspense)
             const importDecl = t.importDeclaration(
               [
                 t.importSpecifier(
                   t.identifier('__TransSuspense'),
                   t.identifier('__TransSuspense'),
+                ),
+                t.importSpecifier(
+                  t.identifier('__useTSuspense'),
+                  t.identifier('__useTSuspense'),
                 ),
               ],
               t.stringLiteral('@idioma/react/runtime-suspense'),
@@ -206,13 +213,62 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
 
       /**
+       * Detect useT imports from user's idioma folder.
+       * Tracks the local name to handle aliased imports.
+       */
+      ImportDeclaration(path: NodePath<t.ImportDeclaration>, state) {
+        const source = path.node.source.value;
+
+        // Check if importing from user's idioma folder (relative paths)
+        // This handles: './idioma', '../idioma', './src/idioma', etc.
+        // But NOT from '@idioma/*' packages
+        if (!source.includes('idioma') || source.startsWith('@idioma/')) {
+          return;
+        }
+
+        // Find useT import specifier
+        for (const specifier of path.node.specifiers) {
+          if (t.isImportSpecifier(specifier)) {
+            const imported = t.isIdentifier(specifier.imported)
+              ? specifier.imported.name
+              : specifier.imported.value;
+
+            if (imported === 'useT') {
+              state.useTImportName = specifier.local.name;
+            }
+          }
+        }
+      },
+
+      /**
        * Transform t() calls from createT.
        * In production: inlines translations as second argument.
        * In development: optionally extracts messages.
        */
       CallExpression(path: NodePath<t.CallExpression>, state) {
-        const { opts, filename } = state;
+        const { opts, filename, useTImportName } = state;
         const callee = path.node.callee;
+
+        // Handle useT() calls in suspense mode
+        // Unlike Trans, useT transforms in BOTH dev and prod for consistent Suspense behavior
+        if (
+          t.isIdentifier(callee) &&
+          useTImportName &&
+          callee.name === useTImportName &&
+          opts.useSuspense
+        ) {
+          // Mark that idioma is used (triggers chunk/loader injection)
+          state.idiomaUsed = true;
+
+          // Transform: useT() → __useTSuspense(__$idiomaChunk, __$idiomaLoad)
+          path.replaceWith(
+            t.callExpression(t.identifier('__useTSuspense'), [
+              t.identifier('__$idiomaChunk'),
+              t.identifier('__$idiomaLoad'),
+            ]),
+          );
+          return;
+        }
 
         // Track createT() calls for potential translation injection
         if (t.isIdentifier(callee) && callee.name === 'createT') {
