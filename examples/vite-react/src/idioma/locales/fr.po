@@ -10,7 +10,7 @@ msgid "Idioma Example"
 msgstr "Exemple Idioma"
 
 #: src/App.tsx:19
-#. [AI Context]: Label for language selector dropdown in the header
+#. [AI Context]: Label for language selection dropdown in the header
 #, ai-translated
 msgid "Language"
 msgstr "Langue"
@@ -22,25 +22,25 @@ msgid "Interpolation"
 msgstr "Interpolation"
 
 #: src/App.tsx:40
-#. [AI Context]: Section heading for demonstrating plural form handling features
+#. [AI Context]: Section heading for demonstrating pluralization features
 #, ai-translated
 msgid "Pluralization"
 msgstr "Pluralisation"
 
 #: src/App.tsx:47
-#. [AI Context]: Section heading for demonstrating programmatic messaging features
+#. [AI Context]: Section heading for demonstrating imperative API usage
 #, ai-translated
 msgid "Imperative API"
 msgstr "API Impérative"
 
 #: src/components/Counter.tsx:11
-#. [AI Context]: Text displayed in a counter component showing the number of items in user's shopping cart. The {count} shows a number and {itemLabel} will be either 'item' (singular) or 'items' (plural) based on the count value.
+#. [AI Context]: Shopping cart status message showing the number of items. The {count} variable is a number and {itemLabel} changes between 'item' (singular) and 'items' (plural) based on the count.
 #, ai-translated
 msgid "You have {count} {itemLabel} in your cart."
 msgstr "Vous avez {count} {itemLabel} dans votre panier."
 
 #: src/components/Greeting.tsx:10
-#. [AI Context]: Personalized greeting message displayed in a paragraph element, where {name} is replaced with the user's actual name.
+#. [AI Context]: Personalized greeting message displayed to users when they visit the page, where {name} is replaced with the user's actual name.
 #, ai-translated
 msgid "Hello, {name}!"
 msgstr "Bonjour, {name} !"

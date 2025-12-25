@@ -23,10 +23,10 @@ msgstr "Pluralization"
 msgid "Imperative API"
 msgstr "Imperative API"
 
-#: src/components/Greeting.tsx:10
-msgid "Hello, {name}!"
-msgstr "Hello, {name}!"
-
 #: src/components/Counter.tsx:11
 msgid "You have {count} {itemLabel} in your cart."
 msgstr "You have {count} {itemLabel} in your cart."
+
+#: src/components/Greeting.tsx:10
+msgid "Hello, {name}!"
+msgstr "Hello, {name}!"
