@@ -108,3 +108,15 @@ export default defineConfig({
 - ICU MessageFormat for plurals/selects: `{count, plural, one {# item} other {# items}}`
 - Component interpolation uses numbered tags: `<0>bold</0> and <1>italic</1>`
 - PO files follow gettext format with ICU in msgstr
+
+## Documentation
+
+**Keep the README up to date.** When making changes that affect:
+
+- Public API (new features, changed behavior, deprecations)
+- Installation or setup steps
+- CLI commands or options
+- Configuration options
+- Usage examples
+
+Update the README.md accordingly to reflect these changes.
