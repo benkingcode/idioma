@@ -34,6 +34,19 @@ pnpm test --watch
 pnpm test packages/core/src/babel/plugin.test.ts
 ```
 
+## Task Completion Checklist
+
+**Before considering any task complete, you MUST:**
+
+1. **Run TypeScript type checking**: `pnpm typecheck`
+   - Fix ALL type errors before marking the task as done
+   - Do not skip this step, even for "small" changes
+2. **Run tests**: `pnpm test` (or relevant test file)
+   - Ensure all tests pass
+3. **Verify no regressions**: Check that existing functionality still works
+
+If any of these checks fail, the task is NOT complete. Fix the issues before proceeding.
+
 ## Commands
 
 ```bash
