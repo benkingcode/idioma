@@ -1,5 +1,5 @@
 /**
- * Type-level tests for useT hook and createServerT.
+ * Type-level tests for useT hook and Trans component.
  *
  * These tests verify that TypeScript correctly catches type errors.
  * The @ts-expect-error comments should suppress errors on invalid usage,
@@ -11,7 +11,6 @@
 import { createTrans } from './createTrans';
 import { createUseT } from './createUseT';
 import type { TransComponent } from './interpolate';
-import { createServerT } from './server/createServerT';
 
 // Mock translations object for testing
 const translations = {
@@ -144,42 +143,6 @@ t('');
 
 // --- Multiple same placeholders should only require one value ---
 t('Hello {name}, goodbye {name}', { name: 'Ben' });
-
-// =============================================================================
-// SERVER-SIDE T FUNCTION (createServerT)
-// =============================================================================
-
-// Create typed server T (simulating what idioma/index.ts exports for RSC)
-const serverT = createServerT<StringOnlyKey, MessageValues>('en', translations);
-
-// === Key-only mode ===
-
-// @ts-expect-error - 'nonexistent' is not a valid StringOnlyKey
-serverT({ id: 'nonexistent' });
-
-// @ts-expect-error - 'greeting.name' requires values: { name }
-serverT({ id: 'greeting.name' });
-
-// @ts-expect-error - 'greeting.name' needs { name }, not { wrong }
-serverT({ id: 'greeting.name', values: { wrong: 'x' } });
-
-// Valid key-only usage
-serverT({ id: 'greeting' });
-serverT({ id: 'greeting.name', values: { name: 'Ben' } });
-serverT({ id: 'items.count', values: { count: 5 } });
-
-// === Source text mode ===
-
-// @ts-expect-error - 'Hello {name}' has placeholder, needs values
-serverT('Hello {name}');
-
-// @ts-expect-error - needs { name }, not { wrong }
-serverT('Hello {name}', { wrong: 'x' });
-
-// Valid source text usage
-serverT('Hello {name}', { name: 'Ben' });
-serverT('No placeholders here');
-serverT('Hello {name}', { name: 'Ben' }, { context: 'greeting' });
 
 // =============================================================================
 // TRANS COMPONENT (createTrans)

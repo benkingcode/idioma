@@ -186,11 +186,11 @@ The Metro plugin automatically compiles translations on startup and watches for 
 
 ## React Server Components
 
-For translations in React Server Components (RSC), use `createServerT`:
+For translations in React Server Components (RSC), use `createT` from the plain module:
 
 ```tsx
 // app/page.tsx (Server Component)
-import { createServerT } from '@/idioma/server';
+import { createT } from '@/idioma/plain';
 
 export default async function Page({
   params,
@@ -198,34 +198,29 @@ export default async function Page({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = createServerT(locale);
+  const t = createT(locale);
 
   return (
     <div>
-      <h1>{await t('Welcome to our app')}</h1>
-      <p>{await t('Hello {name}', { name: 'Ben' })}</p>
+      <h1>{t('Welcome to our app')}</h1>
+      <p>{t('Hello {name}', { name: 'Ben' })}</p>
     </div>
   );
 }
 ```
 
-The `t` function supports:
+The `t` function is synchronous and supports:
 
 ```ts
 // Source text (auto-hashed to key)
-await t('Hello world!');
+t('Hello world!');
 
 // With values (2nd arg)
-await t('Hello {name}', { name: 'Ben' });
-
-// With context (3rd arg - changes hash)
-await t('Submit', undefined, { context: 'button' });
-await t('Hello {name}', { name: 'Ben' }, { context: 'greeting' });
+t('Hello {name}', { name: 'Ben' });
 
 // Key-only mode (like <Trans id="...">)
-await t({ id: 'welcome' });
-await t({ id: 'greeting', values: { name: 'Ben' } });
-await t({ id: 'submit', context: 'modal' }); // context for translator reference
+t({ id: 'welcome' });
+t({ id: 'greeting', values: { name: 'Ben' } });
 ```
 
 The client-side `useT` hook uses the same API, so you can share translation patterns between server and client components.
