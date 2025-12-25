@@ -9,7 +9,7 @@
 - **Write natural JSX** — `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
 - **Content-addressable keys** — Messages auto-generate deterministic hash keys
 - **ICU MessageFormat** — Full support for plurals, selects, and complex logic
-- **AI translation** — Context-aware translation with Claude or GPT
+- **AI translation** — Automatic context generation from source code + translation with Claude or GPT
 - **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
 - **Type-safe output** — Generated TypeScript with full autocomplete
 - **Instant switching** — All locales bundled by default, or lazy-load with Suspense
@@ -329,12 +329,23 @@ idioma compile
 AI-powered translation (requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`):
 
 ```bash
-idioma translate --locale es              # Translate missing messages to Spanish
-idioma translate --locale es --force      # Retranslate all messages
-idioma translate --locale es --dry-run    # Preview without saving
-idioma translate --locale es --provider openai  # Use OpenAI instead of Anthropic
-idioma translate --locale es --mark-ai    # Mark translations with ai-translated flag (default: true)
+idioma translate es                    # Translate missing messages to Spanish
+idioma translate es --force            # Retranslate all messages
+idioma translate es --dry-run          # Preview without saving
+idioma translate es --provider openai  # Use OpenAI instead of Anthropic
+idioma translate es --no-auto-context  # Skip automatic context generation
 ```
+
+**Auto-context generation:** Before translating, Idioma reads your source files and uses AI to generate helpful context for each message (e.g., "Button label in checkout form"). This context is saved to the PO file and helps the translation AI produce more accurate results.
+
+```po
+#. [AI Context]: Button label shown when user confirms their order
+#: src/components/Checkout.tsx:42
+msgid "Confirm"
+msgstr "Confirmar"
+```
+
+Context is generated per-file for token efficiency. Messages that already have context (from `<Trans context="...">` or previous AI generation) are skipped.
 
 ### check
 
@@ -400,10 +411,16 @@ Idioma uses the standard [gettext PO format](https://www.gnu.org/software/gettex
 msgid "Hello {name}"
 msgstr "Hola {name}"
 
-# With translator context
-#. context: button
+# With explicit context (from <Trans context="button">)
+msgctxt "button"
 msgid "Submit"
 msgstr "Enviar"
+
+# With AI-generated context (from idioma translate)
+#. [AI Context]: Error message when payment fails at checkout
+#: src/components/Checkout.tsx:87
+msgid "Payment failed"
+msgstr "El pago falló"
 
 # Pluralization (ICU format)
 msgid "{count, plural, one {# item} other {# items}}"

@@ -1,6 +1,12 @@
 import { join } from 'path';
 import { defineCommand } from 'citty';
 import {
+  createAnthropicContextProvider,
+  createOpenAIContextProvider,
+  generateContextForCatalog,
+  type ContextProvider,
+} from '../../ai/context';
+import {
   createAnthropicProvider,
   createOpenAIProvider,
   type MessageToTranslate,
@@ -25,6 +31,12 @@ export interface TranslateOptions {
   dryRun?: boolean;
   markAI?: boolean;
   batchSize?: number;
+  /** Enable automatic AI context generation (default: false) */
+  autoContext?: boolean;
+  /** Context provider to use for auto-context (required if autoContext is true) */
+  contextProvider?: ContextProvider;
+  /** Project root for resolving source file paths (required if autoContext is true) */
+  projectRoot?: string;
 }
 
 /**
@@ -42,11 +54,23 @@ export async function runTranslate(
     dryRun = false,
     markAI = false,
     batchSize = 20,
+    autoContext = false,
+    contextProvider,
+    projectRoot,
   } = options;
 
   // Load target catalog
   const poPath = join(localeDir, `${targetLocale}.po`);
   const catalog = await loadPoFile(poPath, targetLocale);
+
+  // Generate AI context for messages that need it
+  if (autoContext && contextProvider && projectRoot) {
+    await generateContextForCatalog({
+      projectRoot,
+      catalog,
+      provider: contextProvider,
+    });
+  }
 
   // Find messages that need translation
   const messagesToTranslate: MessageToTranslate[] = [];
@@ -151,6 +175,11 @@ export const translateCommand = defineCommand({
       description: 'Mark translations with ai-translated flag',
       default: true,
     },
+    'no-auto-context': {
+      type: 'boolean',
+      description: 'Skip automatic AI context generation for messages',
+      default: false,
+    },
   },
   async run({ args }) {
     const cwd = process.cwd();
@@ -188,7 +217,34 @@ export const translateCommand = defineCommand({
       return;
     }
 
+    // Create context provider if auto-context is enabled
+    const autoContext = !args['no-auto-context'];
+    let contextProvider: ContextProvider | undefined;
+
+    if (autoContext) {
+      if (providerName === 'anthropic') {
+        const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
+        if (apiKey) {
+          contextProvider = createAnthropicContextProvider({
+            apiKey,
+            model: config.ai?.model,
+          });
+        }
+      } else if (providerName === 'openai') {
+        const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY;
+        if (apiKey) {
+          contextProvider = createOpenAIContextProvider({
+            apiKey,
+            model: config.ai?.model,
+          });
+        }
+      }
+    }
+
     console.log(`Translating to ${args.locale} using ${provider.name}...`);
+    if (autoContext && contextProvider) {
+      console.log('Auto-context generation enabled');
+    }
 
     const result = await runTranslate({
       localeDir: config.localeDir,
@@ -198,6 +254,9 @@ export const translateCommand = defineCommand({
       force: args.force,
       dryRun: args['dry-run'],
       markAI: args['mark-ai'],
+      autoContext: autoContext && !!contextProvider,
+      contextProvider,
+      projectRoot: cwd,
     });
 
     if (result.dryRun) {

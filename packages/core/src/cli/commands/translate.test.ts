@@ -3,6 +3,11 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
+  ContextProvider,
+  FileContextRequest,
+  GeneratedContext,
+} from '../../ai/context';
+import type {
   TranslatedMessage,
   TranslationProvider,
   TranslationRequest,
@@ -263,5 +268,255 @@ msgstr ""
     expect(result.translated).toBe(2);
     expect(result.skipped).toBe(1);
     expect(result.total).toBe(3);
+  });
+});
+
+describe('Translate with Auto-Context', () => {
+  let tempDir: string;
+  let localeDir: string;
+  let srcDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-ctx-'));
+    localeDir = join(tempDir, 'locales');
+    srcDir = join(tempDir, 'src');
+    await fs.mkdir(localeDir, { recursive: true });
+    await fs.mkdir(srcDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  function createMockTranslateProvider(
+    translations: Record<string, string>,
+  ): TranslationProvider {
+    return {
+      name: 'mock',
+      async translate(
+        request: TranslationRequest,
+      ): Promise<TranslatedMessage[]> {
+        return request.messages.map((m) => ({
+          key: m.key,
+          translation: translations[m.source] || `[translated] ${m.source}`,
+        }));
+      },
+    };
+  }
+
+  function createMockContextProvider(
+    contexts: Record<string, string>,
+  ): ContextProvider {
+    return {
+      generateContext: vi
+        .fn()
+        .mockImplementation(
+          async (request: FileContextRequest): Promise<GeneratedContext[]> => {
+            return request.messages.map((m) => ({
+              key: m.key,
+              context: contexts[m.key] ?? 'Default context',
+            }));
+          },
+        ),
+    };
+  }
+
+  it('generates context before translation when autoContext is enabled', async () => {
+    // Create source file
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      'const App = () => <button>Click me</button>;',
+    );
+
+    // Create PO file with reference
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/App.tsx:1
+msgid "Click me"
+msgstr ""
+`,
+    );
+
+    const translateProvider = createMockTranslateProvider({
+      'Click me': 'Haz clic aquí',
+    });
+    const contextProvider = createMockContextProvider({
+      'Click me': 'Button label for primary action',
+    });
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: true,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // Context provider should have been called
+    expect(contextProvider.generateContext).toHaveBeenCalled();
+
+    // PO file should contain both AI context and translation
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('[AI Context]:');
+    expect(esContent).toContain('msgstr "Haz clic aquí"');
+  });
+
+  it('skips context generation when autoContext is false', async () => {
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      'const App = () => <button>Click me</button>;',
+    );
+
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/App.tsx:1
+msgid "Click me"
+msgstr ""
+`,
+    );
+
+    const translateProvider = createMockTranslateProvider({
+      'Click me': 'Haz clic aquí',
+    });
+    const contextProvider = createMockContextProvider({});
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: false,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // Context provider should NOT have been called
+    expect(contextProvider.generateContext).not.toHaveBeenCalled();
+  });
+
+  it('uses existing context without regenerating', async () => {
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      'const App = () => <button>Click me</button>;',
+    );
+
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#. [AI Context]: Pre-existing context
+#: src/App.tsx:1
+msgid "Click me"
+msgstr ""
+`,
+    );
+
+    const translateProvider = createMockTranslateProvider({
+      'Click me': 'Haz clic aquí',
+    });
+    const contextProvider = createMockContextProvider({});
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: true,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // Context provider should NOT have been called (message already has context)
+    expect(contextProvider.generateContext).not.toHaveBeenCalled();
+  });
+
+  it('respects explicit context (msgctxt) over AI context', async () => {
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      'const App = () => <button>Click me</button>;',
+    );
+
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/App.tsx:1
+msgctxt "button"
+msgid "Click me"
+msgstr ""
+`,
+    );
+
+    const translateProvider = createMockTranslateProvider({
+      'Click me': 'Haz clic aquí',
+    });
+    const contextProvider = createMockContextProvider({});
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: true,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // Context provider should NOT have been called (message has explicit context)
+    expect(contextProvider.generateContext).not.toHaveBeenCalled();
+  });
+
+  it('silently handles missing source files', async () => {
+    // Don't create the source file
+
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/NonExistent.tsx:1
+msgid "Missing file"
+msgstr ""
+`,
+    );
+
+    const translateProvider = createMockTranslateProvider({
+      'Missing file': 'Archivo faltante',
+    });
+    const contextProvider = createMockContextProvider({});
+
+    // Should not throw
+    const result = await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: true,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // Translation should still complete
+    expect(result.translated).toBe(1);
   });
 });
