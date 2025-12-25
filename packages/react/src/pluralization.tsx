@@ -1,4 +1,5 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useContext, type ReactNode } from 'react';
+import { IdiomaContext } from './context';
 
 export interface PluralForms {
   /** Form for zero (optional, falls back to other) */
@@ -15,35 +16,79 @@ export interface PluralForms {
   other: string;
 }
 
+// Cache Intl.PluralRules instances by locale for performance
+const pluralRulesCache = new Map<string, Intl.PluralRules>();
+
+function getPluralRules(locale: string): Intl.PluralRules {
+  let rules = pluralRulesCache.get(locale);
+  if (!rules) {
+    rules = new Intl.PluralRules(locale);
+    pluralRulesCache.set(locale, rules);
+  }
+  return rules;
+}
+
+// Module-level locale sync for plural() function fallback
+// This is set by IdiomaProvider and used when no explicit locale is passed
+let _syncedLocale = 'en';
+
+/**
+ * Sync the current locale for the plural() function.
+ * Called by IdiomaProvider to enable locale-aware pluralization
+ * without requiring an explicit locale parameter.
+ *
+ * @internal
+ */
+export function _syncLocale(locale: string): void {
+  _syncedLocale = locale;
+}
+
+type PluralCategory = 'zero' | 'one' | 'two' | 'few' | 'many' | 'other';
+
+/**
+ * Select the appropriate plural form using CLDR rules via Intl.PluralRules.
+ */
+function selectPluralForm(
+  value: number,
+  forms: PluralForms,
+  locale: string,
+): string {
+  // Handle explicit zero form (convenience, not a CLDR category for most languages)
+  if (value === 0 && forms.zero !== undefined) {
+    return forms.zero.replace(/#/g, String(value));
+  }
+
+  // Use Intl.PluralRules for locale-aware category selection
+  const rules = getPluralRules(locale);
+  const category = rules.select(value) as PluralCategory;
+
+  // Use the matching category form, or fall back to 'other'
+  const form = forms[category] ?? forms.other;
+
+  // Replace # with the actual value
+  return form.replace(/#/g, String(value));
+}
+
 /**
  * Marker function for pluralization inside useT template literals.
  * In development, returns the appropriate form with # replaced by the value.
  * In production, this is compiled away entirely.
  *
+ * @param value - The numeric value to pluralize
+ * @param forms - Object with plural forms (one, other, etc.)
+ * @param locale - Optional locale (uses synced locale from IdiomaProvider if not provided)
+ *
  * @example
  * const t = useT()
  * const label = t`You have ${plural(count, { one: '# item', other: '# items' })} in your cart`
  */
-export function plural(value: number, forms: PluralForms): string {
-  // Dev-mode implementation using simple English-like plural rules
-  // In production, this is compiled to ICU and then to JS conditionals
-
-  let form: string;
-
-  if (value === 0 && forms.zero !== undefined) {
-    form = forms.zero;
-  } else if (value === 1 && forms.one !== undefined) {
-    form = forms.one;
-  } else if (value === 2 && forms.two !== undefined) {
-    form = forms.two;
-  } else {
-    // For dev mode, we don't implement full CLDR rules
-    // Just use "other" as the fallback
-    form = forms.other;
-  }
-
-  // Replace # with the actual value
-  return form.replace(/#/g, String(value));
+export function plural(
+  value: number,
+  forms: PluralForms,
+  locale?: string,
+): string {
+  const effectiveLocale = locale ?? _syncedLocale;
+  return selectPluralForm(value, forms, effectiveLocale);
 }
 
 export interface PluralProps {
@@ -68,6 +113,9 @@ export interface PluralProps {
  * In development, renders the appropriate form with # replaced by the value.
  * In production, this component is compiled away entirely.
  *
+ * Uses CLDR plural rules via Intl.PluralRules for locale-aware pluralization.
+ * The locale is automatically obtained from IdiomaContext.
+ *
  * @example
  * <Trans>
  *   You have <Plural value={count} one="# item" other="# items" /> in your cart
@@ -78,27 +126,16 @@ export function Plural({
   zero,
   one,
   two,
+  few,
+  many,
   other,
 }: PluralProps): ReactNode {
-  // Dev-mode implementation using simple English-like plural rules
-  // In production, this is compiled to ICU and then to JS conditionals
+  // Get locale from context, fallback to 'en' if no provider
+  const context = useContext(IdiomaContext);
+  const locale = context?.locale ?? 'en';
 
-  let form: string;
-
-  if (value === 0 && zero !== undefined) {
-    form = zero;
-  } else if (value === 1 && one !== undefined) {
-    form = one;
-  } else if (value === 2 && two !== undefined) {
-    form = two;
-  } else {
-    // For dev mode, we don't implement full CLDR rules
-    // Just use "other" as the fallback
-    form = other;
-  }
-
-  // Replace # with the actual value
-  const text = form.replace(/#/g, String(value));
+  const forms: PluralForms = { zero, one, two, few, many, other };
+  const text = selectPluralForm(value, forms, locale);
 
   return <Fragment>{text}</Fragment>;
 }

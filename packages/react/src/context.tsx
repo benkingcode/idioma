@@ -1,4 +1,11 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from 'react';
+import { _syncLocale } from './pluralization';
 
 export interface IdiomaContextValue {
   locale: string;
@@ -28,6 +35,15 @@ export interface IdiomaProviderProps {
 export function createIdiomaProvider() {
   return function IdiomaProvider({ children, locale }: IdiomaProviderProps) {
     const value = useMemo(() => ({ locale }), [locale]);
+
+    // Sync locale for plural() function fallback
+    // Sync immediately for SSR (before effects run)
+    _syncLocale(locale);
+
+    // Also sync in effect for client-side updates
+    useEffect(() => {
+      _syncLocale(locale);
+    }, [locale]);
 
     return (
       <IdiomaContext.Provider value={value}>{children}</IdiomaContext.Provider>
