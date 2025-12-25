@@ -412,6 +412,27 @@ describe('Context Providers', () => {
       expect(prompt).toContain('UI element');
     });
 
+    it('includes brevity guidance', () => {
+      const prompt = buildContextSystemPrompt();
+      expect(prompt).toContain('1-2 sentences');
+    });
+
+    it('includes ICU pattern awareness', () => {
+      const prompt = buildContextSystemPrompt();
+      expect(prompt).toContain('plural');
+    });
+
+    it('includes example contexts', () => {
+      const prompt = buildContextSystemPrompt();
+      expect(prompt).toContain('Button');
+      expect(prompt).toContain('Error');
+    });
+
+    it('includes guidance on what NOT to do', () => {
+      const prompt = buildContextSystemPrompt();
+      expect(prompt).toContain('Do NOT');
+    });
+
     it('does not include guidelines section when not provided', () => {
       const prompt = buildContextSystemPrompt();
       expect(prompt).not.toContain('Project-specific guidelines');

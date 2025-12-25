@@ -37,17 +37,27 @@ export interface OpenAIProviderOptions {
   guidelines?: string;
 }
 
-const TRANSLATION_SYSTEM_PROMPT = `You are a professional translator. Translate the following messages from {sourceLocale} to {targetLocale}.
+const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator specializing in software UI localization. Translate the following messages from {sourceLocale} to {targetLocale}.
 
-Important guidelines:
-- Preserve all placeholders like {name}, {count}, {0}, etc. exactly as they appear
-- Preserve HTML-like tags like <0>...</0>, <1>...</1> exactly as they appear
-- Preserve ICU format syntax like {count, plural, one {...} other {...}}
-- Maintain the same tone and formality level as the source
-- Consider the context provided (if any) to ensure accurate translation
-- Return translations in the exact order they were provided
+CRITICAL — Preserve exactly as they appear:
+- Placeholders: {name}, {count}, {0}, etc.
+- Component tags: <0>...</0>, <1>...</1>
+- ICU syntax: {count, plural, one {...} other {...}}
+- Whitespace: leading/trailing spaces and newlines
 
-Each message has a key and source text. Some may have context to help with accurate translation.`;
+Translation guidelines:
+- Match the source's tone and formality level
+- Keep translations concise — UI space is limited
+- Use context hints (if provided) to choose appropriate wording
+- Return translations in the exact order provided
+
+Do NOT:
+- Add words, explanations, or politeness not in the source
+- Translate brand names, product names, or technical terms (keep in original language)
+- Change questions to statements or vice versa
+- Translate placeholder names inside {braces}
+
+Each message has a key and source text. Some may include context to help with accurate translation.`;
 
 /**
  * Build the system prompt for translation, optionally including user guidelines.

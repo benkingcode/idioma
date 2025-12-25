@@ -112,8 +112,31 @@ describe('AI Translation Providers', () => {
 
     it('includes base translation instructions', () => {
       const prompt = buildTranslationSystemPrompt('en', 'fr');
-      expect(prompt).toContain('professional translator');
-      expect(prompt).toContain('Preserve all placeholders');
+      expect(prompt).toContain('translator');
+      expect(prompt).toContain('Placeholders');
+    });
+
+    it('includes preservation rules for placeholders and tags', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'es');
+      expect(prompt).toContain('{name}');
+      expect(prompt).toContain('<0>');
+      expect(prompt).toContain('ICU');
+    });
+
+    it('includes guidance on what NOT to do', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'es');
+      expect(prompt).toContain('Do NOT');
+      expect(prompt).toContain('brand names');
+    });
+
+    it('includes whitespace preservation guidance', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'es');
+      expect(prompt).toContain('Whitespace');
+    });
+
+    it('includes UI length awareness', () => {
+      const prompt = buildTranslationSystemPrompt('en', 'es');
+      expect(prompt).toContain('concise');
     });
 
     it('does not include guidelines section when not provided', () => {

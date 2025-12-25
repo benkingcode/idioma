@@ -184,19 +184,20 @@ Context guidelines:
 - Explain when/where users see this text
 - Note any important formatting or length constraints
 - Mention related user actions or workflow context
+- For ICU patterns like {count, plural, ...}, explain what values trigger each form (e.g., "one" for exactly 1, "other" for 0 or 2+)
 - Keep each context to 1-2 sentences maximum
 
 Example contexts:
-- "Button label in checkout flow, shown when user confirms their order"
-- "Error message displayed when login fails due to invalid password"
-- "Heading for the user profile settings page"
-- "Placeholder text in the search input field on the homepage"
+- "Button label in checkout form to confirm purchase"
+- "Error shown when password is under 8 characters"
+- "Pluralized count: 'one' for exactly 1 item, 'other' for 0 or 2+"
+- "Page heading for user profile settings"
 
 Do NOT:
 - Suggest translations
-- Describe the source text itself
+- Describe or paraphrase the source text itself
 - Include technical implementation details
-- Reference specific variable names or code structure`;
+- Reference variable names or code structure`;
 
 /**
  * Build the system prompt for context generation, optionally including user guidelines.
