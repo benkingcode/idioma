@@ -2,7 +2,7 @@
 
 **Compile-time React i18n. Write in English, ship in every language.**
 
-~800 bytes runtime. No async loading. No manual keys. AI-powered translation.
+~800 bytes runtime. No manual keys. AI-powered translation.
 
 ## Features
 
@@ -12,7 +12,7 @@
 - **AI translation** — Context-aware translation with Claude or GPT
 - **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
 - **Type-safe output** — Generated TypeScript with full autocomplete
-- **Instant switching** — All locales bundled, no dynamic imports
+- **Instant switching** — All locales bundled by default, or lazy-load with Suspense
 - **Vite plugin** — HMR for translations, zero config
 
 ## Quick Start
@@ -153,6 +153,9 @@ export default defineConfig({
   // Target languages
   locales: ['en', 'es', 'fr', 'de', 'ja'],
 
+  // Enable Suspense-based lazy loading (React 19+)
+  useSuspense: false,
+
   // Files to scan for messages
   sourcePatterns: ['src/**/*.tsx', 'src/**/*.jsx'],
 
@@ -164,6 +167,41 @@ export default defineConfig({
   },
 });
 ```
+
+## Suspense Mode (React 19+)
+
+For large apps, you can enable Suspense-based lazy loading to reduce bundle size. Instead of inlining all locales, translations load via dynamic imports per code-split chunk.
+
+```ts
+// idioma.config.ts
+export default defineConfig({
+  localeDir: './locales',
+  outputDir: './src/idioma',
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'fr'],
+  useSuspense: true, // Enable lazy loading
+});
+```
+
+Wrap your app with a Suspense boundary:
+
+```tsx
+import { IdiomaProvider } from './src/idioma';
+
+<IdiomaProvider locale={locale}>
+  <Suspense fallback={<Loading />}>
+    <App />
+  </Suspense>
+</IdiomaProvider>;
+```
+
+**Trade-offs:**
+
+|               | Default mode        | Suspense mode             |
+| ------------- | ------------------- | ------------------------- |
+| Bundle size   | All locales inlined | Dynamic imports per chunk |
+| Locale switch | Instant             | Suspends until loaded     |
+| React version | 18+                 | 19+ (uses `use` hook)     |
 
 ## How It Works
 
@@ -194,6 +232,7 @@ The Babel plugin extracts messages during build, generates content-addressed key
 | Extraction     | Built-in | External   | External | Built-in |
 | AI translation | Built-in | No         | No       | No       |
 | Compile-time   | Yes      | No         | No       | Yes      |
+| Lazy loading   | Opt-in   | Yes        | Yes      | Yes      |
 | PO format      | Yes      | No         | No       | Yes      |
 
 ## Packages

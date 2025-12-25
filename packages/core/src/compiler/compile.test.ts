@@ -166,4 +166,134 @@ msgstr "{count, plural, one {# item} other {# items}}"
     // Compiled plural should be an arrow function
     expect(content).toContain('(args) =>');
   });
+
+  describe('useSuspense mode', () => {
+    it('generates chunks directory when useSuspense is true', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/HomePage.tsx:10
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        useSuspense: true,
+        locales: ['en'],
+        projectRoot: tempDir,
+      });
+
+      const chunksDir = join(outputDir, 'chunks');
+      const stats = await fs.stat(chunksDir);
+      expect(stats.isDirectory()).toBe(true);
+    });
+
+    it('generates chunk files per locale', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/HomePage.tsx:10
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/HomePage.tsx:10
+msgid "Hello"
+msgstr "Hola"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        projectRoot: tempDir,
+      });
+
+      const files = await fs.readdir(join(outputDir, 'chunks'));
+      expect(files.some((f) => f.endsWith('.en.ts'))).toBe(true);
+      expect(files.some((f) => f.endsWith('.es.ts'))).toBe(true);
+    });
+
+    it('generates manifest.json', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/HomePage.tsx:10
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        useSuspense: true,
+        locales: ['en'],
+        projectRoot: tempDir,
+      });
+
+      const manifest = JSON.parse(
+        await fs.readFile(join(outputDir, 'manifest.json'), 'utf-8'),
+      );
+      expect(manifest.chunks).toBeDefined();
+    });
+
+    it('generates index.ts with suspense runtime imports', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/HomePage.tsx:10
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        useSuspense: true,
+        locales: ['en'],
+        projectRoot: tempDir,
+      });
+
+      const indexContent = await fs.readFile(
+        join(outputDir, 'index.ts'),
+        'utf-8',
+      );
+      expect(indexContent).toContain('@idioma/react/runtime-suspense');
+    });
+  });
 });

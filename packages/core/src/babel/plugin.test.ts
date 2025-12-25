@@ -170,4 +170,142 @@ describe('Idioma Babel Plugin', () => {
       expect(extracted).toHaveLength(2);
     });
   });
+
+  describe('suspense mode', () => {
+    it('injects __$idiomaChunk constant', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('__$idiomaChunk');
+    });
+
+    it('injects __$idiomaLoad with dynamic imports for all locales', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es', 'de'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('__$idiomaLoad');
+      expect(result).toContain('import(');
+      // Check that all locales are present in the loader
+      expect(result).toContain('.en');
+      expect(result).toContain('.es');
+      expect(result).toContain('.de');
+    });
+
+    it('transforms Trans to include __key, __chunk, __load props', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('__TransSuspense');
+      expect(result).toContain('__key');
+      expect(result).toContain('__chunk');
+      expect(result).toContain('__load');
+    });
+
+    it('imports __TransSuspense from runtime-suspense', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('@idioma/react/runtime-suspense');
+      expect(result).toContain('__TransSuspense');
+    });
+
+    it('handles multiple Trans components in same file (shared loader)', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>First</Trans>
+        const y = <Trans>Second</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      // Should only inject once
+      const chunkMatches = result.match(/__\$idiomaChunk/g);
+      expect(chunkMatches?.length).toBeGreaterThan(0);
+
+      // Both Trans components should use the same chunk
+      expect(result).toContain('__TransSuspense');
+    });
+
+    it('preserves __a for interpolation in suspense mode', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello {name}</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('__a');
+      expect(result).toContain('name');
+    });
+
+    it('preserves __c for components in suspense mode', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Click <Link>here</Link></Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        useSuspense: true,
+        locales: ['en', 'es'],
+        outputDir: './idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('__c');
+      expect(result).toContain('Link');
+    });
+  });
 });

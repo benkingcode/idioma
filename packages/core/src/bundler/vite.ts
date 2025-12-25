@@ -12,6 +12,13 @@ export interface IdiomaViteOptions {
   locales?: string[];
   /** Watch for changes in development (default: true in dev mode) */
   watch?: boolean;
+  /**
+   * Enable Suspense-based lazy loading.
+   * When true, generates chunk files for dynamic imports.
+   * Requires React 19+.
+   * @default false
+   */
+  useSuspense?: boolean;
 }
 
 /**
@@ -22,12 +29,15 @@ export interface IdiomaViteOptions {
  * - Watches PO files for changes in dev mode
  * - Injects Babel plugin for Trans/useT transformation
  * - Triggers HMR when translations change
+ * - Supports Suspense mode for lazy loading translations
  */
 export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
-  const { localeDir, outputDir, defaultLocale, watch } = options;
+  const { localeDir, outputDir, defaultLocale, locales, watch, useSuspense } =
+    options;
 
   let config: ResolvedConfig;
   let isDevMode = false;
+  let projectRoot = '';
 
   async function compile() {
     try {
@@ -35,6 +45,9 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
         localeDir,
         outputDir,
         defaultLocale,
+        useSuspense,
+        locales,
+        projectRoot,
       });
     } catch (error) {
       console.error('[idioma] Compilation error:', error);
@@ -48,6 +61,7 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
     configResolved(resolvedConfig) {
       config = resolvedConfig;
       isDevMode = resolvedConfig.command === 'serve';
+      projectRoot = resolvedConfig.root;
     },
 
     async buildStart() {
@@ -81,9 +95,21 @@ export default function idiomaVitePlugin(options: IdiomaViteOptions): Plugin {
       reactBabel(babelConfig: { plugins: unknown[] }) {
         if (!isDevMode) {
           // In production, add the idioma Babel plugin
+          const pluginOptions: Record<string, unknown> = {
+            mode: 'production',
+          };
+
+          // Add suspense-specific options
+          if (useSuspense) {
+            pluginOptions.useSuspense = true;
+            pluginOptions.locales = locales;
+            pluginOptions.outputDir = outputDir;
+            pluginOptions.projectRoot = projectRoot;
+          }
+
           babelConfig.plugins.push([
             require.resolve('../babel/plugin'),
-            { mode: 'production' },
+            pluginOptions,
           ]);
         }
       },

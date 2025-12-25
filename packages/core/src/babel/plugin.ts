@@ -1,5 +1,6 @@
 import type { NodePath, PluginObj } from '@babel/core';
 import * as t from '@babel/types';
+import { getChunkId } from '../compiler/chunk-id';
 import { generateKey } from '../keys/generator';
 import { extractTransMessage, type ExtractedMessage } from './extract-trans';
 import { serializeJsxChildren } from './serialize';
@@ -7,13 +8,29 @@ import { serializeJsxChildren } from './serialize';
 export interface IdiomaPluginOptions {
   /** Plugin mode: 'development' or 'production' */
   mode?: 'development' | 'production';
-  /** Pre-compiled translations object (for production) */
+  /** Pre-compiled translations object (for production, inlined mode) */
   translations?: Record<
     string,
     Record<string, string | ((args: Record<string, unknown>) => string)>
   >;
   /** Callback for extracted messages (for extraction phase) */
   onExtract?: (message: ExtractedMessage) => void;
+  /** Enable Suspense mode with dynamic imports */
+  useSuspense?: boolean;
+  /** All supported locales (required for suspense mode) */
+  locales?: string[];
+  /** Output directory path for import paths (required for suspense mode) */
+  outputDir?: string;
+  /** Project root for computing chunk IDs (required for suspense mode) */
+  projectRoot?: string;
+}
+
+interface PluginState {
+  opts: IdiomaPluginOptions;
+  filename: string;
+  idiomaUsed: boolean;
+  idiomaKeys: Set<string>;
+  chunkId: string;
 }
 
 /**
@@ -23,19 +40,93 @@ export interface IdiomaPluginOptions {
  * - Leaves code unchanged
  * - Optionally extracts messages via onExtract callback
  *
- * In production mode:
+ * In production mode (inlined):
  * - Transforms <Trans>...</Trans> to <__Trans __t={...} __a={...} __c={...} />
  * - Inlines pre-compiled translations
+ *
+ * In production mode (suspense):
+ * - Transforms <Trans>...</Trans> to <__TransSuspense __key={...} __chunk={...} __load={...} />
+ * - Injects dynamic import loaders
  */
-export default function idiomaPlugin(): PluginObj {
+export default function idiomaPlugin(): PluginObj<PluginState> {
   return {
     name: 'idioma',
 
+    pre(file) {
+      const opts = (this.opts || {}) as IdiomaPluginOptions;
+      const filename = file.opts.filename || 'unknown';
+
+      this.opts = opts;
+      this.filename = filename;
+      this.idiomaUsed = false;
+      this.idiomaKeys = new Set();
+      this.chunkId = opts.projectRoot
+        ? getChunkId(filename, opts.projectRoot)
+        : 'unknown';
+    },
+
     visitor: {
+      Program: {
+        exit(path, state) {
+          const { opts, idiomaUsed, chunkId } = state;
+
+          // Only inject in production suspense mode when Trans was used
+          if (opts.mode !== 'production' || !opts.useSuspense || !idiomaUsed) {
+            return;
+          }
+
+          const { locales, outputDir } = opts;
+          if (!locales || !outputDir) {
+            return;
+          }
+
+          // Inject import for __TransSuspense
+          const importDecl = t.importDeclaration(
+            [
+              t.importSpecifier(
+                t.identifier('__TransSuspense'),
+                t.identifier('__TransSuspense'),
+              ),
+            ],
+            t.stringLiteral('@idioma/react/runtime-suspense'),
+          );
+
+          // Inject __$idiomaChunk constant
+          const chunkDecl = t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('__$idiomaChunk'),
+              t.stringLiteral(chunkId),
+            ),
+          ]);
+
+          // Inject __$idiomaLoad object with dynamic imports
+          const loaderProps = locales.map((locale) =>
+            t.objectProperty(
+              t.identifier(locale),
+              t.arrowFunctionExpression(
+                [],
+                t.callExpression(t.import(), [
+                  t.stringLiteral(`${outputDir}/chunks/${chunkId}.${locale}`),
+                ]),
+              ),
+            ),
+          );
+
+          const loadDecl = t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('__$idiomaLoad'),
+              t.objectExpression(loaderProps),
+            ),
+          ]);
+
+          // Insert at the beginning of the program
+          path.unshiftContainer('body', [importDecl, chunkDecl, loadDecl]);
+        },
+      },
+
       JSXElement(path: NodePath<t.JSXElement>, state) {
-        const opts = (state.opts || {}) as IdiomaPluginOptions;
+        const { opts, filename } = state;
         const mode = opts.mode || 'development';
-        const filename = state.filename || 'unknown';
 
         // Check if this is a Trans component
         const opening = path.node.openingElement;
@@ -62,7 +153,15 @@ export default function idiomaPlugin(): PluginObj {
           return;
         }
 
-        transformTransComponent(path, extracted, opts.translations || {});
+        // Mark that idioma was used in this file
+        state.idiomaUsed = true;
+        state.idiomaKeys.add(extracted.key);
+
+        if (opts.useSuspense) {
+          transformTransSuspense(path, extracted);
+        } else {
+          transformTransComponent(path, extracted, opts.translations || {});
+        }
       },
     },
   };
@@ -177,6 +276,82 @@ function transformTransComponent(
   // Create the new __Trans element
   const newElement = t.jsxElement(
     t.jsxOpeningElement(t.jsxIdentifier('__Trans'), props, true),
+    null,
+    [],
+    true,
+  );
+
+  path.replaceWith(newElement);
+}
+
+/**
+ * Transform a Trans component to __TransSuspense for Suspense mode
+ */
+function transformTransSuspense(
+  path: NodePath<t.JSXElement>,
+  extracted: ExtractedMessage,
+): void {
+  const { key, placeholders, components } = extracted;
+
+  // Build props array
+  const props: t.JSXAttribute[] = [
+    // __key: translation key
+    t.jsxAttribute(t.jsxIdentifier('__key'), t.stringLiteral(key)),
+    // __chunk: reference to injected chunk ID
+    t.jsxAttribute(
+      t.jsxIdentifier('__chunk'),
+      t.jsxExpressionContainer(t.identifier('__$idiomaChunk')),
+    ),
+    // __load: reference to injected loader object
+    t.jsxAttribute(
+      t.jsxIdentifier('__load'),
+      t.jsxExpressionContainer(t.identifier('__$idiomaLoad')),
+    ),
+  ];
+
+  // Add __a if there are placeholders
+  if (Object.keys(placeholders).length > 0) {
+    const aEntries: t.ObjectProperty[] = [];
+    for (const [name, expr] of Object.entries(placeholders)) {
+      // For simple identifiers, reference the variable directly
+      if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(expr)) {
+        aEntries.push(
+          t.objectProperty(t.stringLiteral(name), t.identifier(expr)),
+        );
+      } else {
+        // For complex expressions, use the first part
+        aEntries.push(
+          t.objectProperty(
+            t.stringLiteral(name),
+            t.identifier(expr.split('.')[0] || 'undefined'),
+          ),
+        );
+      }
+    }
+
+    props.push(
+      t.jsxAttribute(
+        t.jsxIdentifier('__a'),
+        t.jsxExpressionContainer(t.objectExpression(aEntries)),
+      ),
+    );
+  }
+
+  // Add __c if there are components
+  if (components.length > 0) {
+    const componentElements = components.map((name) => t.identifier(name));
+
+    props.push(
+      t.jsxAttribute(
+        t.jsxIdentifier('__c'),
+        t.jsxExpressionContainer(t.arrayExpression(componentElements)),
+      ),
+    );
+  }
+
+  // Create the new __TransSuspense element
+  const newElement = t.jsxElement(
+    t.jsxOpeningElement(t.jsxIdentifier('__TransSuspense'), props, true),
     null,
     [],
     true,

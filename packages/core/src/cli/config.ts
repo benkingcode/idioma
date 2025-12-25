@@ -13,6 +13,14 @@ export interface IdiomaConfig {
   locales?: string[];
   /** Glob patterns for source files to extract from */
   sourcePatterns?: string[];
+  /**
+   * Enable Suspense-based lazy loading.
+   * When false: All locales inlined, instant switching, larger bundles
+   * When true: Dynamic imports, Suspense-compatible, smaller bundles
+   * Requires React 19+.
+   * @default false
+   */
+  useSuspense?: boolean;
   /** AI translation provider configuration */
   ai?: {
     provider: 'anthropic' | 'openai';
@@ -69,6 +77,7 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
   return {
     ...config,
     sourcePatterns: config.sourcePatterns ?? DEFAULT_SOURCE_PATTERNS,
+    useSuspense: config.useSuspense ?? false,
   };
 }
 

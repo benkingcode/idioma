@@ -129,5 +129,36 @@ describe('CLI Config', () => {
 
       expect(config.sourcePatterns).toEqual(['src/**/*.tsx']);
     });
+
+    it('defaults useSuspense to false', async () => {
+      const configContent = `
+        export default {
+          localeDir: './locales',
+          outputDir: './src/idioma',
+          defaultLocale: 'en',
+        }
+      `;
+      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+      const config = await loadConfig(tempDir);
+
+      expect(config.useSuspense).toBe(false);
+    });
+
+    it('accepts useSuspense: true', async () => {
+      const configContent = `
+        export default {
+          localeDir: './locales',
+          outputDir: './src/idioma',
+          defaultLocale: 'en',
+          useSuspense: true,
+        }
+      `;
+      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+      const config = await loadConfig(tempDir);
+
+      expect(config.useSuspense).toBe(true);
+    });
   });
 });
