@@ -1,6 +1,6 @@
 # Idioma
 
-**Compile-time React i18n. Write in English, ship in every language.**
+**AI-first, compile-time i18n for React. Write in English, ship in every language.**
 
 ~800 bytes runtime. No manual keys. AI-powered translation.
 
