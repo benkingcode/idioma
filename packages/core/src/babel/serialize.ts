@@ -1,5 +1,6 @@
 import generate from '@babel/generator';
 import * as t from '@babel/types';
+import { serializePluralCallToIcu } from './extract-plural.js';
 
 export interface SerializeResult {
   /** The serialized message for PO file */
@@ -57,6 +58,18 @@ export function serializeJsxChildren(
         return `{${code}}`;
       }
 
+      // Check for plural() function call - convert to ICU format
+      if (
+        t.isCallExpression(expr) &&
+        t.isIdentifier(expr.callee) &&
+        expr.callee.name === 'plural'
+      ) {
+        const { icu, variable } = serializePluralCallToIcu(expr);
+        // Track the variable in placeholders
+        placeholders[variable] = variable;
+        return icu;
+      }
+
       // Complex expression: {fn()}, {a + b}, etc.
       const code = generate(expr).code;
       const index = complexExpressionIndex++;
@@ -111,6 +124,81 @@ export function serializeJsxChildren(
     message,
     placeholders,
     components,
+  };
+
+  if (comments.length > 0) {
+    result.comments = comments;
+  }
+
+  return result;
+}
+
+/**
+ * Serialize a template literal to a PO-compatible message string.
+ *
+ * Converts:
+ * - Static parts → as-is
+ * - ${identifier} → {identifier}
+ * - ${member.expression} → {member.expression}
+ * - ${plural(count, {...})} → {count, plural, ...} (ICU format)
+ * - ${complex()} → {0}, {1}, etc. with comments
+ *
+ * This is the shared implementation used by t() template literal extraction.
+ */
+export function serializeTemplateLiteral(
+  template: t.TemplateLiteral,
+): SerializeResult {
+  const placeholders: Record<string, string> = {};
+  const comments: string[] = [];
+  let complexExpressionIndex = 0;
+
+  // Build the message by interleaving quasis and expressions
+  const parts: string[] = [];
+
+  for (let i = 0; i < template.quasis.length; i++) {
+    const quasi = template.quasis[i]!;
+    // Add the static part (use cooked for proper escape handling)
+    parts.push(quasi.value.cooked ?? quasi.value.raw);
+
+    // Add the expression if not the last quasi
+    if (i < template.expressions.length) {
+      const expr = template.expressions[i]!;
+
+      if (t.isIdentifier(expr)) {
+        // Simple identifier: ${name}
+        placeholders[expr.name] = expr.name;
+        parts.push(`{${expr.name}}`);
+      } else if (t.isMemberExpression(expr)) {
+        // Member expression: ${user.name}
+        const code = generate(expr).code;
+        placeholders[code] = code;
+        parts.push(`{${code}}`);
+      } else if (
+        t.isCallExpression(expr) &&
+        t.isIdentifier(expr.callee) &&
+        expr.callee.name === 'plural'
+      ) {
+        // plural() call - convert to ICU format
+        const { icu, variable } = serializePluralCallToIcu(expr);
+        placeholders[variable] = variable;
+        parts.push(icu);
+      } else if (t.isExpression(expr)) {
+        // Complex expression: ${fn()}, ${a + b}, etc.
+        const code = generate(expr).code;
+        const index = complexExpressionIndex++;
+        placeholders[String(index)] = code;
+        comments.push(`{${index}} = ${code}`);
+        parts.push(`{${index}}`);
+      }
+    }
+  }
+
+  const message = parts.join('');
+
+  const result: SerializeResult = {
+    message,
+    placeholders,
+    components: [], // Template literals don't have JSX components
   };
 
   if (comments.length > 0) {

@@ -145,3 +145,90 @@ describe('serializeJsxChildren', () => {
     expect(result.message).toBe('fragment content');
   });
 });
+
+describe('serializeJsxChildren with plural()', () => {
+  it('serializes plural() call to ICU format', () => {
+    const children = getChildren(
+      '<Trans>You have {plural(count, { one: "# item", other: "# items" })} in cart</Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      'You have {count, plural, one {# item} other {# items}} in cart',
+    );
+    // The variable should be tracked in placeholders
+    expect(result.placeholders).toEqual({ count: 'count' });
+  });
+
+  it('serializes plural() with all CLDR forms', () => {
+    const children = getChildren(`
+      <Trans>
+        {plural(n, {
+          zero: "none",
+          one: "one",
+          two: "two",
+          few: "few",
+          many: "many",
+          other: "other"
+        })}
+      </Trans>
+    `);
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      '{n, plural, zero {none} one {one} two {two} few {few} many {many} other {other}}',
+    );
+    expect(result.placeholders).toEqual({ n: 'n' });
+  });
+
+  it('handles plural() alongside regular placeholders', () => {
+    const children = getChildren(
+      '<Trans>Hello {name}, you have {plural(count, { one: "# message", other: "# messages" })}</Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      'Hello {name}, you have {count, plural, one {# message} other {# messages}}',
+    );
+    expect(result.placeholders).toEqual({
+      name: 'name',
+      count: 'count',
+    });
+  });
+
+  it('handles plural() with member expression value', () => {
+    const children = getChildren(
+      '<Trans>Items: {plural(data.count, { one: "#", other: "#" })}</Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      'Items: {data.count, plural, one {#} other {#}}',
+    );
+    // Member expressions use the full path as key
+    expect(result.placeholders).toEqual({ 'data.count': 'data.count' });
+  });
+
+  it('handles plural() inside JSX elements', () => {
+    const children = getChildren(
+      '<Trans><span>{plural(count, { one: "# item", other: "# items" })}</span></Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      '<0>{count, plural, one {# item} other {# items}}</0>',
+    );
+    expect(result.components).toEqual(['span']);
+    expect(result.placeholders).toEqual({ count: 'count' });
+  });
+
+  it('escapes ICU special chars in plural forms', () => {
+    const children = getChildren(
+      '<Trans>{plural(count, { one: "{count} item", other: "{count} items" })}</Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    // Curly braces should be escaped in ICU
+    expect(result.message).toContain("one {'{count}' item}");
+  });
+});

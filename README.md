@@ -328,26 +328,38 @@ Add translator context that affects key generation (same text, different context
 
 ### Pluralization
 
-```tsx
-import { Plural, Trans } from './src/idioma';
+Use the `plural()` function inside `<Trans>` or `t()` for pluralization:
 
+```tsx
+import { plural, Trans } from './src/idioma';
+
+// In Trans component
 <Trans>
-  You have <Plural value={count} one="# item" other="# items" /> in your cart
+  You have {plural(count, { one: '# item', other: '# items' })} in your cart
 </Trans>;
+
+// In t() template literal
+const t = useT();
+t(`You have ${plural(count, { one: '# item', other: '# items' })} in cart`);
 ```
 
-The `#` placeholder is replaced with the numeric value. Full plural forms for different languages:
+The `#` placeholder is replaced with the numeric value. Both usages compile to ICU MessageFormat:
+
+```
+You have {count, plural, one {# item} other {# items}} in cart
+```
+
+Full plural forms for different languages:
 
 ```tsx
-<Plural
-  value={count}
-  zero="No items" // 0 items (some languages)
-  one="# item" // 1 item
-  two="# items" // 2 items (Arabic, Welsh)
-  few="# items" // 2-4 items (Slavic languages)
-  many="# items" // 5+ items (Slavic, Arabic)
-  other="# items" // Required fallback
-/>
+plural(count, {
+  zero: 'No items', // 0 items (some languages)
+  one: '# item', // 1 item
+  two: '# items', // 2 items (Arabic, Welsh)
+  few: '# items', // 2-4 items (Slavic languages)
+  many: '# items', // 5+ items (Slavic, Arabic)
+  other: '# items', // Required fallback
+});
 ```
 
 ### Imperative usage with useT
@@ -373,21 +385,6 @@ function Greeting({ name }) {
   const message = t('Welcome {user}', { user: name }, { context: 'header' });
 
   return <span>{greeting}</span>;
-}
-```
-
-### Pluralization with useT
-
-Use the `plural()` function for pluralization in imperative code:
-
-```tsx
-import { plural, useT } from './src/idioma';
-
-function CartSummary({ count }: { count: number }) {
-  const t = useT();
-  return (
-    <p>{t(`You have ${plural(count, { one: '# item', other: '# items' })}`)}</p>
-  );
 }
 ```
 

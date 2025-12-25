@@ -3,7 +3,7 @@ import * as t from '@babel/types';
 import { getChunkId } from '../compiler/chunk-id.js';
 import { generateKey } from '../keys/generator.js';
 import { extractTransMessage, type ExtractedMessage } from './extract-trans.js';
-import { serializeJsxChildren } from './serialize.js';
+import { serializeJsxChildren, serializeTemplateLiteral } from './serialize.js';
 
 export interface IdiomaPluginOptions {
   /** Plugin mode: 'development' or 'production' */
@@ -192,9 +192,35 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           return;
         }
 
-        // Get the first argument (source string)
+        // Get the first argument (source string or template literal)
         const args = path.node.arguments;
         const sourceArg = args[0];
+
+        // Handle template literals with plural() calls
+        if (t.isTemplateLiteral(sourceArg)) {
+          const serialized = serializeTemplateLiteral(sourceArg);
+          const source = serialized.message;
+          const key = generateKey(source);
+
+          // Extract message if callback provided
+          if (opts.onExtract) {
+            const line = path.node.loc?.start.line || 0;
+            opts.onExtract({
+              key,
+              source,
+              context: undefined,
+              placeholders: serialized.placeholders,
+              components: [],
+              references: [`${filename}:${line}`],
+            });
+          }
+
+          // In development mode, don't transform (template literal works at runtime)
+          // In production mode, template literals with plural() need special handling
+          // For now, mark as dynamic since runtime needs to evaluate the template
+          state.hasDynamicT = true;
+          return;
+        }
 
         // Dynamic strings can't be inlined - mark for runtime translations
         if (!t.isStringLiteral(sourceArg)) {

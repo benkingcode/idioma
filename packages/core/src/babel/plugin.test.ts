@@ -543,4 +543,122 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('__$translations');
     });
   });
+
+  describe('t() with template literals and plural()', () => {
+    it('extracts template literal with plural() call', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { plural } from '@idioma/react'
+        const t = (s: string) => s
+        const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
+      `;
+
+      transform(code, {
+        mode: 'development',
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe(
+        'You have {count, plural, one {# item} other {# items}} in cart',
+      );
+    });
+
+    it('extracts template literal with mixed placeholders', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { plural } from '@idioma/react'
+        const t = (s: string) => s
+        const msg = t(\`Hello \${name}, you have \${plural(count, { one: "# message", other: "# messages" })}\`)
+      `;
+
+      transform(code, {
+        mode: 'development',
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe(
+        'Hello {name}, you have {count, plural, one {# message} other {# messages}}',
+      );
+      expect(extracted[0].placeholders).toEqual({
+        name: 'name',
+        count: 'count',
+      });
+    });
+
+    it('extracts template literal with member expression in plural()', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { plural } from '@idioma/react'
+        const t = (s: string) => s
+        const msg = t(\`Items: \${plural(data.count, { one: "#", other: "#" })}\`)
+      `;
+
+      transform(code, {
+        mode: 'development',
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe(
+        'Items: {data.count, plural, one {#} other {#}}',
+      );
+    });
+
+    it('produces identical ICU for Trans and t() with same plural()', () => {
+      const transExtracted: Array<{ source: string }> = [];
+      const tExtracted: Array<{ source: string }> = [];
+
+      // Trans version
+      const transCode = `
+        import { Trans, plural } from '@idioma/react'
+        const x = <Trans>You have {plural(count, { one: "# item", other: "# items" })} in cart</Trans>
+      `;
+      transform(transCode, {
+        mode: 'development',
+        onExtract: (msg) => transExtracted.push(msg),
+      });
+
+      // t() version
+      const tCode = `
+        import { plural } from '@idioma/react'
+        const t = (s: string) => s
+        const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
+      `;
+      transform(tCode, {
+        mode: 'development',
+        onExtract: (msg) => tExtracted.push(msg),
+      });
+
+      // Both should produce identical ICU messages
+      expect(transExtracted[0].source).toBe(tExtracted[0].source);
+      expect(transExtracted[0].source).toBe(
+        'You have {count, plural, one {# item} other {# items}} in cart',
+      );
+    });
+
+    it('handles template literal with all CLDR plural forms', () => {
+      const extracted: Array<{ source: string }> = [];
+
+      const code = `
+        import { plural } from '@idioma/react'
+        const t = (s: string) => s
+        const msg = t(\`\${plural(n, { zero: "none", one: "one", two: "two", few: "few", many: "many", other: "other" })}\`)
+      `;
+
+      transform(code, {
+        mode: 'development',
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe(
+        '{n, plural, zero {none} one {one} two {two} few {few} many {many} other {other}}',
+      );
+    });
+  });
 });

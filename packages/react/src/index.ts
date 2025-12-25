@@ -18,12 +18,7 @@ export {
 } from './context';
 
 // Pluralization (re-exported by generated idioma/)
-export {
-  Plural,
-  plural,
-  type PluralForms,
-  type PluralProps,
-} from './pluralization';
+export { plural, type PluralForms } from './pluralization';
 
 // Runtime internals (used by Babel-compiled code)
 export { __Trans, type TransProps } from './Trans';

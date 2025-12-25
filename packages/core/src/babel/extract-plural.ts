@@ -75,6 +75,81 @@ export function serializePluralToIcu(element: t.JSXElement): PluralIcuResult {
 }
 
 /**
+ * Serialize a plural() function call to ICU MessageFormat.
+ *
+ * Converts:
+ *   plural(count, { one: "# item", other: "# items" })
+ * To:
+ *   {count, plural, one {# item} other {# items}}
+ *
+ * This is the shared implementation used by both Trans and t() extraction.
+ */
+export function serializePluralCallToIcu(
+  call: t.CallExpression,
+): PluralIcuResult {
+  const args = call.arguments;
+
+  // Validate first argument (value)
+  if (args.length < 1 || t.isObjectExpression(args[0])) {
+    throw new Error('plural() requires a value as first argument');
+  }
+
+  // Validate second argument (forms object)
+  if (args.length < 2 || !t.isObjectExpression(args[1])) {
+    throw new Error('plural() requires a forms object as second argument');
+  }
+
+  // Extract the variable expression
+  // We've already validated args[0] is not an ObjectExpression above
+  const valueArg = args[0] as t.Expression;
+  const variable = generate(valueArg).code;
+
+  // Extract plural forms from the object
+  const formsObj = args[1] as t.ObjectExpression;
+  const props = new Map<string, string>();
+
+  for (const prop of formsObj.properties) {
+    if (!t.isObjectProperty(prop)) continue;
+
+    // Get the property key
+    let keyName: string | null = null;
+    if (t.isIdentifier(prop.key)) {
+      keyName = prop.key.name;
+    } else if (t.isStringLiteral(prop.key)) {
+      keyName = prop.key.value;
+    }
+
+    if (!keyName || !PLURAL_FORMS.includes(keyName as PluralForm)) continue;
+
+    // Get the property value (must be a string literal)
+    if (t.isStringLiteral(prop.value)) {
+      props.set(keyName, prop.value.value);
+    } else {
+      throw new Error('plural() form values must be string literals');
+    }
+  }
+
+  // Validate required 'other' form
+  if (!props.has('other')) {
+    throw new Error('plural() requires an "other" form');
+  }
+
+  // Build ICU message (same logic as serializePluralToIcu)
+  const forms: string[] = [];
+
+  for (const form of PLURAL_FORMS) {
+    if (props.has(form)) {
+      const formText = escapeIcuSpecialChars(props.get(form)!);
+      forms.push(`${form} {${formText}}`);
+    }
+  }
+
+  const icu = `{${variable}, plural, ${forms.join(' ')}}`;
+
+  return { icu, variable };
+}
+
+/**
  * Escape special ICU characters in form text.
  * Curly braces { and } need to be escaped as '{' and '}' in ICU.
  * But # should NOT be escaped as it's a special ICU placeholder.
