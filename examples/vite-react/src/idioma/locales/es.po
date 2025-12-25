@@ -4,13 +4,13 @@ msgstr ""
 "Content-Type: text/plain\n"
 
 #: src/App.tsx:16
-#. [AI Context]: Main page heading displayed at the top of the application
+#. [AI Context]: Main page heading that appears at the top of the application
 #, ai-translated
 msgid "000QnNwH"
 msgstr "Idioma Example"
 
 #: src/App.tsx:19
-#. [AI Context]: Label for language selection dropdown in the header
+#. [AI Context]: Label for language selector dropdown in the header
 #, ai-translated
 msgid "000esfJJ"
 msgstr "Idioma"
@@ -34,13 +34,13 @@ msgid "0013HYrG"
 msgstr "API Imperativa"
 
 #: src/components/Counter.tsx:11
-#. [AI Context]: Status message in shopping cart showing item count with dynamic pluralization between 'item' and 'items'
+#. [AI Context]: Message displaying cart item count with dynamic pluralization. The {count} shows the number and {itemLabel} switches between 'item' (singular) and 'items' (plural) based on the count value.
 #, ai-translated
 msgid "0019RXs4"
 msgstr "Tienes {count} {itemLabel} en tu carrito."
 
 #: src/components/Greeting.tsx:10
-#. [AI Context]: Greeting message displayed in a paragraph, shown to personalize welcome text with the user's name
+#. [AI Context]: Personalized greeting message displayed to users, where {name} is replaced with the user's actual name.
 #, ai-translated
 msgid "0024c34D"
 msgstr "¡Hola, {name}!"

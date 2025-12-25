@@ -393,6 +393,209 @@ msgstr ""
   });
 });
 
+describe('Translate with Verbose Logging', () => {
+  let tempDir: string;
+  let localeDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-verbose-'));
+    localeDir = join(tempDir, 'locales');
+    await fs.mkdir(localeDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('calls onVerbose with batch progress when verbose is enabled', async () => {
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const provider = createMockProvider({ Hello: 'Hola' });
+    const onVerbose = vi.fn();
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider,
+      onVerbose,
+    });
+
+    // Should have been called with batch header and response
+    expect(onVerbose).toHaveBeenCalled();
+    const calls = onVerbose.mock.calls.map((c) => c[0]);
+
+    // Check for batch header
+    expect(calls.some((msg) => msg.includes('Translation Batch'))).toBe(true);
+
+    // Check for response with translation
+    expect(calls.some((msg) => msg.includes('Hola'))).toBe(true);
+  });
+
+  it('does not call onVerbose when not provided', async () => {
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const provider = createMockProvider({ Hello: 'Hola' });
+
+    // Should not throw when onVerbose is not provided
+    const result = await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider,
+    });
+
+    expect(result.translated).toBe(1);
+  });
+
+  it('logs batch progress for multiple batches', async () => {
+    // Create 3 messages to translate
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+
+msgid "h002"
+msgstr "Goodbye"
+
+msgid "h003"
+msgstr "Welcome"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+
+msgid "h002"
+msgstr ""
+
+msgid "h003"
+msgstr ""
+`,
+    );
+
+    const provider = createMockProvider({
+      Hello: 'Hola',
+      Goodbye: 'Adiós',
+      Welcome: 'Bienvenido',
+    });
+    const onVerbose = vi.fn();
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider,
+      batchSize: 2, // Force 2 batches
+      onVerbose,
+    });
+
+    const calls = onVerbose.mock.calls.map((c) => c[0]);
+
+    // Should have batch 1/2 and batch 2/2
+    expect(calls.some((msg) => msg.includes('Batch 1/2'))).toBe(true);
+    expect(calls.some((msg) => msg.includes('Batch 2/2'))).toBe(true);
+  });
+
+  it('works with dry-run mode', async () => {
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const provider = createMockProvider({ Hello: 'Hola' });
+    const onVerbose = vi.fn();
+
+    const result = await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider,
+      dryRun: true,
+      onVerbose,
+    });
+
+    // Verbose should still be called in dry-run mode
+    expect(onVerbose).toHaveBeenCalled();
+    expect(result.dryRun).toBe(true);
+
+    // File should not be modified
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('msgstr ""');
+  });
+});
+
 describe('Translate with Auto-Context', () => {
   let tempDir: string;
   let localeDir: string;

@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
+import { formatBox } from './format.js';
 
 export interface MessageToTranslate {
   key: string;
@@ -28,6 +29,8 @@ export interface AnthropicProviderOptions {
   model?: string;
   /** Project-specific guidelines for AI translation */
   guidelines?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
 }
 
 export interface OpenAIProviderOptions {
@@ -35,6 +38,8 @@ export interface OpenAIProviderOptions {
   model?: string;
   /** Project-specific guidelines for AI translation */
   guidelines?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
 }
 
 const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator specializing in software UI localization. Translate the following messages from {sourceLocale} to {targetLocale}.
@@ -88,7 +93,12 @@ ${guidelines}`;
 export function createAnthropicProvider(
   options: AnthropicProviderOptions,
 ): TranslationProvider {
-  const { apiKey, model = 'claude-sonnet-4-20250514', guidelines } = options;
+  const {
+    apiKey,
+    model = 'claude-sonnet-4-20250514',
+    guidelines,
+    onVerbose,
+  } = options;
 
   const client = new Anthropic({ apiKey });
 
@@ -112,6 +122,11 @@ export function createAnthropicProvider(
           return text;
         })
         .join('\n\n');
+
+      if (onVerbose) {
+        onVerbose(formatBox('System Prompt', systemPrompt));
+        onVerbose(formatBox('User Content', userContent));
+      }
 
       const response = await client.messages.create({
         model,
@@ -165,7 +180,7 @@ export function createAnthropicProvider(
 export function createOpenAIProvider(
   options: OpenAIProviderOptions,
 ): TranslationProvider {
-  const { apiKey, model = 'gpt-4o', guidelines } = options;
+  const { apiKey, model = 'gpt-4o', guidelines, onVerbose } = options;
 
   const client = new OpenAI({ apiKey });
 
@@ -189,6 +204,11 @@ export function createOpenAIProvider(
           return text;
         })
         .join('\n\n');
+
+      if (onVerbose) {
+        onVerbose(formatBox('System Prompt', systemPrompt));
+        onVerbose(formatBox('User Content', userContent));
+      }
 
       const response = await client.chat.completions.create({
         model,

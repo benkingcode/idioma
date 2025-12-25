@@ -3,6 +3,7 @@ import { join } from 'path';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import type { Catalog, Message } from '../po/types.js';
+import { formatBox, formatHeader, formatKeyValueList } from './format.js';
 
 /**
  * Prefix used to identify AI-generated context comments in PO files.
@@ -119,9 +120,13 @@ export function addAIContext(message: Message, context: string): void {
  * Group messages by their source file for batch context generation.
  * Only includes messages that need context generation.
  * Uses the first reference for each message.
+ *
+ * @param messages - The catalog messages
+ * @param sourceTextByKey - Optional lookup for actual source text (for hash-based key systems)
  */
 export function groupMessagesByFile(
   messages: Map<string, Message>,
+  sourceTextByKey?: Map<string, string>,
 ): Map<string, MessageForContext[]> {
   const grouped = new Map<string, MessageForContext[]>();
 
@@ -142,11 +147,14 @@ export function groupMessagesByFile(
 
     const { filePath, line } = parsed;
 
+    // Get actual source text - prefer lookup, fallback to message.source
+    const sourceText = sourceTextByKey?.get(key) ?? message.source;
+
     // Add to group
     const group = grouped.get(filePath) ?? [];
     group.push({
       key,
-      source: message.source,
+      source: sourceText,
       line,
     });
     grouped.set(filePath, group);
@@ -164,6 +172,8 @@ export interface AnthropicContextProviderOptions {
   model?: string;
   /** Project-specific guidelines for AI context generation */
   guidelines?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
 }
 
 export interface OpenAIContextProviderOptions {
@@ -171,6 +181,8 @@ export interface OpenAIContextProviderOptions {
   model?: string;
   /** Project-specific guidelines for AI context generation */
   guidelines?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
 }
 
 const CONTEXT_GENERATION_SYSTEM_PROMPT = `You are a technical writer helping translators understand UI text.
@@ -242,7 +254,12 @@ ${messageList}`;
 export function createAnthropicContextProvider(
   options: AnthropicContextProviderOptions,
 ): ContextProvider {
-  const { apiKey, model = 'claude-sonnet-4-20250514', guidelines } = options;
+  const {
+    apiKey,
+    model = 'claude-sonnet-4-20250514',
+    guidelines,
+    onVerbose,
+  } = options;
 
   const client = new Anthropic({ apiKey });
   const systemPrompt = buildContextSystemPrompt(guidelines);
@@ -252,6 +269,14 @@ export function createAnthropicContextProvider(
       request: FileContextRequest,
     ): Promise<GeneratedContext[]> {
       const userContent = formatContextRequest(request);
+
+      if (onVerbose) {
+        onVerbose(
+          `\n${formatHeader(`Context Generation: ${request.filePath} (${request.messages.length} messages)`)}`,
+        );
+        onVerbose(formatBox('System Prompt', systemPrompt));
+        onVerbose(formatBox('User Content', userContent));
+      }
 
       const response = await client.messages.create({
         model,
@@ -298,6 +323,18 @@ export function createAnthropicContextProvider(
       }
 
       const input = toolUse.input as { contexts: GeneratedContext[] };
+
+      if (onVerbose) {
+        onVerbose(
+          formatBox(
+            'Response',
+            formatKeyValueList(
+              input.contexts.map((c) => ({ key: c.key, value: c.context })),
+            ),
+          ),
+        );
+      }
+
       return input.contexts;
     },
   };
@@ -309,7 +346,7 @@ export function createAnthropicContextProvider(
 export function createOpenAIContextProvider(
   options: OpenAIContextProviderOptions,
 ): ContextProvider {
-  const { apiKey, model = 'gpt-4o', guidelines } = options;
+  const { apiKey, model = 'gpt-4o', guidelines, onVerbose } = options;
 
   const client = new OpenAI({ apiKey });
   const systemPrompt = buildContextSystemPrompt(guidelines);
@@ -319,6 +356,14 @@ export function createOpenAIContextProvider(
       request: FileContextRequest,
     ): Promise<GeneratedContext[]> {
       const userContent = formatContextRequest(request);
+
+      if (onVerbose) {
+        onVerbose(
+          `\n${formatHeader(`Context Generation: ${request.filePath} (${request.messages.length} messages)`)}`,
+        );
+        onVerbose(formatBox('System Prompt', systemPrompt));
+        onVerbose(formatBox('User Content', userContent));
+      }
 
       const response = await client.chat.completions.create({
         model,
@@ -362,6 +407,18 @@ export function createOpenAIContextProvider(
       const parsed = JSON.parse(content) as {
         contexts: GeneratedContext[];
       };
+
+      if (onVerbose) {
+        onVerbose(
+          formatBox(
+            'Response',
+            formatKeyValueList(
+              parsed.contexts.map((c) => ({ key: c.key, value: c.context })),
+            ),
+          ),
+        );
+      }
+
       return parsed.contexts;
     },
   };
@@ -378,6 +435,8 @@ export interface ContextGenerationOptions {
   catalog: Catalog;
   /** Context provider to use */
   provider: ContextProvider;
+  /** Lookup for actual source text (key -> text, for hash-based key systems) */
+  sourceTextByKey?: Map<string, string>;
 }
 
 export interface ContextGenerationResult {
@@ -396,7 +455,7 @@ export interface ContextGenerationResult {
 export async function generateContextForCatalog(
   options: ContextGenerationOptions,
 ): Promise<ContextGenerationResult> {
-  const { projectRoot, catalog, provider } = options;
+  const { projectRoot, catalog, provider, sourceTextByKey } = options;
 
   const result: ContextGenerationResult = {
     generated: 0,
@@ -412,7 +471,7 @@ export async function generateContextForCatalog(
   }
 
   // Group messages by source file
-  const messagesByFile = groupMessagesByFile(catalog.messages);
+  const messagesByFile = groupMessagesByFile(catalog.messages, sourceTextByKey);
 
   // Process each file
   for (const [filePath, messages] of messagesByFile) {

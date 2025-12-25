@@ -7,6 +7,11 @@ import {
   type ContextProvider,
 } from '../../ai/context.js';
 import {
+  formatBox,
+  formatHeader,
+  formatKeyValueList,
+} from '../../ai/format.js';
+import {
   createAnthropicProvider,
   createOpenAIProvider,
   type MessageToTranslate,
@@ -37,6 +42,8 @@ export interface TranslateOptions {
   contextProvider?: ContextProvider;
   /** Project root for resolving source file paths (required if autoContext is true) */
   projectRoot?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
 }
 
 /**
@@ -57,6 +64,7 @@ export async function runTranslate(
     autoContext = false,
     contextProvider,
     projectRoot,
+    onVerbose,
   } = options;
 
   // Load default locale to get source text (msgstr contains the actual text)
@@ -80,6 +88,7 @@ export async function runTranslate(
       projectRoot,
       catalog,
       provider: contextProvider,
+      sourceTextByKey,
     });
   }
 
@@ -115,9 +124,17 @@ export async function runTranslate(
 
   // Translate in batches
   const translatedMessages: Map<string, string> = new Map();
+  const totalBatches = Math.ceil(messagesToTranslate.length / batchSize);
 
   for (let i = 0; i < messagesToTranslate.length; i += batchSize) {
     const batch = messagesToTranslate.slice(i, i + batchSize);
+    const batchNum = Math.floor(i / batchSize) + 1;
+
+    if (onVerbose) {
+      onVerbose(
+        `\n${formatHeader(`Translation Batch ${batchNum}/${totalBatches} (${batch.length} messages)`)}`,
+      );
+    }
 
     const results = await provider.translate({
       messages: batch,
@@ -127,6 +144,17 @@ export async function runTranslate(
 
     for (const result of results) {
       translatedMessages.set(result.key, result.translation);
+    }
+
+    if (onVerbose) {
+      onVerbose(
+        formatBox(
+          'Response',
+          formatKeyValueList(
+            results.map((r) => ({ key: r.key, value: r.translation })),
+          ),
+        ),
+      );
     }
   }
 
@@ -193,10 +221,20 @@ export const translateCommand = defineCommand({
       description: 'Skip automatic AI context generation for messages',
       default: false,
     },
+    verbose: {
+      type: 'boolean',
+      description: 'Show detailed logs including AI prompts',
+      default: false,
+    },
   },
   async run({ args }) {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
+
+    // Create verbose callback
+    const onVerbose = args.verbose
+      ? (msg: string) => console.log(msg)
+      : undefined;
 
     // Create provider
     let provider: TranslationProvider;
@@ -213,6 +251,7 @@ export const translateCommand = defineCommand({
         apiKey,
         model: config.ai?.model,
         guidelines: config.ai?.guidelines,
+        onVerbose,
       });
     } else if (providerName === 'openai') {
       const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY;
@@ -225,6 +264,7 @@ export const translateCommand = defineCommand({
         apiKey,
         model: config.ai?.model,
         guidelines: config.ai?.guidelines,
+        onVerbose,
       });
     } else {
       console.error(`Error: Unknown provider: ${providerName}`);
@@ -244,6 +284,7 @@ export const translateCommand = defineCommand({
             apiKey,
             model: config.ai?.model,
             guidelines: config.ai?.guidelines,
+            onVerbose,
           });
         }
       } else if (providerName === 'openai') {
@@ -253,6 +294,7 @@ export const translateCommand = defineCommand({
             apiKey,
             model: config.ai?.model,
             guidelines: config.ai?.guidelines,
+            onVerbose,
           });
         }
       }
@@ -276,6 +318,7 @@ export const translateCommand = defineCommand({
       autoContext: autoContext && !!contextProvider,
       contextProvider,
       projectRoot: cwd,
+      onVerbose,
     });
 
     if (result.dryRun) {
