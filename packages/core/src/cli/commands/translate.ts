@@ -59,6 +59,17 @@ export async function runTranslate(
     projectRoot,
   } = options;
 
+  // Load default locale to get source text (msgstr contains the actual text)
+  const defaultPoPath = join(localeDir, `${defaultLocale}.po`);
+  const defaultCatalog = await loadPoFile(defaultPoPath, defaultLocale);
+
+  // Build lookup: key -> source text from default locale's msgstr
+  const sourceTextByKey = new Map<string, string>();
+  for (const [key, message] of defaultCatalog.messages) {
+    // In Idioma's hash-based system, msgid is the hash and msgstr is the source text
+    sourceTextByKey.set(key, message.translation || message.source);
+  }
+
   // Load target catalog
   const poPath = join(localeDir, `${targetLocale}.po`);
   const catalog = await loadPoFile(poPath, targetLocale);
@@ -81,9 +92,11 @@ export async function runTranslate(
       force || !message.translation || message.translation.length === 0;
 
     if (needsTranslation) {
+      // Use source text from default locale, fall back to msgid if not found
+      const sourceText = sourceTextByKey.get(key) || message.source;
       messagesToTranslate.push({
         key,
-        source: message.source,
+        source: sourceText,
         context: message.comments?.join(' '),
       });
     } else {

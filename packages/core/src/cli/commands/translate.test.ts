@@ -14,7 +14,7 @@ import type {
 } from '../../ai/provider';
 import { runTranslate, type TranslateResult } from './translate';
 
-// Mock provider for testing
+// Mock provider that translates based on source text lookup
 function createMockProvider(
   translations: Record<string, string>,
 ): TranslationProvider {
@@ -43,6 +43,50 @@ describe('Translate Command', () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
+  it('translates using source text from default locale when msgid is a hash', async () => {
+    // This test verifies the core Idioma hash-based key system:
+    // - msgid is a content-addressable hash (e.g., "abc123")
+    // - msgstr in default locale contains the actual source text
+    // - msgstr in target locale should be the translation
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "abc123"
+msgstr "Hello, world!"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "abc123"
+msgstr ""
+`,
+    );
+
+    // The provider should receive "Hello, world!" as source, not "abc123"
+    const provider = createMockProvider({ 'Hello, world!': '¡Hola, mundo!' });
+
+    const result = await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider,
+    });
+
+    expect(result.translated).toBe(1);
+
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('msgstr "¡Hola, mundo!"');
+  });
+
   it('translates untranslated messages', async () => {
     await fs.writeFile(
       join(localeDir, 'en.po'),
@@ -51,7 +95,7 @@ msgid ""
 msgstr ""
 "Language: en\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr "Hello"
 `,
     );
@@ -62,7 +106,7 @@ msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -84,13 +128,24 @@ msgstr ""
 
   it('skips already translated messages', async () => {
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr "Hola"
 `,
     );
@@ -110,13 +165,24 @@ msgstr "Hola"
 
   it('respects force option to retranslate', async () => {
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr "Hola viejo"
 `,
     );
@@ -139,13 +205,24 @@ msgstr "Hola viejo"
 
   it('dry run does not write changes', async () => {
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -169,19 +246,36 @@ msgstr ""
 
   it('translates multiple messages in batch', async () => {
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+
+msgid "h002"
+msgstr "Goodbye"
+
+msgid "h003"
+msgstr "Welcome"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr ""
 
-msgid "Goodbye"
+msgid "h002"
 msgstr ""
 
-msgid "Welcome"
+msgid "h003"
 msgstr ""
 `,
     );
@@ -209,13 +303,24 @@ msgstr ""
 
   it('marks AI translations with a flag', async () => {
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -236,19 +341,36 @@ msgstr ""
 
   it('returns stats about translation', async () => {
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+
+msgid "h002"
+msgstr "Goodbye"
+
+msgid "h003"
+msgstr "Welcome"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
 msgstr ""
 "Language: es\\n"
 
-msgid "Hello"
+msgid "h001"
 msgstr ""
 
-msgid "Goodbye"
+msgid "h002"
 msgstr "Adiós"
 
-msgid "Welcome"
+msgid "h003"
 msgstr ""
 `,
     );
@@ -328,7 +450,19 @@ describe('Translate with Auto-Context', () => {
       'const App = () => <button>Click me</button>;',
     );
 
-    // Create PO file with reference
+    // Create PO files with reference (using hash-based key)
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/App.tsx:1
+msgid "h001"
+msgstr "Click me"
+`,
+    );
     await fs.writeFile(
       join(localeDir, 'es.po'),
       `
@@ -337,7 +471,7 @@ msgstr ""
 "Language: es\\n"
 
 #: src/App.tsx:1
-msgid "Click me"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -346,7 +480,7 @@ msgstr ""
       'Click me': 'Haz clic aquí',
     });
     const contextProvider = createMockContextProvider({
-      'Click me': 'Button label for primary action',
+      h001: 'Button label for primary action',
     });
 
     await runTranslate({
@@ -375,6 +509,18 @@ msgstr ""
     );
 
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/App.tsx:1
+msgid "h001"
+msgstr "Click me"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
@@ -382,7 +528,7 @@ msgstr ""
 "Language: es\\n"
 
 #: src/App.tsx:1
-msgid "Click me"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -413,6 +559,19 @@ msgstr ""
     );
 
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#. [AI Context]: Pre-existing context
+#: src/App.tsx:1
+msgid "h001"
+msgstr "Click me"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
@@ -421,7 +580,7 @@ msgstr ""
 
 #. [AI Context]: Pre-existing context
 #: src/App.tsx:1
-msgid "Click me"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -452,6 +611,19 @@ msgstr ""
     );
 
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/App.tsx:1
+msgctxt "button"
+msgid "h001"
+msgstr "Click me"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
@@ -460,7 +632,7 @@ msgstr ""
 
 #: src/App.tsx:1
 msgctxt "button"
-msgid "Click me"
+msgid "h001"
 msgstr ""
 `,
     );
@@ -488,6 +660,18 @@ msgstr ""
     // Don't create the source file
 
     await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/NonExistent.tsx:1
+msgid "h001"
+msgstr "Missing file"
+`,
+    );
+    await fs.writeFile(
       join(localeDir, 'es.po'),
       `
 msgid ""
@@ -495,7 +679,7 @@ msgstr ""
 "Language: es\\n"
 
 #: src/NonExistent.tsx:1
-msgid "Missing file"
+msgid "h001"
 msgstr ""
 `,
     );
