@@ -5,7 +5,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "vitest run",
-    "test:run": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
     "format": "prettier --write ."
