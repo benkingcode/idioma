@@ -15,6 +15,7 @@
 - **Tree-shaken bundles** — Only translations for components on each page ship; opt into Suspense to load one locale at a time
 - **Vite plugin** — HMR for translations, zero config
 - **Next.js plugin** — Works with App Router and Pages Router
+- **React Native / Metro** — First-class React Native support with Metro bundler
 - **React Server Components** — Native RSC support with async translations
 
 ## Quick Start
@@ -117,6 +118,70 @@ export default function RootLayout({ children }) {
 ```
 
 Works with both App Router and Pages Router.
+
+## React Native
+
+Add the Metro configuration wrapper:
+
+```js
+// metro.config.js
+const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const { withIdioma } = require('@idioma/core/metro');
+
+const config = getDefaultConfig(__dirname);
+
+module.exports = withIdioma({
+  localeDir: './locales',
+  outputDir: './src/idioma',
+  defaultLocale: 'en',
+})(config);
+```
+
+Add the Babel preset:
+
+```js
+// babel.config.js
+module.exports = {
+  presets: ['module:@react-native/babel-preset'],
+  plugins: [['@idioma/core/babel', { mode: 'production' }]],
+};
+```
+
+Set up the provider in your app root:
+
+```tsx
+// App.tsx
+import { IdiomaProvider } from './src/idioma';
+
+export default function App() {
+  return (
+    <IdiomaProvider locale="en">
+      <Main />
+    </IdiomaProvider>
+  );
+}
+```
+
+Use translations in your components:
+
+```tsx
+import { Text, View } from 'react-native';
+import { Trans, useT } from './src/idioma';
+
+function Greeting({ name }) {
+  const t = useT();
+  return (
+    <View>
+      <Text>
+        <Trans>Hello {name}!</Trans>
+      </Text>
+      <Text>{t('Welcome to the app')}</Text>
+    </View>
+  );
+}
+```
+
+The Metro plugin automatically compiles translations on startup and watches for PO file changes during development.
 
 ## React Server Components
 
@@ -555,7 +620,7 @@ Use `idioma check` to identify missing translations before deployment.
 
 ## Packages
 
-- **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, CLI, PO compiler
+- **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
 - **@idioma/react** — Runtime components (~800 bytes gzipped)
 
 ## License

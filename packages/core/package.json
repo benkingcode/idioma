@@ -25,6 +25,10 @@
     "./next": {
       "types": "./dist/bundler/next.d.ts",
       "import": "./dist/bundler/next.js"
+    },
+    "./metro": {
+      "types": "./dist/bundler/metro.d.ts",
+      "import": "./dist/bundler/metro.js"
     }
   },
   "bin": {
@@ -52,9 +56,13 @@
   },
   "peerDependencies": {
     "@babel/core": "^7.0.0",
+    "metro-config": ">=0.80.0",
     "next": ">=13.0.0"
   },
   "peerDependenciesMeta": {
+    "metro-config": {
+      "optional": true
+    },
     "next": {
       "optional": true
     }
