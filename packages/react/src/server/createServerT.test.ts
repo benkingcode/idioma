@@ -64,17 +64,34 @@ describe('createServerT', () => {
     });
   });
 
-  describe('with context', () => {
+  describe('with context (3rd arg)', () => {
     it('uses context to generate different key', async () => {
       const t = createServerT('es', translations);
-      const result = await t('Submit', { context: 'button' });
+      const result = await t('Submit', undefined, { context: 'button' });
+      expect(result).toBe('Enviar');
+    });
+
+    it('accepts empty object for values when only options needed', async () => {
+      const t = createServerT('es', translations);
+      const result = await t('Submit', {}, { context: 'button' });
       expect(result).toBe('Enviar');
     });
 
     it('context without translation falls back to source', async () => {
       const t = createServerT('en', translations);
-      const result = await t('Submit', { context: 'unknown' });
+      const result = await t('Submit', undefined, { context: 'unknown' });
       expect(result).toBe('Submit');
+    });
+
+    it('accepts values and options together', async () => {
+      const t = createServerT('es', translations);
+      // No translation for 'greeting' context, should fall back to interpolated source
+      const result = await t(
+        'Hello {name}',
+        { name: 'Ben' },
+        { context: 'greeting' },
+      );
+      expect(result).toBe('Hello Ben');
     });
   });
 

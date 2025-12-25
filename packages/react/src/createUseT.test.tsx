@@ -89,11 +89,52 @@ describe('createUseT', () => {
       expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
     });
 
-    it('uses context to generate different key', () => {
+    it('uses context in options (3rd arg) to generate different key', () => {
       function TestComponent() {
         const t = useT();
         return (
-          <div data-testid="result">{t('Submit', { context: 'button' })}</div>
+          <div data-testid="result">
+            {t('Submit', undefined, { context: 'button' })}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Enviar');
+    });
+
+    it('accepts values as 2nd arg and options as 3rd arg', () => {
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div data-testid="result">
+            {t('Hello {name}', { name: 'Ben' }, { context: 'greeting' })}
+          </div>
+        );
+      }
+
+      // No translation for this context, should fall back to interpolated source
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello Ben');
+    });
+
+    it('accepts empty object for values when only options needed', () => {
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div data-testid="result">
+            {t('Submit', {}, { context: 'button' })}
+          </div>
         );
       }
 
@@ -208,6 +249,24 @@ describe('createUseT', () => {
       );
 
       expect(screen.getByTestId('result').textContent).toBe('nonexistent.key');
+    });
+
+    it('accepts ns option (placeholder for future namespacing)', () => {
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div data-testid="result">{t({ id: 'greeting', ns: 'common' })}</div>
+        );
+      }
+
+      // ns is currently a no-op but should be accepted without error
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hola');
     });
   });
 

@@ -5,18 +5,25 @@ type MessageFunction = (args: Record<string, unknown>) => string;
 type Translations = Record<string, Record<string, string | MessageFunction>>;
 
 /**
- * Key-only mode arguments: t({ id: "welcome", values: { name } })
+ * Key-only mode arguments: t({ id: "welcome", values: { name }, context: "modal", ns: "common" })
  */
 export interface KeyOnlyArgs {
   id: string;
   values?: Record<string, unknown>;
+  /** Translator context (saved in PO for human reference, not used in key lookup) */
+  context?: string;
+  /** Namespace for scoped lookups (placeholder for future) */
+  ns?: string;
 }
 
 /**
- * Source text mode options: t("Submit", { context: "button", name: "Ben" })
+ * Source text mode options: t("Submit", undefined, { context: "button", ns: "common" })
  */
-export interface SourceTextOptions extends Record<string, unknown> {
+export interface SourceTextOptions {
+  /** Translator context (changes key hash) */
   context?: string;
+  /** Namespace for scoped lookups (placeholder for future) */
+  ns?: string;
 }
 
 /**
@@ -25,7 +32,13 @@ export interface SourceTextOptions extends Record<string, unknown> {
  */
 export type ServerTFunction = {
   (args: KeyOnlyArgs): Promise<string>;
-  (source: string, options?: SourceTextOptions): Promise<string>;
+  (source: string): Promise<string>;
+  (source: string, values: Record<string, unknown>): Promise<string>;
+  (
+    source: string,
+    values: Record<string, unknown> | undefined,
+    options: SourceTextOptions,
+  ): Promise<string>;
 };
 
 /**
@@ -41,12 +54,13 @@ export type ServerTFunction = {
  * await t('Hello world!');  // 'Hola mundo!'
  * await t('Hello {name}', { name: 'Ben' });  // 'Hola Ben'
  *
+ * // With context (3rd arg)
+ * await t('Submit', undefined, { context: 'button' });  // 'Enviar'
+ * await t('Hello {name}', { name: 'Ben' }, { context: 'greeting' });  // both
+ *
  * // Key-only mode
  * await t({ id: 'welcome' });  // 'Bienvenido!'
- * await t({ id: 'greeting', values: { name: 'Ben' } });  // 'Hola Ben!'
- *
- * // With context
- * await t('Submit', { context: 'button' });  // 'Enviar'
+ * await t({ id: 'greeting', values: { name: 'Ben' }, ns: 'common' });  // with ns
  */
 export function createServerT(
   locale: string,
@@ -54,36 +68,37 @@ export function createServerT(
 ): ServerTFunction {
   return async (
     sourceOrArgs: string | KeyOnlyArgs,
+    values?: Record<string, unknown>,
     options?: SourceTextOptions,
   ): Promise<string> => {
-    // Key-only mode: t({ id: 'welcome', values: { name } })
+    // Key-only mode: t({ id: 'welcome', values: { name }, ns: 'common' })
     if (typeof sourceOrArgs === 'object') {
-      const { id, values } = sourceOrArgs;
+      const { id, values: keyValues } = sourceOrArgs;
       const localeMessages = translations[id];
       if (!localeMessages) return id;
 
       const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
       if (msg === undefined) return id;
-      if (typeof msg === 'function') return msg(values || {});
-      return values ? interpolateValues(msg, values) : msg;
+      if (typeof msg === 'function') return msg(keyValues || {});
+      return keyValues ? interpolateValues(msg, keyValues) : msg;
     }
 
-    // Source text mode: t('Hello {name}', { name: 'Ben', context: 'button' })
+    // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button' })
     const source = sourceOrArgs;
-    const { context, ...values } = options || {};
+    const { context } = options || {};
     const key = generateKey(source, context);
     const localeMessages = translations[key];
 
     if (!localeMessages) {
       // Fallback: interpolate source text if values provided
-      return Object.keys(values).length > 0
+      return values && Object.keys(values).length > 0
         ? interpolateValues(source, values)
         : source;
     }
 
     const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
     if (msg === undefined) {
-      return Object.keys(values).length > 0
+      return values && Object.keys(values).length > 0
         ? interpolateValues(source, values)
         : source;
     }
@@ -92,7 +107,7 @@ export function createServerT(
       return msg(values || {});
     }
 
-    return Object.keys(values).length > 0
+    return values && Object.keys(values).length > 0
       ? interpolateValues(msg, values)
       : msg;
   };

@@ -149,15 +149,17 @@ The `t` function supports:
 // Source text (auto-hashed to key)
 await t('Hello world!');
 
-// With values
+// With values (2nd arg)
 await t('Hello {name}', { name: 'Ben' });
+
+// With context (3rd arg - changes hash)
+await t('Submit', undefined, { context: 'button' });
+await t('Hello {name}', { name: 'Ben' }, { context: 'greeting' });
 
 // Key-only mode (like <Trans id="...">)
 await t({ id: 'welcome' });
 await t({ id: 'greeting', values: { name: 'Ben' } });
-
-// With context (changes hash)
-await t('Submit', { context: 'button' });
+await t({ id: 'submit', context: 'modal' }); // context for translator reference
 ```
 
 The client-side `useT` hook uses the same API, so you can share translation patterns between server and client components.
@@ -207,7 +209,17 @@ function SearchInput() {
 
 function Greeting({ name }) {
   const t = useT();
-  return <span>{t('Hello {name}', { name })}</span>;
+
+  // With values (2nd arg)
+  const greeting = t('Hello {name}', { name });
+
+  // With context (3rd arg - changes hash)
+  const submitLabel = t('Submit', undefined, { context: 'button' });
+
+  // With both values and context
+  const message = t('Welcome {user}', { user: name }, { context: 'header' });
+
+  return <span>{greeting}</span>;
 }
 ```
 

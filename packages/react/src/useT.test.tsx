@@ -72,11 +72,13 @@ describe('__useT', () => {
       expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
     });
 
-    it('uses context to generate different key', () => {
+    it('uses context in options (3rd arg) to generate different key', () => {
       function TestComponent() {
         const t = __useT(translations);
         return (
-          <div data-testid="result">{t('Submit', { context: 'button' })}</div>
+          <div data-testid="result">
+            {t('Submit', undefined, { context: 'button' })}
+          </div>
         );
       }
 
