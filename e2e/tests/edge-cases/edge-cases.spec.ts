@@ -43,7 +43,7 @@ test.describe('Edge Cases', () => {
     await selectLocale(page, 'es');
 
     await expect(page.getByTestId('edge-empty')).toContainText('Valor: []');
-    await expect(page.getByTestId('edge-zero')).toContainText('Cuenta: 0');
+    await expect(page.getByTestId('edge-zero')).toContainText('Cantidad: 0');
     await expect(page.getByTestId('edge-special')).toContainText(
       'Especial: & < > "comillas"',
     );
@@ -58,10 +58,10 @@ test.describe('Edge Cases', () => {
     await expect(page.getByTestId('edge-empty')).toContainText('القيمة: []');
     await expect(page.getByTestId('edge-zero')).toContainText('العدد: 0');
     await expect(page.getByTestId('edge-special')).toContainText(
-      'خاص: & < > "اقتباسات"',
+      'خاص: & < > "علامات الاقتباس"',
     );
     await expect(page.getByTestId('edge-unicode')).toContainText(
-      'إيموجي: 🎉 ورموز: © ® ™',
+      'رموز تعبيرية: 🎉 والرموز: © ® ™',
     );
   });
 });

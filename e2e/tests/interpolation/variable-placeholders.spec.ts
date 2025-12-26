@@ -43,10 +43,10 @@ test.describe('Interpolation - Variable Placeholders', () => {
   test('interpolation works in Arabic', async ({ page }) => {
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('interp-simple')).toContainText(
-      'مرحباً، Alice!',
+      'مرحبا، Alice!',
     );
     await expect(page.getByTestId('interp-multiple')).toContainText(
-      'أهلاً، Bob Smith!',
+      'مرحبا، Bob Smith!',
     );
   });
 
@@ -65,7 +65,7 @@ test.describe('Interpolation - Variable Placeholders', () => {
     // Arabic
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('interp-simple')).toContainText(
-      'مرحباً، Alice!',
+      'مرحبا، Alice!',
     );
 
     // Back to English

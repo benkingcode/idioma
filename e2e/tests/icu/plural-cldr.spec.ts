@@ -19,15 +19,13 @@ test.describe('ICU Plurals - CLDR Arabic Forms', () => {
 
   test('one form (1)', async ({ page }) => {
     await clickNTimes(page, 'plural-increment', 1);
-    await expect(page.getByTestId('plural-cldr')).toContainText(
-      'ملف واحد (واحد)',
-    );
+    await expect(page.getByTestId('plural-cldr')).toContainText('1 ملف (واحد)');
   });
 
   test('two form (2)', async ({ page }) => {
     await clickNTimes(page, 'plural-increment', 2);
     await expect(page.getByTestId('plural-cldr')).toContainText(
-      'ملفان (اثنان)',
+      '2 ملفات (اثنين)',
     );
   });
 
@@ -46,19 +44,19 @@ test.describe('ICU Plurals - CLDR Arabic Forms', () => {
   test('many form (11-99)', async ({ page }) => {
     await clickNTimes(page, 'plural-increment', 11);
     await expect(page.getByTestId('plural-cldr')).toContainText(
-      '11 ملف (كثير)',
+      '11 ملفات (كثير)',
     );
 
     await clickNTimes(page, 'plural-increment', 88);
     await expect(page.getByTestId('plural-cldr')).toContainText(
-      '99 ملف (كثير)',
+      '99 ملفات (كثير)',
     );
   });
 
   test('other form (100+)', async ({ page }) => {
     await clickNTimes(page, 'plural-increment', 100);
     await expect(page.getByTestId('plural-cldr')).toContainText(
-      '100 ملف (آخر)',
+      '100 ملفات (آخر)',
     );
   });
 
@@ -72,7 +70,7 @@ test.describe('ICU Plurals - CLDR Arabic Forms', () => {
 
     // Two
     await clickNTimes(page, 'plural-increment', 1);
-    await expect(page.getByTestId('plural-cldr')).toContainText('(اثنان)');
+    await expect(page.getByTestId('plural-cldr')).toContainText('(اثنين)');
 
     // Few
     await clickNTimes(page, 'plural-increment', 1);

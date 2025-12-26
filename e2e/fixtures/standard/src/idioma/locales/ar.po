@@ -1,163 +1,123 @@
 msgid ""
 msgstr ""
 "Language: ar\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain\n"
 
 #: src/components/BasicTrans.tsx:8
-#. [AI Context]: Simple greeting text displayed in a paragraph element on a basic component page.
+#, ai-translated
 msgid "000e6cSN"
-msgstr "مرحباً بالعالم!"
+msgstr "مرحبا، يا عالم!"
 
 #: src/components/BasicTrans.tsx:13
-#. [AI Context]: Welcome message shown to users when they access the application, displayed as paragraph text.
+#, ai-translated
 msgid "002LT9uM"
-msgstr "مرحباً بك في تطبيقنا"
+msgstr "مرحبا بك في تطبيقنا"
 
 #: src/components/BasicTrans.tsx:18
-#. [AI Context]: Farewell message displayed in a paragraph element, likely shown when users are leaving or logging out.
+#, ai-translated
 msgid "greeting.farewell"
-msgstr "وداعاً!"
+msgstr "وداعا!"
 
 #: src/components/ComponentTags.tsx:27
-#. [AI Context]: Text with a clickable link element where <0> wraps the link text 'here'
-msgid "002dCe8j"
-msgstr "انقر <0>هنا</0> للمتابعة"
+#, ai-translated
+msgid "001K244T"
+msgstr "انقر <Link>هنا</Link> للمتابعة"
 
 #: src/components/ComponentTags.tsx:34
-#. [AI Context]: Text with two clickable links where <0> wraps 'terms' and <1> wraps 'privacy policy'
-msgid "002Wm69N"
-msgstr "اقرأ <0>الشروط</0> و<1>سياسة الخصوصية</1>"
+#, ai-translated
+msgid "002MF83G"
+msgstr "اقرأ <Link>الشروط</Link> و<Bold>سياسة الخصوصية</Bold>"
 
 #: src/components/ComponentTags.tsx:41
-#. [AI Context]: Greeting message where <0> wraps a user's name in bold formatting
-msgid "0001eiYR"
-msgstr "مرحباً <0>{name}</0>!"
+#, ai-translated
+msgid "000OaF1m"
+msgstr "مرحبا <Bold>{name}</Bold>!"
 
 #: src/components/ComponentTags.tsx:48
-#. [AI Context]: Descriptive text where <0> applies bold formatting and <1> applies italic formatting to sample words
-msgid "002Hfyl1"
-msgstr "هذا <0>عريض</0>، هذا <1>مائل</1>، وعادي"
+#, ai-translated
+msgid "002eTXHM"
+msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، والنص العادي"
 
 #: src/components/ComponentTags.tsx:55
-#. [AI Context]: Important notice where <0> applies bold formatting to the entire message and <1> applies italic formatting to 'read carefully'
-msgid "001Djb8c"
-msgstr "<0> مهم: <1>اقرأ بعناية</1> </0>"
+#, ai-translated
+msgid "0013HsIP"
+msgstr "<Bold> هام: <Italic>اقرأ بعناية</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx:15
-#. [AI Context]: Test message displaying an empty string value in square brackets, used to verify how the translation system handles empty variables.
+#, ai-translated
 msgid "002TXdYD"
 msgstr "القيمة: [{emptyString}]"
 
 #: src/components/EdgeCases.tsx:20
-#. [AI Context]: Test message showing a numeric count value, used to verify how the translation system handles zero values.
+#, ai-translated
 msgid "002Baos1"
 msgstr "العدد: {zero}"
 
 #: src/components/EdgeCases.tsx:25
-#. [AI Context]: Test message displaying a null value in square brackets, used to verify how the translation system handles null variables.
+#, ai-translated
 msgid "0043ID7R"
-msgstr "فارغ: [{nullValue}]"
+msgstr "قيمة فارغة: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx:30
-#. [AI Context]: Test message used to verify fallback behavior when a translation might be missing from the target language.
+#, ai-translated
 msgid "003jykkI"
-msgstr "قد لا تكون هذه الرسالة مترجمة"
+msgstr "قد لا تتم ترجمة هذه الرسالة"
 
 #: src/components/EdgeCases.tsx:35
-#. [AI Context]: Long test message used to verify how the translation system handles extended content across multiple lines.
+#, ai-translated
 msgid "0047ZVOp"
 msgstr ""
-"هذا نص طويل يمتد عبر عدة كلمات ويختبر كيف يتعامل النظام مع المحتوى الأطول "
+"هذا نص أطول يمتد على عدة كلمات ويختبر كيف يتعامل النظام مع المحتوى الأطول "
 "في الترجمات"
 
 #: src/components/EdgeCases.tsx:43
-#. [AI Context]: Test message containing HTML entities and special characters including ampersand, angle brackets, and quotes.
+#, ai-translated
 msgid "001r7GGR"
-msgstr "خاص: & < > \"اقتباسات\""
+msgstr "خاص: & < > \"علامات الاقتباس\""
 
-#: src/components/EdgeCases.tsx:51
-#. [AI Context]: Test message containing emoji and Unicode symbols including copyright, registered trademark, and trademark symbols.
+#: src/components/EdgeCases.tsx:54
+#, ai-translated
 msgid "004JLiGr"
-msgstr "إيموجي: 🎉 ورموز: © ® ™"
+msgstr "رموز تعبيرية: 🎉 والرموز: © ® ™"
 
 #: src/components/Interpolation.tsx:12
-#. [AI Context]: Greeting text displayed in a paragraph element with a placeholder for the user's name
+#, ai-translated
 msgid "0024c34D"
-msgstr "مرحباً، {name}!"
+msgstr "مرحبا، {name}!"
 
 #: src/components/Interpolation.tsx:17
-#. [AI Context]: Welcome message displayed in a paragraph with placeholders for the user's first and last name
+#, ai-translated
 msgid "003lIRId"
-msgstr "أهلاً، {firstName} {lastName}!"
+msgstr "مرحبا، {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx:24
-#. [AI Context]: Example text in a paragraph showing placeholder positioning with text before and after the name variable
+#, ai-translated
 msgid "000iXvMP"
 msgstr "قبل {name} بعد"
 
 #: src/components/Interpolation.tsx:29
-#. [AI Context]: Status message in a paragraph showing item count, where {0} represents a numeric value
+#, ai-translated
 msgid "002r0ybS"
 msgstr "لديك {0} عناصر"
 
-#: src/components/Plurals.tsx:11
-#. [AI Context]: Text displaying item count with basic pluralization: 'one' for exactly 1 item, 'other' for 0 or 2+
+#: src/components/Plurals.tsx:12
+#, ai-translated
 msgid "000w9C8y"
-msgstr ""
-"لديك {count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# "
-"عناصر} many {# عنصر} other {# عنصر}}"
+msgstr "لديك {count, plural, one {# عنصر} other {# عناصر}}"
 
-#: src/components/Plurals.tsx:18
-#. [AI Context]: Message count display with zero form: 'zero' for 0 messages, 'one' for exactly 1, 'other' for 2+
+#: src/components/Plurals.tsx:19
+#, ai-translated
 msgid "0048f6Nc"
-msgstr ""
-"{count, plural, zero {لا رسائل} one {رسالة واحدة} two {رسالتان} few {# "
-"رسائل} many {# رسالة} other {# رسالة}}"
+msgstr "{count, plural, zero {لا توجد رسائل} one {# رسالة} other {# رسائل}}"
 
-#: src/components/Plurals.tsx:29
-#. [AI Context]: Sentence about apples in a basket with pluralization: 'one' for exactly 1 apple (uses 'is'), 'other' for 0 or 2+ (uses 'are')
+#: src/components/Plurals.tsx:30
+#, ai-translated
 msgid "002EaYd6"
-msgstr ""
-"يوجد {count, plural, zero {لا تفاحات} one {تفاحة واحدة} two {تفاحتان} few "
-"{# تفاحات} many {# تفاحة} other {# تفاحة}} في السلة"
+msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
 
-#: src/components/Plurals.tsx:37
-#. [AI Context]: Complex pluralization for file count demonstrating all CLDR forms: 'zero' for 0, 'one' for 1, 'two' for 2, 'few'/'many'/'other' for different ranges based on language rules
+#: src/components/Plurals.tsx:38
+#, ai-translated
 msgid "004CDxng"
 msgstr ""
-"{count, plural, zero {# ملفات (صفر)} one {ملف واحد (واحد)} two {ملفان "
-"(اثنان)} few {# ملفات (قليل)} many {# ملف (كثير)} other {# ملف (آخر)}}"
-
-#: src/components/EdgeCases.tsx:47
-#: src/components/EdgeCases.tsx:47
-#: src/components/EdgeCases.tsx:47
-#. [AI Context]: Greeting message with a name placeholder variable, used to test variable substitution functionality.
-#, ai-translated
-msgid "004Dt4mI"
-msgstr "مرحبا {name}!"
-
-#: src/components/UseT.tsx:7
-#. [AI Context]: Text displayed in a paragraph element demonstrating basic translation functionality
-#, ai-translated
-msgid "002UQheH"
-msgstr "مرحبا من useT!"
-
-#: src/components/UseT.tsx:10
-#. [AI Context]: Welcome message with a name placeholder that gets replaced with user data
-#, ai-translated
-msgid "003X3cVZ"
-msgstr "أهلا وسهلا، {name}!"
-
-#: src/components/UseT.tsx:13
-#. [AI Context]: Status text showing item count and author name, with both values dynamically inserted
-#, ai-translated
-msgid "001gZ2vk"
-msgstr "{count} عنصر بواسطة {author}"
-
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
-#. [AI Context]: Text displayed in a paragraph element showing inline translation usage
-#, ai-translated
-msgid "002RXyTq"
-msgstr "الترجمة المدمجة"
+"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
+"(اثنين)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"

@@ -16,24 +16,24 @@ msgid "greeting.farewell"
 msgstr "Goodbye!"
 
 #: src/components/ComponentTags.tsx:27
-msgid "002dCe8j"
-msgstr "Click <0>here</0> to continue"
+msgid "001K244T"
+msgstr "Click <Link>here</Link> to continue"
 
 #: src/components/ComponentTags.tsx:34
-msgid "002Wm69N"
-msgstr "Read the <0>terms</0> and <1>privacy policy</1>"
+msgid "002MF83G"
+msgstr "Read the <Link>terms</Link> and <Bold>privacy policy</Bold>"
 
 #: src/components/ComponentTags.tsx:41
-msgid "0001eiYR"
-msgstr "Hello <0>{name}</0>!"
+msgid "000OaF1m"
+msgstr "Hello <Bold>{name}</Bold>!"
 
 #: src/components/ComponentTags.tsx:48
-msgid "002Hfyl1"
-msgstr "This is <0>bold</0>, this is <1>italic</1>, and normal"
+msgid "002eTXHM"
+msgstr "This is <Bold>bold</Bold>, this is <Italic>italic</Italic>, and normal"
 
 #: src/components/ComponentTags.tsx:55
-msgid "001Djb8c"
-msgstr "<0> Important: <1>read carefully</1> </0>"
+msgid "0013HsIP"
+msgstr "<Bold> Important: <Italic>read carefully</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx:13
 msgid "002TXdYD"
@@ -81,38 +81,20 @@ msgstr "Before {name} after"
 msgid "002r0ybS"
 msgstr "You have {0} items"
 
-#: src/components/Plurals.tsx:11
+#: src/components/Plurals.tsx:12
 msgid "000w9C8y"
 msgstr "You have {count, plural, one {# item} other {# items}}"
 
-#: src/components/Plurals.tsx:18
+#: src/components/Plurals.tsx:19
 msgid "0048f6Nc"
 msgstr "{count, plural, zero {No messages} one {# message} other {# messages}}"
 
-#: src/components/Plurals.tsx:29
+#: src/components/Plurals.tsx:30
 msgid "002EaYd6"
 msgstr "There {count, plural, one {is # apple} other {are # apples}} in the basket"
 
-#: src/components/Plurals.tsx:37
+#: src/components/Plurals.tsx:38
 msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
-
-#: src/components/UseT.tsx:7
-msgid "002UQheH"
-msgstr "Hello from useT!"
-
-#: src/components/UseT.tsx:10
-msgid "003X3cVZ"
-msgstr "Welcome, {name}!"
-
-#: src/components/UseT.tsx:13
-msgid "001gZ2vk"
-msgstr "{count} items by {author}"
-
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
-msgid "002RXyTq"
-msgstr "Inline translation"

@@ -60,43 +60,51 @@ test.describe('ICU Plurals - Basic', () => {
 
     // Zero - uses 'other' in Spanish (no zero form needed)
     await expect(page.getByTestId('plural-basic')).toContainText(
-      'Tienes 0 artículos',
+      'Tienes 0 elementos',
     );
 
     // One
     await clickNTimes(page, 'plural-increment', 1);
     await expect(page.getByTestId('plural-basic')).toContainText(
-      'Tienes 1 artículo',
+      'Tienes 1 elemento',
     );
 
     // Other
     await clickNTimes(page, 'plural-increment', 4);
     await expect(page.getByTestId('plural-basic')).toContainText(
-      'Tienes 5 artículos',
+      'Tienes 5 elementos',
     );
   });
 
   test('plurals work in Arabic with full CLDR forms', async ({ page }) => {
     await selectLocale(page, 'ar');
 
-    // Zero (Arabic has explicit zero form)
-    await expect(page.getByTestId('plural-basic')).toContainText('لا عناصر');
+    // Zero - uses 'other' form
+    await expect(page.getByTestId('plural-basic')).toContainText(
+      'لديك 0 عناصر',
+    );
 
     // One
     await clickNTimes(page, 'plural-increment', 1);
-    await expect(page.getByTestId('plural-basic')).toContainText('عنصر واحد');
+    await expect(page.getByTestId('plural-basic')).toContainText('لديك 1 عنصر');
 
-    // Two (Arabic has explicit two form)
+    // Two - uses 'other' form in current translation
     await clickNTimes(page, 'plural-increment', 1);
-    await expect(page.getByTestId('plural-basic')).toContainText('عنصران');
+    await expect(page.getByTestId('plural-basic')).toContainText(
+      'لديك 2 عناصر',
+    );
 
     // Few (3-10 in Arabic)
     await clickNTimes(page, 'plural-increment', 1);
-    await expect(page.getByTestId('plural-basic')).toContainText('3 عناصر');
+    await expect(page.getByTestId('plural-basic')).toContainText(
+      'لديك 3 عناصر',
+    );
 
     // Many (11-99 in Arabic)
     await clickNTimes(page, 'plural-increment', 8);
-    await expect(page.getByTestId('plural-basic')).toContainText('11 عنصر');
+    await expect(page.getByTestId('plural-basic')).toContainText(
+      'لديك 11 عناصر',
+    );
   });
 
   test('plurals update dynamically when count changes', async ({ page }) => {

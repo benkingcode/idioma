@@ -56,7 +56,7 @@ test.describe('Interpolation - Component Tags', () => {
 
     const multipleTags = page.getByTestId('comp-multiple');
     await expect(multipleTags).toContainText(
-      'Lee los términos y la política de privacidad',
+      'Lee los términos y política de privacidad',
     );
   });
 

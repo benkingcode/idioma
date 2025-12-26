@@ -8,7 +8,8 @@ export default defineConfig({
   forbidOnly: CI,
   retries: CI ? 2 : 0,
   workers: CI ? 1 : undefined,
-  reporter: CI ? 'github' : 'html',
+  reporter: CI ? 'github' : 'list',
+  timeout: 10000,
 
   use: {
     trace: 'on-first-retry',
