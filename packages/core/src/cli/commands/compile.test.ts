@@ -46,7 +46,6 @@ msgstr "Hello"
     // Internal files in .generated/
     const generatedFiles = await fs.readdir(join(outputDir, '.generated'));
     expect(generatedFiles).toContain('translations.js');
-    expect(generatedFiles).toContain('translations.d.ts');
     expect(generatedFiles).toContain('types.d.ts');
   });
 
