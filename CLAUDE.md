@@ -56,6 +56,9 @@ pnpm install
 # Build all packages
 pnpm build
 
+# Watch mode (rebuilds on file changes)
+pnpm dev
+
 # Run all tests (unit tests via Vitest)
 pnpm test
 
@@ -72,6 +75,28 @@ pnpm clean
 pnpm test:e2e            # Run all e2e tests
 pnpm test:e2e:ui         # Run with Playwright UI
 ```
+
+## Developing the Library
+
+**When modifying `@idioma/core` or `@idioma/react`**, you must rebuild for changes to be visible to:
+
+- E2E test fixtures (`e2e/fixtures/*`)
+- Example apps (`examples/*`)
+
+Use one of these approaches:
+
+1. **Watch mode** (recommended for active development):
+
+   ```bash
+   pnpm dev  # Watches both packages, rebuilds on change
+   ```
+
+2. **Manual build** (one-time rebuild):
+   ```bash
+   pnpm build
+   ```
+
+The E2E fixtures and examples import from the compiled `dist/` directories, not the source files directly. Forgetting to rebuild is a common source of confusion when changes "don't work".
 
 ## Architecture
 
