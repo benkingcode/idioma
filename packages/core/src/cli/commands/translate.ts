@@ -83,13 +83,19 @@ export async function runTranslate(
   const catalog = await loadPoFile(poPath, targetLocale);
 
   // Generate AI context for messages that need it
+  // Context is stored in the default (source) locale so it's available for all target locales
   if (autoContext && contextProvider && projectRoot) {
-    await generateContextForCatalog({
+    const contextResult = await generateContextForCatalog({
       projectRoot,
-      catalog,
+      catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
     });
+
+    // Save default catalog if context was generated
+    if (contextResult.generated > 0) {
+      await writePoFile(defaultPoPath, defaultCatalog);
+    }
   }
 
   // Find messages that need translation
@@ -103,10 +109,12 @@ export async function runTranslate(
     if (needsTranslation) {
       // Use source text from default locale, fall back to msgid if not found
       const sourceText = sourceTextByKey.get(key) || message.source;
+      // Read context from default (source) locale, not target locale
+      const defaultMessage = defaultCatalog.messages.get(key);
       messagesToTranslate.push({
         key,
         source: sourceText,
-        context: message.comments?.join(' '),
+        context: defaultMessage?.comments?.join(' '),
       });
     } else {
       skippedKeys.add(key);

@@ -699,9 +699,13 @@ msgstr ""
     // Context provider should have been called
     expect(contextProvider.generateContext).toHaveBeenCalled();
 
-    // PO file should contain both AI context and translation
+    // AI context should be written to SOURCE locale (en.po)
+    const enContent = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
+    expect(enContent).toContain('[AI Context]:');
+
+    // Target locale should have translation but NOT AI context
     const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
-    expect(esContent).toContain('[AI Context]:');
+    expect(esContent).not.toContain('[AI Context]:');
     expect(esContent).toContain('msgstr "Haz clic aquí"');
   });
 
@@ -905,5 +909,132 @@ msgstr ""
 
     // Translation should still complete
     expect(result.translated).toBe(1);
+  });
+
+  it('writes AI context to source locale, not target locale', async () => {
+    // Create source file
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      'const App = () => <button>Click me</button>;',
+    );
+
+    // Create PO files with reference (using hash-based key)
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#: src/App.tsx:1
+msgid "h001"
+msgstr "Click me"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/App.tsx:1
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const translateProvider = createMockTranslateProvider({
+      'Click me': 'Haz clic aquí',
+    });
+    const contextProvider = createMockContextProvider({
+      h001: 'Button label for primary action',
+    });
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: true,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // AI context should be written to SOURCE locale (en.po), not target
+    const enContent = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
+    expect(enContent).toContain('[AI Context]:');
+
+    // Target locale should NOT have AI context (only translation)
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).not.toContain('[AI Context]:');
+    expect(esContent).toContain('msgstr "Haz clic aquí"');
+  });
+
+  it('uses context from source locale when translating', async () => {
+    // This test verifies that context from en.po is used for translation,
+    // even when translating to a different locale
+
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      'const App = () => <button>Submit</button>;',
+    );
+
+    // Source locale has pre-existing context
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#. [AI Context]: Form submit button
+#: src/App.tsx:1
+msgid "h001"
+msgstr "Submit"
+`,
+    );
+
+    // Target locale has no context
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/App.tsx:1
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    // Track what context the translation provider receives
+    let receivedContext: string | undefined;
+    const translateProvider: TranslationProvider = {
+      name: 'mock',
+      async translate(request) {
+        receivedContext = request.messages[0]?.context;
+        return request.messages.map((m) => ({
+          key: m.key,
+          translation: 'Enviar',
+        }));
+      },
+    };
+
+    const contextProvider = createMockContextProvider({});
+
+    await runTranslate({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocale: 'es',
+      provider: translateProvider,
+      autoContext: true,
+      contextProvider,
+      projectRoot: tempDir,
+    });
+
+    // Translation should receive context from source locale
+    expect(receivedContext).toContain('[AI Context]: Form submit button');
   });
 });
