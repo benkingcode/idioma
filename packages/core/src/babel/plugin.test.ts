@@ -1075,4 +1075,125 @@ describe('Idioma Babel Plugin', () => {
       expect(result).not.toContain('__useTSuspense');
     });
   });
+
+  describe('createT binding tracking', () => {
+    it('tracks createT import and derived t function', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { createT } from './idioma'
+        const t = createT('es')
+        const msg = t('Hello world')
+      `;
+
+      transform(code, {
+        mode: 'development',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe('Hello world');
+    });
+
+    it('inlines translations for createT-derived t() calls in production', () => {
+      const code = `
+        import { createT } from './idioma'
+        const t = createT('es')
+        const msg = t('Hello world')
+      `;
+
+      // Key for 'Hello world' is '003B4Ntk'
+      const result = transform(code, {
+        mode: 'production',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {
+          '003B4Ntk': {
+            en: 'Hello world',
+            es: 'Hola mundo',
+          },
+        },
+      });
+
+      expect(result).toContain('Hello world');
+      expect(result).toContain('Hola mundo');
+    });
+
+    it('handles aliased createT import', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { createT as makeTranslator } from './idioma'
+        const translate = makeTranslator('es')
+        const msg = translate('Hello')
+      `;
+
+      transform(code, {
+        mode: 'development',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe('Hello');
+    });
+
+    it('tracks multiple createT-derived functions', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { createT } from './idioma'
+        const tEn = createT('en')
+        const tEs = createT('es')
+        const msgEn = tEn('Hello')
+        const msgEs = tEs('Goodbye')
+      `;
+
+      transform(code, {
+        mode: 'development',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(2);
+      expect(extracted.map((m) => m.source)).toContain('Hello');
+      expect(extracted.map((m) => m.source)).toContain('Goodbye');
+    });
+
+    it('leaves dynamic t() calls unchanged (falls back to source)', () => {
+      const code = `
+        import { createT } from './idioma'
+        const t = createT('es')
+        const key = getErrorKey()
+        const msg = t(key)
+      `;
+
+      const result = transform(code, {
+        mode: 'production',
+        idiomaDir: TEST_IDIOMA_DIR,
+      });
+
+      // Dynamic calls are left as-is
+      expect(result).toContain('t(key)');
+    });
+
+    it('does not track createT from non-idioma imports', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { createT } from 'some-other-package'
+        const t = createT('es')
+        const msg = t('Hello')
+      `;
+
+      transform(code, {
+        mode: 'development',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      // Should not extract because createT is not from idioma folder
+      expect(extracted).toHaveLength(0);
+    });
+  });
 });

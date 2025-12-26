@@ -715,14 +715,57 @@ async function generatePlainTs(outputDir: string): Promise<void> {
 // Do not edit directly
 // Plain JavaScript translation utilities (no React dependency)
 
-import type { StringOnlyKey, MessageValues } from './.generated/types';
+import type { Locale, StringOnlyKey, MessageValues } from './.generated/types';
 
-// Re-export createT from runtime.
-// In production, Babel inlines translations at each call site.
-// For dynamic strings, Babel injects the translations import automatically.
-export { createT } from '@idioma/core/runtime';
+/**
+ * Interpolate placeholder values in a message string.
+ * Replaces {key} with the corresponding value from values object.
+ */
+function interpolateValues(
+  message: string,
+  values: Record<string, unknown>,
+): string {
+  return message.replace(/\\{([^}]+)\\}/g, (match, key: string) => {
+    const value = values[key];
+    if (value === undefined) return match;
+    return String(value);
+  });
+}
 
-export type { StringOnlyKey, MessageValues };
+/**
+ * Create a translation function bound to a specific locale.
+ *
+ * In production, Babel inlines translations at each call site:
+ * \`t('Hello')\` → \`t('Hello', { key: { en: '...', es: '...' } })\`
+ *
+ * For dynamic strings (variables), falls back to source text.
+ *
+ * @example
+ * const t = createT('es');
+ * t('Hello world');  // → 'Hola mundo' (if translation exists)
+ * t('Hello {name}', { name: 'Ben' });  // → 'Hola Ben'
+ */
+export function createT(locale: Locale) {
+  return function t(
+    source: StringOnlyKey,
+    inlined?: Record<string, Record<string, string>>,
+    values?: MessageValues,
+  ): string {
+    // If Babel inlined translations, use them
+    if (inlined) {
+      const key = Object.keys(inlined)[0];
+      if (key) {
+        const localeMessages = inlined[key];
+        const msg = localeMessages?.[locale] ?? source;
+        return values ? interpolateValues(msg, values) : msg;
+      }
+    }
+    // Fallback for dynamic strings - return source (optionally interpolated)
+    return values ? interpolateValues(source, values) : source;
+  };
+}
+
+export type { Locale, StringOnlyKey, MessageValues };
 `;
 
   await fs.writeFile(join(outputDir, 'plain.ts'), content, 'utf-8');

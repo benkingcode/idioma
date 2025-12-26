@@ -162,7 +162,10 @@ async function extractFromFile(
   const messages: ExtractedMessage[] = [];
 
   // Track bindings from idioma imports
-  const translatableBindings = new Map<string, 'Trans' | 'useT' | 't'>();
+  const translatableBindings = new Map<
+    string,
+    'Trans' | 'useT' | 't' | 'createT'
+  >();
 
   // idiomaDir is required for extraction
   if (!idiomaDir) {
@@ -206,27 +209,39 @@ async function extractFromFile(
                   if (
                     imported === 'Trans' ||
                     imported === 'useT' ||
-                    imported === 't'
+                    imported === 't' ||
+                    imported === 'createT'
                   ) {
                     translatableBindings.set(
                       local,
-                      imported as 'Trans' | 'useT' | 't',
+                      imported as 'Trans' | 'useT' | 't' | 'createT',
                     );
                   }
                 }
               },
 
               VariableDeclarator(path) {
-                // Track variable aliases (e.g., const T = Trans)
                 const init = path.node.init;
-                if (init?.type !== 'Identifier') return;
-
                 const id = path.node.id;
                 if (id.type !== 'Identifier') return;
 
-                const type = translatableBindings.get(init.name);
-                if (type) {
-                  translatableBindings.set(id.name, type);
+                // Handle identifier aliases: const T = Trans
+                if (init?.type === 'Identifier') {
+                  const type = translatableBindings.get(init.name);
+                  if (type) {
+                    translatableBindings.set(id.name, type);
+                  }
+                  return;
+                }
+
+                // Handle createT() calls: const t = createT('es')
+                // The resulting function is tracked as a 't' binding
+                if (
+                  init?.type === 'CallExpression' &&
+                  init.callee.type === 'Identifier' &&
+                  translatableBindings.get(init.callee.name) === 'createT'
+                ) {
+                  translatableBindings.set(id.name, 't');
                 }
               },
 

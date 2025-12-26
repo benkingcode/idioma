@@ -352,4 +352,87 @@ msgstr "Old message"
     // Old message should be removed
     expect(content).not.toContain('msgid "oldHashKey"');
   });
+
+  it('extracts messages from createT-derived t() calls', async () => {
+    await fs.writeFile(
+      join(srcDir, 'server.ts'),
+      `
+      import { createT } from './idioma/plain'
+      const t = createT('es')
+      export const msg = t('Hello from server')
+      `,
+    );
+
+    // Create the idioma/plain directory structure
+    const plainDir = join(idiomaDir, 'plain');
+    await fs.mkdir(plainDir, { recursive: true });
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.ts'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+    });
+
+    expect(result.messages.length).toBe(1);
+    expect(result.messages[0].source).toBe('Hello from server');
+  });
+
+  it('extracts from aliased createT', async () => {
+    await fs.writeFile(
+      join(srcDir, 'utils.ts'),
+      `
+      import { createT as makeT } from './idioma/plain'
+      const translate = makeT('fr')
+      export const greeting = translate('Welcome')
+      `,
+    );
+
+    const plainDir = join(idiomaDir, 'plain');
+    await fs.mkdir(plainDir, { recursive: true });
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.ts'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+    });
+
+    expect(result.messages.length).toBe(1);
+    expect(result.messages[0].source).toBe('Welcome');
+  });
+
+  it('extracts from multiple createT-derived functions', async () => {
+    await fs.writeFile(
+      join(srcDir, 'handler.ts'),
+      `
+      import { createT } from './idioma/plain'
+
+      export function handler(locale: string) {
+        const t = createT(locale as any)
+        return {
+          hello: t('Hello'),
+          goodbye: t('Goodbye'),
+        }
+      }
+      `,
+    );
+
+    const plainDir = join(idiomaDir, 'plain');
+    await fs.mkdir(plainDir, { recursive: true });
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.ts'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+    });
+
+    expect(result.messages.length).toBe(2);
+    expect(result.messages.map((m) => m.source)).toContain('Hello');
+    expect(result.messages.map((m) => m.source)).toContain('Goodbye');
+  });
 });

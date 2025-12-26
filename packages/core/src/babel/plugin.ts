@@ -85,18 +85,10 @@ interface PluginState {
   idiomaUsed: boolean;
   idiomaKeys: Set<string>;
   chunkId: string;
-  /** Whether this file has dynamic t() calls (non-literal first arg) */
-  hasDynamicT: boolean;
-  /** Paths to createT() calls that need translations injected */
-  createTCalls: NodePath<t.CallExpression>[];
   /** Map of local binding names to their imported type from idioma folder */
-  translatableBindings: Map<string, 'Trans' | 'useT' | 't'>;
+  translatableBindings: Map<string, 'Trans' | 'useT' | 't' | 'createT'>;
   /** Resolved absolute path to idioma folder */
   resolvedIdiomaDir: string | null;
-  /** Local name of createT import (for tracking t functions derived from it) */
-  createTImportName: string | null;
-  /** Set of variable names that hold t functions from createT() */
-  createTDerivedFunctions: Set<string>;
 }
 
 /**
@@ -129,8 +121,6 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       this.chunkId = opts.projectRoot
         ? getChunkId(filename, opts.projectRoot)
         : 'unknown';
-      this.hasDynamicT = false;
-      this.createTCalls = [];
       this.translatableBindings = new Map();
       this.resolvedIdiomaDir = opts.idiomaDir ? resolve(opts.idiomaDir) : null;
     },
@@ -138,37 +128,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
     visitor: {
       Program: {
         exit(path, state) {
-          const { opts, idiomaUsed, chunkId, hasDynamicT, createTCalls } =
-            state;
-
-          // Handle dynamic t() calls - inject translations for runtime lookup
-          if (
-            opts.mode === 'production' &&
-            hasDynamicT &&
-            createTCalls.length > 0 &&
-            opts.outputDir
-          ) {
-            // Inject: import { translations as __$translations } from '{outputDir}/.generated/translations'
-            const translationsImport = t.importDeclaration(
-              [
-                t.importSpecifier(
-                  t.identifier('__$translations'),
-                  t.identifier('translations'),
-                ),
-              ],
-              t.stringLiteral(`${opts.outputDir}/.generated/translations`),
-            );
-            path.unshiftContainer('body', [translationsImport]);
-
-            // Modify all createT(locale) calls to createT(locale, __$translations)
-            for (const callPath of createTCalls) {
-              const args = callPath.node.arguments;
-              // Only add if not already provided
-              if (args.length === 1) {
-                args.push(t.identifier('__$translations'));
-              }
-            }
-          }
+          const { opts, idiomaUsed, chunkId } = state;
 
           // Handle Suspense mode - inject chunk loaders
           if (opts.mode === 'production' && opts.useSuspense && idiomaUsed) {
@@ -290,15 +250,16 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
               : specifier.imported.value;
             const local = specifier.local.name;
 
-            // Track Trans, useT, and t as translatable bindings
+            // Track Trans, useT, t, and createT as translatable bindings
             if (
               imported === 'Trans' ||
               imported === 'useT' ||
-              imported === 't'
+              imported === 't' ||
+              imported === 'createT'
             ) {
               state.translatableBindings.set(
                 local,
-                imported as 'Trans' | 'useT' | 't',
+                imported as 'Trans' | 'useT' | 't' | 'createT',
               );
             }
           }
@@ -306,20 +267,31 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
 
       /**
-       * Track variable aliases (e.g., const T = Trans).
-       * Follows the binding chain for translatable components.
+       * Track variable aliases (e.g., const T = Trans) and
+       * derived functions (e.g., const t = createT('es')).
        */
       VariableDeclarator(path: NodePath<t.VariableDeclarator>, state) {
         const init = path.node.init;
-        if (!t.isIdentifier(init)) return;
-
         const id = path.node.id;
         if (!t.isIdentifier(id)) return;
 
-        // If the initializer is a translatable binding, propagate it
-        const type = state.translatableBindings.get(init.name);
-        if (type) {
-          state.translatableBindings.set(id.name, type);
+        // Handle identifier aliases: const T = Trans
+        if (t.isIdentifier(init)) {
+          const type = state.translatableBindings.get(init.name);
+          if (type) {
+            state.translatableBindings.set(id.name, type);
+          }
+          return;
+        }
+
+        // Handle createT() calls: const t = createT('es')
+        // The resulting function is tracked as a 't' binding
+        if (
+          t.isCallExpression(init) &&
+          t.isIdentifier(init.callee) &&
+          state.translatableBindings.get(init.callee.name) === 'createT'
+        ) {
+          state.translatableBindings.set(id.name, 't');
         }
       },
 
@@ -361,12 +333,6 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           return;
         }
 
-        // Track createT() calls for potential translation injection
-        if (calleeName === 'createT') {
-          state.createTCalls.push(path);
-          return;
-        }
-
         // Check if this is a t() call from idioma
         if (bindingType !== 't') {
           return;
@@ -395,16 +361,12 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
             });
           }
 
-          // In development mode, don't transform (template literal works at runtime)
-          // In production mode, template literals with plural() need special handling
-          // For now, mark as dynamic since runtime needs to evaluate the template
-          state.hasDynamicT = true;
+          // Template literals are handled at runtime (no inlining)
           return;
         }
 
-        // Dynamic strings can't be inlined - mark for runtime translations
+        // Dynamic strings can't be inlined - left unchanged for runtime
         if (!t.isStringLiteral(sourceArg)) {
-          state.hasDynamicT = true;
           return;
         }
 
