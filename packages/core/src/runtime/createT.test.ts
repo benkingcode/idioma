@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { generateKey } from '../keys/generator';
-import { createT } from './createT';
+import { _createTFactory } from './createT';
 
-describe('createT', () => {
+describe('_createTFactory', () => {
   describe('basic usage', () => {
     it('returns source text when no translations are inlined', () => {
-      const t = createT('en');
+      const t = _createTFactory('en');
       expect(t('Hello world')).toBe('Hello world');
     });
 
     it('returns source text for unknown locale', () => {
-      const t = createT('fr');
+      const t = _createTFactory('fr');
       expect(t('Hello world')).toBe('Hello world');
     });
   });
 
   describe('with inlined translations (from Babel)', () => {
     it('returns translated text for matching locale', () => {
-      const t = createT('es');
+      const t = _createTFactory('es');
       // Simulates what Babel injects: t('source', { key: { locale: translation } })
       const result = t('Hello world', {
         abc123: { en: 'Hello world', es: 'Hola mundo' },
@@ -26,7 +26,7 @@ describe('createT', () => {
     });
 
     it('falls back to source when locale not found in inlined translations', () => {
-      const t = createT('fr');
+      const t = _createTFactory('fr');
       const result = t('Hello world', {
         abc123: { en: 'Hello world', es: 'Hola mundo' },
       });
@@ -34,7 +34,7 @@ describe('createT', () => {
     });
 
     it('uses first available locale as fallback when source not available', () => {
-      const t = createT('de');
+      const t = _createTFactory('de');
       const result = t('Hello world', {
         abc123: { es: 'Hola mundo', fr: 'Bonjour monde' },
       });
@@ -45,13 +45,13 @@ describe('createT', () => {
 
   describe('placeholder interpolation', () => {
     it('interpolates placeholders in source text', () => {
-      const t = createT('en');
+      const t = _createTFactory('en');
       const result = t('Hello {name}', { name: 'Ben' });
       expect(result).toBe('Hello Ben');
     });
 
     it('interpolates placeholders in translated text', () => {
-      const t = createT('es');
+      const t = _createTFactory('es');
       const result = t(
         'Hello {name}',
         { abc123: { en: 'Hello {name}', es: 'Hola {name}' } },
@@ -61,7 +61,7 @@ describe('createT', () => {
     });
 
     it('handles multiple placeholders', () => {
-      const t = createT('en');
+      const t = _createTFactory('en');
       const result = t('Hello {firstName} {lastName}', {
         firstName: 'Ben',
         lastName: 'King',
@@ -70,13 +70,13 @@ describe('createT', () => {
     });
 
     it('leaves unknown placeholders unchanged', () => {
-      const t = createT('en');
+      const t = _createTFactory('en');
       const result = t('Hello {name}', {});
       expect(result).toBe('Hello {name}');
     });
 
     it('handles numeric values', () => {
-      const t = createT('en');
+      const t = _createTFactory('en');
       const result = t('You have {count} items', { count: 5 });
       expect(result).toBe('You have 5 items');
     });
@@ -84,14 +84,14 @@ describe('createT', () => {
 
   describe('distinguishes values from inlined translations', () => {
     it('treats string values as interpolation values, not translations', () => {
-      const t = createT('en');
+      const t = _createTFactory('en');
       // When second arg has string values (not nested objects), it's interpolation values
       const result = t('Hello {name}', { name: 'Ben' });
       expect(result).toBe('Hello Ben');
     });
 
     it('treats nested objects as inlined translations', () => {
-      const t = createT('es');
+      const t = _createTFactory('es');
       // When second arg has object values, it's inlined translations from Babel
       const result = t('Hello', { abc123: { en: 'Hello', es: 'Hola' } });
       expect(result).toBe('Hola');
@@ -107,23 +107,23 @@ describe('createT', () => {
     };
 
     it('looks up dynamic strings by hashing the source', () => {
-      const t = createT('es', translations);
+      const t = _createTFactory('es', translations);
       // Dynamic string - no Babel inlining, runtime does the lookup
       expect(t('Hello world')).toBe('Hola mundo');
     });
 
     it('falls back to source when key not found in translations', () => {
-      const t = createT('es', translations);
+      const t = _createTFactory('es', translations);
       expect(t('Unknown string')).toBe('Unknown string');
     });
 
     it('interpolates placeholders in looked-up translations', () => {
-      const t = createT('es', translations);
+      const t = _createTFactory('es', translations);
       expect(t('Hello {name}', { name: 'Ben' })).toBe('Hola Ben');
     });
 
     it('prefers Babel-inlined translations over runtime lookup', () => {
-      const t = createT('es', translations);
+      const t = _createTFactory('es', translations);
       // When Babel inlines translations, those take precedence
       const result = t('Hello world', {
         [generateKey('Hello world')]: {
@@ -135,7 +135,7 @@ describe('createT', () => {
     });
 
     it('handles translations object being undefined', () => {
-      const t = createT('es', undefined);
+      const t = _createTFactory('es', undefined);
       expect(t('Hello world')).toBe('Hello world');
     });
   });

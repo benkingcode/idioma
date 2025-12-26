@@ -1,10 +1,10 @@
 /**
  * Runtime module for imperative translations.
  *
- * This module provides `createT` for translating strings outside React components.
- * It's designed to work with Babel inlining for optimal bundle splitting.
+ * This module provides `_createTFactory` for use by generated idioma/plain.ts.
+ * End users should import `createT` from their generated idioma/plain.ts instead.
  *
  * @packageDocumentation
  */
 
-export { createT } from './createT.js';
+export { _createTFactory } from './createT.js';

@@ -32,7 +32,7 @@ function isInlinedTranslations(
 }
 
 /**
- * Creates a synchronous translation function for use outside React components.
+ * Factory to create a synchronous translation function for use outside React components.
  *
  * This function supports three translation modes:
  * 1. Babel-inlined: t('source', { key: { en: '...', es: '...' } }) - optimal, tree-shaken
@@ -43,24 +43,23 @@ function isInlinedTranslations(
  * @param translations - Optional translations object for runtime lookup of dynamic strings
  * @returns A synchronous translation function
  *
- * @example
- * // Static strings (Babel inlines translations)
- * const t = createT('es');
- * t('Hello world');  // → 'Hola mundo'
- *
- * // Dynamic strings (runtime lookup)
- * const t = createT('es', translations);
- * const msg = getErrorMessage();
- * t(msg);  // → looks up by hashing msg
- *
- * // With placeholder values
- * t('Hello {name}', { name: 'Ben' });  // → 'Hola Ben'
+ * @internal Used by generated idioma/plain.ts — import `createT` from there instead.
  */
-export function createT(locale: string, translations?: TranslationsMap) {
+export function _createTFactory<
+  TKey extends string = string,
+  TValues extends Record<string, unknown> = Record<string, unknown>,
+>(
+  locale: string,
+  translations?: TranslationsMap,
+): (
+  source: TKey,
+  inlinedOrValues?: Record<string, unknown>,
+  values?: TValues,
+) => string {
   return (
-    source: string,
+    source: TKey,
     inlinedOrValues?: Record<string, unknown>,
-    values?: Record<string, unknown>,
+    values?: TValues,
   ): string => {
     // Case 1: Inlined translations from Babel (highest priority)
     // Shape: { key: { en: 'Hello', es: 'Hola' } }
