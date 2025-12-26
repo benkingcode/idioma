@@ -431,6 +431,22 @@ export function createOpenAIContextProvider(
 // Orchestration
 // ============================================================================
 
+/**
+ * Progress information for context generation file completion callback.
+ */
+export interface ContextFileProgress {
+  /** Path to the file that was processed */
+  filePath: string;
+  /** Current file number (1-indexed) */
+  currentFile: number;
+  /** Total number of files to process */
+  totalFiles: number;
+  /** Number of messages with context generated in this file */
+  messagesGenerated: number;
+  /** Total messages with context generated so far */
+  totalMessagesGenerated: number;
+}
+
 export interface ContextGenerationOptions {
   /** Root directory for resolving source file paths */
   projectRoot: string;
@@ -440,6 +456,16 @@ export interface ContextGenerationOptions {
   provider: ContextProvider;
   /** Lookup for actual source text (key -> text, for hash-based key systems) */
   sourceTextByKey?: Map<string, string>;
+  /** Called when we know how many files need context generation */
+  onFileCountKnown?: (count: number) => void;
+  /** Called when starting to process a file (filePath, currentFile 1-indexed, totalFiles) */
+  onFileStart?: (
+    filePath: string,
+    currentFile: number,
+    totalFiles: number,
+  ) => void;
+  /** Called when a file is done processing */
+  onFileComplete?: (progress: ContextFileProgress) => void;
 }
 
 export interface ContextGenerationResult {
@@ -458,7 +484,15 @@ export interface ContextGenerationResult {
 export async function generateContextForCatalog(
   options: ContextGenerationOptions,
 ): Promise<ContextGenerationResult> {
-  const { projectRoot, catalog, provider, sourceTextByKey } = options;
+  const {
+    projectRoot,
+    catalog,
+    provider,
+    sourceTextByKey,
+    onFileCountKnown,
+    onFileStart,
+    onFileComplete,
+  } = options;
 
   const result: ContextGenerationResult = {
     generated: 0,
@@ -476,8 +510,16 @@ export async function generateContextForCatalog(
   // Group messages by source file
   const messagesByFile = groupMessagesByFile(catalog.messages, sourceTextByKey);
 
+  // Notify about file count
+  const totalFiles = messagesByFile.size;
+  onFileCountKnown?.(totalFiles);
+
   // Process each file
+  let currentFile = 0;
   for (const [filePath, messages] of messagesByFile) {
+    currentFile++;
+    onFileStart?.(filePath, currentFile, totalFiles);
+
     // Try to read the source file
     const fullPath = join(projectRoot, filePath);
     let fileContent: string;
@@ -504,13 +546,24 @@ export async function generateContextForCatalog(
     });
 
     // Apply generated contexts to catalog messages
+    let messagesGenerated = 0;
     for (const ctx of contexts) {
       const message = catalog.messages.get(ctx.key);
       if (message) {
         addAIContext(message, ctx.context);
         result.generated++;
+        messagesGenerated++;
       }
     }
+
+    // Notify about file completion
+    onFileComplete?.({
+      filePath,
+      currentFile,
+      totalFiles,
+      messagesGenerated,
+      totalMessagesGenerated: result.generated,
+    });
   }
 
   return result;

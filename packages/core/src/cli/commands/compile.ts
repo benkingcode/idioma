@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import { compileTranslations } from '../../compiler/compile.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
+import { createSpinner } from '../ui/index.js';
 
 export interface CompileResult {
   messageCount: number;
@@ -74,19 +75,25 @@ export const compileCommand = defineCommand({
     // Ensure .gitignore exists in the idioma directory
     await ensureGitignore(config.idiomaDir);
 
-    console.log('Compiling translations...');
+    const spinner = createSpinner();
+    spinner.start('Compiling translations...');
 
-    const result = await runCompile({
-      localeDir,
-      outputDir,
-      defaultLocale: config.defaultLocale,
-      useSuspense: config.useSuspense,
-      locales: config.locales,
-      projectRoot: cwd,
-    });
+    try {
+      const result = await runCompile({
+        localeDir,
+        outputDir,
+        defaultLocale: config.defaultLocale,
+        useSuspense: config.useSuspense,
+        locales: config.locales,
+        projectRoot: cwd,
+      });
 
-    console.log(
-      `Compiled ${result.messageCount} messages for ${result.locales.length} locales: ${result.locales.join(', ')}`,
-    );
+      spinner.succeed(
+        `Compiled ${result.messageCount} messages for ${result.locales.length} locales (${result.locales.join(', ')})`,
+      );
+    } catch (error) {
+      spinner.fail('Compilation failed');
+      throw error;
+    }
   },
 });

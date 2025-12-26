@@ -4,29 +4,36 @@ msgstr ""
 "Content-Type: text/plain\n"
 
 #: src/App.tsx:16
+#. [AI Context]: Main page heading at the top of the application
 msgid "000QnNwH"
 msgstr "Idioma Example"
 
 #: src/App.tsx:19
+#. [AI Context]: Label for language selector dropdown where users choose between English and Spanish
 msgid "000esfJJ"
 msgstr "Language"
 
 #: src/App.tsx:33
+#. [AI Context]: Section heading for the interpolation feature demonstration
 msgid "000KJdVL"
 msgstr "Interpolation"
 
 #: src/App.tsx:40
+#. [AI Context]: Section heading for the pluralization feature demonstration
 msgid "004exRVE"
 msgstr "Pluralization"
 
 #: src/App.tsx:47
+#. [AI Context]: Section heading for the imperative API feature demonstration
 msgid "0013HYrG"
 msgstr "Imperative API"
 
 #: src/components/Counter.tsx:11
+#. [AI Context]: Message displayed in shopping cart showing item count. The {count} placeholder is a number, and {itemLabel} is either 'item' (singular) or 'items' (plural) depending on the count value.
 msgid "0019RXs4"
 msgstr "You have {count} {itemLabel} in your cart."
 
 #: src/components/Greeting.tsx:10
+#. [AI Context]: Greeting message displayed to user with their name interpolated. Shows on initial page load or when user component is rendered.
 msgid "0024c34D"
 msgstr "Hello, {name}!"

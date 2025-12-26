@@ -4,6 +4,7 @@ import {
   createAnthropicContextProvider,
   createOpenAIContextProvider,
   generateContextForCatalog,
+  type ContextFileProgress,
   type ContextProvider,
 } from '../../ai/context.js';
 import {
@@ -19,12 +20,31 @@ import {
 } from '../../ai/provider.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
+import {
+  createProgressBar,
+  createSpinner,
+  setNonInteractive,
+} from '../ui/index.js';
 
 export interface TranslateResult {
   translated: number;
   skipped: number;
   total: number;
   dryRun?: boolean;
+}
+
+/**
+ * Progress information for translation callbacks.
+ */
+export interface TranslateProgress {
+  /** Total messages to translate for this locale */
+  totalMessages: number;
+  /** Messages translated so far */
+  completedMessages: number;
+  /** Current batch number (1-indexed) */
+  currentBatch: number;
+  /** Total number of batches */
+  totalBatches: number;
 }
 
 export interface TranslateAllResult {
@@ -49,6 +69,20 @@ export interface TranslateOptions {
   projectRoot?: string;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
+  /** Called when we know how many messages need translation */
+  onMessageCountKnown?: (count: number) => void;
+  /** Called when a batch completes with progress info */
+  onBatchComplete?: (progress: TranslateProgress) => void;
+  /** Called when we know how many files need context generation */
+  onContextFileCountKnown?: (count: number) => void;
+  /** Called when starting to generate context for a file */
+  onContextFileStart?: (
+    filePath: string,
+    currentFile: number,
+    totalFiles: number,
+  ) => void;
+  /** Called when context generation completes for a file */
+  onContextFileComplete?: (progress: ContextFileProgress) => void;
 }
 
 /**
@@ -70,6 +104,11 @@ export async function runTranslate(
     contextProvider,
     projectRoot,
     onVerbose,
+    onMessageCountKnown,
+    onBatchComplete,
+    onContextFileCountKnown,
+    onContextFileStart,
+    onContextFileComplete,
   } = options;
 
   // Load default locale to get source text (msgstr contains the actual text)
@@ -95,6 +134,9 @@ export async function runTranslate(
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
+      onFileCountKnown: onContextFileCountKnown,
+      onFileStart: onContextFileStart,
+      onFileComplete: onContextFileComplete,
     });
 
     // Save default catalog if context was generated
@@ -125,6 +167,9 @@ export async function runTranslate(
       skippedKeys.add(key);
     }
   }
+
+  // Notify about message count
+  onMessageCountKnown?.(messagesToTranslate.length);
 
   if (messagesToTranslate.length === 0) {
     return {
@@ -158,6 +203,14 @@ export async function runTranslate(
     for (const result of results) {
       translatedMessages.set(result.key, result.translation);
     }
+
+    // Notify about batch completion with progress
+    onBatchComplete?.({
+      totalMessages: messagesToTranslate.length,
+      completedMessages: translatedMessages.size,
+      currentBatch: batchNum,
+      totalBatches,
+    });
 
     if (onVerbose) {
       onVerbose(
@@ -229,6 +282,11 @@ export async function runTranslateAll(
     contextProvider,
     projectRoot,
     onVerbose,
+    onMessageCountKnown,
+    onBatchComplete,
+    onContextFileCountKnown,
+    onContextFileStart,
+    onContextFileComplete,
     onLocaleStart,
     onLocaleComplete,
   } = options;
@@ -236,6 +294,35 @@ export async function runTranslateAll(
   const results = new Map<string, TranslateResult>();
   const errors = new Map<string, Error>();
 
+  // Generate AI context ONCE before translating any locales
+  // Context is stored in the default (source) locale and shared across all target locales
+  if (autoContext && contextProvider && projectRoot) {
+    const defaultPoPath = join(localeDir, `${defaultLocale}.po`);
+    const defaultCatalog = await loadPoFile(defaultPoPath, defaultLocale);
+
+    // Build lookup: key -> source text from default locale's msgstr
+    const sourceTextByKey = new Map<string, string>();
+    for (const [key, message] of defaultCatalog.messages) {
+      sourceTextByKey.set(key, message.translation || message.source);
+    }
+
+    const contextResult = await generateContextForCatalog({
+      projectRoot,
+      catalog: defaultCatalog,
+      provider: contextProvider,
+      sourceTextByKey,
+      onFileCountKnown: onContextFileCountKnown,
+      onFileStart: onContextFileStart,
+      onFileComplete: onContextFileComplete,
+    });
+
+    // Save default catalog if context was generated
+    if (contextResult.generated > 0) {
+      await writePoFile(defaultPoPath, defaultCatalog);
+    }
+  }
+
+  // Now translate each locale
   for (const locale of targetLocales) {
     onLocaleStart?.(locale);
 
@@ -249,10 +336,11 @@ export async function runTranslateAll(
         dryRun,
         markAI,
         batchSize,
-        autoContext,
-        contextProvider,
-        projectRoot,
+        // Context already generated above, don't do it again per-locale
+        autoContext: false,
         onVerbose,
+        onMessageCountKnown,
+        onBatchComplete,
       });
 
       results.set(locale, result);
@@ -313,6 +401,11 @@ export const translateCommand = defineCommand({
   async run({ args }) {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
+
+    // Verbose mode uses non-interactive output (no spinners/progress bars)
+    if (args.verbose) {
+      setNonInteractive(true);
+    }
 
     // Create verbose callback
     const onVerbose = args.verbose
@@ -404,16 +497,15 @@ export const translateCommand = defineCommand({
         ? targetLocales[0]
         : `${targetLocales.length} locales (${targetLocales.join(', ')})`;
 
-    console.log(
+    // Initial status spinner (will be simple text in non-interactive/verbose mode)
+    const spinner = createSpinner();
+    let progressBar: ReturnType<typeof createProgressBar> | null = null;
+    let contextProgressBar: ReturnType<typeof createProgressBar> | null = null;
+    let currentLocaleIndex = 0;
+
+    spinner.start(
       `Translating ${localeList} using ${provider.name}${config.ai?.model ? ` (${config.ai.model})` : ''}...`,
     );
-    if (autoContext && contextProvider) {
-      console.log('Auto-context generation enabled');
-    }
-    if (args['dry-run']) {
-      console.log('(dry run - no changes will be saved)');
-    }
-    console.log('');
 
     const { results, errors } = await runTranslateAll({
       localeDir,
@@ -427,40 +519,87 @@ export const translateCommand = defineCommand({
       contextProvider,
       projectRoot: cwd,
       onVerbose,
-      onLocaleStart: (locale) => {
-        if (targetLocales.length > 1) {
-          console.log(`[${locale}] Translating...`);
+      onContextFileCountKnown: (count) => {
+        spinner.stop();
+        if (count > 0) {
+          console.log('Generating AI context...');
+          contextProgressBar = createProgressBar({
+            label: 'Generating context',
+          });
+          contextProgressBar.start(count, 0);
         }
       },
-      onLocaleComplete: (locale, result) => {
-        if (targetLocales.length > 1) {
-          console.log(
-            `[${locale}] Translated: ${result.translated}, Skipped: ${result.skipped}`,
+      onContextFileComplete: (progress) => {
+        contextProgressBar?.update(progress.currentFile);
+        if (progress.currentFile === progress.totalFiles) {
+          contextProgressBar?.stop();
+          contextProgressBar = null;
+          const contextSpinner = createSpinner();
+          contextSpinner.succeed(
+            `Generated context for ${progress.totalMessagesGenerated} messages`,
           );
         }
+      },
+      onLocaleStart: (locale) => {
+        // Stop any existing progress bar
+        progressBar?.stop();
+        spinner.stop();
+
+        // Print translation header on first locale
+        if (currentLocaleIndex === 0) {
+          console.log(`\nTranslating to ${localeList}...`);
+        }
+
+        const localeLabel =
+          targetLocales.length > 1
+            ? `[${currentLocaleIndex + 1}/${targetLocales.length}] ${locale}`
+            : locale;
+        progressBar = createProgressBar({ label: localeLabel });
+      },
+      onMessageCountKnown: (count) => {
+        // Only show progress bar if there's work to do
+        if (count > 0) {
+          progressBar?.start(count, 0);
+        } else {
+          // Nothing to translate - clean up the progress bar so onLocaleComplete
+          // just shows the success message without an empty "0/0 | 100%" bar
+          progressBar?.stop();
+          progressBar = null;
+        }
+      },
+      onBatchComplete: (progress) => {
+        progressBar?.update(progress.completedMessages);
+      },
+      onLocaleComplete: (locale, result) => {
+        progressBar?.stop();
+        progressBar = null;
+
+        const localeLabel =
+          targetLocales.length > 1
+            ? `[${currentLocaleIndex + 1}/${targetLocales.length}] ${locale}`
+            : locale;
+        const successSpinner = createSpinner();
+        successSpinner.succeed(
+          `${localeLabel}: ${result.translated} translated, ${result.skipped} skipped`,
+        );
+        currentLocaleIndex++;
       },
     });
 
     // Summary
-    if (targetLocales.length > 1) {
-      console.log('');
-      console.log('Summary:');
-    }
-
     let totalTranslated = 0;
     let totalSkipped = 0;
-    let totalMessages = 0;
 
     for (const [, result] of results) {
       totalTranslated += result.translated;
       totalSkipped += result.skipped;
-      totalMessages += result.total;
     }
 
-    console.log(`  Translated: ${totalTranslated}`);
-    console.log(`  Skipped: ${totalSkipped}`);
     if (targetLocales.length > 1) {
-      console.log(`  Locales: ${results.size}`);
+      console.log('');
+      console.log(
+        `Summary: ${totalTranslated} translated, ${totalSkipped} skipped across ${results.size} locales`,
+      );
     }
 
     // Report errors

@@ -5,6 +5,7 @@ import { compileCommand } from './commands/compile.js';
 import { extractCommand } from './commands/extract.js';
 import { statsCommand } from './commands/stats.js';
 import { translateCommand } from './commands/translate.js';
+import { setNonInteractive } from './ui/index.js';
 
 // Load .env file from current working directory
 loadDotenv({ quiet: true });
@@ -14,6 +15,20 @@ const main = defineCommand({
     name: 'idioma',
     version: '0.1.0',
     description: 'Idioma i18n CLI - Compile-time React internationalization',
+  },
+  args: {
+    'non-interactive': {
+      type: 'boolean',
+      description: 'Disable interactive UI (spinners, progress bars)',
+      default: false,
+      global: true,
+    },
+  },
+  setup({ args }) {
+    // Set non-interactive mode globally if flag is passed
+    if (args['non-interactive']) {
+      setNonInteractive(true);
+    }
   },
   subCommands: {
     extract: extractCommand,

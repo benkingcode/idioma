@@ -11,6 +11,7 @@ import { loadPoFile, writePoFile } from '../../po/parser.js';
 import type { Catalog, Message } from '../../po/types.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
+import { createSpinner } from '../ui/index.js';
 
 export interface ExtractedMessage {
   key: string;
@@ -431,24 +432,32 @@ export const extractCommand = defineCommand({
     // Ensure .gitignore exists in the idioma directory
     await ensureGitignore(config.idiomaDir);
 
-    const result = await extractMessages({
-      cwd,
-      sourcePatterns: config.sourcePatterns ?? ['**/*.tsx', '**/*.jsx'],
-      localeDir,
-      defaultLocale: config.defaultLocale,
-      locales: config.locales,
-      clean: args.clean,
-      // Pass absolute idiomaDir for robust import detection
-      idiomaDir: resolve(cwd, config.idiomaDir),
-    });
+    const spinner = createSpinner();
+    spinner.start('Extracting messages...');
 
-    console.log(
-      `Extracted ${result.messages.length} messages from ${result.files} files`,
-    );
+    try {
+      const result = await extractMessages({
+        cwd,
+        sourcePatterns: config.sourcePatterns ?? ['**/*.tsx', '**/*.jsx'],
+        localeDir,
+        defaultLocale: config.defaultLocale,
+        locales: config.locales,
+        clean: args.clean,
+        // Pass absolute idiomaDir for robust import detection
+        idiomaDir: resolve(cwd, config.idiomaDir),
+      });
 
-    if (args.watch) {
-      console.log('Watching for changes...');
-      // Watch mode would be implemented with chokidar
+      spinner.succeed(
+        `Extracted ${result.messages.length} messages from ${result.files} files`,
+      );
+
+      if (args.watch) {
+        console.log('Watching for changes...');
+        // Watch mode would be implemented with chokidar
+      }
+    } catch (error) {
+      spinner.fail('Extraction failed');
+      throw error;
     }
   },
 });

@@ -702,4 +702,217 @@ describe('generateContextForCatalog', () => {
     expect(result.skipped).toBe(1);
     expect(result.generated).toBe(0);
   });
+
+  describe('progress callbacks', () => {
+    it('calls onFileCountKnown with number of files to process', async () => {
+      writeFileSync(join(srcDir, 'A.tsx'), 'const A = () => <div>A</div>;');
+      writeFileSync(join(srcDir, 'B.tsx'), 'const B = () => <div>B</div>;');
+
+      const catalog = createCatalog([
+        {
+          key: 'a1',
+          source: 'Message A1',
+          translation: '',
+          references: ['src/A.tsx:1'],
+        },
+        {
+          key: 'b1',
+          source: 'Message B1',
+          translation: '',
+          references: ['src/B.tsx:1'],
+        },
+      ]);
+
+      const mockProvider = createMockContextProvider({
+        a1: 'Context A1',
+        b1: 'Context B1',
+      });
+
+      const onFileCountKnown = vi.fn();
+
+      await generateContextForCatalog({
+        projectRoot: testDir,
+        catalog,
+        provider: mockProvider,
+        onFileCountKnown,
+      });
+
+      expect(onFileCountKnown).toHaveBeenCalledOnce();
+      expect(onFileCountKnown).toHaveBeenCalledWith(2);
+    });
+
+    it('calls onFileStart before processing each file', async () => {
+      writeFileSync(join(srcDir, 'A.tsx'), 'const A = () => <div>A</div>;');
+      writeFileSync(join(srcDir, 'B.tsx'), 'const B = () => <div>B</div>;');
+
+      const catalog = createCatalog([
+        {
+          key: 'a1',
+          source: 'Message A1',
+          translation: '',
+          references: ['src/A.tsx:1'],
+        },
+        {
+          key: 'b1',
+          source: 'Message B1',
+          translation: '',
+          references: ['src/B.tsx:1'],
+        },
+      ]);
+
+      const mockProvider = createMockContextProvider({
+        a1: 'Context A1',
+        b1: 'Context B1',
+      });
+
+      const onFileStart = vi.fn();
+
+      await generateContextForCatalog({
+        projectRoot: testDir,
+        catalog,
+        provider: mockProvider,
+        onFileStart,
+      });
+
+      expect(onFileStart).toHaveBeenCalledTimes(2);
+      expect(onFileStart).toHaveBeenNthCalledWith(1, 'src/A.tsx', 1, 2);
+      expect(onFileStart).toHaveBeenNthCalledWith(2, 'src/B.tsx', 2, 2);
+    });
+
+    it('calls onFileComplete after processing each file', async () => {
+      writeFileSync(join(srcDir, 'A.tsx'), 'const A = () => <div>A</div>;');
+      writeFileSync(join(srcDir, 'B.tsx'), 'const B = () => <div>B</div>;');
+
+      const catalog = createCatalog([
+        {
+          key: 'a1',
+          source: 'Message A1',
+          translation: '',
+          references: ['src/A.tsx:1'],
+        },
+        {
+          key: 'a2',
+          source: 'Message A2',
+          translation: '',
+          references: ['src/A.tsx:2'],
+        },
+        {
+          key: 'b1',
+          source: 'Message B1',
+          translation: '',
+          references: ['src/B.tsx:1'],
+        },
+      ]);
+
+      const mockProvider = createMockContextProvider({
+        a1: 'Context A1',
+        a2: 'Context A2',
+        b1: 'Context B1',
+      });
+
+      const onFileComplete = vi.fn();
+
+      await generateContextForCatalog({
+        projectRoot: testDir,
+        catalog,
+        provider: mockProvider,
+        onFileComplete,
+      });
+
+      expect(onFileComplete).toHaveBeenCalledTimes(2);
+      // First file has 2 messages, so after it we have 2 generated
+      expect(onFileComplete).toHaveBeenNthCalledWith(1, {
+        filePath: 'src/A.tsx',
+        currentFile: 1,
+        totalFiles: 2,
+        messagesGenerated: 2,
+        totalMessagesGenerated: 2,
+      });
+      // Second file has 1 message, so after it we have 3 generated
+      expect(onFileComplete).toHaveBeenNthCalledWith(2, {
+        filePath: 'src/B.tsx',
+        currentFile: 2,
+        totalFiles: 2,
+        messagesGenerated: 1,
+        totalMessagesGenerated: 3,
+      });
+    });
+
+    it('does not call callbacks when no files need processing', async () => {
+      const catalog = createCatalog([
+        {
+          key: 'skipped',
+          source: 'Already has context',
+          translation: '',
+          references: ['src/App.tsx:1'],
+          comments: ['[AI Context]: Existing context'],
+        },
+      ]);
+
+      const mockProvider = createMockContextProvider({});
+      const onFileCountKnown = vi.fn();
+      const onFileStart = vi.fn();
+      const onFileComplete = vi.fn();
+
+      await generateContextForCatalog({
+        projectRoot: testDir,
+        catalog,
+        provider: mockProvider,
+        onFileCountKnown,
+        onFileStart,
+        onFileComplete,
+      });
+
+      expect(onFileCountKnown).toHaveBeenCalledWith(0);
+      expect(onFileStart).not.toHaveBeenCalled();
+      expect(onFileComplete).not.toHaveBeenCalled();
+    });
+
+    it('skips callbacks for files that cannot be read', async () => {
+      // Only create A.tsx, not B.tsx
+      writeFileSync(join(srcDir, 'A.tsx'), 'const A = () => <div>A</div>;');
+
+      const catalog = createCatalog([
+        {
+          key: 'a1',
+          source: 'Message A1',
+          translation: '',
+          references: ['src/A.tsx:1'],
+        },
+        {
+          key: 'b1',
+          source: 'Message B1',
+          translation: '',
+          references: ['src/B.tsx:1'],
+        },
+      ]);
+
+      const mockProvider = createMockContextProvider({
+        a1: 'Context A1',
+      });
+
+      const onFileStart = vi.fn();
+      const onFileComplete = vi.fn();
+
+      await generateContextForCatalog({
+        projectRoot: testDir,
+        catalog,
+        provider: mockProvider,
+        onFileStart,
+        onFileComplete,
+      });
+
+      // Both files should trigger onFileStart (we don't know file is missing until we try)
+      expect(onFileStart).toHaveBeenCalledTimes(2);
+      // Only A.tsx should complete successfully
+      expect(onFileComplete).toHaveBeenCalledTimes(1);
+      expect(onFileComplete).toHaveBeenCalledWith({
+        filePath: 'src/A.tsx',
+        currentFile: 1,
+        totalFiles: 2,
+        messagesGenerated: 1,
+        totalMessagesGenerated: 1,
+      });
+    });
+  });
 });

@@ -32,5 +32,10 @@ export default defineConfig({
     '@anthropic-ai/sdk',
     'openai',
     'dotenv',
+    // CLI UI
+    'cli-progress',
+    'ora',
+    'chalk',
+    'ci-info',
   ],
 });
