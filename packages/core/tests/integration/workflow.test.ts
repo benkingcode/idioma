@@ -201,7 +201,10 @@ describe('End-to-End Workflow', () => {
       defaultLocale: 'en',
     });
 
-    expect(result.messages[0].source).toBe('Click <0>here</0> to continue');
+    // Named component tags are used for better translator readability
+    expect(result.messages[0].source).toBe(
+      'Click <Link>here</Link> to continue',
+    );
   });
 
   it('preserves existing translations on re-extract', async () => {

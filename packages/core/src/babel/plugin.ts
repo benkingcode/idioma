@@ -509,14 +509,26 @@ function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
     );
   }
 
-  // Add __c if there are components
+  // Add __c (component array) and __cn (component names) if there are components
   if (components.length > 0) {
     const componentElements = components.map((name) => t.identifier(name));
+    const componentNameStrings = components.map((name) =>
+      t.stringLiteral(name),
+    );
 
+    // __c: array of component references
     props.push(
       t.jsxAttribute(
         t.jsxIdentifier('__c'),
         t.jsxExpressionContainer(t.arrayExpression(componentElements)),
+      ),
+    );
+
+    // __cn: array of component name strings (for named tag matching)
+    props.push(
+      t.jsxAttribute(
+        t.jsxIdentifier('__cn'),
+        t.jsxExpressionContainer(t.arrayExpression(componentNameStrings)),
       ),
     );
   }

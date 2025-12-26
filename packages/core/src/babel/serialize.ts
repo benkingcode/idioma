@@ -1,6 +1,10 @@
 import _generate from '@babel/generator';
 import * as t from '@babel/types';
-import { serializePluralCallToIcu } from './extract-plural.js';
+import {
+  serializePluralCallToIcu,
+  serializeSelectCallToIcu,
+  serializeSelectOrdinalCallToIcu,
+} from './extract-plural.js';
 
 // Handle ESM/CJS interop for @babel/generator
 const generate =
@@ -64,16 +68,27 @@ export function serializeJsxChildren(
         return `{${code}}`;
       }
 
-      // Check for plural() function call - convert to ICU format
-      if (
-        t.isCallExpression(expr) &&
-        t.isIdentifier(expr.callee) &&
-        expr.callee.name === 'plural'
-      ) {
-        const { icu, variable } = serializePluralCallToIcu(expr);
-        // Track the variable in placeholders
-        placeholders[variable] = variable;
-        return icu;
+      // Check for plural(), select(), selectOrdinal() function calls - convert to ICU format
+      if (t.isCallExpression(expr) && t.isIdentifier(expr.callee)) {
+        const calleeName = expr.callee.name;
+
+        if (calleeName === 'plural') {
+          const { icu, variable } = serializePluralCallToIcu(expr);
+          placeholders[variable] = variable;
+          return icu;
+        }
+
+        if (calleeName === 'select') {
+          const { icu, variable } = serializeSelectCallToIcu(expr);
+          placeholders[variable] = variable;
+          return icu;
+        }
+
+        if (calleeName === 'selectOrdinal') {
+          const { icu, variable } = serializeSelectOrdinalCallToIcu(expr);
+          placeholders[variable] = variable;
+          return icu;
+        }
       }
 
       // Complex expression: {fn()}, {a + b}, etc.
@@ -87,15 +102,16 @@ export function serializeJsxChildren(
     if (t.isJSXElement(node)) {
       const opening = node.openingElement;
       const componentName = getElementName(opening.name);
-      const componentIndex = components.length;
       components.push(componentName);
 
+      // Use named tags for better translator readability
+      // e.g., <Link>click here</Link> instead of <0>click here</0>
       if (node.openingElement.selfClosing) {
-        return `<${componentIndex}/>`;
+        return `<${componentName}/>`;
       }
 
       const childContent = node.children.map(serializeNode).join('');
-      return `<${componentIndex}>${childContent}</${componentIndex}>`;
+      return `<${componentName}>${childContent}</${componentName}>`;
     }
 
     if (t.isJSXFragment(node)) {
@@ -179,15 +195,30 @@ export function serializeTemplateLiteral(
         const code = generate(expr).code;
         placeholders[code] = code;
         parts.push(`{${code}}`);
-      } else if (
-        t.isCallExpression(expr) &&
-        t.isIdentifier(expr.callee) &&
-        expr.callee.name === 'plural'
-      ) {
-        // plural() call - convert to ICU format
-        const { icu, variable } = serializePluralCallToIcu(expr);
-        placeholders[variable] = variable;
-        parts.push(icu);
+      } else if (t.isCallExpression(expr) && t.isIdentifier(expr.callee)) {
+        // Check for plural(), select(), selectOrdinal() calls - convert to ICU format
+        const calleeName = expr.callee.name;
+
+        if (calleeName === 'plural') {
+          const { icu, variable } = serializePluralCallToIcu(expr);
+          placeholders[variable] = variable;
+          parts.push(icu);
+        } else if (calleeName === 'select') {
+          const { icu, variable } = serializeSelectCallToIcu(expr);
+          placeholders[variable] = variable;
+          parts.push(icu);
+        } else if (calleeName === 'selectOrdinal') {
+          const { icu, variable } = serializeSelectOrdinalCallToIcu(expr);
+          placeholders[variable] = variable;
+          parts.push(icu);
+        } else {
+          // Other function call - treat as complex expression
+          const code = generate(expr).code;
+          const index = complexExpressionIndex++;
+          placeholders[String(index)] = code;
+          comments.push(`{${index}} = ${code}`);
+          parts.push(`{${index}}`);
+        }
       } else if (t.isExpression(expr)) {
         // Complex expression: ${fn()}, ${a + b}, etc.
         const code = generate(expr).code;

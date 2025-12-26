@@ -74,7 +74,8 @@ describe('extractTransMessage', () => {
     `);
 
     expect(messages).toHaveLength(1);
-    expect(messages[0].source).toBe('Click <0>here</0> to continue');
+    // Named component tags are used for better translator readability
+    expect(messages[0].source).toBe('Click <Link>here</Link> to continue');
     expect(messages[0].components).toEqual(['Link']);
   });
 

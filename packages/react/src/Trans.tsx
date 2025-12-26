@@ -13,6 +13,8 @@ export interface TransProps {
   __a?: Record<string, unknown>;
   /** Components for tag interpolation */
   __c?: TransComponent[];
+  /** Component names for named tag matching (parallel to __c array) */
+  __cn?: string[];
 }
 
 /**
@@ -23,7 +25,7 @@ export interface TransProps {
  * // Compiled output:
  * <__Trans __t={__$idioma["key"]} __a={{ name }} __c={[Link]} />
  */
-export function __Trans({ __t, __a, __c }: TransProps): ReactNode {
+export function __Trans({ __t, __a, __c, __cn }: TransProps): ReactNode {
   const context = useContext(IdiomaContext);
   if (!context) {
     throw new Error(
@@ -41,8 +43,8 @@ export function __Trans({ __t, __a, __c }: TransProps): ReactNode {
     if (fallback === undefined) {
       return null;
     }
-    return renderMessage(fallback, __a, __c);
+    return renderMessage(fallback, __a, __c, __cn);
   }
 
-  return renderMessage(msg, __a, __c);
+  return renderMessage(msg, __a, __c, __cn);
 }

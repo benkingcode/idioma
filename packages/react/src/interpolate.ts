@@ -34,37 +34,56 @@ export function interpolateValues(
 export type TransComponent = ComponentType<{ children?: ReactNode }>;
 
 /**
- * Interpolates numbered tags in a translated string with React components.
+ * Interpolates tags in a translated string with React components.
+ * Supports both named tags (<Link>text</Link>) and numbered tags (<0>text</0>).
  * Also handles value placeholders ({name}, {0}) within the text.
- * Supports nested tags like <0>outer <1>inner</1></0>.
+ * Supports nested tags like <Bold>outer <Italic>inner</Italic></Bold>.
  *
  * @example
+ * // Named tags (preferred)
  * interpolateTags(
- *   "Read our <0>terms</0> and <1>privacy</1>",
- *   [TermsLink, PrivacyLink]
+ *   "Read our <TermsLink>terms</TermsLink> and <PrivacyLink>privacy</PrivacyLink>",
+ *   [TermsLink, PrivacyLink],
+ *   undefined,
+ *   ['TermsLink', 'PrivacyLink']
  * )
  *
  * @example
+ * // With placeholders
  * interpolateTags(
- *   "Hello {name}, click <0>here</0>",
+ *   "Hello {name}, click <Link>here</Link>",
  *   [Link],
- *   { name: "Ben" }
+ *   { name: "Ben" },
+ *   ['Link']
  * )
  *
  * @example
- * // Nested tags
+ * // Duplicate component names (matched in order)
  * interpolateTags(
- *   "<0>Important: <1>read carefully</1></0>",
- *   [Bold, Italic]
+ *   "Click <Link>here</Link> or <Link>there</Link>",
+ *   [LinkA, LinkB],
+ *   undefined,
+ *   ['Link', 'Link']
  * )
  */
 export function interpolateTags(
   message: string,
   components: TransComponent[],
   args?: Record<string, unknown>,
+  componentNames?: string[],
 ): ReactNode {
   // Parse the message into a tree structure, then render
-  return parseAndRender(message, components, args, 0).result;
+  // Track which component indices have been used (for duplicate name matching)
+  const usedIndices = new Set<number>();
+  return parseAndRender(
+    message,
+    components,
+    args,
+    0,
+    undefined,
+    componentNames,
+    usedIndices,
+  ).result;
 }
 
 interface ParseResult {
@@ -78,7 +97,9 @@ interface ParseResult {
  * @param components Array of React components for tag substitution
  * @param args Optional interpolation values
  * @param startIndex Where to start parsing
- * @param closingTag Optional: the closing tag we're looking for (e.g., "</0>")
+ * @param closingTag Optional: the closing tag we're looking for (e.g., "</Link>" or "</0>")
+ * @param componentNames Optional: names of components in order (for named tag matching)
+ * @param usedIndices Set tracking which component indices have been used
  */
 function parseAndRender(
   message: string,
@@ -86,6 +107,8 @@ function parseAndRender(
   args: Record<string, unknown> | undefined,
   startIndex: number,
   closingTag?: string,
+  componentNames?: string[],
+  usedIndices?: Set<number>,
 ): ParseResult {
   const parts: ReactNode[] = [];
   let i = startIndex;
@@ -108,8 +131,10 @@ function parseAndRender(
       };
     }
 
-    // Check for opening tag like <0>, <1>, etc.
-    const openMatch = message.slice(i).match(/^<(\d+)>/);
+    // Check for opening tag - supports both named (<Link>) and numbered (<0>)
+    // Named tags: <Link>, <Bold>, <MyComponent>
+    // Numbered tags (legacy): <0>, <1>, <2>
+    const openMatch = message.slice(i).match(/^<([a-zA-Z][a-zA-Z0-9]*|\d+)>/);
     if (openMatch) {
       // Add text before this tag
       if (i > textStart) {
@@ -117,9 +142,27 @@ function parseAndRender(
         parts.push(args ? interpolateValues(text, args) : text);
       }
 
-      const tagIndex = parseInt(openMatch[1]!, 10);
-      const tagClosing = `</${tagIndex}>`;
+      const tagIdentifier = openMatch[1]!;
+      const isNumbered = /^\d+$/.test(tagIdentifier);
+      let tagIndex: number;
+
+      if (isNumbered) {
+        // Numbered tag: use the number directly as index
+        tagIndex = parseInt(tagIdentifier, 10);
+      } else {
+        // Named tag: find the next unused component with this name
+        tagIndex = findComponentIndex(
+          tagIdentifier,
+          componentNames,
+          usedIndices,
+        );
+      }
+
+      const tagClosing = `</${tagIdentifier}>`;
       const openTagLength = openMatch[0].length;
+
+      // Mark this index as used
+      usedIndices?.add(tagIndex);
 
       // Recursively parse the content inside this tag
       const innerResult = parseAndRender(
@@ -128,13 +171,15 @@ function parseAndRender(
         args,
         i + openTagLength,
         tagClosing,
+        componentNames,
+        usedIndices,
       );
 
       const Component = components[tagIndex];
       if (Component) {
         parts.push(
           createElement(Component, {
-            key: `${tagIndex}-${i}`,
+            key: `${tagIdentifier}-${i}`,
             children: innerResult.result,
           }),
         );
@@ -146,7 +191,46 @@ function parseAndRender(
       i = innerResult.endIndex;
       textStart = i;
     } else {
-      i++;
+      // Check for self-closing tag like <br/> or <Icon/>
+      const selfCloseMatch = message
+        .slice(i)
+        .match(/^<([a-zA-Z][a-zA-Z0-9]*|\d+)\/>/);
+      if (selfCloseMatch) {
+        // Add text before this tag
+        if (i > textStart) {
+          const text = message.slice(textStart, i);
+          parts.push(args ? interpolateValues(text, args) : text);
+        }
+
+        const tagIdentifier = selfCloseMatch[1]!;
+        const isNumbered = /^\d+$/.test(tagIdentifier);
+        let tagIndex: number;
+
+        if (isNumbered) {
+          tagIndex = parseInt(tagIdentifier, 10);
+        } else {
+          tagIndex = findComponentIndex(
+            tagIdentifier,
+            componentNames,
+            usedIndices,
+          );
+        }
+
+        // Mark this index as used
+        usedIndices?.add(tagIndex);
+
+        const Component = components[tagIndex];
+        if (Component) {
+          parts.push(
+            createElement(Component, { key: `${tagIdentifier}-${i}` }),
+          );
+        }
+
+        i += selfCloseMatch[0].length;
+        textStart = i;
+      } else {
+        i++;
+      }
     }
   }
 
@@ -167,17 +251,44 @@ function parseAndRender(
 }
 
 /**
+ * Find the next unused component index matching the given name.
+ * For duplicate names, returns them in order of first appearance.
+ */
+function findComponentIndex(
+  name: string,
+  componentNames?: string[],
+  usedIndices?: Set<number>,
+): number {
+  if (!componentNames) {
+    // No names provided, can't match - return -1 (will result in fallback)
+    return -1;
+  }
+
+  // Find the first component with this name that hasn't been used yet
+  for (let i = 0; i < componentNames.length; i++) {
+    if (componentNames[i] === name && !usedIndices?.has(i)) {
+      return i;
+    }
+  }
+
+  // No match found - return -1
+  return -1;
+}
+
+/**
  * Shared message rendering logic for both standard and Suspense runtimes.
  * Handles ICU-compiled functions, tag interpolation, and value interpolation.
  *
  * @param msg The message - either a string or a compiled ICU function
  * @param args Optional interpolation values
  * @param components Optional React components for tag interpolation
+ * @param componentNames Optional component names for named tag matching
  */
 export function renderMessage(
   msg: string | ((args: Record<string, unknown>) => string | ReactNode),
   args?: Record<string, unknown>,
   components?: TransComponent[],
+  componentNames?: string[],
 ): ReactNode {
   // Compiled plural/ICU: msg is a function
   if (typeof msg === 'function') {
@@ -185,10 +296,10 @@ export function renderMessage(
   }
 
   // String message - may need interpolation
-  // Tag interpolation: replace <0>...</0> with React components
+  // Tag interpolation: replace <Link>...</Link> or <0>...</0> with React components
   // This must happen first if we have components, as it handles value interpolation too
   if (components && components.length > 0) {
-    return interpolateTags(msg, components, args);
+    return interpolateTags(msg, components, args, componentNames);
   }
 
   // Value interpolation only: replace {name} or {0} with values from __a

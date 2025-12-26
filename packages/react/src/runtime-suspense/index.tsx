@@ -136,6 +136,8 @@ export interface TransSuspenseProps {
   __a?: Record<string, unknown>;
   /** Components for tag interpolation */
   __c?: TransComponent[];
+  /** Component names for named tag matching (parallel to __c array) */
+  __cn?: string[];
 }
 
 /**
@@ -148,6 +150,7 @@ export function __TransSuspense({
   __load,
   __a,
   __c,
+  __cn,
 }: TransSuspenseProps): ReactNode {
   const context = useContext(IdiomaContext);
   if (!context) {
@@ -168,7 +171,7 @@ export function __TransSuspense({
   }
 
   // Use shared rendering logic (handles ICU functions, tags, and values)
-  return renderMessage(msg, __a, __c);
+  return renderMessage(msg, __a, __c, __cn);
 }
 
 /**

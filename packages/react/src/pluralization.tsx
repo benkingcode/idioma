@@ -1,4 +1,4 @@
-// Note: No React imports needed - plural() is a pure function
+// Note: No React imports needed - plural(), select(), selectOrdinal() are pure functions
 
 export interface PluralForms {
   /** Form for zero (optional, falls back to other) */
@@ -15,14 +15,37 @@ export interface PluralForms {
   other: string;
 }
 
-// Cache Intl.PluralRules instances by locale for performance
+/**
+ * Forms for select() - exact value matching.
+ * Keys are the possible values to match against.
+ */
+export interface SelectForms {
+  /** Additional forms for exact value matching */
+  [key: string]: string;
+  /** Required fallback when no exact match found */
+  other: string;
+}
+
+// Cache Intl.PluralRules instances by locale for performance (cardinal numbers)
 const pluralRulesCache = new Map<string, Intl.PluralRules>();
+
+// Separate cache for ordinal rules (ordinal numbers: 1st, 2nd, 3rd, etc.)
+const ordinalRulesCache = new Map<string, Intl.PluralRules>();
 
 function getPluralRules(locale: string): Intl.PluralRules {
   let rules = pluralRulesCache.get(locale);
   if (!rules) {
     rules = new Intl.PluralRules(locale);
     pluralRulesCache.set(locale, rules);
+  }
+  return rules;
+}
+
+function getOrdinalRules(locale: string): Intl.PluralRules {
+  let rules = ordinalRulesCache.get(locale);
+  if (!rules) {
+    rules = new Intl.PluralRules(locale, { type: 'ordinal' });
+    ordinalRulesCache.set(locale, rules);
   }
   return rules;
 }
@@ -92,4 +115,77 @@ export function plural(
 ): string {
   const effectiveLocale = locale ?? _syncedLocale;
   return selectPluralForm(value, forms, effectiveLocale);
+}
+
+/**
+ * Select the appropriate ordinal form using CLDR rules via Intl.PluralRules.
+ * Used internally by selectOrdinal().
+ */
+function selectOrdinalForm(
+  value: number,
+  forms: PluralForms,
+  locale: string,
+): string {
+  // Use Intl.PluralRules with ordinal type for locale-aware category selection
+  const rules = getOrdinalRules(locale);
+  const category = rules.select(value) as PluralCategory;
+
+  // Use the matching category form, or fall back to 'other'
+  const form = forms[category] ?? forms.other;
+
+  // Replace # with the actual value
+  return form.replace(/#/g, String(value));
+}
+
+/**
+ * Ordinal pluralization function for use inside Trans and t() template literals.
+ * Returns the appropriate ordinal form (1st, 2nd, 3rd, 4th, etc.) based on CLDR rules.
+ * At compile time, this is serialized to ICU MessageFormat with selectordinal.
+ *
+ * @param value - The numeric value to format as ordinal
+ * @param forms - Object with ordinal forms (one, two, few, other, etc.)
+ * @param locale - Optional locale (uses synced locale from IdiomaProvider if not provided)
+ *
+ * @example
+ * // English ordinals: 1st, 2nd, 3rd, 4th
+ * // one = 1, 21, 31... (ends in 1, not 11)
+ * // two = 2, 22, 32... (ends in 2, not 12)
+ * // few = 3, 23, 33... (ends in 3, not 13)
+ * // other = 4, 5, 11, 12, 13, 14...
+ *
+ * @example
+ * // In Trans component
+ * <Trans>You finished in {selectOrdinal(place, { one: '#st', two: '#nd', few: '#rd', other: '#th' })} place</Trans>
+ *
+ * @example
+ * // In t() template literal
+ * t(`Your ${selectOrdinal(position, { one: '#st', two: '#nd', few: '#rd', other: '#th' })} attempt`)
+ */
+export function selectOrdinal(
+  value: number,
+  forms: PluralForms,
+  locale?: string,
+): string {
+  const effectiveLocale = locale ?? _syncedLocale;
+  return selectOrdinalForm(value, forms, effectiveLocale);
+}
+
+/**
+ * Selection function for exact value matching (gender, categories, etc.).
+ * Unlike plural() and selectOrdinal(), this does simple string matching without CLDR rules.
+ * At compile time, this is serialized to ICU MessageFormat with select.
+ *
+ * @param value - The string value to match against
+ * @param forms - Object with forms for each possible value, plus 'other' as fallback
+ *
+ * @example
+ * // Gender selection
+ * <Trans>{select(gender, { male: 'He', female: 'She', other: 'They' })} liked your post</Trans>
+ *
+ * @example
+ * // Category selection
+ * t(`${select(status, { pending: 'Waiting', approved: 'Accepted', rejected: 'Denied', other: 'Unknown' })}`)
+ */
+export function select(value: string, forms: SelectForms): string {
+  return forms[value] ?? forms.other;
 }

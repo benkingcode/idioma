@@ -111,4 +111,93 @@ describe('interpolateTags', () => {
 
     expect(result).toBeDefined();
   });
+
+  it('interpolates named tags', () => {
+    const Link = ({ children }: { children?: React.ReactNode }) =>
+      createElement('a', { href: '/test' }, children);
+
+    const result = interpolateTags(
+      'Read our <Link>terms</Link>',
+      [Link],
+      undefined,
+      ['Link'],
+    );
+
+    expect(result).toBeDefined();
+  });
+
+  it('interpolates multiple named tags', () => {
+    const Bold = ({ children }: { children?: React.ReactNode }) =>
+      createElement('strong', null, children);
+    const Italic = ({ children }: { children?: React.ReactNode }) =>
+      createElement('em', null, children);
+
+    const result = interpolateTags(
+      '<Bold>Hello</Bold> and <Italic>world</Italic>',
+      [Bold, Italic],
+      undefined,
+      ['Bold', 'Italic'],
+    );
+
+    expect(result).toBeDefined();
+  });
+
+  it('handles duplicate named tags', () => {
+    const Link1 = ({ children }: { children?: React.ReactNode }) =>
+      createElement('a', { href: '/foo' }, children);
+    const Link2 = ({ children }: { children?: React.ReactNode }) =>
+      createElement('a', { href: '/bar' }, children);
+
+    const result = interpolateTags(
+      'Click <Link>here</Link> or <Link>there</Link>',
+      [Link1, Link2],
+      undefined,
+      ['Link', 'Link'],
+    );
+
+    expect(result).toBeDefined();
+  });
+
+  it('handles self-closing named tags', () => {
+    const Divider = () => createElement('hr');
+
+    const result = interpolateTags(
+      'Before<Divider/>After',
+      [Divider],
+      undefined,
+      ['Divider'],
+    );
+
+    expect(result).toBeDefined();
+  });
+
+  it('handles nested named tags', () => {
+    const Bold = ({ children }: { children?: React.ReactNode }) =>
+      createElement('strong', null, children);
+    const Italic = ({ children }: { children?: React.ReactNode }) =>
+      createElement('em', null, children);
+
+    const result = interpolateTags(
+      '<Bold><Italic>nested</Italic></Bold>',
+      [Bold, Italic],
+      undefined,
+      ['Bold', 'Italic'],
+    );
+
+    expect(result).toBeDefined();
+  });
+
+  it('handles named tags with value placeholders', () => {
+    const Link = ({ children }: { children?: React.ReactNode }) =>
+      createElement('a', null, children);
+
+    const result = interpolateTags(
+      'Hello {name}, click <Link>here</Link>',
+      [Link],
+      { name: 'Ben' },
+      ['Link'],
+    );
+
+    expect(result).toBeDefined();
+  });
 });

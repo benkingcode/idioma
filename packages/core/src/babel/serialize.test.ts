@@ -65,41 +65,43 @@ describe('serializeJsxChildren', () => {
     expect(result.comments).toContain('{0} = getCount()');
   });
 
-  it('serializes JSX element as numbered tag', () => {
+  it('serializes JSX element with named tag', () => {
     const children = getChildren(
       '<Trans>Click <Link>here</Link> to continue</Trans>',
     );
     const result = serializeJsxChildren(children);
 
-    expect(result.message).toBe('Click <0>here</0> to continue');
+    expect(result.message).toBe('Click <Link>here</Link> to continue');
     expect(result.components).toEqual(['Link']);
   });
 
-  it('serializes multiple JSX elements with correct numbering', () => {
+  it('serializes multiple JSX elements with named tags', () => {
     const children = getChildren(
       '<Trans><Bold>Hello</Bold> and <Italic>world</Italic></Trans>',
     );
     const result = serializeJsxChildren(children);
 
-    expect(result.message).toBe('<0>Hello</0> and <1>world</1>');
+    expect(result.message).toBe(
+      '<Bold>Hello</Bold> and <Italic>world</Italic>',
+    );
     expect(result.components).toEqual(['Bold', 'Italic']);
   });
 
-  it('serializes self-closing JSX element', () => {
+  it('serializes self-closing JSX element with named tag', () => {
     const children = getChildren('<Trans>Line break<br/>here</Trans>');
     const result = serializeJsxChildren(children);
 
-    expect(result.message).toBe('Line break<0/>here');
+    expect(result.message).toBe('Line break<br/>here');
     expect(result.components).toEqual(['br']);
   });
 
-  it('serializes nested JSX elements', () => {
+  it('serializes nested JSX elements with named tags', () => {
     const children = getChildren(
       '<Trans><Bold><Italic>text</Italic></Bold></Trans>',
     );
     const result = serializeJsxChildren(children);
 
-    expect(result.message).toBe('<0><1>text</1></0>');
+    expect(result.message).toBe('<Bold><Italic>text</Italic></Bold>');
     expect(result.components).toEqual(['Bold', 'Italic']);
   });
 
@@ -107,9 +109,22 @@ describe('serializeJsxChildren', () => {
     const children = getChildren('<Trans><Link>Hello {name}</Link></Trans>');
     const result = serializeJsxChildren(children);
 
-    expect(result.message).toBe('<0>Hello {name}</0>');
+    expect(result.message).toBe('<Link>Hello {name}</Link>');
     expect(result.placeholders).toEqual({ name: 'name' });
     expect(result.components).toEqual(['Link']);
+  });
+
+  it('handles duplicate component names', () => {
+    const children = getChildren(
+      '<Trans>Click <Link>here</Link> or <Link>there</Link></Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    // Both Links use the same tag name - runtime tracks order
+    expect(result.message).toBe(
+      'Click <Link>here</Link> or <Link>there</Link>',
+    );
+    expect(result.components).toEqual(['Link', 'Link']);
   });
 
   it('handles multiple numbered placeholders', () => {
@@ -216,7 +231,7 @@ describe('serializeJsxChildren with plural()', () => {
     const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
-      '<0>{count, plural, one {# item} other {# items}}</0>',
+      '<span>{count, plural, one {# item} other {# items}}</span>',
     );
     expect(result.components).toEqual(['span']);
     expect(result.placeholders).toEqual({ count: 'count' });
