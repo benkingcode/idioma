@@ -261,13 +261,23 @@ export function createTransSuspense<
 
 // ============ useT Hook ============
 
+/**
+ * Derive string-only keys from TranslationKey + MessageComponents.
+ * Keys with empty component arrays [] can be used with useT.
+ * Keys with non-empty component arrays [TransComponent, ...] must use Trans.
+ */
+type StringOnlyKeys<TK extends string, MC extends Record<string, unknown[]>> = {
+  [K in TK & keyof MC]: MC[K] extends [] ? K : never;
+}[TK & keyof MC];
+
 export type TFunction<
-  K extends string = string,
+  TK extends string = string,
   MV extends Record<string, Record<string, unknown>> = Record<
     string,
     Record<string, unknown>
   >,
-> = <Key extends K>(
+  MC extends Record<string, unknown[]> = Record<string, unknown[]>,
+> = <Key extends StringOnlyKeys<TK, MC> & string>(
   key: Key,
   values?: Key extends keyof MV ? MV[Key] : Record<string, unknown>,
 ) => string;
@@ -322,15 +332,16 @@ export function __useTSuspense(
  * chunk and loader information.
  */
 export function createUseTSuspense<
-  K extends string = string,
+  TK extends string = string,
   MV extends Record<string, Record<string, unknown>> = Record<
     string,
     Record<string, unknown>
   >,
->(_config: SuspenseConfig): () => TFunction<K, MV> {
+  MC extends Record<string, unknown[]> = Record<string, unknown[]>,
+>(_config: SuspenseConfig): () => TFunction<TK, MV, MC> {
   // Return a hook that throws when called
   // In production with proper Babel setup, this would be transformed
-  return function useT(): TFunction<K, MV> {
+  return function useT(): TFunction<TK, MV, MC> {
     throw new Error(
       '[idioma] useT in Suspense mode requires Babel transform. ' +
         'Make sure the Babel plugin is configured correctly.',

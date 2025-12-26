@@ -23,6 +23,18 @@ export type KeysWithoutValues<
   [K in keyof MV]: MV[K] extends Record<string, never> ? K : never;
 }[keyof MV];
 
+/**
+ * Derive string-only keys from TranslationKey + MessageComponents.
+ * Keys with empty component arrays [] can be used with useT.
+ * Keys with non-empty component arrays [TransComponent, ...] must use Trans.
+ */
+export type StringOnlyKeys<
+  TK extends string,
+  MC extends Record<string, unknown[]>,
+> = {
+  [K in TK & keyof MC]: MC[K] extends [] ? K : never;
+}[TK & keyof MC];
+
 // --- Source text mode helpers ---
 
 /**
@@ -64,20 +76,24 @@ export interface SourceTextOptions {
  * Type for the t function returned by useT.
  * Supports both source text mode and key-only mode with full type safety.
  *
- * @template SK - StringOnlyKey union (valid translation keys)
+ * @template TK - TranslationKey union (all translation keys)
  * @template MV - MessageValues interface (maps keys to required values)
+ * @template MC - MessageComponents interface (maps keys to required components)
+ *
+ * The TFunction only accepts keys where MC[K] is an empty array (string-only keys).
  */
 export type TFunction<
-  SK extends string = string,
+  TK extends string = string,
   MV extends Record<string, Record<string, unknown>> = Record<
     string,
     Record<string, unknown>
   >,
+  MC extends Record<string, unknown[]> = Record<string, unknown[]>,
 > = {
   // === Key-only mode ===
 
-  // Keys that require values
-  <K extends SK & string>(
+  // Keys that require values (only string-only keys allowed)
+  <K extends StringOnlyKeys<TK, MC> & string>(
     args: K extends KeysWithValues<MV>
       ? { id: K; values: MV[K]; context?: string; ns?: string }
       : K extends KeysWithoutValues<MV>
@@ -123,7 +139,7 @@ export type TFunction<
  *
  * @example
  * // In generated idioma/index.ts:
- * export const useT = createUseT<StringOnlyKey, MessageValues>()
+ * export const useT = createUseT<TranslationKey, MessageValues, MessageComponents>()
  *
  * // Usage:
  * const t = useT()
@@ -143,19 +159,20 @@ interface KeyOnlyArgsRuntime {
 }
 
 export function createUseT<
-  SK extends string = string,
+  TK extends string = string,
   MV extends Record<string, Record<string, unknown>> = Record<
     string,
     Record<string, unknown>
   >,
->(): () => TFunction<SK, MV> {
+  MC extends Record<string, unknown[]> = Record<string, unknown[]>,
+>(): () => TFunction<TK, MV, MC> {
   /**
    * useT hook for imperative translations.
    *
    * Babel transforms t() calls to include inlined translations.
    * This hook handles the transformed calls and provides fallback behavior.
    */
-  return function useT(): TFunction<SK, MV> {
+  return function useT(): TFunction<TK, MV, MC> {
     const ctx = useContext(IdiomaContext);
     if (!ctx) {
       throw new Error(
@@ -242,6 +259,6 @@ export function createUseT<
           : msg;
       },
       [locale],
-    ) as TFunction<SK, MV>;
+    ) as TFunction<TK, MV, MC>;
   };
 }

@@ -11,7 +11,6 @@ import type {
   Locale,
   MessageComponents,
   MessageValues,
-  StringOnlyKey,
   TranslationKey,
 } from './.generated/types';
 
@@ -20,7 +19,7 @@ const config = {
 };
 
 export const Trans = createTransSuspense<TranslationKey, MessageValues, MessageComponents>(config);
-export const useT = createUseTSuspense<StringOnlyKey, MessageValues>(config);
+export const useT = createUseTSuspense<TranslationKey, MessageValues, MessageComponents>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
@@ -28,6 +27,5 @@ export type {
   Locale,
   MessageComponents,
   MessageValues,
-  StringOnlyKey,
   TranslationKey,
 };

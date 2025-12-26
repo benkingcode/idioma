@@ -13,9 +13,7 @@ import { createUseT } from './createUseT';
 import type { TransComponent } from './interpolate';
 
 // Simulated generated types (what the compiler would produce)
-type StringOnlyKey = 'greeting' | 'greeting.name' | 'items.count';
-
-// All keys including ones with component tags
+// NOTE: StringOnlyKey is no longer generated - useT derives it from MessageComponents!
 type TranslationKey =
   | 'greeting'
   | 'greeting.name'
@@ -37,8 +35,8 @@ type MessageComponents = {
 };
 
 // Create typed useT (simulating what idioma/index.ts exports)
-// Translations are inlined by Babel at build time, so no translations arg needed
-const useT = createUseT<StringOnlyKey, MessageValues>();
+// useT now takes TranslationKey + MessageComponents and internally filters to string-only keys
+const useT = createUseT<TranslationKey, MessageValues, MessageComponents>();
 
 // Get the t function (in real usage this would be inside a component)
 declare const t: ReturnType<typeof useT>;
@@ -48,8 +46,12 @@ declare const t: ReturnType<typeof useT>;
 // =============================================================================
 
 // --- Invalid key should error ---
-// @ts-expect-error - 'nonexistent' is not a valid StringOnlyKey
+// @ts-expect-error - 'nonexistent' is not a valid key
 t({ id: 'nonexistent' });
+
+// --- Keys with component tags should error (must use Trans instead) ---
+// @ts-expect-error - 'legal.links' has component tags, can't use with useT
+t({ id: 'legal.links' });
 
 // --- Missing values for key with placeholders should error ---
 // @ts-expect-error - 'greeting.name' requires values: { name }

@@ -12,12 +12,11 @@ import type {
   Locale,
   MessageComponents,
   MessageValues,
-  StringOnlyKey,
   TranslationKey,
 } from './.generated/types';
 
 export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>();
-export const useT = createUseT<StringOnlyKey, MessageValues>();
+export const useT = createUseT<TranslationKey, MessageValues, MessageComponents>();
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
@@ -25,6 +24,5 @@ export type {
   Locale,
   MessageComponents,
   MessageValues,
-  StringOnlyKey,
   TranslationKey,
 };
