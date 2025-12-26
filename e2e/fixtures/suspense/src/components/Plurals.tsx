@@ -1,5 +1,6 @@
+import { plural } from '@idioma/core/icu';
 import { useState } from 'react';
-import { plural, Trans } from '../idioma';
+import { Trans } from '../idioma';
 
 export function Plurals() {
   const [count, setCount] = useState(0);

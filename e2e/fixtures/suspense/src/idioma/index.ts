@@ -7,7 +7,6 @@ import {
   createUseLocale,
   createUseT,
 } from '@idioma/react/runtime-suspense';
-import { plural } from '@idioma/react';
 import type {
   Locale,
   MessageComponents,
@@ -25,7 +24,6 @@ export const useT = createUseT<StringOnlyKey, MessageValues>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export { plural };
 export type {
   Locale,
   MessageComponents,

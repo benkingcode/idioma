@@ -331,7 +331,8 @@ Add translator context that affects key generation (same text, different context
 Use the `plural()` function inside `<Trans>` or `t()` for pluralization:
 
 ```tsx
-import { plural, Trans } from './src/idioma';
+import { plural } from '@idioma/core/icu';
+import { Trans } from './src/idioma';
 
 // In Trans component
 <Trans>
@@ -367,7 +368,8 @@ plural(count, {
 Use the `select()` function for exact value matching (gender, status, categories):
 
 ```tsx
-import { select, Trans } from './src/idioma';
+import { select } from '@idioma/core/icu';
+import { Trans } from './src/idioma';
 
 // In Trans component
 <Trans>
@@ -394,7 +396,8 @@ The `other` form is required as a fallback for unmatched values.
 Use `selectOrdinal()` for ordinal formatting (1st, 2nd, 3rd):
 
 ```tsx
-import { selectOrdinal, Trans } from './src/idioma';
+import { selectOrdinal } from '@idioma/core/icu';
+import { Trans } from './src/idioma';
 
 // In Trans component
 <Trans>

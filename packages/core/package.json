@@ -33,6 +33,10 @@
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "import": "./dist/runtime/index.js"
+    },
+    "./icu": {
+      "types": "./dist/icu/index.d.ts",
+      "import": "./dist/icu/index.js"
     }
   },
   "bin": {

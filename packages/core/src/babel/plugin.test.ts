@@ -615,7 +615,8 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { t, plural } from './idioma'
+        import { plural } from '@idioma/core/icu'
+        import { t } from './idioma'
         const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
       `;
 
@@ -635,7 +636,8 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { t, plural } from './idioma'
+        import { plural } from '@idioma/core/icu'
+        import { t } from './idioma'
         const msg = t(\`Hello \${name}, you have \${plural(count, { one: "# message", other: "# messages" })}\`)
       `;
 
@@ -659,7 +661,8 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { t, plural } from './idioma'
+        import { plural } from '@idioma/core/icu'
+        import { t } from './idioma'
         const msg = t(\`Items: \${plural(data.count, { one: "#", other: "#" })}\`)
       `;
 
@@ -681,7 +684,8 @@ describe('Idioma Babel Plugin', () => {
 
       // Trans version
       const transCode = `
-        import { Trans, plural } from './idioma'
+        import { plural } from '@idioma/core/icu'
+        import { Trans } from './idioma'
         const x = <Trans>You have {plural(count, { one: "# item", other: "# items" })} in cart</Trans>
       `;
       transform(transCode, {
@@ -692,7 +696,8 @@ describe('Idioma Babel Plugin', () => {
 
       // t() version
       const tCode = `
-        import { t, plural } from './idioma'
+        import { plural } from '@idioma/core/icu'
+        import { t } from './idioma'
         const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
       `;
       transform(tCode, {
@@ -712,7 +717,8 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ source: string }> = [];
 
       const code = `
-        import { t, plural } from './idioma'
+        import { plural } from '@idioma/core/icu'
+        import { t } from './idioma'
         const msg = t(\`\${plural(n, { zero: "none", one: "one", two: "two", few: "few", many: "many", other: "other" })}\`)
       `;
 

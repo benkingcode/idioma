@@ -6,7 +6,6 @@ import {
   createTrans,
   createUseLocale,
   createUseT,
-  plural,
 } from '@idioma/react';
 import { translations } from './.generated/translations';
 import type {
@@ -22,7 +21,6 @@ export const useT = createUseT<StringOnlyKey, MessageValues>(translations);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export { plural };
 export type {
   Locale,
   MessageComponents,

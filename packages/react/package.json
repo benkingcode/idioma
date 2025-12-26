@@ -52,6 +52,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@idioma/core": "workspace:*",
     "murmurhash-js": "^1.0.0"
   }
 }

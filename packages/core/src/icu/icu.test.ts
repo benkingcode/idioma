@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { _syncLocale, plural, select, selectOrdinal } from './pluralization';
+import { _syncLocale, plural, select, selectOrdinal } from './index';
 
 describe('plural()', () => {
   it('returns the correct form for count 1', () => {
@@ -142,5 +142,51 @@ describe('select()', () => {
 
   it('always falls back to other', () => {
     expect(select('foo', { other: 'default' })).toBe('default');
+  });
+});
+
+describe('plural function with CLDR rules', () => {
+  it('uses synced locale when none provided', () => {
+    _syncLocale('ru');
+    const result = plural(5, {
+      one: '# сообщение',
+      few: '# сообщения',
+      many: '# сообщений',
+      other: '# сообщения',
+    });
+    expect(result).toBe('5 сообщений');
+  });
+
+  it('uses explicit locale over synced locale', () => {
+    _syncLocale('en');
+    const result = plural(
+      2,
+      {
+        one: '# item',
+        few: '# items (few)',
+        many: '# items (many)',
+        other: '# items',
+      },
+      'ru',
+    );
+    // Russian: 2 uses 'few' form
+    expect(result).toBe('2 items (few)');
+  });
+
+  it('handles Russian 21 correctly with synced locale', () => {
+    _syncLocale('ru');
+    const result = plural(21, {
+      one: '# сообщение',
+      few: '# сообщения',
+      many: '# сообщений',
+      other: '# сообщения',
+    });
+    expect(result).toBe('21 сообщение');
+  });
+
+  it('defaults to English rules when no locale synced', () => {
+    _syncLocale('en');
+    const result = plural(5, { one: '# item', other: '# items' });
+    expect(result).toBe('5 items');
   });
 });

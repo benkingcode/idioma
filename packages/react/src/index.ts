@@ -17,15 +17,6 @@ export {
   type IdiomaProviderProps,
 } from './context';
 
-// Pluralization and selection (re-exported by generated idioma/)
-export {
-  plural,
-  select,
-  selectOrdinal,
-  type PluralForms,
-  type SelectForms,
-} from './pluralization';
-
 // Runtime internals (used by Babel-compiled code)
 export { __Trans, type TransProps } from './Trans';
 export { __useT, type UseTOptions } from './useT';

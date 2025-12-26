@@ -222,6 +222,9 @@ importers:
 
   packages/react:
     dependencies:
+      '@idioma/core':
+        specifier: workspace:*
+        version: link:../core
       murmurhash-js:
         specifier: ^1.0.0
         version: 1.0.0

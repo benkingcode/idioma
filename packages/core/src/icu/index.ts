@@ -1,4 +1,5 @@
-// Note: No React imports needed - plural(), select(), selectOrdinal() are pure functions
+// ICU MessageFormat utilities for pluralization and selection
+// These are pure functions with no React dependency
 
 export interface PluralForms {
   /** Form for zero (optional, falls back to other) */

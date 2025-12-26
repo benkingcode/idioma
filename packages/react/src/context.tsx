@@ -1,3 +1,4 @@
+import { _syncLocale } from '@idioma/core/icu';
 import {
   createContext,
   useContext,
@@ -5,7 +6,6 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { _syncLocale } from './pluralization';
 
 export interface IdiomaContextValue {
   locale: string;
