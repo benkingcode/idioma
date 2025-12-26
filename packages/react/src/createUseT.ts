@@ -150,7 +150,7 @@ export function createUseT<
     string,
     Record<string, unknown>
   >,
->(translations: Translations): () => TFunction<SK, MV> {
+>(translations?: Translations): () => TFunction<SK, MV> {
   return function useT(): TFunction<SK, MV> {
     const ctx = useContext(IdiomaContext);
     if (!ctx) {
@@ -173,6 +173,7 @@ export function createUseT<
           key: string,
           ns?: string,
         ): Record<string, string | MessageFunction> | undefined => {
+          if (!translations) return undefined;
           if (ns) {
             // Look in __ns.{namespace}.{key}
             const nsTranslations = (

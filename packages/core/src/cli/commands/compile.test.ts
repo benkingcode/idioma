@@ -186,8 +186,10 @@ msgstr "Hello"
       'export const IdiomaProvider = createIdiomaProvider',
     );
     expect(content).toContain('export type {');
-    // index.ts should import from .generated/
-    expect(content).toContain('./.generated/translations');
+    // index.ts should import types from .generated/
+    expect(content).toContain('./.generated/types');
+    // index.ts should NOT import translations (Babel inlines them)
+    expect(content).not.toContain('./.generated/translations');
   });
 
   it('returns compile result with stats', async () => {

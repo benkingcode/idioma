@@ -101,7 +101,7 @@ export function createTrans<
     string,
     TransComponent[]
   >,
->(translations: Translations) {
+>(translations?: Translations) {
   function Trans(props: TransInlineModeProps): ReactNode;
   function Trans<K extends TK>(
     props: TransKeyOnlyModeProps<K, MV, MC>,
@@ -134,6 +134,16 @@ export function createTrans<
 
     if (!id) {
       throw new Error('[idioma] Trans requires either children or id prop');
+    }
+
+    // When translations not provided (tree-shaking mode), Babel inlines them.
+    // At runtime, key-only mode won't work without translations.
+    if (!translations) {
+      console.warn(
+        `[idioma] Trans with id="${id}" requires translations. ` +
+          'Make sure Babel is transforming your code in production.',
+      );
+      return id;
     }
 
     // Get locale messages from the right place (namespace or top-level)

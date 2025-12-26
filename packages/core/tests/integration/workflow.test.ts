@@ -140,8 +140,9 @@ describe('End-to-End Workflow', () => {
     const indexTs = await fs.readFile(join(outputDir, 'index.ts'), 'utf-8');
     expect(indexTs).toContain('export const Trans = createTrans');
     expect(indexTs).toContain('export const useT = createUseT');
-    // index.ts should import from .generated/
-    expect(indexTs).toContain('./.generated/translations');
+    // index.ts should import types from .generated/ (not translations - Babel inlines them)
+    expect(indexTs).toContain('./.generated/types');
+    expect(indexTs).not.toContain('./.generated/translations');
 
     // Step 5: Check translations
     const checkResult = await runCheck({ localeDir });

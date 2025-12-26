@@ -137,7 +137,9 @@ msgstr "Hello"
     const content = await fs.readFile(indexPath, 'utf-8');
 
     expect(content).toContain('export');
-    expect(content).toContain('./.generated/translations');
+    // index.ts should import types from .generated/ (not translations)
+    expect(content).toContain('./.generated/types');
+    expect(content).not.toContain('./.generated/translations');
   });
 
   it('compiles ICU plural messages to functions', async () => {
