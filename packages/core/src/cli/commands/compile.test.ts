@@ -47,7 +47,7 @@ msgstr "Hello"
     const generatedFiles = await fs.readdir(join(outputDir, '.generated'));
     expect(generatedFiles).toContain('translations.js');
     expect(generatedFiles).toContain('translations.d.ts');
-    expect(generatedFiles).toContain('types.ts');
+    expect(generatedFiles).toContain('types.d.ts');
   });
 
   it('generates translations.js with all locales', async () => {
@@ -90,7 +90,7 @@ msgstr "Hola"
     expect(content).toContain('"es"');
   });
 
-  it('generates types.ts with Locale type', async () => {
+  it('generates types.d.ts with Locale type', async () => {
     await fs.writeFile(
       join(localeDir, 'en.po'),
       `
@@ -121,7 +121,7 @@ msgstr "Bonjour"
     });
 
     const content = await fs.readFile(
-      join(outputDir, '.generated', 'types.ts'),
+      join(outputDir, '.generated', 'types.d.ts'),
       'utf-8',
     );
     expect(content).toContain('Locale');
@@ -152,7 +152,7 @@ msgstr "Goodbye"
     });
 
     const content = await fs.readFile(
-      join(outputDir, '.generated', 'types.ts'),
+      join(outputDir, '.generated', 'types.d.ts'),
       'utf-8',
     );
     expect(content).toContain('TranslationKey');

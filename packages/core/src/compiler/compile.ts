@@ -69,7 +69,7 @@ function countComponentTags(source: string): number {
  *
  * Creates:
  * - translations.ts: Compiled translation data
- * - types.ts: TypeScript type definitions
+ * - types.d.ts: TypeScript type definitions
  * - index.ts: Re-exports with typed factories
  *
  * When useSuspense is true, also creates:
@@ -91,6 +91,8 @@ export async function compileTranslations(
   // Ensure output directories exist
   await fs.mkdir(outputDir, { recursive: true });
   const generatedDir = join(outputDir, '.generated');
+  // Clean .generated directory before regenerating to remove stale files
+  await fs.rm(generatedDir, { recursive: true, force: true });
   await fs.mkdir(generatedDir, { recursive: true });
 
   // Detect all locales (from flat .po files and namespace directories)
@@ -615,7 +617,7 @@ async function generateTypesTs(
 
   content += `export type StringOnlyKey = ${stringOnlyKeys.map((k) => JSON.stringify(k)).join(' | ') || 'never'};\n`;
 
-  await fs.writeFile(join(outputDir, 'types.ts'), content, 'utf-8');
+  await fs.writeFile(join(outputDir, 'types.d.ts'), content, 'utf-8');
 }
 
 /**

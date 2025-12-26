@@ -129,7 +129,7 @@ describe('End-to-End Workflow', () => {
     expect(translationsJs).toContain('Hola mundo');
 
     const typesTs = await fs.readFile(
-      join(outputDir, '.generated', 'types.ts'),
+      join(outputDir, '.generated', 'types.d.ts'),
       'utf-8',
     );
     expect(typesTs).toContain('Locale');

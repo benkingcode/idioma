@@ -88,7 +88,7 @@ msgstr "Hola"
     expect(content).toContain('export');
   });
 
-  it('generates types.ts with TypeScript definitions in .generated/', async () => {
+  it('generates types.d.ts with TypeScript definitions in .generated/', async () => {
     await createPoFile(
       'en',
       `
@@ -107,7 +107,7 @@ msgstr "Hello {name}"
       defaultLocale: 'en',
     });
 
-    const typesPath = join(outputDir, '.generated', 'types.ts');
+    const typesPath = join(outputDir, '.generated', 'types.d.ts');
     const content = await fs.readFile(typesPath, 'utf-8');
 
     expect(content).toContain('interface');
