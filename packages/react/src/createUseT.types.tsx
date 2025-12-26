@@ -12,28 +12,6 @@ import { createTrans } from './createTrans';
 import { createUseT } from './createUseT';
 import type { TransComponent } from './interpolate';
 
-// Mock translations object for testing
-const translations = {
-  greeting: {
-    en: 'Hello',
-    es: 'Hola',
-  },
-  'greeting.name': {
-    en: (args: Record<string, unknown>) => `Hello ${args.name}`,
-    es: (args: Record<string, unknown>) => `Hola ${args.name}`,
-  },
-  'items.count': {
-    en: (args: Record<string, unknown>) =>
-      args.count === 1 ? '1 item' : `${args.count} items`,
-    es: (args: Record<string, unknown>) =>
-      args.count === 1 ? '1 artículo' : `${args.count} artículos`,
-  },
-  'legal.links': {
-    en: 'Read our <0>Terms</0> and <1>Privacy Policy</1>',
-    es: 'Lee nuestros <0>Términos</0> y <1>Política de Privacidad</1>',
-  },
-};
-
 // Simulated generated types (what the compiler would produce)
 type StringOnlyKey = 'greeting' | 'greeting.name' | 'items.count';
 
@@ -59,7 +37,8 @@ type MessageComponents = {
 };
 
 // Create typed useT (simulating what idioma/index.ts exports)
-const useT = createUseT<StringOnlyKey, MessageValues>(translations);
+// Translations are inlined by Babel at build time, so no translations arg needed
+const useT = createUseT<StringOnlyKey, MessageValues>();
 
 // Get the t function (in real usage this would be inside a component)
 declare const t: ReturnType<typeof useT>;
@@ -149,9 +128,8 @@ t('Hello {name}, goodbye {name}', { name: 'Ben' });
 // =============================================================================
 
 // Create typed Trans (simulating what idioma/index.ts exports)
-const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>(
-  translations,
-);
+// Translations are inlined by Babel at build time, so no translations arg needed
+const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>();
 
 // Mock components for testing
 declare const TermsLink: TransComponent;

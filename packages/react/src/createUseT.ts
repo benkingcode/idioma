@@ -1,10 +1,8 @@
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';
-import { generateKey } from './server/generateKey';
 
 type MessageFunction = (args: Record<string, unknown>) => string;
-type Translations = Record<string, Record<string, string | MessageFunction>>;
 
 // =============================================================================
 // Helper Types for Strict Typing
@@ -125,7 +123,7 @@ export type TFunction<
  *
  * @example
  * // In generated idioma/index.ts:
- * export const useT = createUseT(translations)
+ * export const useT = createUseT<StringOnlyKey, MessageValues>()
  *
  * // Usage:
  * const t = useT()
@@ -150,7 +148,13 @@ export function createUseT<
     string,
     Record<string, unknown>
   >,
->(translations?: Translations): () => TFunction<SK, MV> {
+>(): () => TFunction<SK, MV> {
+  /**
+   * useT hook for imperative translations.
+   *
+   * Babel transforms t() calls to include inlined translations.
+   * This hook handles the transformed calls and provides fallback behavior.
+   */
   return function useT(): TFunction<SK, MV> {
     const ctx = useContext(IdiomaContext);
     if (!ctx) {
@@ -168,38 +172,19 @@ export function createUseT<
         values?: Record<string, unknown>,
         options?: SourceTextOptions,
       ): string => {
-        // Helper to get locale messages from the right place (namespace or top-level)
-        const getLocaleMessages = (
-          key: string,
-          ns?: string,
-        ): Record<string, string | MessageFunction> | undefined => {
-          if (!translations) return undefined;
-          if (ns) {
-            // Look in __ns.{namespace}.{key}
-            const nsTranslations = (
-              translations as unknown as { __ns?: Record<string, Translations> }
-            ).__ns;
-            return nsTranslations?.[ns]?.[key];
-          }
-          // Look at top level
-          return translations[key];
-        };
-
         // Key-only mode: t({ id: 'welcome', values: { name }, ns: 'common' })
+        // Babel should transform this, but if not, return the id as fallback
         if (typeof sourceOrArgs === 'object') {
-          const { id, values: keyValues, ns } = sourceOrArgs;
-          const localeMessages = getLocaleMessages(id, ns);
-          if (!localeMessages) return id;
-
-          const msg =
-            localeMessages[locale] ?? Object.values(localeMessages)[0];
-          if (msg === undefined) return id;
-          if (typeof msg === 'function') return msg(keyValues || {});
-          return keyValues ? interpolateValues(msg, keyValues) : msg;
+          const { id } = sourceOrArgs;
+          console.warn(
+            `[idioma] t({ id: "${id}" }) was not transformed by Babel. ` +
+              'Make sure @idioma/core Babel plugin is configured.',
+          );
+          return id;
         }
 
-        // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button', ns: 'auth' })
-        // OR after Babel transformation: t('Hello {name}', { en: '...', es: '...' }, { name: 'Ben' })
+        // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button' })
+        // OR after Babel transformation: t('Hello {name}', { key: { en: '...', es: '...' } }, { name: 'Ben' })
         const source = sourceOrArgs;
 
         // Detect if Babel has inlined translations in arg 2
@@ -232,15 +217,10 @@ export function createUseT<
             string | MessageFunction
           >;
           actualValues = options as unknown as Record<string, unknown>;
-        } else {
-          // Normal mode: arg 2 is values, arg 3 is options
-          const { context, ns } = (options as SourceTextOptions) || {};
-          const key = generateKey(source, context, ns);
-          localeMessages = getLocaleMessages(key, ns);
         }
 
         if (!localeMessages) {
-          // Fallback: interpolate source text if values provided
+          // Not transformed by Babel - fallback to source text
           return actualValues && Object.keys(actualValues).length > 0
             ? interpolateValues(source, actualValues)
             : source;

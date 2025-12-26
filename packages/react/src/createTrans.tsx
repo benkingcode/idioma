@@ -1,14 +1,6 @@
 import { useContext, type ReactNode } from 'react';
 import { IdiomaContext } from './context';
-import {
-  interpolateTags,
-  interpolateValues,
-  type TransComponent,
-} from './interpolate';
-
-type MessageFunction = (args: Record<string, unknown>) => string | ReactNode;
-type LocaleMessages = Record<string, string | MessageFunction>;
-type Translations = Record<string, LocaleMessages>;
+import { type TransComponent } from './interpolate';
 
 /**
  * Inline mode props - when children are present.
@@ -82,7 +74,7 @@ export type TransKeyOnlyModeProps<
  *
  * @example
  * // In generated idioma/index.ts:
- * export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>(translations)
+ * export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>()
  *
  * // Inline mode (dev, Babel extracts):
  * <Trans>Hello {name}</Trans>
@@ -101,7 +93,14 @@ export function createTrans<
     string,
     TransComponent[]
   >,
->(translations?: Translations) {
+>() {
+  /**
+   * Trans component for inline translations.
+   *
+   * In development and production, Babel transforms Trans to __Trans with
+   * inlined translations. This function exists for type safety and to provide
+   * a fallback when Babel hasn't transformed the code.
+   */
   function Trans(props: TransInlineModeProps): ReactNode;
   function Trans<K extends TK>(
     props: TransKeyOnlyModeProps<K, MV, MC>,
@@ -117,73 +116,24 @@ export function createTrans<
       );
     }
 
-    const { locale } = ctx;
-
     // Inline mode: children present - render them directly
-    // In production, Babel transforms this to __Trans
+    // Babel transforms this to __Trans with inlined translations
     if ('children' in props && props.children !== undefined) {
       return props.children;
     }
 
-    // Key-only mode: lookup from translations
-    const { id, values, components, ns } = props as TransKeyOnlyModeProps<
-      TK,
-      MV,
-      MC
-    > & { ns?: string };
-
-    if (!id) {
-      throw new Error('[idioma] Trans requires either children or id prop');
-    }
-
-    // When translations not provided (tree-shaking mode), Babel inlines them.
-    // At runtime, key-only mode won't work without translations.
-    if (!translations) {
+    // Key-only mode: Babel should transform this too
+    // If we reach here, Babel hasn't transformed the code
+    const { id } = props as TransKeyOnlyModeProps<TK, MV, MC>;
+    if (id) {
       console.warn(
-        `[idioma] Trans with id="${id}" requires translations. ` +
-          'Make sure Babel is transforming your code in production.',
+        `[idioma] Trans with id="${id}" was not transformed by Babel. ` +
+          'Make sure @idioma/core Babel plugin is configured.',
       );
       return id;
     }
 
-    // Get locale messages from the right place (namespace or top-level)
-    let localeMessages: LocaleMessages | undefined;
-    if (ns) {
-      // Look in __ns.{namespace}.{id}
-      const nsTranslations = (
-        translations as unknown as { __ns?: Record<string, Translations> }
-      ).__ns;
-      localeMessages = nsTranslations?.[ns]?.[id];
-    } else {
-      // Look at top level
-      localeMessages = translations[id];
-    }
-
-    if (!localeMessages) {
-      return id; // Fallback to key
-    }
-
-    const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
-    if (msg === undefined) {
-      return id;
-    }
-
-    // Compiled plural/ICU: msg is a function
-    if (typeof msg === 'function') {
-      return msg(values || {});
-    }
-
-    // Component interpolation: replace <0>...</0> with React components
-    if (components && components.length > 0) {
-      return interpolateTags(msg, components, values);
-    }
-
-    // Value interpolation only: replace {name} with values
-    if (values && Object.keys(values).length > 0) {
-      return interpolateValues(msg, values);
-    }
-
-    return msg;
+    throw new Error('[idioma] Trans requires either children or id prop');
   }
 
   return Trans;

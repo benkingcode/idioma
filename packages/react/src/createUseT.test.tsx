@@ -1,57 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createIdiomaProvider } from './context';
 import { createUseT } from './createUseT';
-import { generateKey } from './server/generateKey';
 
 const IdiomaProvider = createIdiomaProvider();
-
-// Translations keyed by hash for source text mode
-const translations = {
-  // Source text translations (keyed by hash)
-  [generateKey('Hello world!')]: {
-    en: 'Hello world!',
-    es: '¡Hola mundo!',
-  },
-  [generateKey('Hello {name}')]: {
-    en: 'Hello {name}',
-    es: 'Hola {name}',
-  },
-  [generateKey('Submit', 'button')]: {
-    en: 'Submit',
-    es: 'Enviar',
-  },
-  // Key-only translations (manual ids)
-  greeting: {
-    en: 'Hello',
-    es: 'Hola',
-  },
-  'greeting.name': {
-    en: 'Hello {name}!',
-    es: '¡Hola {name}!',
-  },
-  'items.count': {
-    en: ({ count }: { count: number }) =>
-      count === 1 ? '1 item' : `${count} items`,
-    es: ({ count }: { count: number }) =>
-      count === 1 ? '1 artículo' : `${count} artículos`,
-  },
-  // Namespaced translations (under __ns.{namespace}.{key})
-  __ns: {
-    common: {
-      greeting: {
-        en: 'Hello (common)',
-        es: 'Hola (common)',
-      },
-    },
-  },
-};
-
-const useT = createUseT(translations);
+const useT = createUseT();
 
 describe('createUseT', () => {
-  describe('source text mode', () => {
-    it('translates source text for given locale', () => {
+  describe('source text mode fallback (without Babel transformation)', () => {
+    it('returns source text when not transformed by Babel', () => {
       function TestComponent() {
         const t = useT();
         return <div data-testid="result">{t('Hello world!')}</div>;
@@ -63,13 +20,16 @@ describe('createUseT', () => {
         </IdiomaProvider>,
       );
 
-      expect(screen.getByTestId('result').textContent).toBe('¡Hola mundo!');
+      // Without Babel transformation, returns source text as fallback
+      expect(screen.getByTestId('result').textContent).toBe('Hello world!');
     });
 
-    it('returns source text if translation not found', () => {
+    it('interpolates values in source text even without Babel transformation', () => {
       function TestComponent() {
         const t = useT();
-        return <div data-testid="result">{t('Unknown message')}</div>;
+        return (
+          <div data-testid="result">{t('Hello {name}', { name: 'Ben' })}</div>
+        );
       }
 
       render(
@@ -78,14 +38,119 @@ describe('createUseT', () => {
         </IdiomaProvider>,
       );
 
-      expect(screen.getByTestId('result').textContent).toBe('Unknown message');
+      // Interpolates values in the source text fallback
+      expect(screen.getByTestId('result').textContent).toBe('Hello Ben');
     });
 
-    it('interpolates values in source text mode', () => {
+    it('returns interpolated source when context provided but not transformed', () => {
       function TestComponent() {
         const t = useT();
         return (
-          <div data-testid="result">{t('Hello {name}', { name: 'Ben' })}</div>
+          <div data-testid="result">
+            {t('Hello {name}', { name: 'Ben' }, { context: 'greeting' })}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      // Falls back to interpolated source
+      expect(screen.getByTestId('result').textContent).toBe('Hello Ben');
+    });
+  });
+
+  describe('key-only mode fallback (without Babel transformation)', () => {
+    it('returns id and warns when not transformed by Babel', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = useT();
+        return <div data-testid="result">{t({ id: 'greeting' })}</div>;
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      // Returns the id as fallback
+      expect(screen.getByTestId('result').textContent).toBe('greeting');
+
+      // Warns that Babel didn't transform
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          't({ id: "greeting" }) was not transformed by Babel',
+        ),
+      );
+
+      warnSpy.mockRestore();
+    });
+
+    it('returns id for complex keys when not transformed', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = useT();
+        return <div data-testid="result">{t({ id: 'some.nested.key' })}</div>;
+      }
+
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('some.nested.key');
+
+      warnSpy.mockRestore();
+    });
+  });
+
+  describe('Babel-transformed behavior (simulated)', () => {
+    it('uses inlined translations when Babel has transformed', () => {
+      function TestComponent() {
+        const t = useT();
+        // Simulate what Babel produces:
+        // t('Hello', { key: { en: 'Hello', es: 'Hola' } })
+        // where 'key' is the message key hash
+        return (
+          <div data-testid="result">
+            {t('Hello', {
+              abc123: { en: 'Hello', es: 'Hola' },
+            } as unknown as Record<string, unknown>)}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="es">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hola');
+    });
+
+    it('uses inlined translations with values', () => {
+      function TestComponent() {
+        const t = useT();
+        // Simulate Babel-transformed call with values in 3rd arg:
+        // t('Hello {name}', { key: { en: '...', es: '...' } }, { name: 'Ben' })
+        return (
+          <div data-testid="result">
+            {t(
+              'Hello {name}',
+              {
+                abc123: { en: 'Hello {name}', es: 'Hola {name}' },
+              } as unknown as Record<string, unknown>,
+              { name: 'Ben' } as unknown as undefined,
+            )}
+          </div>
         );
       }
 
@@ -98,121 +163,24 @@ describe('createUseT', () => {
       expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
     });
 
-    it('uses context in options (3rd arg) to generate different key', () => {
+    it('uses function messages for plurals', () => {
       function TestComponent() {
         const t = useT();
+        // Simulate Babel-transformed call with function message:
         return (
           <div data-testid="result">
-            {t('Submit', undefined, { context: 'button' })}
-          </div>
-        );
-      }
-
-      render(
-        <IdiomaProvider locale="es">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('Enviar');
-    });
-
-    it('accepts values as 2nd arg and options as 3rd arg', () => {
-      function TestComponent() {
-        const t = useT();
-        return (
-          <div data-testid="result">
-            {t('Hello {name}', { name: 'Ben' }, { context: 'greeting' })}
-          </div>
-        );
-      }
-
-      // No translation for this context, should fall back to interpolated source
-      render(
-        <IdiomaProvider locale="en">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('Hello Ben');
-    });
-
-    it('accepts empty object for values when only options needed', () => {
-      function TestComponent() {
-        const t = useT();
-        return (
-          <div data-testid="result">
-            {t('Submit', {}, { context: 'button' })}
-          </div>
-        );
-      }
-
-      render(
-        <IdiomaProvider locale="es">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('Enviar');
-    });
-  });
-
-  describe('key-only mode', () => {
-    it('looks up by explicit id', () => {
-      function TestComponent() {
-        const t = useT();
-        return <div data-testid="result">{t({ id: 'greeting' })}</div>;
-      }
-
-      render(
-        <IdiomaProvider locale="en">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('Hello');
-    });
-
-    it('translates to the current locale', () => {
-      function TestComponent() {
-        const t = useT();
-        return <div data-testid="result">{t({ id: 'greeting' })}</div>;
-      }
-
-      render(
-        <IdiomaProvider locale="es">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('Hola');
-    });
-
-    it('interpolates values with id lookup', () => {
-      function TestComponent() {
-        const t = useT();
-        return (
-          <div data-testid="result">
-            {t({ id: 'greeting.name', values: { name: 'Ben' } })}
-          </div>
-        );
-      }
-
-      render(
-        <IdiomaProvider locale="en">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('Hello Ben!');
-    });
-
-    it('handles function messages (compiled plurals)', () => {
-      function TestComponent() {
-        const t = useT();
-        return (
-          <div data-testid="result">
-            {t({ id: 'items.count', values: { count: 5 } })}
+            {t(
+              '{count} items',
+              {
+                abc123: {
+                  en: (args: { count: number }) =>
+                    args.count === 1 ? '1 item' : `${args.count} items`,
+                  es: (args: { count: number }) =>
+                    args.count === 1 ? '1 artículo' : `${args.count} artículos`,
+                },
+              } as unknown as Record<string, unknown>,
+              { count: 5 } as unknown as undefined,
+            )}
           </div>
         );
       }
@@ -226,90 +194,71 @@ describe('createUseT', () => {
       expect(screen.getByTestId('result').textContent).toBe('5 items');
     });
 
-    it('handles function messages with count of 1', () => {
+    it('falls back to first locale if current locale not found', () => {
       function TestComponent() {
         const t = useT();
         return (
           <div data-testid="result">
-            {t({ id: 'items.count', values: { count: 1 } })}
+            {t('Hello', {
+              abc123: { en: 'Hello', es: 'Hola' },
+            } as unknown as Record<string, unknown>)}
           </div>
         );
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomaProvider locale="fr">
           <TestComponent />
         </IdiomaProvider>,
       );
 
-      expect(screen.getByTestId('result').textContent).toBe('1 item');
+      // Falls back to first available (en)
+      expect(screen.getByTestId('result').textContent).toBe('Hello');
     });
+  });
 
-    it('returns id if translation is missing', () => {
+  describe('locale changes', () => {
+    it('updates when locale changes', () => {
       function TestComponent() {
         const t = useT();
-        return <div data-testid="result">{t({ id: 'nonexistent.key' })}</div>;
-      }
-
-      render(
-        <IdiomaProvider locale="en">
-          <TestComponent />
-        </IdiomaProvider>,
-      );
-
-      expect(screen.getByTestId('result').textContent).toBe('nonexistent.key');
-    });
-
-    it('looks up translations in the specified namespace', () => {
-      function TestComponent() {
-        const t = useT();
+        // Using Babel-transformed format to test locale switching
         return (
-          <div data-testid="result">{t({ id: 'greeting', ns: 'common' })}</div>
+          <div data-testid="result">
+            {t('Hello', {
+              abc123: { en: 'Hello', es: 'Hola' },
+            } as unknown as Record<string, unknown>)}
+          </div>
         );
       }
 
-      // With ns: 'common', looks up in translations.__ns.common.greeting
-      render(
+      const { rerender } = render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello');
+
+      rerender(
         <IdiomaProvider locale="es">
           <TestComponent />
         </IdiomaProvider>,
       );
 
-      expect(screen.getByTestId('result').textContent).toBe('Hola (common)');
+      expect(screen.getByTestId('result').textContent).toBe('Hola');
     });
   });
 
-  it('updates when locale changes', () => {
-    function TestComponent() {
-      const t = useT();
-      return <div data-testid="result">{t({ id: 'greeting' })}</div>;
-    }
+  describe('error handling', () => {
+    it('throws when used outside provider', () => {
+      function TestComponent() {
+        const t = useT();
+        return <div>{t({ id: 'greeting' })}</div>;
+      }
 
-    const { rerender } = render(
-      <IdiomaProvider locale="en">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getByTestId('result').textContent).toBe('Hello');
-
-    rerender(
-      <IdiomaProvider locale="es">
-        <TestComponent />
-      </IdiomaProvider>,
-    );
-
-    expect(screen.getByTestId('result').textContent).toBe('Hola');
-  });
-
-  it('throws when used outside provider', () => {
-    function TestComponent() {
-      const t = useT();
-      return <div>{t({ id: 'greeting' })}</div>;
-    }
-
-    expect(() => {
-      render(<TestComponent />);
-    }).toThrow('[idioma] useT must be used within an IdiomaProvider');
+      expect(() => {
+        render(<TestComponent />);
+      }).toThrow('[idioma] useT must be used within an IdiomaProvider');
+    });
   });
 });
