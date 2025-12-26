@@ -27,16 +27,18 @@ export interface ExtractedMessage {
  *
  * @param path - The Babel path to the JSX element
  * @param filename - The source filename for references
+ * @param skipNameCheck - If true, skip the Trans component name check (caller has already verified)
  * @returns The extracted message, or null if not a Trans component or empty
  */
 export function extractTransMessage(
   path: NodePath<t.JSXElement>,
   filename: string,
+  skipNameCheck = false,
 ): ExtractedMessage | null {
   const opening = path.node.openingElement;
 
-  // Check if this is a Trans component
-  if (!isTransComponent(opening.name)) {
+  // Check if this is a Trans component (skip if caller already verified)
+  if (!skipNameCheck && !isTransComponent(opening.name)) {
     return null;
   }
 

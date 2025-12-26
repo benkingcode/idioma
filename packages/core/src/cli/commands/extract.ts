@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { join, relative } from 'path';
+import { dirname, join, relative, resolve } from 'path';
 import * as babel from '@babel/core';
 import type * as t from '@babel/types';
 import { defineCommand } from 'citty';
@@ -27,6 +27,8 @@ export interface ExtractOptions {
   defaultLocale: string;
   locales?: string[];
   clean?: boolean;
+  /** Absolute path to idioma folder for robust import detection */
+  idiomaDir?: string;
 }
 
 export interface ExtractResult {
@@ -40,8 +42,15 @@ export interface ExtractResult {
 export async function extractMessages(
   options: ExtractOptions,
 ): Promise<ExtractResult> {
-  const { cwd, sourcePatterns, localeDir, defaultLocale, locales, clean } =
-    options;
+  const {
+    cwd,
+    sourcePatterns,
+    localeDir,
+    defaultLocale,
+    locales,
+    clean,
+    idiomaDir,
+  } = options;
 
   // Find all source files
   const files = await fg(sourcePatterns, {
@@ -57,7 +66,12 @@ export async function extractMessages(
     const content = await fs.readFile(file, 'utf-8');
     const relativePath = relative(cwd, file);
 
-    const fileMessages = await extractFromFile(content, relativePath);
+    const fileMessages = await extractFromFile(
+      content,
+      file,
+      relativePath,
+      idiomaDir,
+    );
     messages.push(...fileMessages);
   }
 
@@ -133,16 +147,31 @@ export async function extractMessages(
 
 /**
  * Extract messages from a single file.
+ *
+ * @param code - Source code content
+ * @param absolutePath - Absolute file path (for resolving imports)
+ * @param displayPath - Path to display in locations (relative)
+ * @param idiomaDir - Optional absolute path to idioma folder for robust import detection
  */
 async function extractFromFile(
   code: string,
-  filename: string,
+  absolutePath: string,
+  displayPath: string,
+  idiomaDir?: string,
 ): Promise<ExtractedMessage[]> {
   const messages: ExtractedMessage[] = [];
 
+  // Track bindings from idioma imports
+  const translatableBindings = new Map<string, 'Trans' | 'useT' | 't'>();
+
+  // idiomaDir is required for extraction
+  if (!idiomaDir) {
+    return messages;
+  }
+
   try {
     await babel.transformAsync(code, {
-      filename,
+      filename: absolutePath,
       presets: [
         ['@babel/preset-react', { runtime: 'automatic' }],
         '@babel/preset-typescript',
@@ -151,9 +180,71 @@ async function extractFromFile(
         function extractorPlugin(): babel.PluginObj {
           return {
             visitor: {
+              ImportDeclaration(path) {
+                const source = path.node.source.value;
+
+                // Check if this import is from the idioma folder
+                let isIdiomaImport = false;
+                if (source.startsWith('.')) {
+                  const fileDir = dirname(absolutePath);
+                  const resolvedImport = resolve(fileDir, source);
+                  isIdiomaImport = resolvedImport.startsWith(idiomaDir);
+                }
+
+                if (!isIdiomaImport) return;
+
+                // Track translatable imports
+                for (const specifier of path.node.specifiers) {
+                  if (specifier.type !== 'ImportSpecifier') continue;
+
+                  const imported =
+                    specifier.imported.type === 'Identifier'
+                      ? specifier.imported.name
+                      : specifier.imported.value;
+                  const local = specifier.local.name;
+
+                  if (
+                    imported === 'Trans' ||
+                    imported === 'useT' ||
+                    imported === 't'
+                  ) {
+                    translatableBindings.set(
+                      local,
+                      imported as 'Trans' | 'useT' | 't',
+                    );
+                  }
+                }
+              },
+
+              VariableDeclarator(path) {
+                // Track variable aliases (e.g., const T = Trans)
+                const init = path.node.init;
+                if (init?.type !== 'Identifier') return;
+
+                const id = path.node.id;
+                if (id.type !== 'Identifier') return;
+
+                const type = translatableBindings.get(init.name);
+                if (type) {
+                  translatableBindings.set(id.name, type);
+                }
+              },
+
               JSXElement(path) {
                 const opening = path.node.openingElement;
-                if (!isTransComponent(opening)) return;
+                const elementName = opening.name;
+
+                // Get component name
+                let componentName: string | null = null;
+                if (elementName.type === 'JSXIdentifier') {
+                  componentName = elementName.name;
+                }
+                if (!componentName) return;
+
+                // Check if this is a Trans component using binding tracking
+                const isTrans =
+                  translatableBindings.get(componentName) === 'Trans';
+                if (!isTrans) return;
 
                 const { id, context, namespace, source } = parseTransElement(
                   path.node,
@@ -167,16 +258,21 @@ async function extractFromFile(
                 messages.push({
                   key,
                   source,
-                  location: `${filename}:${line}`,
+                  location: `${displayPath}:${line}`,
                   context,
                   namespace,
                 });
               },
+
               // Extract t() calls from useT hook
               CallExpression(path) {
                 const callee = path.node.callee;
-                // Only handle calls like t('string') where t is an identifier
-                if (!isTIdentifier(callee)) return;
+                if (callee.type !== 'Identifier') return;
+
+                // Check if this is a t function call using binding tracking
+                const isT = translatableBindings.get(callee.name) === 't';
+
+                if (!isT) return;
 
                 const args = path.node.arguments;
                 const sourceArg = args[0];
@@ -191,7 +287,7 @@ async function extractFromFile(
                 messages.push({
                   key,
                   source,
-                  location: `${filename}:${line}`,
+                  location: `${displayPath}:${line}`,
                 });
               },
             },
@@ -202,21 +298,12 @@ async function extractFromFile(
   } catch (error) {
     // Silently skip files with parse errors
     console.warn(
-      `Warning: Could not parse ${filename}:`,
+      `Warning: Could not parse ${displayPath}:`,
       (error as Error).message,
     );
   }
 
   return messages;
-}
-
-function isTransComponent(opening: t.JSXOpeningElement): boolean {
-  if (opening.name.type !== 'JSXIdentifier') return false;
-  return opening.name.name === 'Trans';
-}
-
-function isTIdentifier(node: t.Node): node is t.Identifier {
-  return node.type === 'Identifier' && node.name === 't';
 }
 
 function parseTransElement(element: t.JSXElement): {
@@ -324,6 +411,8 @@ export const extractCommand = defineCommand({
       defaultLocale: config.defaultLocale,
       locales: config.locales,
       clean: args.clean,
+      // Pass absolute idiomaDir for robust import detection
+      idiomaDir: resolve(cwd, config.idiomaDir),
     });
 
     console.log(

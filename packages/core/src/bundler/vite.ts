@@ -168,6 +168,8 @@ export default function idiomaVitePlugin(
         // (this is needed for locale switching to work in dev)
         const pluginOptions: Record<string, unknown> = {
           mode: 'production',
+          // Pass idiomaDir for robust config-based import detection
+          idiomaDir: join(projectRoot, idiomaDir),
         };
 
         // Pass loaded translations for inlining (non-suspense mode)

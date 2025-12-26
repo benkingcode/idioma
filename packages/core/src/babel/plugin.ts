@@ -75,6 +75,8 @@ export interface IdiomaPluginOptions {
   outputDir?: string;
   /** Project root for computing chunk IDs (required for suspense mode) */
   projectRoot?: string;
+  /** Absolute path to idioma folder for robust import detection */
+  idiomaDir?: string;
 }
 
 interface PluginState {
@@ -87,8 +89,14 @@ interface PluginState {
   hasDynamicT: boolean;
   /** Paths to createT() calls that need translations injected */
   createTCalls: NodePath<t.CallExpression>[];
-  /** Local name of useT import (tracks aliased imports) */
-  useTImportName: string | null;
+  /** Map of local binding names to their imported type from idioma folder */
+  translatableBindings: Map<string, 'Trans' | 'useT' | 't'>;
+  /** Resolved absolute path to idioma folder */
+  resolvedIdiomaDir: string | null;
+  /** Local name of createT import (for tracking t functions derived from it) */
+  createTImportName: string | null;
+  /** Set of variable names that hold t functions from createT() */
+  createTDerivedFunctions: Set<string>;
 }
 
 /**
@@ -123,7 +131,8 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         : 'unknown';
       this.hasDynamicT = false;
       this.createTCalls = [];
-      this.useTImportName = null;
+      this.translatableBindings = new Map();
+      this.resolvedIdiomaDir = opts.idiomaDir ? resolve(opts.idiomaDir) : null;
     },
 
     visitor: {
@@ -247,50 +256,98 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
 
       /**
-       * Detect useT imports from user's idioma folder.
-       * Tracks the local name to handle aliased imports.
+       * Detect imports from user's idioma folder.
+       * Tracks local names to handle aliased imports.
+       * Requires idiomaDir to be configured.
        */
       ImportDeclaration(path: NodePath<t.ImportDeclaration>, state) {
         const source = path.node.source.value;
+        const { resolvedIdiomaDir } = state;
 
-        // Check if importing from user's idioma folder (relative paths)
-        // This handles: './idioma', '../idioma', './src/idioma', etc.
-        // But NOT from '@idioma/*' packages
-        if (!source.includes('idioma') || source.startsWith('@idioma/')) {
+        // Skip if idiomaDir not configured
+        if (!resolvedIdiomaDir) {
           return;
         }
 
-        // Find useT import specifier
+        // Check if import resolves to idiomaDir
+        let isIdiomaImport = false;
+        if (source.startsWith('.')) {
+          const fileDir = dirname(state.filename);
+          const resolvedImport = resolve(fileDir, source);
+          isIdiomaImport = resolvedImport.startsWith(resolvedIdiomaDir);
+        }
+        // Non-relative imports (e.g., 'some-package') won't match idiomaDir
+
+        if (!isIdiomaImport) {
+          return;
+        }
+
+        // Track all translatable imports
         for (const specifier of path.node.specifiers) {
           if (t.isImportSpecifier(specifier)) {
             const imported = t.isIdentifier(specifier.imported)
               ? specifier.imported.name
               : specifier.imported.value;
+            const local = specifier.local.name;
 
-            if (imported === 'useT') {
-              state.useTImportName = specifier.local.name;
+            // Track Trans, useT, and t as translatable bindings
+            if (
+              imported === 'Trans' ||
+              imported === 'useT' ||
+              imported === 't'
+            ) {
+              state.translatableBindings.set(
+                local,
+                imported as 'Trans' | 'useT' | 't',
+              );
             }
           }
         }
       },
 
       /**
-       * Transform t() calls from createT.
+       * Track variable aliases (e.g., const T = Trans).
+       * Follows the binding chain for translatable components.
+       */
+      VariableDeclarator(path: NodePath<t.VariableDeclarator>, state) {
+        const init = path.node.init;
+        if (!t.isIdentifier(init)) return;
+
+        const id = path.node.id;
+        if (!t.isIdentifier(id)) return;
+
+        // If the initializer is a translatable binding, propagate it
+        const type = state.translatableBindings.get(init.name);
+        if (type) {
+          state.translatableBindings.set(id.name, type);
+        }
+      },
+
+      /**
+       * Transform t() and useT() calls.
        * In production: inlines translations as second argument.
        * In development: optionally extracts messages.
        */
       CallExpression(path: NodePath<t.CallExpression>, state) {
-        const { opts, filename, useTImportName } = state;
+        const { opts, filename, translatableBindings, resolvedIdiomaDir } =
+          state;
         const callee = path.node.callee;
+
+        if (!t.isIdentifier(callee)) {
+          return;
+        }
+
+        // Skip if idiomaDir not configured
+        if (!resolvedIdiomaDir) {
+          return;
+        }
+
+        const calleeName = callee.name;
+        const bindingType = translatableBindings.get(calleeName);
 
         // Handle useT() calls in suspense mode
         // Unlike Trans, useT transforms in BOTH dev and prod for consistent Suspense behavior
-        if (
-          t.isIdentifier(callee) &&
-          useTImportName &&
-          callee.name === useTImportName &&
-          opts.useSuspense
-        ) {
+        if (bindingType === 'useT' && opts.useSuspense) {
           // Mark that idioma is used (triggers chunk/loader injection)
           state.idiomaUsed = true;
 
@@ -305,13 +362,13 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         }
 
         // Track createT() calls for potential translation injection
-        if (t.isIdentifier(callee) && callee.name === 'createT') {
+        if (calleeName === 'createT') {
           state.createTCalls.push(path);
           return;
         }
 
-        // Only handle calls like t('string')
-        if (!t.isIdentifier(callee) || callee.name !== 't') {
+        // Check if this is a t() call from idioma
+        if (bindingType !== 't') {
           return;
         }
 
@@ -419,17 +476,42 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
 
       JSXElement(path: NodePath<t.JSXElement>, state) {
-        const { opts, filename } = state;
+        const { opts, filename, translatableBindings, resolvedIdiomaDir } =
+          state;
         const mode = opts.mode || 'development';
 
-        // Check if this is a Trans component
-        const opening = path.node.openingElement;
-        if (!isTransComponent(opening.name)) {
+        // Skip if idiomaDir not configured
+        if (!resolvedIdiomaDir) {
           return;
         }
 
-        // Extract the message
-        const extracted = extractTransMessage(path, filename);
+        // Check if this is a Trans component
+        const opening = path.node.openingElement;
+        const elementName = opening.name;
+
+        // Get the component name to check
+        let componentName: string | null = null;
+        if (t.isJSXIdentifier(elementName)) {
+          componentName = elementName.name;
+        } else if (t.isJSXMemberExpression(elementName)) {
+          // For member expressions like Idioma.Trans, check the property
+          if (t.isJSXIdentifier(elementName.property)) {
+            componentName = elementName.property.name;
+          }
+        }
+
+        if (!componentName) {
+          return;
+        }
+
+        // Check if this is a Trans component using binding tracking
+        const isTrans = translatableBindings.get(componentName) === 'Trans';
+        if (!isTrans) {
+          return;
+        }
+
+        // Extract the message (skip name check since we verified via binding tracking)
+        const extracted = extractTransMessage(path, filename, true);
 
         // Call extraction callback if provided
         if (extracted && opts.onExtract) {
@@ -459,21 +541,6 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
     },
   };
-}
-
-/**
- * Check if the element name is "Trans"
- */
-function isTransComponent(
-  name: t.JSXIdentifier | t.JSXMemberExpression | t.JSXNamespacedName,
-): boolean {
-  if (t.isJSXIdentifier(name)) {
-    return name.name === 'Trans';
-  }
-  if (t.isJSXMemberExpression(name)) {
-    return t.isJSXIdentifier(name.property) && name.property.name === 'Trans';
-  }
-  return false;
 }
 
 /**

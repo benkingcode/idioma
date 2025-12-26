@@ -7,13 +7,16 @@ import { extractMessages } from './extract';
 describe('Extract Command', () => {
   let tempDir: string;
   let srcDir: string;
+  let idiomaDir: string;
   let localeDir: string;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-extract-'));
     srcDir = join(tempDir, 'src');
+    idiomaDir = join(srcDir, 'idioma');
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(srcDir, { recursive: true });
+    await fs.mkdir(idiomaDir, { recursive: true });
     await fs.mkdir(localeDir, { recursive: true });
   });
 
@@ -25,7 +28,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -37,6 +40,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -47,7 +51,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'Greeting.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function Greeting({ name }) {
         return <Trans>Hello {name}</Trans>
       }
@@ -59,6 +63,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -69,7 +74,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'Page.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function Page() {
         return <Trans id="welcome.message">Welcome to our app</Trans>
       }
@@ -81,6 +86,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -92,14 +98,14 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'A.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export const A = () => <Trans>Message A</Trans>
       `,
     );
     await fs.writeFile(
       join(srcDir, 'B.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export const B = () => <Trans>Message B</Trans>
       `,
     );
@@ -109,6 +115,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     expect(result.messages.length).toBe(2);
@@ -121,7 +128,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -133,6 +140,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     const poPath = join(localeDir, 'en.po');
@@ -160,7 +168,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -173,6 +181,7 @@ msgstr "Hola mundo"
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
+      idiomaDir,
     });
 
     const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
@@ -185,7 +194,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -197,6 +206,7 @@ msgstr "Hola mundo"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     const poPath = join(localeDir, 'en.po');
@@ -209,7 +219,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -221,6 +231,7 @@ msgstr "Hola mundo"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     // Key should be a hash, not the source text
@@ -243,7 +254,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'Page.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function Page() {
         return <Trans id="welcome.message">Welcome to our app</Trans>
       }
@@ -255,6 +266,7 @@ msgstr "Hola mundo"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     const poPath = join(localeDir, 'en.po');
@@ -270,7 +282,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -283,6 +295,7 @@ msgstr "Hola mundo"
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
+      idiomaDir,
     });
 
     // Default locale should have source text as msgstr
@@ -315,7 +328,7 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from './idioma'
       export function App() {
         return <Trans>New message</Trans>
       }
@@ -328,6 +341,7 @@ msgstr "Old message"
       localeDir,
       defaultLocale: 'en',
       clean: true,
+      idiomaDir,
     });
 
     const content = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');

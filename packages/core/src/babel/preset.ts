@@ -9,6 +9,11 @@ export interface IdiomaBabelPresetOptions {
   outputDir?: string;
   /** Project root for computing chunk IDs */
   projectRoot?: string;
+  /**
+   * Absolute path to idioma folder for robust import detection.
+   * This enables config-based detection which handles import aliasing.
+   */
+  idiomaDir?: string;
 }
 
 type PluginEntry = [string, Partial<IdiomaPluginOptions>];
@@ -25,10 +30,14 @@ interface PresetResult {
  *
  * @example
  * // babel.config.js
+ * const path = require('path');
+ *
  * module.exports = {
  *   presets: [
  *     'next/babel',
  *     ['@idioma/core/babel-preset', {
+ *       // Enable robust import detection (handles aliased imports)
+ *       idiomaDir: path.resolve(__dirname, './src/idioma'),
  *       useSuspense: true,
  *       locales: ['en', 'es', 'fr'],
  *     }],

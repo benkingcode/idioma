@@ -31,10 +31,11 @@ describe('End-to-End Workflow', () => {
 
   it('complete workflow: extract → compile → check', async () => {
     // Step 1: Create source files with Trans components
+    // Import from ../idioma since source files are in src/ and idioma is at root
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../idioma'
 
       export function App() {
         return (
@@ -51,7 +52,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'components/Greeting.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../../idioma'
 
       export function Greeting({ name }) {
         return <Trans>Hello {name}!</Trans>
@@ -66,6 +67,7 @@ describe('End-to-End Workflow', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
+      idiomaDir,
     });
 
     expect(extractResult.messages.length).toBe(3);
@@ -152,7 +154,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'Page.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../idioma'
 
       export function Page() {
         return (
@@ -167,6 +169,7 @@ describe('End-to-End Workflow', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     // The explicit ID is used as the key
@@ -182,7 +185,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'Links.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../idioma'
 
       export function Links() {
         return (
@@ -199,6 +202,7 @@ describe('End-to-End Workflow', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
+      idiomaDir,
     });
 
     // Named component tags are used for better translator readability
@@ -212,7 +216,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../idioma'
       export const App = () => <Trans>Hello</Trans>
       `,
     );
@@ -223,6 +227,7 @@ describe('End-to-End Workflow', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
+      idiomaDir,
     });
 
     const helloKey = firstExtract.messages[0].key;
@@ -239,7 +244,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../idioma'
       export const App = () => (
         <>
           <Trans>Hello</Trans>
@@ -255,6 +260,7 @@ describe('End-to-End Workflow', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
+      idiomaDir,
     });
 
     const worldKey = secondExtract.messages.find(
@@ -329,7 +335,7 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '@idioma/react'
+      import { Trans } from '../idioma'
       export const App = () => <Trans>New message</Trans>
       `,
     );
@@ -341,6 +347,7 @@ msgstr "Old message"
       localeDir,
       defaultLocale: 'en',
       clean: true,
+      idiomaDir,
     });
 
     const enPo = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
