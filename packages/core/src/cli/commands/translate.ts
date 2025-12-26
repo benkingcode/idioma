@@ -310,7 +310,9 @@ export const translateCommand = defineCommand({
 
     const { localeDir } = getIdiomaPaths(config);
 
-    console.log(`Translating to ${args.locale} using ${provider.name}...`);
+    console.log(
+      `Translating to ${args.locale} using ${provider.name}${config.ai?.model ? ` (${config.ai?.model})` : ``}...`,
+    );
     if (autoContext && contextProvider) {
       console.log('Auto-context generation enabled');
     }
