@@ -12,7 +12,11 @@ import type {
   TranslationProvider,
   TranslationRequest,
 } from '../../ai/provider';
-import { runTranslate, type TranslateResult } from './translate';
+import {
+  runTranslate,
+  runTranslateAll,
+  type TranslateResult,
+} from './translate';
 
 // Mock provider that translates based on source text lookup
 function createMockProvider(
@@ -1036,5 +1040,265 @@ msgstr ""
 
     // Translation should receive context from source locale
     expect(receivedContext).toContain('[AI Context]: Form submit button');
+  });
+});
+
+describe('runTranslateAll', () => {
+  let tempDir: string;
+  let localeDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-all-'));
+    localeDir = join(tempDir, 'locales');
+    await fs.mkdir(localeDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  function createMockTranslateProvider(
+    translations: Record<string, string>,
+  ): TranslationProvider {
+    return {
+      name: 'mock',
+      async translate(
+        request: TranslationRequest,
+      ): Promise<TranslatedMessage[]> {
+        return request.messages.map((m) => ({
+          key: m.key,
+          translation: translations[m.source] || `[translated] ${m.source}`,
+        }));
+      },
+    };
+  }
+
+  it('translates multiple locales', async () => {
+    // Create source locale
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+
+    // Create target locales
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'fr.po'),
+      `
+msgid ""
+msgstr ""
+"Language: fr\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const provider = createMockTranslateProvider({
+      Hello: 'Translated Hello',
+    });
+
+    const result = await runTranslateAll({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocales: ['es', 'fr'],
+      provider,
+    });
+
+    expect(result.results.size).toBe(2);
+    expect(result.errors.size).toBe(0);
+
+    expect(result.results.get('es')?.translated).toBe(1);
+    expect(result.results.get('fr')?.translated).toBe(1);
+
+    // Verify files were written
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    const frContent = await fs.readFile(join(localeDir, 'fr.po'), 'utf-8');
+    expect(esContent).toContain('msgstr "Translated Hello"');
+    expect(frContent).toContain('msgstr "Translated Hello"');
+  });
+
+  it('continues on error and reports all failures', async () => {
+    // Create source locale
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+
+    // Create only one target locale - 'ja' is missing
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const provider = createMockTranslateProvider({
+      Hello: 'Hola',
+    });
+
+    const result = await runTranslateAll({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocales: ['es', 'ja'], // 'ja' doesn't exist
+      provider,
+    });
+
+    // Should have one success and one failure
+    expect(result.results.size).toBe(1);
+    expect(result.errors.size).toBe(1);
+
+    expect(result.results.get('es')?.translated).toBe(1);
+    expect(result.errors.has('ja')).toBe(true);
+
+    // Verify the successful locale was still translated
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('msgstr "Hola"');
+  });
+
+  it('returns empty results when no target locales provided', async () => {
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+
+    const provider = createMockTranslateProvider({});
+
+    const result = await runTranslateAll({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocales: [],
+      provider,
+    });
+
+    expect(result.results.size).toBe(0);
+    expect(result.errors.size).toBe(0);
+  });
+
+  it('passes through options like force and dryRun', async () => {
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr "Old translation"
+`,
+    );
+
+    const provider = createMockTranslateProvider({
+      Hello: 'New translation',
+    });
+
+    const result = await runTranslateAll({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocales: ['es'],
+      provider,
+      force: true,
+      dryRun: true,
+    });
+
+    expect(result.results.get('es')?.translated).toBe(1);
+    expect(result.results.get('es')?.dryRun).toBe(true);
+
+    // Verify file was NOT written (dry run)
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('msgstr "Old translation"');
+  });
+
+  it('calls onLocaleStart and onLocaleComplete callbacks', async () => {
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "h001"
+msgstr "Hello"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "h001"
+msgstr ""
+`,
+    );
+
+    const provider = createMockTranslateProvider({ Hello: 'Hola' });
+    const onLocaleStart = vi.fn();
+    const onLocaleComplete = vi.fn();
+
+    await runTranslateAll({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocales: ['es'],
+      provider,
+      onLocaleStart,
+      onLocaleComplete,
+    });
+
+    expect(onLocaleStart).toHaveBeenCalledWith('es');
+    expect(onLocaleComplete).toHaveBeenCalledWith(
+      'es',
+      expect.objectContaining({
+        translated: 1,
+      }),
+    );
   });
 });

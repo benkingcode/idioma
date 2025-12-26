@@ -27,6 +27,11 @@ export interface TranslateResult {
   dryRun?: boolean;
 }
 
+export interface TranslateAllResult {
+  results: Map<string, TranslateResult>;
+  errors: Map<string, Error>;
+}
+
 export interface TranslateOptions {
   localeDir: string;
   defaultLocale: string;
@@ -193,6 +198,76 @@ export async function runTranslate(
   };
 }
 
+export interface TranslateAllOptions extends Omit<
+  TranslateOptions,
+  'targetLocale'
+> {
+  targetLocales: string[];
+  /** Called when starting to translate a locale */
+  onLocaleStart?: (locale: string) => void;
+  /** Called when a locale translation completes (success or error) */
+  onLocaleComplete?: (locale: string, result: TranslateResult) => void;
+}
+
+/**
+ * Translate messages to multiple locales using AI.
+ * Continues on error and collects all failures.
+ */
+export async function runTranslateAll(
+  options: TranslateAllOptions,
+): Promise<TranslateAllResult> {
+  const {
+    localeDir,
+    defaultLocale,
+    targetLocales,
+    provider,
+    force,
+    dryRun,
+    markAI,
+    batchSize,
+    autoContext,
+    contextProvider,
+    projectRoot,
+    onVerbose,
+    onLocaleStart,
+    onLocaleComplete,
+  } = options;
+
+  const results = new Map<string, TranslateResult>();
+  const errors = new Map<string, Error>();
+
+  for (const locale of targetLocales) {
+    onLocaleStart?.(locale);
+
+    try {
+      const result = await runTranslate({
+        localeDir,
+        defaultLocale,
+        targetLocale: locale,
+        provider,
+        force,
+        dryRun,
+        markAI,
+        batchSize,
+        autoContext,
+        contextProvider,
+        projectRoot,
+        onVerbose,
+      });
+
+      results.set(locale, result);
+      onLocaleComplete?.(locale, result);
+    } catch (error) {
+      errors.set(
+        locale,
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    }
+  }
+
+  return { results, errors };
+}
+
 export const translateCommand = defineCommand({
   meta: {
     name: 'translate',
@@ -201,8 +276,8 @@ export const translateCommand = defineCommand({
   args: {
     locale: {
       type: 'string',
-      description: 'Target locale to translate',
-      required: true,
+      description:
+        'Target locale to translate (translates all locales if not specified)',
     },
     provider: {
       type: 'string',
@@ -310,17 +385,40 @@ export const translateCommand = defineCommand({
 
     const { localeDir } = getIdiomaPaths(config);
 
+    // Determine target locales
+    const targetLocales = args.locale
+      ? [args.locale as string]
+      : (config.locales ?? []).filter((l) => l !== config.defaultLocale);
+
+    if (targetLocales.length === 0) {
+      console.error('Error: No target locales to translate');
+      console.error(
+        'Either specify a locale or configure locales in idioma.config.ts',
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    const localeList =
+      targetLocales.length === 1
+        ? targetLocales[0]
+        : `${targetLocales.length} locales (${targetLocales.join(', ')})`;
+
     console.log(
-      `Translating to ${args.locale} using ${provider.name}${config.ai?.model ? ` (${config.ai?.model})` : ``}...`,
+      `Translating ${localeList} using ${provider.name}${config.ai?.model ? ` (${config.ai.model})` : ''}...`,
     );
     if (autoContext && contextProvider) {
       console.log('Auto-context generation enabled');
     }
+    if (args['dry-run']) {
+      console.log('(dry run - no changes will be saved)');
+    }
+    console.log('');
 
-    const result = await runTranslate({
+    const { results, errors } = await runTranslateAll({
       localeDir,
       defaultLocale: config.defaultLocale,
-      targetLocale: args.locale as string,
+      targetLocales,
       provider,
       force: args.force,
       dryRun: args['dry-run'],
@@ -329,14 +427,50 @@ export const translateCommand = defineCommand({
       contextProvider,
       projectRoot: cwd,
       onVerbose,
+      onLocaleStart: (locale) => {
+        if (targetLocales.length > 1) {
+          console.log(`[${locale}] Translating...`);
+        }
+      },
+      onLocaleComplete: (locale, result) => {
+        if (targetLocales.length > 1) {
+          console.log(
+            `[${locale}] Translated: ${result.translated}, Skipped: ${result.skipped}`,
+          );
+        }
+      },
     });
 
-    if (result.dryRun) {
-      console.log('(dry run - no changes saved)');
+    // Summary
+    if (targetLocales.length > 1) {
+      console.log('');
+      console.log('Summary:');
     }
 
-    console.log(`Translated: ${result.translated}`);
-    console.log(`Skipped: ${result.skipped}`);
-    console.log(`Total: ${result.total}`);
+    let totalTranslated = 0;
+    let totalSkipped = 0;
+    let totalMessages = 0;
+
+    for (const [, result] of results) {
+      totalTranslated += result.translated;
+      totalSkipped += result.skipped;
+      totalMessages += result.total;
+    }
+
+    console.log(`  Translated: ${totalTranslated}`);
+    console.log(`  Skipped: ${totalSkipped}`);
+    if (targetLocales.length > 1) {
+      console.log(`  Locales: ${results.size}`);
+    }
+
+    // Report errors
+    if (errors.size > 0) {
+      console.log('');
+      console.error('Errors:');
+      for (const [locale, error] of errors) {
+        console.error(`  [${locale}] ${error.message}`);
+      }
+      process.exitCode = 1;
+    }
   },
 });
