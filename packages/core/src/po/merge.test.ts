@@ -288,6 +288,39 @@ msgstr ""
     ]);
   });
 
+  it('preserves existing comments when extracted has none', () => {
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#. [AI Context]: Important greeting message
+msgid "Hello"
+msgstr "Hola"
+`,
+      'es',
+    );
+
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+
+msgid "Hello"
+msgstr ""
+`,
+      'es',
+    );
+
+    mergeCatalogs(existing, extracted);
+
+    // Existing comment should be preserved when extracted has none
+    expect(existing.messages.get('Hello')!.comments).toEqual([
+      '[AI Context]: Important greeting message',
+    ]);
+  });
+
   it('updates context on existing messages', () => {
     const existing = parsePoString(
       `

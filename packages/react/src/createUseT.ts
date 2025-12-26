@@ -56,6 +56,8 @@ export type HasPlaceholders<S extends string> =
 export interface SourceTextOptions {
   /** Translator context (changes key hash) */
   context?: string;
+  /** Translator comment (extracted to PO #. comment for translators) */
+  comment?: string;
   /** Namespace for scoped lookups (placeholder for future) */
   ns?: string;
 }

@@ -46,9 +46,12 @@ export function mergeCatalogs(
       });
       result.added.push(key);
     } else {
-      // Existing message - update references, comments, and context but preserve translation
+      // Existing message - update references and context but preserve translation
       existingMsg.references = extractedMsg.references;
-      existingMsg.comments = extractedMsg.comments;
+      // Only overwrite comments if extracted message has them
+      if (extractedMsg.comments && extractedMsg.comments.length > 0) {
+        existingMsg.comments = extractedMsg.comments;
+      }
       existingMsg.context = extractedMsg.context;
 
       // Track as updated if references changed

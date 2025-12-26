@@ -435,4 +435,34 @@ msgstr "Old message"
     expect(result.messages.map((m) => m.source)).toContain('Hello');
     expect(result.messages.map((m) => m.source)).toContain('Goodbye');
   });
+
+  it('extracts comment prop as PO extracted comment', async () => {
+    await fs.writeFile(
+      join(srcDir, 'Button.tsx'),
+      `
+      import { Trans } from './idioma'
+      export function Button() {
+        return <Trans comment="Primary action button for form submission">Submit</Trans>
+      }
+      `,
+    );
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+    });
+
+    expect(result.messages.length).toBe(1);
+    expect(result.messages[0].comment).toBe(
+      'Primary action button for form submission',
+    );
+
+    // Check PO file contains the extracted comment
+    const poPath = join(localeDir, 'en.po');
+    const content = await fs.readFile(poPath, 'utf-8');
+    expect(content).toContain('#. Primary action button for form submission');
+  });
 });

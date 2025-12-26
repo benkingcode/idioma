@@ -119,14 +119,15 @@ describe('Context Generation Utilities', () => {
       expect(needsContextGeneration(message)).toBe(false);
     });
 
-    it('returns true when comments exist but none are AI context', () => {
+    it('returns false when message has any comments (developer or AI)', () => {
       const message: Message = {
         key: 'test',
         source: 'Hello',
         translation: '',
-        comments: ['Some human note'],
+        comments: ['Some developer note'],
       };
-      expect(needsContextGeneration(message)).toBe(true);
+      // Skip AI context generation if message already has any comments
+      expect(needsContextGeneration(message)).toBe(false);
     });
   });
 
@@ -669,7 +670,7 @@ describe('generateContextForCatalog', () => {
     expect(mockProvider.generateContext).not.toHaveBeenCalled();
   });
 
-  it('preserves human comments when adding AI context', async () => {
+  it('skips AI context generation when message has existing comments', async () => {
     writeFileSync(join(srcDir, 'App.tsx'), 'const x = 1;');
 
     const catalog = createCatalog([
@@ -686,14 +687,19 @@ describe('generateContextForCatalog', () => {
       'with-human-comment': 'AI generated context',
     });
 
-    await generateContextForCatalog({
+    const result = await generateContextForCatalog({
       projectRoot: testDir,
       catalog,
       provider: mockProvider,
     });
 
+    // Message with existing comment should be skipped
     const message = catalog.messages.get('with-human-comment');
-    expect(message?.comments).toContain('Human-written note');
-    expect(message?.comments).toContain('[AI Context]: AI generated context');
+    expect(message?.comments).toEqual(['Human-written note']);
+    expect(message?.comments).not.toContain(
+      '[AI Context]: AI generated context',
+    );
+    expect(result.skipped).toBe(1);
+    expect(result.generated).toBe(0);
   });
 });

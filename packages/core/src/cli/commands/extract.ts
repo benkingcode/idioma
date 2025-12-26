@@ -17,6 +17,8 @@ export interface ExtractedMessage {
   source: string;
   location: string;
   context?: string;
+  /** Translator comment (extracted to PO #. comment) */
+  comment?: string;
   namespace?: string;
 }
 
@@ -264,9 +266,8 @@ async function extractFromFile(
                   translatableBindings.get(componentName) === 'Trans';
                 if (!isTrans) return;
 
-                const { id, context, namespace, source } = parseTransElement(
-                  path.node,
-                );
+                const { id, context, comment, namespace, source } =
+                  parseTransElement(path.node);
                 if (!source) return;
 
                 // Use explicit id or generate hash key from source
@@ -278,6 +279,7 @@ async function extractFromFile(
                   source,
                   location: `${displayPath}:${line}`,
                   context,
+                  comment,
                   namespace,
                 });
               },
@@ -327,15 +329,17 @@ async function extractFromFile(
 function parseTransElement(element: t.JSXElement): {
   id?: string;
   context?: string;
+  comment?: string;
   namespace?: string;
   source?: string;
 } {
   const opening = element.openingElement;
   let id: string | undefined;
   let context: string | undefined;
+  let comment: string | undefined;
   let namespace: string | undefined;
 
-  // Extract id, context, and ns from props
+  // Extract id, context, comment, and ns from props
   for (const attr of opening.attributes) {
     if (attr.type !== 'JSXAttribute') continue;
     if (attr.name.type !== 'JSXIdentifier') continue;
@@ -347,6 +351,9 @@ function parseTransElement(element: t.JSXElement): {
     if (name === 'context' && attr.value?.type === 'StringLiteral') {
       context = attr.value.value;
     }
+    if (name === 'comment' && attr.value?.type === 'StringLiteral') {
+      comment = attr.value.value;
+    }
     if (name === 'ns' && attr.value?.type === 'StringLiteral') {
       namespace = attr.value.value;
     }
@@ -356,7 +363,7 @@ function parseTransElement(element: t.JSXElement): {
   // that handles plural(), component tags, and other expressions correctly
   const { message: source } = serializeJsxChildren(element.children);
 
-  return { id, context, namespace, source };
+  return { id, context, comment, namespace, source };
 }
 
 function messagesToCatalog(
@@ -383,6 +390,8 @@ function messagesToCatalog(
       references: [msg.location],
       context: msg.context,
       namespace: msg.namespace,
+      // Convert comment prop to PO extracted comment
+      comments: msg.comment ? [msg.comment] : undefined,
     };
 
     // If message with same key exists, merge references

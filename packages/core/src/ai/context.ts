@@ -87,14 +87,17 @@ export function hasAIContext(message: Message): boolean {
  * Check if a message needs context generation.
  * Returns false if:
  * - Message has explicit context (msgctxt)
- * - Message already has AI-generated context
+ * - Message already has any comments (developer or AI-generated)
  */
 export function needsContextGeneration(message: Message): boolean {
   // Skip if has explicit context (msgctxt)
   if (message.context) return false;
 
-  // Skip if already has AI context
-  if (hasAIContext(message)) return false;
+  // Skip if already has any comments (developer or AI)
+  // This prevents:
+  // - Overwriting developer-provided comments
+  // - Regenerating AI context that already exists
+  if (message.comments && message.comments.length > 0) return false;
 
   return true;
 }

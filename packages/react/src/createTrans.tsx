@@ -18,8 +18,10 @@ export interface TransInlineModeProps {
   children: ReactNode;
   /** Optional explicit key (overrides auto-hash) */
   id?: string;
-  /** Translator context (extracted to PO, stripped from bundle) */
+  /** Translator context for key disambiguation (affects hash) */
   context?: string;
+  /** Translator comment (extracted to PO #. comment for translators) */
+  comment?: string;
   /** Namespace for large apps */
   ns?: string;
 }
