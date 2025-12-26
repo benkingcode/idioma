@@ -1,5 +1,6 @@
 import { useContext, type ReactNode } from 'react';
 import { IdiomaContext } from './context';
+import { type BaseIdiomaConfig } from './createUseT';
 import { type TransComponent } from './interpolate';
 
 /**
@@ -74,7 +75,7 @@ export type TransKeyOnlyModeProps<
  *
  * @example
  * // In generated idioma/index.ts:
- * export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>()
+ * export const Trans = createTrans<IdiomaConfig>()
  *
  * // Inline mode (dev, Babel extracts):
  * <Trans>Hello {name}</Trans>
@@ -83,17 +84,12 @@ export type TransKeyOnlyModeProps<
  * <Trans id="welcome" values={{ name: "Ben" }} />
  * <Trans id="legal.links" components={[TermsLink, PrivacyLink]} />
  */
-export function createTrans<
-  TK extends string = string,
-  MV extends Record<string, Record<string, unknown>> = Record<
-    string,
-    Record<string, unknown>
-  >,
-  MC extends Record<string, TransComponent[]> = Record<
-    string,
-    TransComponent[]
-  >,
->() {
+export function createTrans<C extends BaseIdiomaConfig = BaseIdiomaConfig>() {
+  // Extract types from config
+  type TK = C['TranslationKey'];
+  type MV = C['MessageValues'];
+  type MC = C['MessageComponents'];
+
   /**
    * Trans component for inline translations.
    *
@@ -103,10 +99,20 @@ export function createTrans<
    */
   function Trans(props: TransInlineModeProps): ReactNode;
   function Trans<K extends TK>(
-    props: TransKeyOnlyModeProps<K, MV, MC>,
+    props: TransKeyOnlyModeProps<
+      K & string,
+      MV,
+      MC & Record<string, TransComponent[]>
+    >,
   ): ReactNode;
   function Trans(
-    props: TransInlineModeProps | TransKeyOnlyModeProps<TK, MV, MC>,
+    props:
+      | TransInlineModeProps
+      | TransKeyOnlyModeProps<
+          TK & string,
+          MV,
+          MC & Record<string, TransComponent[]>
+        >,
   ): ReactNode {
     const ctx = useContext(IdiomaContext);
     if (!ctx) {
@@ -124,7 +130,11 @@ export function createTrans<
 
     // Key-only mode: Babel should transform this too
     // If we reach here, Babel hasn't transformed the code
-    const { id } = props as TransKeyOnlyModeProps<TK, MV, MC>;
+    const { id } = props as TransKeyOnlyModeProps<
+      TK & string,
+      MV,
+      MC & Record<string, TransComponent[]>
+    >;
     if (id) {
       console.warn(
         `[idioma] Trans with id="${id}" was not transformed by Babel. ` +

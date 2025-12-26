@@ -8,21 +8,11 @@ import {
   createUseLocale,
   createUseT,
 } from '@idioma/react';
-import type {
-  Locale,
-  MessageComponents,
-  MessageValues,
-  TranslationKey,
-} from './.generated/types';
+import type { IdiomaConfig, Locale } from './.generated/types';
 
-export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>();
-export const useT = createUseT<TranslationKey, MessageValues, MessageComponents>();
+export const Trans = createTrans<IdiomaConfig>();
+export const useT = createUseT<IdiomaConfig>();
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type {
-  Locale,
-  MessageComponents,
-  MessageValues,
-  TranslationKey,
-};
+export type { IdiomaConfig, Locale };

@@ -598,7 +598,14 @@ async function generateTypesTs(
   }
   content += '}\n\n';
 
-  // NOTE: StringOnlyKey is no longer generated - useT derives it from MessageComponents!
+  // Generate IdiomaConfig - bundles all types for cleaner factory API
+  content +=
+    '/** Combined config type for createTrans/createUseT factories */\n';
+  content += 'export interface IdiomaConfig {\n';
+  content += '  TranslationKey: TranslationKey;\n';
+  content += '  MessageValues: MessageValues;\n';
+  content += '  MessageComponents: MessageComponents;\n';
+  content += '}\n';
 
   await fs.writeFile(join(outputDir, 'types.d.ts'), content, 'utf-8');
 }
@@ -627,24 +634,14 @@ import {
   createUseLocale,
   createUseT,
 } from '@idioma/react';
-import type {
-  Locale,
-  MessageComponents,
-  MessageValues,
-  TranslationKey,
-} from './.generated/types';
+import type { IdiomaConfig, Locale } from './.generated/types';
 
-export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>();
-export const useT = createUseT<TranslationKey, MessageValues, MessageComponents>();
+export const Trans = createTrans<IdiomaConfig>();
+export const useT = createUseT<IdiomaConfig>();
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type {
-  Locale,
-  MessageComponents,
-  MessageValues,
-  TranslationKey,
-};
+export type { IdiomaConfig, Locale };
 `;
 
   await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
@@ -663,28 +660,18 @@ import {
   createUseLocale,
   createUseTSuspense,
 } from '@idioma/react/runtime-suspense';
-import type {
-  Locale,
-  MessageComponents,
-  MessageValues,
-  TranslationKey,
-} from './.generated/types';
+import type { IdiomaConfig, Locale } from './.generated/types';
 
 const config = {
   locales: ${JSON.stringify(locales)} as const,
 };
 
-export const Trans = createTransSuspense<TranslationKey, MessageValues, MessageComponents>(config);
-export const useT = createUseTSuspense<TranslationKey, MessageValues, MessageComponents>(config);
+export const Trans = createTransSuspense<IdiomaConfig>(config);
+export const useT = createUseTSuspense<IdiomaConfig>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type {
-  Locale,
-  MessageComponents,
-  MessageValues,
-  TranslationKey,
-};
+export type { IdiomaConfig, Locale };
 `;
 
   await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');

@@ -204,28 +204,33 @@ export interface TransInlineModeProps {
 }
 
 /**
+ * Base interface for project-specific Idioma types (for Trans).
+ */
+interface BaseIdiomaConfigForTrans {
+  TranslationKey: string;
+  MessageValues: Record<string, Record<string, unknown>>;
+  MessageComponents: Record<string, TransComponent[]>;
+}
+
+/**
  * Creates a typed Trans component for Suspense mode.
  *
  * In development: renders children directly
  * In production: Babel transforms to __TransSuspense
  */
 export function createTransSuspense<
-  TK extends string = string,
-  MV extends Record<string, Record<string, unknown>> = Record<
-    string,
-    Record<string, unknown>
-  >,
-  MC extends Record<string, TransComponent[]> = Record<
-    string,
-    TransComponent[]
-  >,
+  C extends BaseIdiomaConfigForTrans = BaseIdiomaConfigForTrans,
 >(_config: SuspenseConfig) {
+  type TK = C['TranslationKey'];
+  type MV = C['MessageValues'];
+  type MC = C['MessageComponents'];
+
   function Trans(props: TransInlineModeProps): ReactNode;
   function Trans<K extends TK>(
-    props: TransKeyOnlyModeProps<K, MV, MC>,
+    props: TransKeyOnlyModeProps<K & string, MV, MC>,
   ): ReactNode;
   function Trans(
-    props: TransInlineModeProps | TransKeyOnlyModeProps<TK, MV, MC>,
+    props: TransInlineModeProps | TransKeyOnlyModeProps<TK & string, MV, MC>,
   ): ReactNode {
     // Inline mode: children present - render them directly
     // In production, Babel transforms this to __TransSuspense
@@ -235,7 +240,7 @@ export function createTransSuspense<
 
     // Key-only mode in Suspense: requires __chunk and __load from Babel
     const { __chunk, __load, id, values, components } =
-      props as TransKeyOnlyModeProps<TK, MV, MC>;
+      props as TransKeyOnlyModeProps<TK & string, MV, MC>;
 
     if (__chunk && __load) {
       return (
@@ -262,6 +267,16 @@ export function createTransSuspense<
 // ============ useT Hook ============
 
 /**
+ * Base interface for project-specific Idioma types.
+ * Same as BaseIdiomaConfig from createUseT.
+ */
+interface BaseIdiomaConfig {
+  TranslationKey: string;
+  MessageValues: Record<string, Record<string, unknown>>;
+  MessageComponents: Record<string, unknown[]>;
+}
+
+/**
  * Derive string-only keys from TranslationKey + MessageComponents.
  * Keys with empty component arrays [] can be used with useT.
  * Keys with non-empty component arrays [TransComponent, ...] must use Trans.
@@ -270,16 +285,14 @@ type StringOnlyKeys<TK extends string, MC extends Record<string, unknown[]>> = {
   [K in TK & keyof MC]: MC[K] extends [] ? K : never;
 }[TK & keyof MC];
 
-export type TFunction<
-  TK extends string = string,
-  MV extends Record<string, Record<string, unknown>> = Record<
+export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = <
+  Key extends StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
     string,
-    Record<string, unknown>
-  >,
-  MC extends Record<string, unknown[]> = Record<string, unknown[]>,
-> = <Key extends StringOnlyKeys<TK, MC> & string>(
+>(
   key: Key,
-  values?: Key extends keyof MV ? MV[Key] : Record<string, unknown>,
+  values?: Key extends keyof C['MessageValues']
+    ? C['MessageValues'][Key]
+    : Record<string, unknown>,
 ) => string;
 
 /**
@@ -332,16 +345,11 @@ export function __useTSuspense(
  * chunk and loader information.
  */
 export function createUseTSuspense<
-  TK extends string = string,
-  MV extends Record<string, Record<string, unknown>> = Record<
-    string,
-    Record<string, unknown>
-  >,
-  MC extends Record<string, unknown[]> = Record<string, unknown[]>,
->(_config: SuspenseConfig): () => TFunction<TK, MV, MC> {
+  C extends BaseIdiomaConfig = BaseIdiomaConfig,
+>(_config: SuspenseConfig): () => TFunction<C> {
   // Return a hook that throws when called
   // In production with proper Babel setup, this would be transformed
-  return function useT(): TFunction<TK, MV, MC> {
+  return function useT(): TFunction<C> {
     throw new Error(
       '[idioma] useT in Suspense mode requires Babel transform. ' +
         'Make sure the Babel plugin is configured correctly.',

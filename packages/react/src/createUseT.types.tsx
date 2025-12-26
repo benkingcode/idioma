@@ -13,30 +13,26 @@ import { createUseT } from './createUseT';
 import type { TransComponent } from './interpolate';
 
 // Simulated generated types (what the compiler would produce)
-// NOTE: StringOnlyKey is no longer generated - useT derives it from MessageComponents!
-type TranslationKey =
-  | 'greeting'
-  | 'greeting.name'
-  | 'items.count'
-  | 'legal.links';
-
-type MessageValues = {
-  greeting: Record<string, never>;
-  'greeting.name': { name: string | number };
-  'items.count': { count: number };
-  'legal.links': Record<string, never>;
-};
-
-type MessageComponents = {
-  greeting: [];
-  'greeting.name': [];
-  'items.count': [];
-  'legal.links': [TransComponent, TransComponent];
-};
+// All types bundled into a single IdiomaConfig interface for cleaner API
+interface IdiomaConfig {
+  TranslationKey: 'greeting' | 'greeting.name' | 'items.count' | 'legal.links';
+  MessageValues: {
+    greeting: Record<string, never>;
+    'greeting.name': { name: string | number };
+    'items.count': { count: number };
+    'legal.links': Record<string, never>;
+  };
+  MessageComponents: {
+    greeting: [];
+    'greeting.name': [];
+    'items.count': [];
+    'legal.links': [TransComponent, TransComponent];
+  };
+}
 
 // Create typed useT (simulating what idioma/index.ts exports)
-// useT now takes TranslationKey + MessageComponents and internally filters to string-only keys
-const useT = createUseT<TranslationKey, MessageValues, MessageComponents>();
+// Single type parameter instead of 3!
+const useT = createUseT<IdiomaConfig>();
 
 // Get the t function (in real usage this would be inside a component)
 declare const t: ReturnType<typeof useT>;
@@ -130,8 +126,8 @@ t('Hello {name}, goodbye {name}', { name: 'Ben' });
 // =============================================================================
 
 // Create typed Trans (simulating what idioma/index.ts exports)
-// Translations are inlined by Babel at build time, so no translations arg needed
-const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>();
+// Single type parameter instead of 3!
+const Trans = createTrans<IdiomaConfig>();
 
 // Mock components for testing
 declare const TermsLink: TransComponent;
