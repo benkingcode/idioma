@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/about.lazy.tsx:14
+#. [AI Context]: Page heading for the About page, displayed prominently at the top
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/routes/about.lazy.tsx:16
+#: src/routes/about.lazy.tsx:16
+#: src/routes/about.lazy.tsx:16
+#. [AI Context]: Descriptive paragraph on the About page, introducing the company's purpose and work
+msgid "004U2qa8"
+msgstr "Learn more about what we do"
+
+#: src/routes/contact.lazy.tsx:12
+#. [AI Context]: Page heading on the contact page that invites users to initiate communication
+msgid "0034rp6e"
+msgstr "Get in touch with us"
+
+#: src/routes/contact.lazy.tsx:15
+#. [AI Context]: Subheading on the contact page describing what users can expect when they submit a message
+msgid "002p8oRq"
+msgstr "Send us a message and we will respond"
+
+#: src/routes/index.lazy.tsx:12
+#. [AI Context]: Main heading on the home page that greets users when they visit the website
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/routes/index.lazy.tsx:15
+#. [AI Context]: Descriptive text below the main heading on the home page, explaining the purpose of the page
+msgid "000SSgaT"
+msgstr "This is the home page with unique translations"

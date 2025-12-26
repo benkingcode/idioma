@@ -20,7 +20,7 @@ export default defineConfig({
     // Standard mode tests (non-Suspense)
     {
       name: 'standard',
-      testIgnore: /suspense\/.*\.spec\.ts$/,
+      testIgnore: [/suspense\/.*\.spec\.ts$/, /tree-shaking\/.*\.spec\.ts$/],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:5173',
@@ -33,6 +33,24 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:5174',
+      },
+    },
+    // Tree-shaking tests - Suspense mode (production build)
+    {
+      name: 'tree-shaking-suspense',
+      testMatch: /tree-shaking\/suspense\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5175',
+      },
+    },
+    // Tree-shaking tests - Standard mode (production build)
+    {
+      name: 'tree-shaking-standard',
+      testMatch: /tree-shaking\/standard\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5176',
       },
     },
   ],
@@ -49,6 +67,21 @@ export default defineConfig({
       url: 'http://localhost:5174',
       reuseExistingServer: !CI,
       timeout: 120000,
+    },
+    // Tree-shaking fixtures use preview (production build) for accurate chunk analysis
+    {
+      command:
+        'pnpm --filter e2e-fixture-tree-shaking-suspense build:fixture && pnpm --filter e2e-fixture-tree-shaking-suspense preview --port 5175',
+      url: 'http://localhost:5175',
+      reuseExistingServer: !CI,
+      timeout: 180000,
+    },
+    {
+      command:
+        'pnpm --filter e2e-fixture-tree-shaking-standard build:fixture && pnpm --filter e2e-fixture-tree-shaking-standard preview --port 5176',
+      url: 'http://localhost:5176',
+      reuseExistingServer: !CI,
+      timeout: 180000,
     },
   ],
 });
