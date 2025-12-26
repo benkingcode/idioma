@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
+    "tsdown": "^0.18.0",
     "@types/node": "^20.19.27",
     "dotenv-cli": "^11.0.0",
     "knip": "^5.77.1",

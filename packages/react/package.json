@@ -10,10 +10,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./runtime": {
-      "types": "./dist/runtime/index.d.ts",
-      "import": "./dist/runtime/index.js"
-    },
     "./runtime-suspense": {
       "types": "./dist/runtime-suspense/index.d.ts",
       "import": "./dist/runtime-suspense/index.js"
@@ -27,7 +23,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -35,7 +32,10 @@
     "react": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.28.0",
+    "@rollup/plugin-babel": "^6.0.0",
     "@testing-library/react": "^16.0.0",
+    "babel-plugin-react-compiler": "19.1.0-rc.2",
     "@types/murmurhash-js": "^1.0.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

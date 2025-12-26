@@ -1,4 +1,4 @@
 #!/usr/bin/env node
-import { run } from '../dist/cli/index.js';
+import { run } from '../dist/cli/index.mjs';
 
 run();

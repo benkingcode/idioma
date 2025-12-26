@@ -3,40 +3,40 @@
   "version": "0.1.0",
   "description": "Compile-time React i18n - build tools and CLI",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
     "./babel": {
-      "types": "./dist/babel/plugin.d.ts",
-      "import": "./dist/babel/plugin.js"
+      "types": "./dist/babel/plugin.d.mts",
+      "import": "./dist/babel/plugin.mjs"
     },
     "./babel-preset": {
-      "types": "./dist/babel/preset.d.ts",
-      "import": "./dist/babel/preset.js"
+      "types": "./dist/babel/preset.d.mts",
+      "import": "./dist/babel/preset.mjs"
     },
     "./vite": {
-      "types": "./dist/bundler/vite.d.ts",
-      "import": "./dist/bundler/vite.js"
+      "types": "./dist/bundler/vite.d.mts",
+      "import": "./dist/bundler/vite.mjs"
     },
     "./next": {
-      "types": "./dist/bundler/next.d.ts",
-      "import": "./dist/bundler/next.js"
+      "types": "./dist/bundler/next.d.mts",
+      "import": "./dist/bundler/next.mjs"
     },
     "./metro": {
-      "types": "./dist/bundler/metro.d.ts",
-      "import": "./dist/bundler/metro.js"
+      "types": "./dist/bundler/metro.d.mts",
+      "import": "./dist/bundler/metro.mjs"
     },
     "./runtime": {
-      "types": "./dist/runtime/index.d.ts",
-      "import": "./dist/runtime/index.js"
+      "types": "./dist/runtime/index.d.mts",
+      "import": "./dist/runtime/index.mjs"
     },
     "./icu": {
-      "types": "./dist/icu/index.d.ts",
-      "import": "./dist/icu/index.js"
+      "types": "./dist/icu/index.d.mts",
+      "import": "./dist/icu/index.mjs"
     }
   },
   "bin": {
@@ -47,7 +47,8 @@
     "bin"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
