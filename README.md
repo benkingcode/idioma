@@ -362,6 +362,67 @@ plural(count, {
 });
 ```
 
+### Selection
+
+Use the `select()` function for exact value matching (gender, status, categories):
+
+```tsx
+import { select, Trans } from './src/idioma';
+
+// In Trans component
+<Trans>
+  {select(gender, { male: 'He', female: 'She', other: 'They' })} liked your post
+</Trans>;
+
+// In t() template literal
+const t = useT();
+t(
+  `${select(status, { pending: 'Waiting', approved: 'Accepted', other: 'Unknown' })}`,
+);
+```
+
+This compiles to ICU MessageFormat:
+
+```
+{gender, select, male {He} female {She} other {They}} liked your post
+```
+
+The `other` form is required as a fallback for unmatched values.
+
+### Ordinal Numbers
+
+Use `selectOrdinal()` for ordinal formatting (1st, 2nd, 3rd):
+
+```tsx
+import { selectOrdinal, Trans } from './src/idioma';
+
+// In Trans component
+<Trans>
+  You finished in{' '}
+  {selectOrdinal(place, { one: '#st', two: '#nd', few: '#rd', other: '#th' })}{' '}
+  place
+</Trans>;
+
+// In t() template literal
+const t = useT();
+t(
+  `Your ${selectOrdinal(attempt, { one: '#st', two: '#nd', few: '#rd', other: '#th' })} attempt`,
+);
+```
+
+The `#` placeholder is replaced with the numeric value. This compiles to ICU MessageFormat:
+
+```
+You finished in {place, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} place
+```
+
+Ordinal rules are locale-aware via CLDR. In English:
+
+- `one` = 1, 21, 31... (ends in 1, not 11)
+- `two` = 2, 22, 32... (ends in 2, not 12)
+- `few` = 3, 23, 33... (ends in 3, not 13)
+- `other` = 4, 5, 11, 12, 13, 14...
+
 ### Imperative usage with useT
 
 ```tsx

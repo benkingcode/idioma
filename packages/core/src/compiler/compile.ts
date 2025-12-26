@@ -638,6 +638,8 @@ import {
   createUseLocale,
   createUseT,
   plural,
+  select,
+  selectOrdinal,
 } from '@idioma/react';
 import { translations } from './.generated/translations';
 import type {
@@ -653,7 +655,7 @@ export const useT = createUseT<StringOnlyKey, MessageValues>(translations);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export { plural };
+export { plural, select, selectOrdinal };
 export type {
   Locale,
   MessageComponents,
@@ -679,7 +681,7 @@ import {
   createUseLocale,
   createUseT,
 } from '@idioma/react/runtime-suspense';
-import { plural } from '@idioma/react';
+import { plural, select, selectOrdinal } from '@idioma/react';
 import type {
   Locale,
   MessageComponents,
@@ -697,7 +699,7 @@ export const useT = createUseT<StringOnlyKey, MessageValues>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export { plural };
+export { plural, select, selectOrdinal };
 export type {
   Locale,
   MessageComponents,
