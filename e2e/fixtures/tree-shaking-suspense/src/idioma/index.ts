@@ -7,15 +7,15 @@ import {
   createUseLocale,
   createUseTSuspense,
 } from '@idioma/react/runtime-suspense';
-import type { IdiomaConfig, Locale } from './.generated/types';
+import type { IdiomaTypes, Locale } from './.generated/types';
 
 const config = {
   locales: ["en","es"] as const,
 };
 
-export const Trans = createTransSuspense<IdiomaConfig>(config);
-export const useT = createUseTSuspense<IdiomaConfig>(config);
+export const Trans = createTransSuspense<IdiomaTypes>(config);
+export const useT = createUseTSuspense<IdiomaTypes>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type { IdiomaConfig, Locale };
+export type { IdiomaTypes, Locale };

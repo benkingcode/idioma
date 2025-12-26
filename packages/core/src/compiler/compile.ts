@@ -598,10 +598,9 @@ async function generateTypesTs(
   }
   content += '}\n\n';
 
-  // Generate IdiomaConfig - bundles all types for cleaner factory API
-  content +=
-    '/** Combined config type for createTrans/createUseT factories */\n';
-  content += 'export interface IdiomaConfig {\n';
+  // Generate IdiomaTypes - bundles all types for cleaner factory API
+  content += '/** Combined types for createTrans/createUseT factories */\n';
+  content += 'export interface IdiomaTypes {\n';
   content += '  TranslationKey: TranslationKey;\n';
   content += '  MessageValues: MessageValues;\n';
   content += '  MessageComponents: MessageComponents;\n';
@@ -634,14 +633,14 @@ import {
   createUseLocale,
   createUseT,
 } from '@idioma/react';
-import type { IdiomaConfig, Locale } from './.generated/types';
+import type { IdiomaTypes, Locale } from './.generated/types';
 
-export const Trans = createTrans<IdiomaConfig>();
-export const useT = createUseT<IdiomaConfig>();
+export const Trans = createTrans<IdiomaTypes>();
+export const useT = createUseT<IdiomaTypes>();
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type { IdiomaConfig, Locale };
+export type { IdiomaTypes, Locale };
 `;
 
   await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
@@ -660,18 +659,18 @@ import {
   createUseLocale,
   createUseTSuspense,
 } from '@idioma/react/runtime-suspense';
-import type { IdiomaConfig, Locale } from './.generated/types';
+import type { IdiomaTypes, Locale } from './.generated/types';
 
 const config = {
   locales: ${JSON.stringify(locales)} as const,
 };
 
-export const Trans = createTransSuspense<IdiomaConfig>(config);
-export const useT = createUseTSuspense<IdiomaConfig>(config);
+export const Trans = createTransSuspense<IdiomaTypes>(config);
+export const useT = createUseTSuspense<IdiomaTypes>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type { IdiomaConfig, Locale };
+export type { IdiomaTypes, Locale };
 `;
 
   await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');

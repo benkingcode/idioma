@@ -5,7 +5,7 @@ import { interpolateValues } from './interpolate';
 type MessageFunction = (args: Record<string, unknown>) => string;
 
 // =============================================================================
-// IdiomaConfig - Single type parameter for cleaner API
+// IdiomaTypes - Single type parameter for cleaner API
 // =============================================================================
 
 /**
@@ -14,7 +14,7 @@ type MessageFunction = (args: Record<string, unknown>) => string;
  *
  * @example
  * // In generated types.d.ts:
- * export interface IdiomaConfig {
+ * export interface IdiomaTypes {
  *   TranslationKey: 'greeting' | 'farewell';
  *   MessageValues: { greeting: { name: string } };
  *   MessageComponents: { greeting: [] };
@@ -98,7 +98,7 @@ export interface SourceTextOptions {
  * Type for the t function returned by useT.
  * Supports both source text mode and key-only mode with full type safety.
  *
- * @template C - IdiomaConfig interface containing TranslationKey, MessageValues, MessageComponents
+ * @template C - IdiomaTypes interface containing TranslationKey, MessageValues, MessageComponents
  *
  * The TFunction only accepts keys where MessageComponents[K] is an empty array (string-only keys).
  */
@@ -155,7 +155,7 @@ export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = {
  *
  * @example
  * // In generated idioma/index.ts:
- * export const useT = createUseT<IdiomaConfig>()
+ * export const useT = createUseT<IdiomaTypes>()
  *
  * // Usage:
  * const t = useT()

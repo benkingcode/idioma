@@ -75,7 +75,7 @@ export type TransKeyOnlyModeProps<
  *
  * @example
  * // In generated idioma/index.ts:
- * export const Trans = createTrans<IdiomaConfig>()
+ * export const Trans = createTrans<IdiomaTypes>()
  *
  * // Inline mode (dev, Babel extracts):
  * <Trans>Hello {name}</Trans>

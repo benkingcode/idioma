@@ -8,11 +8,11 @@ import {
   createUseLocale,
   createUseT,
 } from '@idioma/react';
-import type { IdiomaConfig, Locale } from './.generated/types';
+import type { IdiomaTypes, Locale } from './.generated/types';
 
-export const Trans = createTrans<IdiomaConfig>();
-export const useT = createUseT<IdiomaConfig>();
+export const Trans = createTrans<IdiomaTypes>();
+export const useT = createUseT<IdiomaTypes>();
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 
-export type { IdiomaConfig, Locale };
+export type { IdiomaTypes, Locale };
