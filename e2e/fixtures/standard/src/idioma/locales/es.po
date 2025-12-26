@@ -122,3 +122,27 @@ msgstr ""
 "{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# "
 "archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other "
 "{# archivos (otro)}}"
+
+#: src/components/EdgeCases.tsx:49
+#: src/components/EdgeCases.tsx:49
+#: src/components/EdgeCases.tsx:49
+msgid "004Dt4mI"
+msgstr ""
+
+#: src/components/UseT.tsx:7
+msgid "002UQheH"
+msgstr "¡Hola desde useT!"
+
+#: src/components/UseT.tsx:10
+msgid "003X3cVZ"
+msgstr "¡Bienvenido, {name}!"
+
+#: src/components/UseT.tsx:13
+msgid "001gZ2vk"
+msgstr "{count} elementos por {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+msgid "002RXyTq"
+msgstr "Traducción en línea"

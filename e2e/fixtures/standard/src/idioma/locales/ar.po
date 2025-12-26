@@ -121,3 +121,27 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
 "(اثنين)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
+
+#: src/components/EdgeCases.tsx:49
+#: src/components/EdgeCases.tsx:49
+#: src/components/EdgeCases.tsx:49
+msgid "004Dt4mI"
+msgstr ""
+
+#: src/components/UseT.tsx:7
+msgid "002UQheH"
+msgstr "مرحبا من useT!"
+
+#: src/components/UseT.tsx:10
+msgid "003X3cVZ"
+msgstr "أهلا وسهلا، {name}!"
+
+#: src/components/UseT.tsx:13
+msgid "001gZ2vk"
+msgstr "{count} عناصر بواسطة {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+msgid "002RXyTq"
+msgstr "ترجمة مضمنة"

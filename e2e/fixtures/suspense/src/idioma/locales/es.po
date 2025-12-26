@@ -103,7 +103,7 @@ msgstr "Tienes {0} elementos"
 #: src/components/Plurals.tsx:12
 #, ai-translated
 msgid "000w9C8y"
-msgstr "Tienes {count, plural, one {# elemento} other {# elementos}}"
+msgstr "Tienes {count, plural, one {# artículo} other {# artículos}}"
 
 #: src/components/Plurals.tsx:19
 #, ai-translated
@@ -121,3 +121,25 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
+
+#: src/components/UseT.tsx:7
+#, ai-translated
+msgid "002UQheH"
+msgstr "¡Hola desde useT!"
+
+#: src/components/UseT.tsx:10
+#, ai-translated
+msgid "003X3cVZ"
+msgstr "Bienvenido, {name}!"
+
+#: src/components/UseT.tsx:13
+#, ai-translated
+msgid "001gZ2vk"
+msgstr "{count} elementos de {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#, ai-translated
+msgid "002RXyTq"
+msgstr "Traducción en línea"

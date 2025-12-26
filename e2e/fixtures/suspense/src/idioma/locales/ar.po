@@ -6,7 +6,7 @@ msgstr ""
 #: src/components/BasicTrans.tsx:8
 #, ai-translated
 msgid "000e6cSN"
-msgstr "مرحبا بك يا عالم!"
+msgstr "مرحباً بالعالم!"
 
 #: src/components/BasicTrans.tsx:13
 #, ai-translated
@@ -83,7 +83,7 @@ msgstr "رموز تعبيرية: 🎉 والرموز: © ® ™"
 #: src/components/Interpolation.tsx:12
 #, ai-translated
 msgid "0024c34D"
-msgstr "مرحبا، {name}!"
+msgstr "مرحباً، {name}!"
 
 #: src/components/Interpolation.tsx:17
 #, ai-translated
@@ -121,3 +121,25 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
 "(اثنان)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
+
+#: src/components/UseT.tsx:7
+#, ai-translated
+msgid "002UQheH"
+msgstr "مرحبا من useT!"
+
+#: src/components/UseT.tsx:10
+#, ai-translated
+msgid "003X3cVZ"
+msgstr "أهلا بك، {name}!"
+
+#: src/components/UseT.tsx:13
+#, ai-translated
+msgid "001gZ2vk"
+msgstr "{count} عناصر بقلم {author}"
+
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx:30
+#, ai-translated
+msgid "002RXyTq"
+msgstr "ترجمة سطرية"

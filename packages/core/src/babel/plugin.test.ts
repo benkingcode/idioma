@@ -1080,6 +1080,27 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('useT()');
       expect(result).not.toContain('__useTSuspense');
     });
+
+    it('extracts messages from useT-derived t() calls', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { useT } from './idioma'
+        function MyComponent() {
+          const t = useT()
+          return t('Hello from useT')
+        }
+      `;
+
+      transform(code, {
+        mode: 'development',
+        ...suspenseOptions,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe('Hello from useT');
+    });
   });
 
   describe('createT binding tracking', () => {

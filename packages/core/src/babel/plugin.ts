@@ -284,14 +284,14 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           return;
         }
 
-        // Handle createT() calls: const t = createT('es')
+        // Handle createT() and useT() calls:
+        // const t = createT('es') OR const t = useT()
         // The resulting function is tracked as a 't' binding
-        if (
-          t.isCallExpression(init) &&
-          t.isIdentifier(init.callee) &&
-          state.translatableBindings.get(init.callee.name) === 'createT'
-        ) {
-          state.translatableBindings.set(id.name, 't');
+        if (t.isCallExpression(init) && t.isIdentifier(init.callee)) {
+          const calleeType = state.translatableBindings.get(init.callee.name);
+          if (calleeType === 'createT' || calleeType === 'useT') {
+            state.translatableBindings.set(id.name, 't');
+          }
         }
       },
 

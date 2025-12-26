@@ -234,14 +234,17 @@ async function extractFromFile(
                   return;
                 }
 
-                // Handle createT() calls: const t = createT('es')
+                // Handle createT() and useT() calls:
+                // const t = createT('es') OR const t = useT()
                 // The resulting function is tracked as a 't' binding
                 if (
                   init?.type === 'CallExpression' &&
-                  init.callee.type === 'Identifier' &&
-                  translatableBindings.get(init.callee.name) === 'createT'
+                  init.callee.type === 'Identifier'
                 ) {
-                  translatableBindings.set(id.name, 't');
+                  const calleeType = translatableBindings.get(init.callee.name);
+                  if (calleeType === 'createT' || calleeType === 'useT') {
+                    translatableBindings.set(id.name, 't');
+                  }
                 }
               },
 
