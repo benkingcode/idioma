@@ -3,9 +3,9 @@
 
 import {
   createIdiomaProvider,
-  createTrans,
+  createTransSuspense,
   createUseLocale,
-  createUseT,
+  createUseTSuspense,
 } from '@idioma/react/runtime-suspense';
 import type {
   Locale,
@@ -19,8 +19,8 @@ const config = {
   locales: ["en","es","ar"] as const,
 };
 
-export const Trans = createTrans<TranslationKey, MessageValues, MessageComponents>(config);
-export const useT = createUseT<StringOnlyKey, MessageValues>(config);
+export const Trans = createTransSuspense<TranslationKey, MessageValues, MessageComponents>(config);
+export const useT = createUseTSuspense<StringOnlyKey, MessageValues>(config);
 export const IdiomaProvider = createIdiomaProvider();
 export const useLocale = createUseLocale();
 

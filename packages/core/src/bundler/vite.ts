@@ -186,7 +186,7 @@ export default function idiomaVitePlugin(
         }
 
         babelConfig.plugins.push([
-          join(__dirname, '../babel/plugin.js'),
+          join(__dirname, '../babel/plugin.mjs'),
           pluginOptions,
         ]);
       },

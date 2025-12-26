@@ -6,7 +6,7 @@
   "scripts": {
     "dev:example": "vite",
     "build:example": "vite build",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "extract": "idioma extract",
     "compile": "idioma compile"

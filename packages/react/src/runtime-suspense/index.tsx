@@ -209,7 +209,7 @@ export interface TransInlineModeProps {
  * In development: renders children directly
  * In production: Babel transforms to __TransSuspense
  */
-export function createTrans<
+export function createTransSuspense<
   TK extends string = string,
   MV extends Record<string, Record<string, unknown>> = Record<
     string,
@@ -321,7 +321,7 @@ export function __useTSuspense(
  * Note: In Suspense mode, useT is transformed by Babel to include
  * chunk and loader information.
  */
-export function createUseT<
+export function createUseTSuspense<
   K extends string = string,
   MV extends Record<string, Record<string, unknown>> = Record<
     string,

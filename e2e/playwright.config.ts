@@ -39,13 +39,13 @@ export default defineConfig({
 
   webServer: [
     {
-      command: 'pnpm --filter e2e-fixture-standard dev --port 5173',
+      command: 'pnpm --filter e2e-fixture-standard dev:fixture --port 5173',
       url: 'http://localhost:5173',
       reuseExistingServer: !CI,
       timeout: 120000,
     },
     {
-      command: 'pnpm --filter e2e-fixture-suspense dev --port 5174',
+      command: 'pnpm --filter e2e-fixture-suspense dev:fixture --port 5174',
       url: 'http://localhost:5174',
       reuseExistingServer: !CI,
       timeout: 120000,
