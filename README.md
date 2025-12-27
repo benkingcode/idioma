@@ -592,7 +592,8 @@ AI-powered translation (requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`):
 ```bash
 idioma translate                    # Translate missing messages
 idioma translate --force            # Retranslate all messages
-idioma translate --dry-run          # Preview changes as diff
+idioma translate --dry-run          # Run without API calls or saving
+idioma translate --verbose          # Show AI prompts and responses
 idioma translate --provider openai  # Use OpenAI instead of Anthropic
 idioma translate --no-auto-context  # Skip automatic context generation
 ```
@@ -614,7 +615,13 @@ msgstr "Confirmar"
 
 **Cost and performance:** Translation uses batched API calls. A typical 1,000-message project costs roughly $0.50–2.00 USD depending on message complexity and provider. Context generation is a one-time cost per message; subsequent translations reuse existing context.
 
-**Review workflow:** Use `--dry-run` to preview translations as a diff before saving. For team review, translations are written to standard PO files that can be committed and reviewed in your normal PR process.
+**Dry run mode:** The `--dry-run` flag runs the translation pipeline without making API calls or saving files. Combined with `--verbose`, you can inspect the exact prompts that would be sent to the AI—useful for debugging your guidelines or understanding what context each message receives:
+
+```bash
+idioma translate --dry-run --verbose
+```
+
+**Review workflow:** Translations are written to standard PO files that can be committed and reviewed in your normal PR process, or synced to a TMS like Phrase, Lokalise, or Crowdin for professional review.
 
 ### check
 

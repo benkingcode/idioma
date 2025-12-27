@@ -487,6 +487,16 @@ Batch translates messages with system prompt that ensures:
 - Anthropic (Claude Sonnet 4) - uses tool calling for structured output
 - OpenAI (GPT-4o) - uses JSON schema mode
 
+**Dry Run Mode**:
+
+Use `--dry-run --verbose` to inspect AI prompts without making API calls:
+
+```bash
+idioma translate --dry-run --verbose
+```
+
+This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for all translations. Useful for debugging guidelines and reviewing what context the AI receives.
+
 ### Bundler Integration
 
 #### Vite Plugin (`packages/core/src/bundler/vite.ts`)
