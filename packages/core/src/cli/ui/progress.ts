@@ -1,6 +1,6 @@
-import chalk from 'chalk';
 import { Presets, SingleBar } from 'cli-progress';
 import { isInteractive } from './env.js';
+import { colors } from './theme.js';
 
 /**
  * Options for creating a progress bar.
@@ -40,7 +40,7 @@ export class InteractiveProgressBar implements ProgressBar {
     this.total = total;
     this.bar = new SingleBar(
       {
-        format: `${this.label} ${chalk.cyan('{bar}')} {value}/{total} | {percentage}%{payload}`,
+        format: `${this.label} ${colors().primary('{bar}')} {value}/{total} | {percentage}%{payload}`,
         barCompleteChar: '█',
         barIncompleteChar: '░',
         hideCursor: true,

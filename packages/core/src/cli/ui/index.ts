@@ -36,3 +36,13 @@ export {
   InteractiveAnimatedHeader,
   SimpleAnimatedHeader,
 } from './animated-header.js';
+
+export {
+  colors,
+  getColors,
+  getColorTheme,
+  getCachedColorTheme,
+  resetColorsCache,
+  resetThemeCache,
+  type ColorTheme,
+} from './theme.js';

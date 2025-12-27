@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import { isInteractive } from './env.js';
+import { colors } from './theme.js';
 
 export const GLOBE_HEIGHT = 9;
 
@@ -150,17 +151,11 @@ function colorizeChar(char: string, depth: number): string {
 
   switch (char) {
     case 'o': // Land
-      return adjusted > 0.5
-        ? chalk.greenBright(pickChar(palettes.land, adjusted))
-        : chalk.greenBright(pickChar(palettes.land, adjusted));
+      return colors().land(pickChar(palettes.land, adjusted));
     case 'i': // Ice
-      return adjusted > 0.5
-        ? chalk.cyan(pickChar(palettes.ice, adjusted))
-        : chalk.cyan(pickChar(palettes.ice, adjusted));
+      return colors().ice(pickChar(palettes.ice, adjusted));
     default: // Ocean
-      return adjusted > 0.5
-        ? chalk.cyan.dim(pickChar(palettes.ocean, adjusted))
-        : chalk.cyan.dim(pickChar(palettes.ocean, adjusted));
+      return colors().ocean(pickChar(palettes.ocean, adjusted));
   }
 }
 
@@ -215,7 +210,7 @@ export async function displayGlobe(): Promise<void> {
   process.stdout.write('\x1b[?25l');
 
   // Print instruction
-  console.log(chalk.dim('Press any key to stop...\n'));
+  console.log(colors().dim('Press any key to stop...\n'));
 
   // Print initial frame
   console.log(frames[0]);

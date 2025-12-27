@@ -1,5 +1,4 @@
 import { join } from 'path';
-import chalk from 'chalk';
 import { defineCommand } from 'citty';
 import {
   createAnthropicContextProvider,
@@ -22,6 +21,7 @@ import {
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
+import { colors } from '../ui/theme.js';
 import { ensureExtracted } from './ensure-extracted.js';
 
 export interface TranslateResult {
@@ -570,7 +570,7 @@ export const translateCommand = defineCommand({
       },
       onLocaleComplete: (_locale, result) => {
         const checkmark =
-          result.translated > 0 ? chalk.green('✔') : chalk.cyan('✔');
+          result.translated > 0 ? colors().success('✔') : colors().primary('✔');
         header.log(
           `${checkmark} ${currentLocaleLabel}: ${result.translated} translated, ${result.skipped} skipped`,
         );

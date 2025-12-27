@@ -1,6 +1,6 @@
-import chalk from 'chalk';
 import ora, { type Ora } from 'ora';
 import { isInteractive } from './env.js';
+import { colors } from './theme.js';
 
 /**
  * Interface for a spinner that shows indeterminate progress.
@@ -49,7 +49,7 @@ export class InteractiveSpinner implements Spinner {
       this.spinner = null;
     } else {
       // If succeed() is called without start(), just print the success message
-      console.log(chalk.green('✓') + ' ' + message);
+      console.log(colors().success('✓') + ' ' + message);
     }
   }
 
@@ -60,7 +60,7 @@ export class InteractiveSpinner implements Spinner {
       this.spinner = null;
     } else {
       // If fail() is called without start(), just print the failure message
-      console.log(chalk.red('✗') + ' ' + message);
+      console.log(colors().error('✗') + ' ' + message);
     }
   }
 
@@ -90,11 +90,11 @@ export class SimpleSpinner implements Spinner {
   }
 
   succeed(text?: string): void {
-    console.log(chalk.green('✓') + ' ' + (text ?? this.currentText));
+    console.log(colors().success('✓') + ' ' + (text ?? this.currentText));
   }
 
   fail(text?: string): void {
-    console.log(chalk.red('✗') + ' ' + (text ?? this.currentText));
+    console.log(colors().error('✗') + ' ' + (text ?? this.currentText));
   }
 
   stop(): void {

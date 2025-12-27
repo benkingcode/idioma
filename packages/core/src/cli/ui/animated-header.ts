@@ -1,6 +1,6 @@
-import chalk from 'chalk';
 import { isInteractive } from './env.js';
 import { getGlobeFrames, GLOBE_HEIGHT } from './globe.js';
+import { colors } from './theme.js';
 
 /**
  * Configuration options for the animated header.
@@ -46,7 +46,7 @@ function formatModelInfo(provider: string, model?: string): string {
     const maxLen = 25;
     const shortModel =
       model.length > maxLen ? model.slice(0, maxLen - 3) + '...' : model;
-    return `${provider} ${chalk.dim(`(${shortModel})`)}`;
+    return `${provider} ${colors().dim(`(${shortModel})`)}`;
   }
   return provider;
 }
@@ -66,9 +66,9 @@ function renderHeaderFrame(
     '', // Line 0: padding
     '', // Line 1: padding
     '', // Line 2: padding
-    chalk.bold.cyan(options.title), // Line 3: title
+    colors().primaryBold(options.title), // Line 3: title
     '', // Line 4: padding
-    `Auto context: ${options.autoContext ? chalk.green('on') : chalk.dim('off')}`, // Line 5
+    `Auto context: ${options.autoContext ? colors().success('on') : colors().dim('off')}`, // Line 5
     `Model: ${formatModelInfo(options.provider, options.model)}`, // Line 6
     '', // Line 7: padding
     '', // Line 8: padding
@@ -97,7 +97,8 @@ function renderProgressBar(
   const percent = Math.round((current / total) * 100);
   const filled = Math.round((current / total) * width);
   const empty = width - filled;
-  const bar = chalk.green('█'.repeat(filled)) + chalk.dim('░'.repeat(empty));
+  const bar =
+    colors().success('█'.repeat(filled)) + colors().dim('░'.repeat(empty));
   return `${label} ${bar} ${current}/${total} | ${percent}%`;
 }
 
