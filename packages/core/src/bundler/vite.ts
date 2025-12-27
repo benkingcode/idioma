@@ -132,8 +132,8 @@ export default function idiomaVitePlugin(
       // Compile translations at build start
       await compile();
 
-      // Load compiled translations for Babel plugin (non-suspense mode only)
-      // In suspense mode, Trans uses lazy loading and useT is not yet supported
+      // Load compiled translations for Babel plugin (inlined mode only)
+      // In suspense mode, both Trans and useT use lazy loading via dynamic imports
       if (!useSuspense) {
         try {
           const translationsPath = join(
