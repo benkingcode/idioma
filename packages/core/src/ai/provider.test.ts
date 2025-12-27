@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   buildTranslationSystemPrompt,
   createAnthropicProvider,
+  createDryRunProvider,
   createOpenAIProvider,
   type TranslationProvider,
   type TranslationRequest,
@@ -75,6 +76,51 @@ describe('AI Translation Providers', () => {
         guidelines: 'Use formal language for this business app.',
       });
       expect(provider.name).toBe('openai');
+    });
+  });
+
+  describe('createDryRunProvider', () => {
+    it('creates a provider with name "dry-run"', () => {
+      const provider = createDryRunProvider();
+      expect(provider.name).toBe('dry-run');
+    });
+
+    it('does not require an API key', () => {
+      const provider = createDryRunProvider();
+      expect(typeof provider.translate).toBe('function');
+    });
+
+    it('returns "Dry run" translation for all messages without calling AI', async () => {
+      const provider = createDryRunProvider();
+
+      const request: TranslationRequest = {
+        messages: [
+          { key: 'greeting', source: 'Hello' },
+          { key: 'farewell', source: 'Goodbye', context: 'End of session' },
+        ],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      const result = await provider.translate(request);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ key: 'greeting', translation: 'Dry run' });
+      expect(result[1]).toEqual({ key: 'farewell', translation: 'Dry run' });
+    });
+
+    it('handles empty messages array', async () => {
+      const provider = createDryRunProvider();
+
+      const request: TranslationRequest = {
+        messages: [],
+        sourceLocale: 'en',
+        targetLocale: 'fr',
+      };
+
+      const result = await provider.translate(request);
+
+      expect(result).toHaveLength(0);
     });
   });
 

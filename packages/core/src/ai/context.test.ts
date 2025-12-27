@@ -7,6 +7,7 @@ import {
   AI_CONTEXT_PREFIX,
   buildContextSystemPrompt,
   createAnthropicContextProvider,
+  createDryRunContextProvider,
   createOpenAIContextProvider,
   generateContextForCatalog,
   groupMessagesByFile,
@@ -417,6 +418,46 @@ describe('Context Providers', () => {
         guidelines: 'This is a formal business app.',
       });
       expect(typeof provider.generateContext).toBe('function');
+    });
+  });
+
+  describe('createDryRunContextProvider', () => {
+    it('creates a provider without requiring API key', () => {
+      const provider = createDryRunContextProvider();
+      expect(typeof provider.generateContext).toBe('function');
+    });
+
+    it('returns "Dry run" context for all messages without calling AI', async () => {
+      const provider = createDryRunContextProvider();
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const App = () => <button>Click me</button>;',
+        messages: [
+          { key: 'btn1', source: 'Click me', line: 1 },
+          { key: 'btn2', source: 'Submit', line: 2 },
+        ],
+      };
+
+      const result = await provider.generateContext(request);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ key: 'btn1', context: 'Dry run' });
+      expect(result[1]).toEqual({ key: 'btn2', context: 'Dry run' });
+    });
+
+    it('handles empty messages array', async () => {
+      const provider = createDryRunContextProvider();
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const x = 1;',
+        messages: [],
+      };
+
+      const result = await provider.generateContext(request);
+
+      expect(result).toHaveLength(0);
     });
   });
 

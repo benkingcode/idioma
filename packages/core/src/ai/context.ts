@@ -355,6 +355,23 @@ export function createAnthropicContextProvider(
 }
 
 /**
+ * Create a dry run context provider that returns "Dry run" for all messages
+ * without making any AI API calls.
+ */
+export function createDryRunContextProvider(): ContextProvider {
+  return {
+    async generateContext(
+      request: FileContextRequest,
+    ): Promise<GeneratedContext[]> {
+      return request.messages.map((m) => ({
+        key: m.key,
+        context: 'Dry run',
+      }));
+    },
+  };
+}
+
+/**
  * Create an OpenAI context provider.
  */
 export function createOpenAIContextProvider(

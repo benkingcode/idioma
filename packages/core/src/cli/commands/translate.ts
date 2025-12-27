@@ -2,6 +2,7 @@ import { join } from 'path';
 import { defineCommand } from 'citty';
 import {
   createAnthropicContextProvider,
+  createDryRunContextProvider,
   createOpenAIContextProvider,
   generateContextForCatalog,
   type ContextFileProgress,
@@ -14,6 +15,7 @@ import {
 } from '../../ai/format.js';
 import {
   createAnthropicProvider,
+  createDryRunProvider,
   createOpenAIProvider,
   type MessageToTranslate,
   type TranslationProvider,
@@ -137,8 +139,8 @@ export async function runTranslate(
       onFileComplete: onContextFileComplete,
     });
 
-    // Save default catalog if context was generated
-    if (contextResult.generated > 0) {
+    // Save default catalog if context was generated (skip in dry run mode)
+    if (contextResult.generated > 0 && !dryRun) {
       await writePoFile(defaultPoPath, defaultCatalog);
     }
   }
@@ -314,8 +316,8 @@ export async function runTranslateAll(
       onFileComplete: onContextFileComplete,
     });
 
-    // Save default catalog if context was generated
-    if (contextResult.generated > 0) {
+    // Save default catalog if context was generated (skip in dry run mode)
+    if (contextResult.generated > 0 && !dryRun) {
       await writePoFile(defaultPoPath, defaultCatalog);
     }
   }
@@ -414,7 +416,10 @@ export const translateCommand = defineCommand({
     let provider: TranslationProvider;
     const providerName = args.provider as string;
 
-    if (providerName === 'anthropic') {
+    // In dry run mode, use a provider that skips AI calls
+    if (args['dry-run']) {
+      provider = createDryRunProvider();
+    } else if (providerName === 'anthropic') {
       const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
         console.error('Error: ANTHROPIC_API_KEY not set');
@@ -451,7 +456,10 @@ export const translateCommand = defineCommand({
     let contextProvider: ContextProvider | undefined;
 
     if (autoContext) {
-      if (providerName === 'anthropic') {
+      // In dry run mode, use a provider that skips AI calls
+      if (args['dry-run']) {
+        contextProvider = createDryRunContextProvider();
+      } else if (providerName === 'anthropic') {
         const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
         if (apiKey) {
           contextProvider = createAnthropicContextProvider({
@@ -500,21 +508,24 @@ export const translateCommand = defineCommand({
     });
 
     // Ensure PO files exist (auto-extract if missing)
-    const allLocales = [config.defaultLocale, ...targetLocales].filter(
-      (v, i, a) => a.indexOf(v) === i,
-    );
-    await ensureExtracted({
-      localeDir,
-      locales: allLocales,
-      cwd,
-      config,
-      onExtractStart: () => {
-        header.setStatus('PO files missing, extracting messages first...');
-      },
-      onExtractComplete: ({ messages, files }) => {
-        header.log(`✔ Extracted ${messages} messages from ${files} files`);
-      },
-    });
+    // Skip in dry run mode - we don't want to write any files
+    if (!args['dry-run']) {
+      const allLocales = [config.defaultLocale, ...targetLocales].filter(
+        (v, i, a) => a.indexOf(v) === i,
+      );
+      await ensureExtracted({
+        localeDir,
+        locales: allLocales,
+        cwd,
+        config,
+        onExtractStart: () => {
+          header.setStatus('PO files missing, extracting messages first...');
+        },
+        onExtractComplete: ({ messages, files }) => {
+          header.log(`✔ Extracted ${messages} messages from ${files} files`);
+        },
+      });
+    }
 
     let currentLocaleIndex = 0;
     let currentLocaleLabel = '';

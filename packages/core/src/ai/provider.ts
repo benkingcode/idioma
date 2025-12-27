@@ -175,6 +175,22 @@ export function createAnthropicProvider(
 }
 
 /**
+ * Create a dry run translation provider that returns "Dry run" for all messages
+ * without making any AI API calls.
+ */
+export function createDryRunProvider(): TranslationProvider {
+  return {
+    name: 'dry-run',
+    async translate(request: TranslationRequest): Promise<TranslatedMessage[]> {
+      return request.messages.map((m) => ({
+        key: m.key,
+        translation: 'Dry run',
+      }));
+    },
+  };
+}
+
+/**
  * Create an OpenAI translation provider.
  */
 export function createOpenAIProvider(
