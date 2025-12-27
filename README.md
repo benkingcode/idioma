@@ -302,8 +302,8 @@ export function formatApiError(code: string, locale: string) {
 
 ```tsx
 <Trans>
-  Read our <a href="/terms">terms of service</a> and{' '}
-  <a href="/privacy">privacy policy</a>
+  Read our <Link to="/terms">terms of service</Link> and{' '}
+  <Link to="/privacy">privacy policy</Link>
 </Trans>
 ```
 
@@ -614,9 +614,9 @@ msgstr "El pago falló"
 msgid "{count, plural, one {# item} other {# items}}"
 msgstr "{count, plural, one {# artículo} other {# artículos}}"
 
-# Component interpolation
-msgid "Read our <0>terms</0> and <1>privacy policy</1>"
-msgstr "Lee nuestros <0>términos</0> y <1>política de privacidad</1>"
+# Component interpolation (tag names from JSX)
+msgid "Read our <Link>terms of service</Link> and <Link>privacy policy</Link>"
+msgstr "Lee nuestros <Link>términos de servicio</Link> y <Link>política de privacidad</Link>"
 ```
 
 PO files work with translation management systems like Phrase, Lokalise, and Crowdin.

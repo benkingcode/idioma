@@ -541,7 +541,7 @@ Similar pattern for React Native.
 
 - Message keys are content-addressable hashes (murmurhash of source text)
 - ICU MessageFormat for plurals/selects: `{count, plural, one {# item} other {# items}}`
-- Component interpolation uses numbered tags: `<0>bold</0> and <1>italic</1>`
+- Component interpolation uses named tags from JSX: `<Link>click here</Link>`
 - PO files follow gettext format with ICU in msgstr
 
 ## Documentation
