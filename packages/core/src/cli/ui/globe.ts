@@ -5,14 +5,13 @@ export const GLOBE_HEIGHT = 9;
 
 // Earth texture map designed for 9×18 low-resolution output
 // 72×18 texture (4:1 aspect ratio for equirectangular projection)
-// Characters: '.'=ocean, 'o'=land, 'H'=ice
+// Characters: '.'=ocean, 'o'=land
 // Columns: 0-12 Pacific, 12-28 Americas, 28-38 Atlantic, 38-50 Europe/Africa, 50-68 Asia, 68-72 Pacific
-// Ice bands at ~70° latitude for visibility on sphere edges
 const EARTH_TEXTURE = `
 ........................................................................
 ........................................................................
-..........HHHH..............HHHHHH..............HHHHHHHHHHH.............
-.........HooooH...........HHooooooHH...........oooooooooooooooooo.......
+........................................................................
+..........oooo.............oooooooo............oooooooooooooooooo.......
 .......ooooooooo..........ooooooooooo.........ooooooooooooooooooooo.....
 ......oooooooooo...........oooooooooo..oo....ooooo....oooooooooooooo....
 .......ooooooooo...........ooooooooo..oooo..oooo......ooooo...ooooo.....
@@ -24,8 +23,8 @@ const EARTH_TEXTURE = `
 .............o................oooo.............................oooooo..
 ..............o................oo...............................oooo...
 ..................................................................oo...
-.......................................HHHHHHHH........HHHHHHHHHHH......
-........................................HHHHHHHHHHHHHHHHHHHHHHHHHH......
+........................................................................
+........................................................................
 ........................................................................
 `
   .trim()
@@ -96,12 +95,10 @@ function renderSphere(
 // When colors are disabled, each terrain type uses distinct characters
 const LAND_CHARS_COLOR = ['.', '.', '.', '.', ' '];
 const OCEAN_CHARS_COLOR = ['.', '.', '.', '.', ' '];
-const ICE_CHARS_COLOR = ['.', '.', '.', '.', ' '];
 
 // No-color fallback: distinct shapes for each terrain type
 const LAND_CHARS_NOCOLOR = ['#', '#', '+', '+', ' '];
 const OCEAN_CHARS_NOCOLOR = ['.', '.', '.', '.', ' '];
-const ICE_CHARS_NOCOLOR = ['^', '^', '~', '~', ' '];
 
 /**
  * Pick a character from palette based on depth (0-1)
@@ -120,14 +117,12 @@ function pickChar(palette: string[], depth: number): string {
 function getCharPalettes(): {
   land: string[];
   ocean: string[];
-  ice: string[];
 } {
   // chalk.level: 0 = no colors, 1+ = colors supported
   const hasColors = chalk.level > 0;
   return {
     land: hasColors ? LAND_CHARS_COLOR : LAND_CHARS_NOCOLOR,
     ocean: hasColors ? OCEAN_CHARS_COLOR : OCEAN_CHARS_NOCOLOR,
-    ice: hasColors ? ICE_CHARS_COLOR : ICE_CHARS_NOCOLOR,
   };
 }
 
@@ -149,16 +144,12 @@ function colorizeChar(char: string, depth: number): string {
   switch (char) {
     case 'o': // Land
       return adjusted > 0.5
-        ? chalk.green(pickChar(palettes.land, adjusted))
-        : chalk.green.dim(pickChar(palettes.land, adjusted));
-    case 'H': // Ice/snow - render as light blue
-      return adjusted > 0.5
-        ? chalk.cyanBright(pickChar(palettes.ice, adjusted))
-        : chalk.cyan.dim(pickChar(palettes.ice, adjusted));
+        ? chalk.cyanBright(pickChar(palettes.land, adjusted))
+        : chalk.cyanBright.dim(pickChar(palettes.land, adjusted));
     default: // Ocean
       return adjusted > 0.5
-        ? chalk.blue(pickChar(palettes.ocean, adjusted))
-        : chalk.blue.dim(pickChar(palettes.ocean, adjusted));
+        ? chalk.cyan.dim(pickChar(palettes.ocean, adjusted))
+        : chalk.cyan.dim(pickChar(palettes.ocean, adjusted));
   }
 }
 

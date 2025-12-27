@@ -13,22 +13,19 @@ function countVisibleChars(frame: string): number {
 }
 
 // Analyze terrain distribution in a frame using shape markers
-// In no-color mode: land=#/+, ocean=., ice=^/~
+// In no-color mode: land=#/+, ocean=.
 function analyzeTerrain(frame: string): {
   land: number;
   ocean: number;
-  ice: number;
   total: number;
 } {
   const stripped = stripAnsi(frame);
   const landMatches = stripped.match(/[#\+]/g) || [];
   const oceanMatches = stripped.match(/\./g) || [];
-  const iceMatches = stripped.match(/[\^~]/g) || [];
   return {
     land: landMatches.length,
     ocean: oceanMatches.length,
-    ice: iceMatches.length,
-    total: landMatches.length + oceanMatches.length + iceMatches.length,
+    total: landMatches.length + oceanMatches.length,
   };
 }
 
@@ -99,19 +96,17 @@ describe('globe animation', () => {
       }
     });
 
-    it('frames have all three terrain types (land, ocean, ice)', () => {
+    it('frames have both terrain types (land, ocean)', () => {
       const frames = getGlobeFrames();
 
       // Aggregate terrain across all frames
       let totalLand = 0;
       let totalOcean = 0;
-      let totalIce = 0;
 
       for (let i = 0; i < frames.length; i++) {
         const terrain = analyzeTerrain(frames[i]);
         totalLand += terrain.land;
         totalOcean += terrain.ocean;
-        totalIce += terrain.ice;
 
         // Every frame should have ocean - it's 70% of Earth
         expect(terrain.ocean, `Frame ${i} missing ocean (.)`).toBeGreaterThan(
@@ -119,13 +114,10 @@ describe('globe animation', () => {
         );
       }
 
-      // Overall, we should see all terrain types across the full rotation
+      // Overall, we should see both terrain types across the full rotation
       expect(totalOcean, 'Should have ocean across frames').toBeGreaterThan(0);
       expect(totalLand, 'Should have land across frames').toBeGreaterThan(0);
-      // Ice might be minimal at this resolution, so just log it
-      console.log(
-        `Totals: Land=${totalLand}, Ocean=${totalOcean}, Ice=${totalIce}`,
-      );
+      console.log(`Totals: Land=${totalLand}, Ocean=${totalOcean}`);
     });
 
     it('land coverage varies between frames as globe rotates', () => {
@@ -149,9 +141,6 @@ describe('globe animation', () => {
       console.log(
         `Ocean (.) range: ${Math.min(...frames.map((f) => analyzeTerrain(f).ocean))} - ${Math.max(...frames.map((f) => analyzeTerrain(f).ocean))}`,
       );
-      console.log(
-        `Ice (^/~) range: ${Math.min(...frames.map((f) => analyzeTerrain(f).ice))} - ${Math.max(...frames.map((f) => analyzeTerrain(f).ice))}`,
-      );
 
       // Print per-frame breakdown
       console.log('\nPer-frame land coverage:');
@@ -172,19 +161,16 @@ describe('globe animation', () => {
         const next = analyzeTerrain(frames[(i + 1) % frames.length]);
 
         const landDelta = Math.abs(next.land - curr.land);
-        const iceDelta = Math.abs(next.ice - curr.ice);
 
         const rotation = Math.round((i / frames.length) * 360);
         const nextRotation = Math.round(((i + 1) / frames.length) * 360);
 
         // Flag large changes
         const landWarning = landDelta > 8 ? ' ⚠️' : '';
-        const iceWarning = iceDelta > 1 ? ' ❄️' : '';
 
         console.log(
           `  ${rotation.toString().padStart(3)}° → ${nextRotation.toString().padStart(3)}°: ` +
-            `Land Δ${landDelta.toString().padStart(2)}${landWarning}, ` +
-            `Ice Δ${iceDelta}${iceWarning}`,
+            `Land Δ${landDelta.toString().padStart(2)}${landWarning}`,
         );
       }
     });
@@ -193,7 +179,7 @@ describe('globe animation', () => {
       const frames = getGlobeFrames();
 
       console.log('\n=== ALL FRAMES (24 total) ===');
-      console.log('Legend: # = land, . = ocean, ^ = ice\n');
+      console.log('Legend: # = land, . = ocean\n');
 
       // Show all frames to check for flickering
       for (let i = 0; i < frames.length; i++) {
@@ -202,7 +188,7 @@ describe('globe animation', () => {
         const rotation = Math.round((i / frames.length) * 360);
 
         console.log(
-          `--- Frame ${i} (${rotation}°) | Land: ${terrain.land}, Ocean: ${terrain.ocean}, Ice: ${terrain.ice} ---`,
+          `--- Frame ${i} (${rotation}°) | Land: ${terrain.land}, Ocean: ${terrain.ocean} ---`,
         );
         console.log(stripped);
         console.log('');
