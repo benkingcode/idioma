@@ -144,8 +144,8 @@ function colorizeChar(char: string, depth: number): string {
   switch (char) {
     case 'o': // Land
       return adjusted > 0.5
-        ? chalk.cyanBright(pickChar(palettes.land, adjusted))
-        : chalk.cyanBright.dim(pickChar(palettes.land, adjusted));
+        ? chalk.greenBright(pickChar(palettes.land, adjusted))
+        : chalk.greenBright(pickChar(palettes.land, adjusted));
     default: // Ocean
       return adjusted > 0.5
         ? chalk.cyan.dim(pickChar(palettes.ocean, adjusted))
