@@ -34,7 +34,7 @@ export interface AnimatedHeader {
 }
 
 const GLOBE_WIDTH = 18;
-const GAP = '  '; // 2 spaces between globe and info
+const GAP = '    '; // 4 spaces between globe and info
 const CONTENT_LINES = 4; // Fixed number of content lines below header
 
 /**
@@ -61,15 +61,15 @@ function renderHeaderFrame(
   const globeLines = globeFrame.split('\n');
 
   // Build info lines (9 total to match globe height)
-  // Position title on line 1, config on lines 3-4 (0-indexed)
+  // Position title on line 3, config on lines 5-6 (vertically centered)
   const infoLines: string[] = [
     '', // Line 0: padding
-    chalk.bold.cyan(options.title), // Line 1: title
+    '', // Line 1: padding
     '', // Line 2: padding
-    `Auto context: ${options.autoContext ? chalk.green('on') : chalk.dim('off')}`, // Line 3
-    `Model: ${formatModelInfo(options.provider, options.model)}`, // Line 4
-    '', // Line 5: padding
-    '', // Line 6: padding
+    chalk.bold.cyan(options.title), // Line 3: title
+    '', // Line 4: padding
+    `Auto context: ${options.autoContext ? chalk.green('on') : chalk.dim('off')}`, // Line 5
+    `Model: ${formatModelInfo(options.provider, options.model)}`, // Line 6
     '', // Line 7: padding
     '', // Line 8: padding
   ];
