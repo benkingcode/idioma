@@ -90,7 +90,7 @@ export function formatBox(title: string, content: string): string {
     })
     .join('\n');
 
-  return `${top}\n${body}\n${bottom}`;
+  return `\n${top}\n${body}\n${bottom}`;
 }
 
 /**

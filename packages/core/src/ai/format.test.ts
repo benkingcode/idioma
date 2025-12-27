@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { formatBox, formatHeader, formatKeyValueList } from './format';
 
 describe('formatBox', () => {
+  it('starts with a blank line for visual separation', () => {
+    const result = formatBox('Title', 'Content');
+
+    expect(result.startsWith('\n')).toBe(true);
+  });
+
   it('creates a box with title and content', () => {
     const result = formatBox('Title', 'Hello world');
 
@@ -46,8 +52,8 @@ More text`;
   it('pads short lines to fixed width', () => {
     const result = formatBox('Short', 'Hi');
 
-    // All lines should have the same width
-    const lines = result.split('\n');
+    // All lines should have the same width (skip leading blank line)
+    const lines = result.split('\n').filter((l) => l.length > 0);
     const topLength = lines[0].length;
     const bottomLength = lines[lines.length - 1].length;
 
@@ -60,8 +66,12 @@ More text`;
     const result = formatBox('Words', text);
 
     // Check that words are not broken in the middle
-    const lines = result.split('\n');
-    const contentLines = lines.slice(1, -1); // Remove top and bottom borders
+    // Get only content lines (starting with │ and not borders)
+    const contentLines = result
+      .split('\n')
+      .filter(
+        (l) => l.startsWith('│') && !l.startsWith('┌') && !l.startsWith('└'),
+      );
 
     for (const line of contentLines) {
       // Extract content between │ markers
