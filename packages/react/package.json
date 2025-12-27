@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Compile-time React i18n - runtime package",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -36,7 +37,6 @@
     "@rollup/plugin-babel": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "babel-plugin-react-compiler": "19.1.0-rc.2",
-    "@types/murmurhash-js": "^1.0.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^25.0.0",
@@ -52,7 +52,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@idioma/core": "workspace:*",
-    "murmurhash-js": "^1.0.0"
+    "@idioma/core": "workspace:*"
   }
 }

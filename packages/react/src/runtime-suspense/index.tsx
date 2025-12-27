@@ -20,7 +20,6 @@ import {
   renderMessage,
   type TransComponent,
 } from '../interpolate';
-import { generateKey } from '../server/generateKey';
 
 // ============ React Version Check ============
 
@@ -300,8 +299,8 @@ export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = <
  * Requires chunk and loader from Babel transform.
  */
 export function __useTSuspense(
-  chunk: string,
-  loader: Loader,
+  _chunk: string,
+  _loader: Loader,
 ): (key: string, values?: Record<string, unknown>) => string {
   const context = useContext(IdiomaContext);
   if (!context) {
@@ -311,30 +310,25 @@ export function __useTSuspense(
     );
   }
 
-  const { locale } = context;
+  const { locale: _locale } = context;
 
-  // use() suspends until promise resolves
-  const translations = use(getTranslations(locale, chunk, loader));
+  // Note: In properly transformed code, Babel provides the key directly.
+  // This function is a fallback when Babel didn't transform.
 
   return (source: string, values?: Record<string, unknown>) => {
-    // Generate hash key from source message
-    const key = generateKey(source);
-    const msg = translations[key];
-    if (msg === undefined) {
-      // Fallback: return source with values interpolated if possible
-      if (values && Object.keys(values).length > 0) {
-        return interpolateValues(source, values);
-      }
-      return source;
+    // In Suspense mode, Babel should transform useT calls to include the key
+    // If we get here with source text, Babel didn't transform - graceful fallback
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(
+        `Idioma: Missing translations for "${source}". ` +
+          'Ensure the Babel plugin is configured.',
+      );
     }
-    // Handle ICU-compiled functions
-    if (typeof msg === 'function') {
-      return msg(values || {}) as string;
-    }
+    // Fallback: return source with values interpolated if possible
     if (values && Object.keys(values).length > 0) {
-      return interpolateValues(msg, values);
+      return interpolateValues(source, values);
     }
-    return msg;
+    return source;
   };
 }
 

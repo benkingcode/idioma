@@ -1,7 +1,6 @@
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';
-import { generateKey } from './server/generateKey';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type MessageFunction = (args: any) => string;
@@ -129,10 +128,17 @@ export function __useT(
         localeMessages = firstValue as Record<string, string | MessageFunction>;
         actualValues = options as unknown as Record<string, unknown>;
       } else {
-        // Normal mode: arg 2 is values, arg 3 is options
-        const { context: ctx } = options || {};
-        const key = generateKey(source, ctx);
-        localeMessages = translations[key];
+        // Babel didn't inline translations - graceful fallback
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(
+            `Idioma: Missing translations for "${source}". ` +
+              'Ensure the Babel plugin is configured.',
+          );
+        }
+        // Return source text (with interpolation if values provided)
+        return actualValues && Object.keys(actualValues).length > 0
+          ? interpolateValues(source, actualValues)
+          : source;
       }
 
       if (!localeMessages) {

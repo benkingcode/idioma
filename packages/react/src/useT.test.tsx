@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createIdiomaProvider } from './context';
 import { generateKey } from './server/generateKey';
 import { __useT } from './useT';
@@ -39,11 +39,22 @@ describe('__useT', () => {
     },
   };
 
-  describe('source text mode', () => {
-    it('translates source text for given locale', () => {
+  describe('Babel-inlined mode', () => {
+    it('translates using Babel-inlined translations', () => {
+      // Babel transforms: t('source', { key: { en: '...', es: '...' } })
       function TestComponent() {
         const t = __useT(translations);
-        return <div data-testid="result">{t('Hello world!')}</div>;
+        // Second arg is Babel-inlined: { key: { locale: translation } }
+        return (
+          <div data-testid="result">
+            {t('Hello world!', {
+              [generateKey('Hello world!')]: {
+                en: 'Hello world!',
+                es: '¡Hola mundo!',
+              },
+            } as unknown as Record<string, unknown>)}
+          </div>
+        );
       }
 
       render(
@@ -55,11 +66,23 @@ describe('__useT', () => {
       expect(screen.getByTestId('result').textContent).toBe('¡Hola mundo!');
     });
 
-    it('interpolates values in source text mode', () => {
+    it('interpolates values with Babel-inlined translations', () => {
+      // Babel transforms: t('source', { key: { en: '...', es: '...' } }, { values })
       function TestComponent() {
         const t = __useT(translations);
         return (
-          <div data-testid="result">{t('Hello {name}', { name: 'Ben' })}</div>
+          <div data-testid="result">
+            {t(
+              'Hello {name}',
+              {
+                [generateKey('Hello {name}')]: {
+                  en: 'Hello {name}',
+                  es: 'Hola {name}',
+                },
+              } as unknown as Record<string, unknown>,
+              { name: 'Ben' } as unknown as undefined,
+            )}
+          </div>
         );
       }
 
@@ -72,23 +95,34 @@ describe('__useT', () => {
       expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
     });
 
-    it('uses context in options (3rd arg) to generate different key', () => {
+    it('handles function messages (compiled plurals) with Babel inlining', () => {
       function TestComponent() {
         const t = __useT(translations);
         return (
           <div data-testid="result">
-            {t('Submit', undefined, { context: 'button' })}
+            {t(
+              '{count} items',
+              {
+                someKey: {
+                  en: ({ count }: { count: number }) =>
+                    count === 1 ? '1 item' : `${count} items`,
+                  es: ({ count }: { count: number }) =>
+                    count === 1 ? '1 artículo' : `${count} artículos`,
+                },
+              } as unknown as Record<string, unknown>,
+              { count: 5 } as unknown as undefined,
+            )}
           </div>
         );
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomaProvider locale="en">
           <TestComponent />
         </IdiomaProvider>,
       );
 
-      expect(screen.getByTestId('result').textContent).toBe('Enviar');
+      expect(screen.getByTestId('result').textContent).toBe('5 items');
     });
   });
 
@@ -217,5 +251,79 @@ describe('__useT', () => {
     );
 
     expect(screen.getByTestId('result').textContent).toBe('Hola');
+  });
+
+  describe('graceful fallback when translation is missing', () => {
+    it('returns source text and logs warning when translation not found', () => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = __useT({}); // Empty translations - simulates Babel not transforming
+        return <div data-testid="result">{t('Hello world')}</div>;
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello world');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Idioma: Missing translations'),
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('returns interpolated source text when values provided', () => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = __useT({});
+        return (
+          <div data-testid="result">{t('Hello {name}', { name: 'Ben' })}</div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello Ben');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('does not log warning in production mode', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = __useT({});
+        return <div data-testid="result">{t('Hello world')}</div>;
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello world');
+      expect(consoleSpy).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      process.env.NODE_ENV = originalEnv;
+    });
   });
 });

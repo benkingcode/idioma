@@ -9,7 +9,7 @@ import {
   type PluralOrSelectOption,
   type SelectElement,
 } from '@formatjs/icu-messageformat-parser';
-import { analyzeIcuMessage } from '../icu/compiler.js';
+import { analyzeIcuMessage, type IcuAnalysis } from '../icu/compiler.js';
 import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
@@ -47,6 +47,8 @@ export interface CompiledMessage {
   componentCount: number;
   /** Optional namespace */
   namespace?: string;
+  /** Cached ICU analysis (avoids re-parsing) */
+  icuAnalysis?: IcuAnalysis;
 }
 
 /**
@@ -166,10 +168,11 @@ export async function compileTranslations(
           const hasComponentTags = /<\d+>/.test(translationText);
 
           // Skip ICU analysis if message has component tags (they break the ICU parser)
-          let analysis = {
+          let analysis: IcuAnalysis = {
+            hasPlaceholders: false,
             hasPlural: false,
             hasSelect: false,
-            variables: [] as string[],
+            variables: [],
           };
           if (!hasComponentTags && translationText) {
             try {
@@ -186,6 +189,9 @@ export async function compileTranslations(
             variables: analysis.variables,
             componentCount: countComponentTags(translationText),
             namespace,
+            // Cache analysis for reuse across locales
+            icuAnalysis:
+              !hasComponentTags && translationText ? analysis : undefined,
           });
         }
 
@@ -200,18 +206,20 @@ export async function compileTranslations(
             // Messages with component tags are handled differently - just store as string
             compiled.translations[locale] = message.translation;
           } else {
-            // Analyze for ICU patterns (plural, select)
-            const analysis = analyzeIcuMessage(message.translation);
+            // Use cached analysis if available, otherwise analyze
+            const analysis =
+              compiled.icuAnalysis ?? analyzeIcuMessage(message.translation);
             const hasIcu =
               analysis.hasPlural ||
               analysis.hasSelect ||
               message.flags?.includes('icu-format');
 
             if (hasIcu) {
-              // Compile ICU to function string
+              // Compile ICU to function string, passing cached analysis
               compiled.translations[locale] = compileIcuToFunctionString(
                 message.translation,
                 locale,
+                analysis,
               );
               compiled.isIcu = true;
             } else {
@@ -255,12 +263,17 @@ export async function compileTranslations(
  * Compile ICU message to a JavaScript function string (for inline in JS).
  * This generates actual executable JavaScript code that evaluates the ICU message.
  * Exported for use in chunk generation (Suspense mode).
+ *
+ * @param message - The ICU message string to compile
+ * @param locale - The target locale
+ * @param cachedAnalysis - Optional pre-computed analysis to avoid re-parsing
  */
 export function compileIcuToFunctionString(
   message: string,
   locale: string,
+  cachedAnalysis?: IcuAnalysis,
 ): string {
-  const analysis = analyzeIcuMessage(message);
+  const analysis = cachedAnalysis ?? analyzeIcuMessage(message);
 
   if (!analysis.hasPlural && !analysis.hasSelect) {
     // Simple string with placeholders - use template literal

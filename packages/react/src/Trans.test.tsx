@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createIdiomaProvider } from './context';
 import { __Trans } from './Trans';
 
@@ -142,5 +142,54 @@ describe('__Trans', () => {
     expect(screen.getByTestId('link').textContent).toBe('here');
     // The full text should contain "Hello Ben"
     expect(screen.getByText(/Hello Ben/)).toBeDefined();
+  });
+
+  describe('graceful fallback when __t is missing', () => {
+    it('renders children as fallback when __t is undefined', () => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      render(
+        <IdiomaProvider locale="en">
+          <__Trans
+            // @ts-expect-error - testing runtime behavior when Babel didn't transform
+            __t={undefined}
+            children="Hello world"
+          />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByText('Hello world')).toBeDefined();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Idioma: Missing translations'),
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('does not log warning in production mode', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
+      render(
+        <IdiomaProvider locale="en">
+          <__Trans
+            // @ts-expect-error - testing runtime behavior when Babel didn't transform
+            __t={undefined}
+            children="Hello world"
+          />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByText('Hello world')).toBeDefined();
+      expect(consoleSpy).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      process.env.NODE_ENV = originalEnv;
+    });
   });
 });

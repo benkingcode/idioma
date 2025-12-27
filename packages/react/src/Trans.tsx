@@ -7,14 +7,16 @@ type MessageFunction = (args: any) => string | ReactNode;
 type LocaleMessages = Record<string, string | MessageFunction>;
 
 export interface TransProps {
-  /** Translation object keyed by locale */
-  __t: LocaleMessages;
+  /** Translation object keyed by locale (may be undefined if Babel didn't transform) */
+  __t?: LocaleMessages;
   /** Arguments for interpolation (named like "user.name" or numbered like "0") */
   __a?: Record<string, unknown>;
   /** Components for tag interpolation */
   __c?: TransComponent[];
   /** Component names for named tag matching (parallel to __c array) */
   __cn?: string[];
+  /** Children (used as fallback when __t is missing) */
+  children?: ReactNode;
 }
 
 /**
@@ -25,13 +27,29 @@ export interface TransProps {
  * // Compiled output:
  * <__Trans __t={__$idioma["key"]} __a={{ name }} __c={[Link]} />
  */
-export function __Trans({ __t, __a, __c, __cn }: TransProps): ReactNode {
+export function __Trans({
+  __t,
+  __a,
+  __c,
+  __cn,
+  children,
+}: TransProps): ReactNode {
   const context = useContext(IdiomaContext);
   if (!context) {
     throw new Error(
       '[idioma] Trans must be used within an IdiomaProvider. ' +
         'Make sure to wrap your app with <IdiomaProvider>.',
     );
+  }
+
+  // Graceful fallback when Babel didn't transform (missing __t)
+  if (!__t) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(
+        'Idioma: Missing translations. Ensure the Babel plugin is configured.',
+      );
+    }
+    return children ?? null;
   }
 
   const { locale } = context;
