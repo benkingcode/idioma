@@ -162,15 +162,41 @@ describe('globe animation', () => {
       });
     });
 
-    it('prints key frames for visual inspection', () => {
+    it('detects frame-to-frame flickering', () => {
       const frames = getGlobeFrames();
 
-      console.log('\n=== KEY FRAMES (0°, 90°, 180°, 270°) ===');
+      console.log('\n=== FRAME-TO-FRAME CHANGES ===');
+
+      for (let i = 0; i < frames.length; i++) {
+        const curr = analyzeTerrain(frames[i]);
+        const next = analyzeTerrain(frames[(i + 1) % frames.length]);
+
+        const landDelta = Math.abs(next.land - curr.land);
+        const iceDelta = Math.abs(next.ice - curr.ice);
+
+        const rotation = Math.round((i / frames.length) * 360);
+        const nextRotation = Math.round(((i + 1) / frames.length) * 360);
+
+        // Flag large changes
+        const landWarning = landDelta > 8 ? ' ⚠️' : '';
+        const iceWarning = iceDelta > 1 ? ' ❄️' : '';
+
+        console.log(
+          `  ${rotation.toString().padStart(3)}° → ${nextRotation.toString().padStart(3)}°: ` +
+            `Land Δ${landDelta.toString().padStart(2)}${landWarning}, ` +
+            `Ice Δ${iceDelta}${iceWarning}`,
+        );
+      }
+    });
+
+    it('prints all frames for visual inspection', () => {
+      const frames = getGlobeFrames();
+
+      console.log('\n=== ALL FRAMES (24 total) ===');
       console.log('Legend: # = land, . = ocean, ^ = ice\n');
 
-      // Show 4 key rotation angles
-      const keyFrames = [0, 6, 12, 18];
-      for (const i of keyFrames) {
+      // Show all frames to check for flickering
+      for (let i = 0; i < frames.length; i++) {
         const stripped = stripAnsi(frames[i]);
         const terrain = analyzeTerrain(frames[i]);
         const rotation = Math.round((i / frames.length) * 360);
