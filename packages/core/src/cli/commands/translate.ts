@@ -20,11 +20,7 @@ import {
 } from '../../ai/provider.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
-import {
-  createProgressBar,
-  createSpinner,
-  setNonInteractive,
-} from '../ui/index.js';
+import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
 import { ensureExtracted } from './ensure-extracted.js';
 
 export interface TranslateResult {
@@ -493,13 +489,14 @@ export const translateCommand = defineCommand({
       return;
     }
 
-    const localeList =
-      targetLocales.length === 1
-        ? targetLocales[0]
-        : `${targetLocales.length} locales (${targetLocales.join(', ')})`;
-
-    // Initial status spinner (will be simple text in non-interactive/verbose mode)
-    const spinner = createSpinner();
+    // Start animated header (globe + config info)
+    const header = createAnimatedHeader();
+    header.start({
+      title: 'idioma translate',
+      autoContext,
+      provider: providerName,
+      model: config.ai?.model,
+    });
 
     // Ensure PO files exist (auto-extract if missing)
     const allLocales = [config.defaultLocale, ...targetLocales].filter(
@@ -511,19 +508,16 @@ export const translateCommand = defineCommand({
       cwd,
       config,
       onExtractStart: () => {
-        spinner.start('PO files missing, extracting messages first...');
+        header.setStatus('PO files missing, extracting messages first...');
       },
       onExtractComplete: ({ messages, files }) => {
-        spinner.succeed(`Extracted ${messages} messages from ${files} files`);
+        header.log(`✓ Extracted ${messages} messages from ${files} files`);
       },
     });
-    let progressBar: ReturnType<typeof createProgressBar> | null = null;
-    let contextProgressBar: ReturnType<typeof createProgressBar> | null = null;
-    let currentLocaleIndex = 0;
 
-    spinner.start(
-      `Translating ${localeList} using ${provider.name}${config.ai?.model ? ` (${config.ai.model})` : ''}...`,
-    );
+    let currentLocaleIndex = 0;
+    let currentLocaleLabel = '';
+    let currentTotal = 0;
 
     const { results, errors } = await runTranslateAll({
       localeDir,
@@ -538,71 +532,51 @@ export const translateCommand = defineCommand({
       projectRoot: cwd,
       onVerbose,
       onContextFileCountKnown: (count) => {
-        spinner.stop();
         if (count > 0) {
-          console.log('Generating AI context...');
-          contextProgressBar = createProgressBar({
-            label: 'Generating context',
-          });
-          contextProgressBar.start(count, 0);
+          header.setProgress('Generating context', 0, count);
         }
       },
       onContextFileComplete: (progress) => {
-        contextProgressBar?.update(progress.currentFile);
+        header.setProgress(
+          'Generating context',
+          progress.currentFile,
+          progress.totalFiles,
+        );
         if (progress.currentFile === progress.totalFiles) {
-          contextProgressBar?.stop();
-          contextProgressBar = null;
-          const contextSpinner = createSpinner();
-          contextSpinner.succeed(
-            `Generated context for ${progress.totalMessagesGenerated} messages`,
+          header.log(
+            `✓ Generated context for ${progress.totalMessagesGenerated} messages`,
           );
         }
       },
       onLocaleStart: (locale) => {
-        // Stop any existing progress bar
-        progressBar?.stop();
-        spinner.stop();
-
-        // Print translation header on first locale
-        if (currentLocaleIndex === 0) {
-          console.log(`\nTranslating to ${localeList}...`);
-        }
-
-        const localeLabel =
+        currentLocaleLabel =
           targetLocales.length > 1
             ? `[${currentLocaleIndex + 1}/${targetLocales.length}] ${locale}`
             : locale;
-        progressBar = createProgressBar({ label: localeLabel });
       },
       onMessageCountKnown: (count) => {
-        // Only show progress bar if there's work to do
+        currentTotal = count;
         if (count > 0) {
-          progressBar?.start(count, 0);
-        } else {
-          // Nothing to translate - clean up the progress bar so onLocaleComplete
-          // just shows the success message without an empty "0/0 | 100%" bar
-          progressBar?.stop();
-          progressBar = null;
+          header.setProgress(currentLocaleLabel, 0, count);
         }
       },
       onBatchComplete: (progress) => {
-        progressBar?.update(progress.completedMessages);
+        header.setProgress(
+          currentLocaleLabel,
+          progress.completedMessages,
+          currentTotal,
+        );
       },
-      onLocaleComplete: (locale, result) => {
-        progressBar?.stop();
-        progressBar = null;
-
-        const localeLabel =
-          targetLocales.length > 1
-            ? `[${currentLocaleIndex + 1}/${targetLocales.length}] ${locale}`
-            : locale;
-        const successSpinner = createSpinner();
-        successSpinner.succeed(
-          `${localeLabel}: ${result.translated} translated, ${result.skipped} skipped`,
+      onLocaleComplete: (_locale, result) => {
+        header.log(
+          `✓ ${currentLocaleLabel}: ${result.translated} translated, ${result.skipped} skipped`,
         );
         currentLocaleIndex++;
       },
     });
+
+    // Stop the animated header now that translation is complete
+    header.stop();
 
     // Summary
     let totalTranslated = 0;

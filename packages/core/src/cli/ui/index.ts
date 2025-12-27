@@ -28,3 +28,11 @@ export {
 } from './progress.js';
 
 export { displayGlobe, getGlobeFrames, GLOBE_HEIGHT } from './globe.js';
+
+export {
+  createAnimatedHeader,
+  type AnimatedHeader,
+  type AnimatedHeaderOptions,
+  InteractiveAnimatedHeader,
+  SimpleAnimatedHeader,
+} from './animated-header.js';
