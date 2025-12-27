@@ -25,6 +25,7 @@ import {
   createSpinner,
   setNonInteractive,
 } from '../ui/index.js';
+import { ensureExtracted } from './ensure-extracted.js';
 
 export interface TranslateResult {
   translated: number;
@@ -499,6 +500,23 @@ export const translateCommand = defineCommand({
 
     // Initial status spinner (will be simple text in non-interactive/verbose mode)
     const spinner = createSpinner();
+
+    // Ensure PO files exist (auto-extract if missing)
+    const allLocales = [config.defaultLocale, ...targetLocales].filter(
+      (v, i, a) => a.indexOf(v) === i,
+    );
+    await ensureExtracted({
+      localeDir,
+      locales: allLocales,
+      cwd,
+      config,
+      onExtractStart: () => {
+        spinner.start('PO files missing, extracting messages first...');
+      },
+      onExtractComplete: ({ messages, files }) => {
+        spinner.succeed(`Extracted ${messages} messages from ${files} files`);
+      },
+    });
     let progressBar: ReturnType<typeof createProgressBar> | null = null;
     let contextProgressBar: ReturnType<typeof createProgressBar> | null = null;
     let currentLocaleIndex = 0;

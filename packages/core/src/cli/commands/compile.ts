@@ -3,6 +3,7 @@ import { compileTranslations } from '../../compiler/compile.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
+import { ensureExtracted } from './ensure-extracted.js';
 
 export interface CompileResult {
   messageCount: number;
@@ -76,6 +77,21 @@ export const compileCommand = defineCommand({
     await ensureGitignore(config.idiomaDir);
 
     const spinner = createSpinner();
+
+    // Ensure PO files exist (auto-extract if missing)
+    await ensureExtracted({
+      localeDir,
+      locales: config.locales ?? [config.defaultLocale],
+      cwd,
+      config,
+      onExtractStart: () => {
+        spinner.start('PO files missing, extracting messages first...');
+      },
+      onExtractComplete: ({ messages, files }) => {
+        spinner.succeed(`Extracted ${messages} messages from ${files} files`);
+      },
+    });
+
     spinner.start('Compiling translations...');
 
     try {
