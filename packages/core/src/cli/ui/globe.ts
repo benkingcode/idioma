@@ -156,7 +156,7 @@ function colorizeChar(char: string, depth: number): string {
     case 'i': // Ice
       return adjusted > 0.5
         ? chalk.cyan(pickChar(palettes.ice, adjusted))
-        : chalk.cyan.dim(pickChar(palettes.ice, adjusted));
+        : chalk.cyan(pickChar(palettes.ice, adjusted));
     default: // Ocean
       return adjusted > 0.5
         ? chalk.cyan.dim(pickChar(palettes.ocean, adjusted))
