@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { defineCommand } from 'citty';
 import {
   createAnthropicContextProvider,
@@ -67,6 +67,8 @@ export interface TranslateOptions {
   contextProvider?: ContextProvider;
   /** Project root for resolving source file paths (required if autoContext is true) */
   projectRoot?: string;
+  /** Absolute path to idioma directory (required if autoContext is true) */
+  idiomaDir?: string;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
   /** Called when we know how many messages need translation */
@@ -103,6 +105,7 @@ export async function runTranslate(
     autoContext = false,
     contextProvider,
     projectRoot,
+    idiomaDir,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -128,9 +131,10 @@ export async function runTranslate(
 
   // Generate AI context for messages that need it
   // Context is stored in the default (source) locale so it's available for all target locales
-  if (autoContext && contextProvider && projectRoot) {
+  if (autoContext && contextProvider && projectRoot && idiomaDir) {
     const contextResult = await generateContextForCatalog({
       projectRoot,
+      idiomaDir,
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
@@ -281,6 +285,7 @@ export async function runTranslateAll(
     autoContext,
     contextProvider,
     projectRoot,
+    idiomaDir,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -296,7 +301,7 @@ export async function runTranslateAll(
 
   // Generate AI context ONCE before translating any locales
   // Context is stored in the default (source) locale and shared across all target locales
-  if (autoContext && contextProvider && projectRoot) {
+  if (autoContext && contextProvider && projectRoot && idiomaDir) {
     const defaultPoPath = join(localeDir, `${defaultLocale}.po`);
     const defaultCatalog = await loadPoFile(defaultPoPath, defaultLocale);
 
@@ -308,6 +313,7 @@ export async function runTranslateAll(
 
     const contextResult = await generateContextForCatalog({
       projectRoot,
+      idiomaDir,
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
@@ -548,6 +554,7 @@ export const translateCommand = defineCommand({
       autoContext: autoContext && !!contextProvider,
       contextProvider,
       projectRoot: cwd,
+      idiomaDir: resolve(cwd, config.idiomaDir),
       onVerbose,
       onContextFileCountKnown: (count) => {
         if (count > 0) {

@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
+import { extractFromFile } from '../cli/commands/extract.js';
 import type { Catalog, Message } from '../po/types.js';
 import { formatBox, formatHeader, formatKeyValueList } from './format.js';
 
@@ -248,7 +249,10 @@ Use these guidelines to inform the context you generate.`;
  */
 function formatContextRequest(request: FileContextRequest): string {
   const messageList = request.messages
-    .map((m, i) => `[${i + 1}] Line ${m.line}: "${m.source}" (key: ${m.key})`)
+    .map((m, i) => {
+      const lineInfo = m.line > 0 ? `Line ${m.line}: ` : '';
+      return `[${i + 1}] ${lineInfo}"${m.source}" (key: ${m.key})`;
+    })
     .join('\n');
 
   return `File: ${request.filePath}
@@ -500,6 +504,8 @@ export interface ContextFileProgress {
 export interface ContextGenerationOptions {
   /** Root directory for resolving source file paths */
   projectRoot: string;
+  /** Absolute path to idioma directory (for extracting line numbers) */
+  idiomaDir: string;
   /** Catalog to generate context for */
   catalog: Catalog;
   /** Context provider to use */
@@ -536,6 +542,7 @@ export async function generateContextForCatalog(
 ): Promise<ContextGenerationResult> {
   const {
     projectRoot,
+    idiomaDir,
     catalog,
     provider,
     sourceTextByKey,
@@ -588,11 +595,29 @@ export async function generateContextForCatalog(
       continue;
     }
 
+    // Extract from this file to get accurate line numbers
+    // (PO references are file-only, so we re-extract for line info)
+    const extractedMessages = await extractFromFile(
+      fileContent,
+      fullPath,
+      filePath,
+      idiomaDir,
+    );
+
+    // Build a lookup map from key -> line number
+    const lineByKey = new Map(extractedMessages.map((m) => [m.key, m.line]));
+
+    // Update messages with accurate line numbers
+    const messagesWithLines = messages.map((m) => ({
+      ...m,
+      line: lineByKey.get(m.key) ?? m.line,
+    }));
+
     // Generate context for all messages in this file
     const contexts = await provider.generateContext({
       filePath,
       fileContent,
-      messages,
+      messages: messagesWithLines,
     });
 
     // Apply generated contexts to catalog messages

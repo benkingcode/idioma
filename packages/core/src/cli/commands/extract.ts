@@ -17,6 +17,8 @@ export interface ExtractedMessage {
   key: string;
   source: string;
   location: string;
+  /** Line number in source file (1-indexed, 0 if unavailable) */
+  line: number;
   context?: string;
   /** Translator comment (extracted to PO #. comment) */
   comment?: string;
@@ -273,11 +275,13 @@ export async function extractFromFile(
 
                 // Use explicit id or generate hash key from source
                 const key = id || generateKey(source, context, namespace);
+                const line = path.node.loc?.start.line ?? 0;
 
                 messages.push({
                   key,
                   source,
                   location: displayPath,
+                  line,
                   context,
                   comment,
                   namespace,
@@ -302,11 +306,13 @@ export async function extractFromFile(
 
                 const source = sourceArg.value;
                 const key = generateKey(source);
+                const line = path.node.loc?.start.line ?? 0;
 
                 messages.push({
                   key,
                   source,
                   location: displayPath,
+                  line,
                 });
               },
             },
