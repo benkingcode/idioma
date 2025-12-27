@@ -78,11 +78,23 @@ export function analyzeChunksFromCatalogs(
 }
 
 /**
- * Parse file path from reference string (format: "filepath:line")
+ * Parse file path from reference string.
+ * Supports both formats:
+ * - "filepath:line" (traditional gettext format)
+ * - "filepath" (Idioma incremental extraction, no line numbers)
  */
 function parseFilePath(reference: string): string | null {
-  const filePath = reference.split(':').slice(0, -1).join(':');
-  return filePath || null;
+  // Check if reference has a line number (ends with :number)
+  const lastColonIdx = reference.lastIndexOf(':');
+  if (lastColonIdx > 0) {
+    const afterColon = reference.slice(lastColonIdx + 1);
+    // If what's after the last colon is a number, strip it
+    if (/^\d+$/.test(afterColon)) {
+      return reference.slice(0, lastColonIdx) || null;
+    }
+  }
+  // No line number, return the whole reference as the file path
+  return reference || null;
 }
 
 /**

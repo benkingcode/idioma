@@ -2,7 +2,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { loadConfig } from '../cli/config.js';
-import { compileTranslations } from '../compiler/compile.js';
+import { createCompileLock } from '../compiler/compile.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
   createDebouncedExtractor,
@@ -84,6 +84,9 @@ export default function idiomaVitePlugin(
   let loadedTranslations: Record<string, Record<string, unknown>> | undefined;
   let debouncedExtractor: DebouncedExtractor | null = null;
 
+  // Compile lock prevents concurrent compilations from racing
+  const compileLock = createCompileLock();
+
   async function loadIdiomaConfig() {
     // Load config from idioma.config.ts, with options as overrides
     const config = await loadConfig(projectRoot);
@@ -103,7 +106,8 @@ export default function idiomaVitePlugin(
       // Ensure .gitignore exists (skip creating locales/ if custom path provided)
       await ensureGitignore(idiomaDir, { skipLocalesDir: hasCustomLocalesDir });
 
-      await compileTranslations({
+      // Use compile lock to prevent concurrent compilations from racing
+      await compileLock.compile({
         localeDir,
         outputDir,
         defaultLocale,

@@ -6,7 +6,11 @@ import ignore, { type Ignore } from 'ignore';
  * Minimum patterns that should always be ignored, even if .gitignore doesn't exist.
  * These are universally ignored directories that should never contain translatable code.
  */
-const BASE_IGNORE_PATTERNS = ['node_modules', '.git'];
+const BASE_IGNORE_PATTERNS = [
+  'node_modules',
+  '.git',
+  '.generated', // Idioma generated files - never extract from these
+];
 
 /**
  * Normalize a path for the ignore library.

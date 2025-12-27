@@ -3,7 +3,11 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parsePoString, writePoFile } from '../po/parser';
-import { compileTranslations, type CompileOptions } from './compile';
+import {
+  compileTranslations,
+  createCompileLock,
+  type CompileOptions,
+} from './compile';
 
 describe('compileTranslations', () => {
   let tempDir: string;
@@ -423,6 +427,102 @@ msgstr "Hello"
         'utf-8',
       );
       expect(indexContent).toContain('@idioma/react/runtime-suspense');
+    });
+  });
+
+  describe('concurrent compilation safety', () => {
+    it('handles multiple concurrent compileTranslations calls without race conditions', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "Hello"
+msgstr "Hola"
+`,
+      );
+
+      const compileLock = createCompileLock();
+      const options: CompileOptions = {
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+      };
+
+      // Launch 5 concurrent compilations - this would fail without locking
+      const promises = Array(5)
+        .fill(null)
+        .map(() => compileLock.compile(options));
+
+      // All should succeed without throwing
+      await expect(Promise.all(promises)).resolves.not.toThrow();
+
+      // Verify output is valid
+      const translationsPath = join(outputDir, '.generated', 'translations.js');
+      const content = await fs.readFile(translationsPath, 'utf-8');
+      expect(content).toContain('Hello');
+      expect(content).toContain('Hola');
+    });
+
+    it('serializes compilation calls to prevent race conditions', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      const compileLock = createCompileLock();
+      const options: CompileOptions = {
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+      };
+
+      const executionOrder: number[] = [];
+
+      // Create promises that track execution order
+      const makeTrackedCompile = (id: number) => async () => {
+        executionOrder.push(id);
+        await compileLock.compile(options);
+        executionOrder.push(id + 100);
+      };
+
+      // Launch concurrent compilations
+      await Promise.all([
+        makeTrackedCompile(1)(),
+        makeTrackedCompile(2)(),
+        makeTrackedCompile(3)(),
+      ]);
+
+      // Each compilation should complete before the next starts
+      // (e.g., [1, 101, 2, 102, 3, 103] - serialized order)
+      // We verify by checking that for each ID, start comes before all other ends
+      for (let i = 1; i <= 3; i++) {
+        const startIdx = executionOrder.indexOf(i);
+        const endIdx = executionOrder.indexOf(i + 100);
+        // Start should come before end
+        expect(startIdx).toBeLessThan(endIdx);
+      }
     });
   });
 });

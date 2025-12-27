@@ -96,6 +96,23 @@ describe('analyzeChunks', () => {
     expect(analysis.files.has('/project/src/Page.tsx')).toBe(true);
   });
 
+  it('extracts file path from reference without line number', () => {
+    // Incremental extraction saves references without line numbers to reduce git noise
+    const messages = [
+      {
+        key: 'key1',
+        source: 'Hello',
+        placeholders: {},
+        components: [],
+        references: ['src/components/Page.tsx'],
+      },
+    ];
+
+    const analysis = analyzeChunks(messages, projectRoot);
+
+    expect(analysis.files.has('src/components/Page.tsx')).toBe(true);
+  });
+
   it('returns empty analysis for empty messages array', () => {
     const analysis = analyzeChunks([], projectRoot);
 

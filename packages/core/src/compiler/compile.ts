@@ -15,6 +15,41 @@ import type { Catalog, Message } from '../po/types.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
 import { generateChunkModules } from './generate-chunks.js';
 
+/**
+ * Creates a compilation lock to prevent concurrent compilations.
+ * This prevents race conditions when multiple processes try to
+ * clean and regenerate the .generated directory simultaneously.
+ */
+export interface CompileLock {
+  /** Compile with lock protection */
+  compile(options: CompileOptions): Promise<void>;
+}
+
+/**
+ * Creates a compile lock that serializes compilation calls.
+ * When multiple compilations are requested concurrently, they are
+ * queued and executed one at a time to prevent race conditions.
+ */
+export function createCompileLock(): CompileLock {
+  let currentCompilation: Promise<void> | null = null;
+
+  return {
+    async compile(options: CompileOptions): Promise<void> {
+      // Wait for any in-progress compilation to complete
+      while (currentCompilation) {
+        await currentCompilation;
+      }
+
+      // Start new compilation and track it
+      currentCompilation = compileTranslations(options).finally(() => {
+        currentCompilation = null;
+      });
+
+      await currentCompilation;
+    },
+  };
+}
+
 export interface CompileOptions {
   /** Directory containing .po files */
   localeDir: string;
@@ -90,11 +125,9 @@ export async function compileTranslations(
     projectRoot,
   } = options;
 
-  // Ensure output directories exist
+  // Ensure output directories exist (don't delete - overwrite in place)
   await fs.mkdir(outputDir, { recursive: true });
   const generatedDir = join(outputDir, '.generated');
-  // Clean .generated directory before regenerating to remove stale files
-  await fs.rm(generatedDir, { recursive: true, force: true });
   await fs.mkdir(generatedDir, { recursive: true });
 
   // Detect all locales (from flat .po files and namespace directories)

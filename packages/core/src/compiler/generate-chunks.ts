@@ -105,4 +105,23 @@ ${entries.join(',\n')}
     JSON.stringify(manifest, null, 2),
     'utf-8',
   );
+
+  // Clean up stale chunk files
+  const expectedChunkFiles = new Set<string>();
+  for (const [, { chunkId }] of analysis.files) {
+    for (const locale of locales) {
+      expectedChunkFiles.add(`${chunkId}.${locale}.ts`);
+    }
+  }
+
+  try {
+    const existingFiles = await fs.readdir(chunksDir);
+    for (const file of existingFiles) {
+      if (!expectedChunkFiles.has(file)) {
+        await fs.unlink(join(chunksDir, file)).catch(() => {});
+      }
+    }
+  } catch {
+    // Chunks directory doesn't exist yet, that's fine
+  }
 }
