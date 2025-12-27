@@ -110,7 +110,7 @@ export class InteractiveAnimatedHeader implements AnimatedHeader {
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private frameIndex = 0;
   private frames: string[] = [];
-  private totalHeight = GLOBE_HEIGHT + 1 + CONTENT_LINES; // header + blank + content
+  private totalHeight = GLOBE_HEIGHT + 2 + CONTENT_LINES; // header + 2 blank lines + content
   private hasDrawn = false; // Track if we've drawn at least once
 
   // Content area state
@@ -187,8 +187,8 @@ export class InteractiveAnimatedHeader implements AnimatedHeader {
     // Draw header
     process.stdout.write(this.frames[this.frameIndex] + '\n');
 
-    // Blank line
-    process.stdout.write('\n');
+    // Two blank lines for spacing
+    process.stdout.write('\n\n');
 
     // Draw content area
     const contentLines = this.buildContentLines();
@@ -226,10 +226,32 @@ export class InteractiveAnimatedHeader implements AnimatedHeader {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
-    // Final redraw to ensure clean state
-    this.draw();
+    // Final redraw without content padding (clean exit)
+    this.drawFinal();
     // Show cursor
     process.stdout.write('\x1b[?25h');
+  }
+
+  private drawFinal(): void {
+    // Move to start of our region
+    if (this.hasDrawn) {
+      process.stdout.write(`\x1b[${this.totalHeight}A`);
+    }
+
+    // Clear from cursor to end of screen
+    process.stdout.write('\x1b[J');
+
+    // Draw header
+    process.stdout.write(this.frames[this.frameIndex] + '\n');
+
+    // Two blank lines for spacing
+    process.stdout.write('\n\n');
+
+    // Draw only actual content lines (no padding)
+    const contentLines = this.buildContentLines();
+    for (const line of contentLines) {
+      process.stdout.write(line + '\n');
+    }
   }
 }
 

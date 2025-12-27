@@ -1,4 +1,5 @@
 import { join } from 'path';
+import chalk from 'chalk';
 import { defineCommand } from 'citty';
 import {
   createAnthropicContextProvider,
@@ -511,7 +512,7 @@ export const translateCommand = defineCommand({
         header.setStatus('PO files missing, extracting messages first...');
       },
       onExtractComplete: ({ messages, files }) => {
-        header.log(`✓ Extracted ${messages} messages from ${files} files`);
+        header.log(`✔ Extracted ${messages} messages from ${files} files`);
       },
     });
 
@@ -544,7 +545,7 @@ export const translateCommand = defineCommand({
         );
         if (progress.currentFile === progress.totalFiles) {
           header.log(
-            `✓ Generated context for ${progress.totalMessagesGenerated} messages`,
+            `✔ Generated context for ${progress.totalMessagesGenerated} messages`,
           );
         }
       },
@@ -568,8 +569,10 @@ export const translateCommand = defineCommand({
         );
       },
       onLocaleComplete: (_locale, result) => {
+        const checkmark =
+          result.translated > 0 ? chalk.green('✔') : chalk.cyan('✔');
         header.log(
-          `✓ ${currentLocaleLabel}: ${result.translated} translated, ${result.skipped} skipped`,
+          `${checkmark} ${currentLocaleLabel}: ${result.translated} translated, ${result.skipped} skipped`,
         );
         currentLocaleIndex++;
       },
