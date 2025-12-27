@@ -602,12 +602,14 @@ msgstr ""
 
 describe('Translate with Auto-Context', () => {
   let tempDir: string;
+  let idiomaDir: string;
   let localeDir: string;
   let srcDir: string;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-ctx-'));
-    localeDir = join(tempDir, 'locales');
+    idiomaDir = join(tempDir, 'idioma');
+    localeDir = join(idiomaDir, 'locales');
     srcDir = join(tempDir, 'src');
     await fs.mkdir(localeDir, { recursive: true });
     await fs.mkdir(srcDir, { recursive: true });
@@ -651,13 +653,11 @@ describe('Translate with Auto-Context', () => {
   }
 
   it('generates context before translation when autoContext is enabled', async () => {
-    // Create source file
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       'const App = () => <button>Click me</button>;',
     );
 
-    // Create PO files with reference (using hash-based key)
     await fs.writeFile(
       join(localeDir, 'en.po'),
       `
@@ -698,6 +698,7 @@ msgstr ""
       autoContext: true,
       contextProvider,
       projectRoot: tempDir,
+      idiomaDir,
     });
 
     // Context provider should have been called
@@ -916,13 +917,11 @@ msgstr ""
   });
 
   it('writes AI context to source locale, not target locale', async () => {
-    // Create source file
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       'const App = () => <button>Click me</button>;',
     );
 
-    // Create PO files with reference (using hash-based key)
     await fs.writeFile(
       join(localeDir, 'en.po'),
       `
@@ -963,6 +962,7 @@ msgstr ""
       autoContext: true,
       contextProvider,
       projectRoot: tempDir,
+      idiomaDir,
     });
 
     // AI context should be written to SOURCE locale (en.po), not target
