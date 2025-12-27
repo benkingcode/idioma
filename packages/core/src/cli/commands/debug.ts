@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { displayGlobe, type GlobeStyle } from '../ui/globe.js';
+import { displayGlobe } from '../ui/globe.js';
 import { isInteractive } from '../ui/index.js';
 
 export const debugCommand = defineCommand({
@@ -7,22 +7,9 @@ export const debugCommand = defineCommand({
     name: 'debug',
     description: 'Debug utilities for library maintainers',
   },
-  args: {
-    style: {
-      type: 'string',
-      description: 'Globe style: tiny, simple, or detailed',
-      default: 'detailed',
-    },
-  },
-  async run({ args }) {
-    const style = (
-      ['tiny', 'simple', 'detailed'].includes(args.style ?? '')
-        ? args.style
-        : 'detailed'
-    ) as GlobeStyle;
-
+  async run() {
     if (isInteractive()) {
-      await displayGlobe(style);
+      await displayGlobe();
     } else {
       console.log(
         'Debug command (non-interactive mode - globe animation skipped)',

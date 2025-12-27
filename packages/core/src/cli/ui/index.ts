@@ -27,11 +27,4 @@ export {
   SimpleProgressBar,
 } from './progress.js';
 
-export {
-  displayGlobe,
-  getGlobeFrames,
-  type GlobeStyle,
-  TINY_GLOBE_HEIGHT,
-  SIMPLE_GLOBE_HEIGHT,
-  DETAILED_GLOBE_HEIGHT,
-} from './globe.js';
+export { displayGlobe, getGlobeFrames, GLOBE_HEIGHT } from './globe.js';

@@ -1,11 +1,7 @@
 import chalk from 'chalk';
 import { isInteractive } from './env.js';
 
-export type GlobeStyle = 'tiny' | 'simple' | 'detailed';
-
-export const TINY_GLOBE_HEIGHT = 9;
-export const SIMPLE_GLOBE_HEIGHT = 17;
-export const DETAILED_GLOBE_HEIGHT = 25;
+export const GLOBE_HEIGHT = 9;
 
 // Simplified Earth texture map with recognizable continent shapes
 // Optimized for low-resolution rendering (cleaner shapes that read well at small sizes)
@@ -102,7 +98,7 @@ function renderSphere(
 }
 
 // Character palettes for depth shading (brightest to dimmest)
-const LAND_CHARS = ['o', 'o', 'o', '.', '.'];
+const LAND_CHARS = ['.', '.', '.', '.', ' '];
 const OCEAN_CHARS = ['.', '.', '.', '.', ' '];
 
 /**
@@ -163,42 +159,18 @@ function generateFrames(
   return frames;
 }
 
-// Pre-generate frames for all styles
-let tinyFramesCache: string[] | null = null;
-let simpleFramesCache: string[] | null = null;
-let detailedFramesCache: string[] | null = null;
-
-function getTinyFrames(): string[] {
-  if (!tinyFramesCache) {
-    // Tiny: 18 chars wide (9 height * 2 for aspect), 9 lines tall, 8 frames
-    tinyFramesCache = generateFrames(18, TINY_GLOBE_HEIGHT, 8);
-  }
-  return tinyFramesCache;
-}
-
-function getSimpleFrames(): string[] {
-  if (!simpleFramesCache) {
-    // Simple: 34 chars wide (17 height * 2 for aspect), 17 lines tall, 12 frames
-    simpleFramesCache = generateFrames(34, SIMPLE_GLOBE_HEIGHT, 12);
-  }
-  return simpleFramesCache;
-}
-
-function getDetailedFrames(): string[] {
-  if (!detailedFramesCache) {
-    // Detailed: 50 chars wide (25 height * 2 for aspect), 25 lines tall, 20 frames
-    detailedFramesCache = generateFrames(50, DETAILED_GLOBE_HEIGHT, 20);
-  }
-  return detailedFramesCache;
-}
+// Pre-generate frames (lazy initialization)
+let framesCache: string[] | null = null;
 
 /**
- * Get all frames for a globe style
+ * Get all frames for the globe animation
  */
-export function getGlobeFrames(style: GlobeStyle): string[] {
-  if (style === 'tiny') return getTinyFrames();
-  if (style === 'simple') return getSimpleFrames();
-  return getDetailedFrames();
+export function getGlobeFrames(): string[] {
+  if (!framesCache) {
+    // 18 chars wide (9 height * 2 for aspect), 9 lines tall, 8 frames
+    framesCache = generateFrames(18, GLOBE_HEIGHT, 8);
+  }
+  return framesCache;
 }
 
 /**
@@ -206,21 +178,13 @@ export function getGlobeFrames(style: GlobeStyle): string[] {
  * Runs until user presses any key.
  * Only works in interactive terminal.
  */
-export async function displayGlobe(
-  style: GlobeStyle = 'detailed',
-): Promise<void> {
+export async function displayGlobe(): Promise<void> {
   if (!isInteractive()) {
     console.log('Globe animation requires an interactive terminal.');
     return;
   }
 
-  const frames = getGlobeFrames(style);
-  const frameHeight =
-    style === 'tiny'
-      ? TINY_GLOBE_HEIGHT
-      : style === 'simple'
-        ? SIMPLE_GLOBE_HEIGHT
-        : DETAILED_GLOBE_HEIGHT;
+  const frames = getGlobeFrames();
   let frameIndex = 0;
 
   // Hide cursor
@@ -235,7 +199,7 @@ export async function displayGlobe(
   const interval = setInterval(() => {
     frameIndex = (frameIndex + 1) % frames.length;
     // Move cursor up to overwrite previous frame
-    process.stdout.write(`\x1b[${frameHeight}A`);
+    process.stdout.write(`\x1b[${GLOBE_HEIGHT}A`);
     console.log(frames[frameIndex]);
   }, 320);
 
