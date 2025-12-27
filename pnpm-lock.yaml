@@ -262,6 +262,9 @@ importers:
       unplugin:
         specifier: ^1.12.0
         version: 1.16.1
+      zod:
+        specifier: ^4.2.1
+        version: 4.2.1
     devDependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.32.0
@@ -316,7 +319,7 @@ importers:
         version: 16.1.1(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       openai:
         specifier: ^4.0.0
-        version: 4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76)
+        version: 4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@4.2.1)
       vite:
         specifier: ^5.4.21
         version: 5.4.21(@types/node@20.19.27)(terser@5.44.1)
@@ -329,9 +332,6 @@ importers:
       '@idioma/core':
         specifier: workspace:*
         version: link:../core
-      murmurhash-js:
-        specifier: ^1.0.0
-        version: 1.0.0
     devDependencies:
       '@babel/preset-typescript':
         specifier: ^7.28.0
@@ -342,9 +342,6 @@ importers:
       '@testing-library/react':
         specifier: ^16.0.0
         version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/murmurhash-js':
-        specifier: ^1.0.6
-        version: 1.0.6
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.7
@@ -5891,7 +5888,7 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@3.25.76):
+  openai@4.104.0(encoding@0.1.13)(ws@8.18.3)(zod@4.2.1):
     dependencies:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
@@ -5902,7 +5899,7 @@ snapshots:
       node-fetch: 2.7.0(encoding@0.1.13)
     optionalDependencies:
       ws: 8.18.3
-      zod: 3.25.76
+      zod: 4.2.1
     transitivePeerDependencies:
       - encoding
 

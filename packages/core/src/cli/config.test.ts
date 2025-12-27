@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   defineConfig,
   getIdiomaPaths,
@@ -217,6 +217,104 @@ describe('CLI Config', () => {
       expect(config.ai?.guidelines).toBe(
         'This is a formal business app. Use professional language.',
       );
+    });
+
+    describe('validation', () => {
+      it('throws on missing idiomaDir', async () => {
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default { defaultLocale: 'en' }`,
+        );
+
+        await expect(loadConfig(tempDir)).rejects.toThrow('idiomaDir');
+      });
+
+      it('throws on missing defaultLocale', async () => {
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default { idiomaDir: './src/idioma' }`,
+        );
+
+        await expect(loadConfig(tempDir)).rejects.toThrow('defaultLocale');
+      });
+
+      it('throws on invalid ai.provider', async () => {
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            ai: { provider: 'chatgpt' }
+          }`,
+        );
+
+        await expect(loadConfig(tempDir)).rejects.toThrow('ai.provider');
+      });
+
+      it('throws on wrong type for idiomaDir', async () => {
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default {
+            idiomaDir: 123,
+            defaultLocale: 'en',
+          }`,
+        );
+
+        await expect(loadConfig(tempDir)).rejects.toThrow('idiomaDir');
+      });
+
+      it('throws on wrong type for locales', async () => {
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            locales: 'en,es',
+          }`,
+        );
+
+        await expect(loadConfig(tempDir)).rejects.toThrow('locales');
+      });
+
+      it('warns when defaultLocale not in locales', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            locales: ['es', 'fr'],
+          }`,
+        );
+
+        await loadConfig(tempDir);
+
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('defaultLocale "en" is not in locales'),
+        );
+
+        warnSpy.mockRestore();
+      });
+
+      it('does not warn when defaultLocale is in locales', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            locales: ['en', 'es', 'fr'],
+          }`,
+        );
+
+        await loadConfig(tempDir);
+
+        expect(warnSpy).not.toHaveBeenCalled();
+
+        warnSpy.mockRestore();
+      });
     });
   });
 });

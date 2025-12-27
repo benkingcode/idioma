@@ -1,30 +1,35 @@
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
+import { z } from 'zod';
 
-export interface IdiomaConfig {
+/**
+ * Zod schema for Idioma configuration.
+ * This is the single source of truth - IdiomaConfig type is derived from this.
+ */
+const IdiomaConfigSchema = z.object({
   /**
    * Base directory for Idioma files.
    * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
    */
-  idiomaDir: string;
+  idiomaDir: z.string().min(1, 'idiomaDir is required'),
   /**
    * Directory containing PO files.
    * Override this if you have existing PO files elsewhere.
    * @default '{idiomaDir}/locales'
    */
-  localesDir?: string;
+  localesDir: z.string().optional(),
   /** Default/source locale */
-  defaultLocale: string;
+  defaultLocale: z.string().min(1, 'defaultLocale is required'),
   /** List of supported locales (auto-detected from PO files if not specified) */
-  locales?: string[];
+  locales: z.array(z.string()).optional(),
   /**
    * List of namespaces (auto-detected from {locale}/*.po subdirectories if not specified).
    * Namespaces allow organizing translations into logical groups.
    */
-  namespaces?: string[];
+  namespaces: z.array(z.string()).optional(),
   /** Glob patterns for source files to extract from */
-  sourcePatterns?: string[];
+  sourcePatterns: z.array(z.string()).optional(),
   /**
    * Enable Suspense-based lazy loading.
    * When false: All locales inlined, instant switching, larger bundles
@@ -32,20 +37,25 @@ export interface IdiomaConfig {
    * Requires React 19+.
    * @default false
    */
-  useSuspense?: boolean;
+  useSuspense: z.boolean().optional(),
   /** AI translation provider configuration */
-  ai?: {
-    provider: 'anthropic' | 'openai';
-    model?: string;
-    apiKey?: string;
-    /**
-     * Project-specific guidelines for AI translation.
-     * Describe your app's tone, audience, and any special requirements.
-     * @example "This is a children's educational game. Use simple, friendly language."
-     */
-    guidelines?: string;
-  };
-}
+  ai: z
+    .object({
+      provider: z.enum(['anthropic', 'openai']),
+      model: z.string().optional(),
+      apiKey: z.string().optional(),
+      /**
+       * Project-specific guidelines for AI translation.
+       * Describe your app's tone, audience, and any special requirements.
+       * @example "This is a children's educational game. Use simple, friendly language."
+       */
+      guidelines: z.string().optional(),
+    })
+    .optional(),
+});
+
+/** Idioma configuration type - derived from the Zod schema */
+export type IdiomaConfig = z.infer<typeof IdiomaConfigSchema>;
 
 const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'];
 
@@ -104,7 +114,26 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
   }
 
   // Load the config using dynamic import
-  const config = await loadConfigFile(configPath);
+  const rawConfig = await loadConfigFile(configPath);
+
+  // Validate config against schema
+  const result = IdiomaConfigSchema.safeParse(rawConfig);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
+      .join('\n');
+    throw new Error(`Invalid idioma.config.ts:\n${issues}`);
+  }
+
+  const config = result.data;
+
+  // Warn if defaultLocale is not in locales array (when locales specified)
+  if (config.locales && !config.locales.includes(config.defaultLocale)) {
+    console.warn(
+      `[idioma] Warning: defaultLocale "${config.defaultLocale}" ` +
+        `is not in locales array [${config.locales.join(', ')}]`,
+    );
+  }
 
   // Merge with defaults
   return {
@@ -114,7 +143,7 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
   };
 }
 
-async function loadConfigFile(configPath: string): Promise<IdiomaConfig> {
+async function loadConfigFile(configPath: string): Promise<unknown> {
   const absolutePath = resolve(configPath);
 
   if (configPath.endsWith('.ts')) {
@@ -131,10 +160,11 @@ async function loadConfigFile(configPath: string): Promise<IdiomaConfig> {
 
     // Create a temporary .mjs file
     const tempPath = absolutePath + '.mjs';
-    const mjsContent = jsContent.replace(
-      'module.exports = ',
-      'export default ',
-    );
+    // Inject defineConfig as a local function (it's just a pass-through)
+    const defineConfigShim = 'const defineConfig = (c) => c;\n';
+    const mjsContent =
+      defineConfigShim +
+      jsContent.replace('module.exports = ', 'export default ');
     await fs.writeFile(tempPath, mjsContent);
 
     try {

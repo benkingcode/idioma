@@ -1,4 +1,6 @@
-export default {
+import { defineConfig } from '@idioma/core';
+
+export default defineConfig({
   idiomaDir: './src/idioma',
   defaultLocale: 'en',
   locales: ['en', 'es', 'ar'],
@@ -7,4 +9,4 @@ export default {
     provider: 'anthropic',
     model: 'claude-haiku-4-5',
   },
-};
+});
