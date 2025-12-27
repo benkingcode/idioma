@@ -391,6 +391,8 @@ export function messagesToCatalog(
       namespace: msg.namespace,
       // Convert comment prop to PO extracted comment
       comments: msg.comment ? [msg.comment] : undefined,
+      // Mark as extracted by idioma (used to distinguish from TMS-imported messages)
+      flags: ['extracted'],
     };
 
     // If message with same key exists, merge references (deduplicated)

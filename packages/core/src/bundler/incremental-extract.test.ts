@@ -52,6 +52,7 @@ describe('extractAndMergeFile', () => {
       source: string;
       translation: string;
       references?: string[];
+      flags?: string[];
     }>,
   ): Catalog {
     const catalog: Catalog = {
@@ -65,6 +66,7 @@ describe('extractAndMergeFile', () => {
         source: msg.source,
         translation: msg.translation,
         references: msg.references ?? [],
+        flags: msg.flags,
       });
     }
     return catalog;
@@ -106,6 +108,7 @@ describe('extractAndMergeFile', () => {
     mockReadFile.mockResolvedValue(fileContent);
 
     // Mock catalogs with existing message that has only this file as reference
+    // Message has 'extracted' flag so it's eligible for auto-deletion
     mockLoadPoFile.mockImplementation(async (path, locale) => {
       return createCatalog(locale, [
         {
@@ -113,6 +116,7 @@ describe('extractAndMergeFile', () => {
           source: 'abc123',
           translation: locale === 'en' ? 'Hello world' : '',
           references: ['src/App.tsx'],
+          flags: ['extracted'],
         },
       ]);
     });
@@ -136,12 +140,14 @@ describe('extractAndMergeFile', () => {
     mockReadFile.mockResolvedValue(fileContent);
 
     // Mock catalogs - English has message, Spanish has translation
+    // Both have 'extracted' flag, but Spanish translation should prevent deletion
     const enCatalog = createCatalog('en', [
       {
         key: 'abc123',
         source: 'abc123',
         translation: 'Hello world',
         references: ['src/App.tsx'],
+        flags: ['extracted'],
       },
     ]);
     const esCatalog = createCatalog('es', [
@@ -150,6 +156,7 @@ describe('extractAndMergeFile', () => {
         source: 'abc123',
         translation: 'Hola mundo',
         references: ['src/App.tsx'],
+        flags: ['extracted'],
       },
     ]);
 

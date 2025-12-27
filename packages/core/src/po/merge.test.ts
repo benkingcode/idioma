@@ -437,6 +437,7 @@ describe('mergeFileIntoCatalog', () => {
       key: string;
       translation: string;
       references?: string[];
+      flags?: string[];
     }>,
   ): Catalog {
     const catalog: Catalog = {
@@ -450,6 +451,7 @@ describe('mergeFileIntoCatalog', () => {
         source: msg.key,
         translation: msg.translation,
         references: msg.references ?? [],
+        flags: msg.flags,
       });
     }
     return catalog;
@@ -491,9 +493,14 @@ describe('mergeFileIntoCatalog', () => {
     ]);
   });
 
-  it('removes orphaned untranslated messages when no references remain', () => {
+  it('removes orphaned untranslated messages when no references remain (with extracted flag)', () => {
     const existing = createCatalog('es', [
-      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+      {
+        key: 'hello',
+        translation: '',
+        references: ['src/App.tsx'],
+        flags: ['extracted'],
+      },
     ]);
     const extracted = createCatalog('es', []);
 
@@ -508,13 +515,23 @@ describe('mergeFileIntoCatalog', () => {
 
   it('keeps orphaned messages if they have translations in other locales', () => {
     const existing = createCatalog('en', [
-      { key: 'hello', translation: 'Hello', references: ['src/App.tsx'] },
+      {
+        key: 'hello',
+        translation: 'Hello',
+        references: ['src/App.tsx'],
+        flags: ['extracted'],
+      },
     ]);
     const extracted = createCatalog('en', []);
 
     // Spanish catalog has a translation for this message
     const spanishCatalog = createCatalog('es', [
-      { key: 'hello', translation: 'Hola', references: ['src/App.tsx'] },
+      {
+        key: 'hello',
+        translation: 'Hola',
+        references: ['src/App.tsx'],
+        flags: ['extracted'],
+      },
     ]);
 
     const result = mergeFileIntoCatalog(existing, extracted, {
@@ -532,13 +549,23 @@ describe('mergeFileIntoCatalog', () => {
 
   it('removes orphaned messages if no other locale has translations', () => {
     const existing = createCatalog('en', [
-      { key: 'hello', translation: 'Hello', references: ['src/App.tsx'] },
+      {
+        key: 'hello',
+        translation: 'Hello',
+        references: ['src/App.tsx'],
+        flags: ['extracted'],
+      },
     ]);
     const extracted = createCatalog('en', []);
 
     // Spanish catalog has this message but with empty translation
     const spanishCatalog = createCatalog('es', [
-      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+      {
+        key: 'hello',
+        translation: '',
+        references: ['src/App.tsx'],
+        flags: ['extracted'],
+      },
     ]);
 
     const result = mergeFileIntoCatalog(existing, extracted, {
@@ -550,6 +577,60 @@ describe('mergeFileIntoCatalog', () => {
     // Should remove because Spanish translation is empty
     expect(result.removed).toContain('hello');
     expect(existing.messages.has('hello')).toBe(false);
+  });
+
+  it('never removes orphaned messages without extracted flag (TMS protection)', () => {
+    const existing = createCatalog('en', [
+      {
+        key: 'tms-message',
+        translation: 'From TMS',
+        references: ['src/App.tsx'],
+        // No 'extracted' flag - this came from a TMS
+      },
+    ]);
+    const extracted = createCatalog('en', []);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    // Should NOT remove because it lacks the 'extracted' flag
+    expect(result.removed).not.toContain('tms-message');
+    expect(existing.messages.has('tms-message')).toBe(true);
+    // References are removed but message is preserved
+    expect(existing.messages.get('tms-message')?.references).toEqual([]);
+  });
+
+  it('removes orphaned messages with extracted flag but keeps those without', () => {
+    const existing = createCatalog('en', [
+      {
+        key: 'idioma-message',
+        translation: 'From Idioma',
+        references: ['src/App.tsx'],
+        flags: ['extracted'],
+      },
+      {
+        key: 'tms-message',
+        translation: 'From TMS',
+        references: ['src/App.tsx'],
+        // No 'extracted' flag
+      },
+    ]);
+    const extracted = createCatalog('en', []);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    // idioma-message should be removed (has extracted flag, no translations)
+    expect(result.removed).toContain('idioma-message');
+    expect(existing.messages.has('idioma-message')).toBe(false);
+
+    // tms-message should be preserved (no extracted flag)
+    expect(result.removed).not.toContain('tms-message');
+    expect(existing.messages.has('tms-message')).toBe(true);
   });
 
   it('adds file to references for existing messages found in extracted', () => {

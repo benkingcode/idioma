@@ -149,12 +149,23 @@ export function mergeFileIntoCatalog(
     }
   }
 
-  // Step 3: Find and remove orphaned messages (no references, no translations)
+  // Step 3: Find and remove orphaned messages
+  // Only auto-delete if:
+  // - No references remain (orphaned)
+  // - Has 'extracted' flag (idioma-created, not TMS-imported)
+  // - No translations in other locales
   const keysToRemove: string[] = [];
 
   for (const [key, msg] of existing.messages) {
     // Skip if message still has references
     if (msg.references && msg.references.length > 0) {
+      continue;
+    }
+
+    // Skip if message was not extracted by idioma (e.g., TMS-imported)
+    // Messages without the 'extracted' flag are never auto-deleted
+    const isIdiomaExtracted = msg.flags?.includes('extracted');
+    if (!isIdiomaExtracted) {
       continue;
     }
 
