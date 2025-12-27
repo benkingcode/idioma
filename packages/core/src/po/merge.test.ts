@@ -115,7 +115,7 @@ msgstr ""
     ]);
   });
 
-  it('removes unused messages when clean option is true', () => {
+  it('removes unused messages when clean option is true (with extracted flag)', () => {
     const existing = parsePoString(
       `
 msgid ""
@@ -125,6 +125,7 @@ msgstr ""
 msgid "Hello"
 msgstr "Hola"
 
+#, extracted
 msgid "Obsolete"
 msgstr "Obsoleto"
 `,
@@ -147,6 +148,42 @@ msgstr ""
     expect(result.removed).toContain('Obsolete');
     expect(existing.messages.has('Obsolete')).toBe(false);
     expect(existing.messages.has('Hello')).toBe(true);
+  });
+
+  it('never removes TMS-imported messages when clean option is true', () => {
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#, extracted
+msgid "idioma-message"
+msgstr "From Idioma"
+
+msgid "tms-message"
+msgstr "From TMS"
+`,
+      'es',
+    );
+
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+`,
+      'es',
+    );
+
+    const result = mergeCatalogs(existing, extracted, { clean: true });
+
+    // idioma-message should be removed (has extracted flag)
+    expect(result.removed).toContain('idioma-message');
+    expect(existing.messages.has('idioma-message')).toBe(false);
+
+    // tms-message should be preserved (no extracted flag)
+    expect(result.removed).not.toContain('tms-message');
+    expect(existing.messages.has('tms-message')).toBe(true);
   });
 
   it('keeps unused messages when clean option is false', () => {

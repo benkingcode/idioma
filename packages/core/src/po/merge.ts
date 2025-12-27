@@ -66,12 +66,18 @@ export function mergeCatalogs(
   }
 
   // Handle removal of obsolete messages
+  // Only remove messages that have the 'extracted' flag (idioma-created)
+  // TMS-imported messages (without the flag) are never auto-deleted
   if (clean) {
     const keysToRemove: string[] = [];
 
-    for (const key of existing.messages.keys()) {
+    for (const [key, msg] of existing.messages) {
       if (!extractedKeys.has(key)) {
-        keysToRemove.push(key);
+        // Only remove if message was extracted by idioma
+        const isIdiomaExtracted = msg.flags?.includes('extracted');
+        if (isIdiomaExtracted) {
+          keysToRemove.push(key);
+        }
       }
     }
 

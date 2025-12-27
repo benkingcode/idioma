@@ -320,6 +320,7 @@ msgstr ""
 
   it('clean option removes unused messages', async () => {
     // Create initial PO with messages (using a hash-like key)
+    // Message has 'extracted' flag so it's eligible for removal by clean
     await fs.writeFile(
       join(localeDir, 'en.po'),
       `
@@ -327,6 +328,7 @@ msgid ""
 msgstr ""
 "Language: en\\n"
 
+#, extracted
 msgid "oldHashKey"
 msgstr "Old message"
 `,
