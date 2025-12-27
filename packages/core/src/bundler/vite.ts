@@ -81,7 +81,9 @@ export default function idiomaVitePlugin(
 
   let isDevMode = false;
   let projectRoot = '';
-  let loadedTranslations: Record<string, Record<string, unknown>> | undefined;
+  // Use a stable object reference so Babel plugin always sees updates
+  // (reactBabel callback captures this by reference at config time)
+  const loadedTranslations: Record<string, Record<string, unknown>> = {};
   let debouncedExtractor: DebouncedExtractor | null = null;
 
   // Compile lock prevents concurrent compilations from racing
@@ -149,7 +151,11 @@ export default function idiomaVitePlugin(
           // Use cache-busting query param for dev mode to pick up HMR changes
           const cacheBuster = isDevMode ? `?t=${Date.now()}` : '';
           const module = await import(translationsPath + cacheBuster);
-          loadedTranslations = module.translations;
+          // Mutate the existing object so Babel plugin sees updates
+          for (const key of Object.keys(loadedTranslations)) {
+            delete loadedTranslations[key];
+          }
+          Object.assign(loadedTranslations, module.translations);
         } catch (error) {
           // Translations may not exist yet on first build
           console.warn('[idioma] Could not load translations:', error);
@@ -190,7 +196,32 @@ export default function idiomaVitePlugin(
     handleHotUpdate({ file, server }) {
       // Handle PO file changes - recompile translations
       if (file.endsWith('.po') && file.includes(localeDir)) {
-        compile().then(() => {
+        compile().then(async () => {
+          // Reload translations for Babel plugin (inlined mode only)
+          if (!useSuspense) {
+            try {
+              const translationsPath = join(
+                projectRoot,
+                outputDir,
+                '.generated',
+                'translations.js',
+              );
+              const cacheBuster = `?t=${Date.now()}`;
+              const module = await import(translationsPath + cacheBuster);
+              // Mutate the existing object so Babel plugin sees updates
+              for (const key of Object.keys(loadedTranslations)) {
+                delete loadedTranslations[key];
+              }
+              Object.assign(loadedTranslations, module.translations);
+            } catch (error) {
+              console.warn('[idioma] Could not reload translations:', error);
+            }
+          }
+
+          // Invalidate all modules to force re-transformation with fresh translations
+          // We need to invalidate because Babel inlines translations at transform time
+          server.moduleGraph.invalidateAll();
+
           server.ws.send({
             type: 'full-reload',
             path: '*',
@@ -226,7 +257,8 @@ export default function idiomaVitePlugin(
         };
 
         // Pass loaded translations for inlining (inlined mode only)
-        if (!useSuspense && loadedTranslations) {
+        // This is a stable reference - HMR updates mutate the same object
+        if (!useSuspense) {
           pluginOptions.translations = loadedTranslations;
         }
 
