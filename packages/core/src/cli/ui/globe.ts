@@ -91,8 +91,16 @@ function renderSphere(
 }
 
 // Character palettes for depth shading (brightest to dimmest)
-const LAND_CHARS = ['.', '.', '.', '.', ' '];
-const OCEAN_CHARS = ['.', '.', '.', '.', ' '];
+// When colors are available, all terrain uses dots (color provides differentiation)
+// When colors are disabled, each terrain type uses distinct characters
+const LAND_CHARS_COLOR = ['.', '.', '.', '.', ' '];
+const OCEAN_CHARS_COLOR = ['.', '.', '.', '.', ' '];
+const ICE_CHARS_COLOR = ['.', '.', '.', '.', ' '];
+
+// No-color fallback: distinct shapes for each terrain type
+const LAND_CHARS_NOCOLOR = ['#', '#', '+', '+', ' '];
+const OCEAN_CHARS_NOCOLOR = ['.', '.', '.', '.', ' '];
+const ICE_CHARS_NOCOLOR = ['^', '^', '~', '~', ' '];
 
 /**
  * Pick a character from palette based on depth (0-1)
@@ -103,6 +111,23 @@ function pickChar(palette: string[], depth: number): string {
     Math.floor((1 - depth) * palette.length),
   );
   return palette[idx] ?? palette[0] ?? ' ';
+}
+
+/**
+ * Get the appropriate character palette based on color support
+ */
+function getCharPalettes(): {
+  land: string[];
+  ocean: string[];
+  ice: string[];
+} {
+  // chalk.level: 0 = no colors, 1+ = colors supported
+  const hasColors = chalk.level > 0;
+  return {
+    land: hasColors ? LAND_CHARS_COLOR : LAND_CHARS_NOCOLOR,
+    ocean: hasColors ? OCEAN_CHARS_COLOR : OCEAN_CHARS_NOCOLOR,
+    ice: hasColors ? ICE_CHARS_COLOR : ICE_CHARS_NOCOLOR,
+  };
 }
 
 /**
@@ -117,19 +142,21 @@ function colorizeChar(char: string, depth: number): string {
     return ' ';
   }
 
+  const palettes = getCharPalettes();
+
   switch (char) {
     case 'o': // Land
       return adjusted > 0.5
-        ? chalk.green(pickChar(LAND_CHARS, adjusted))
-        : chalk.green.dim(pickChar(LAND_CHARS, adjusted));
+        ? chalk.green(pickChar(palettes.land, adjusted))
+        : chalk.green.dim(pickChar(palettes.land, adjusted));
     case 'H': // Ice/snow - render as light blue
       return adjusted > 0.5
-        ? chalk.cyanBright(pickChar(OCEAN_CHARS, adjusted))
-        : chalk.cyan.dim(pickChar(OCEAN_CHARS, adjusted));
+        ? chalk.cyanBright(pickChar(palettes.ice, adjusted))
+        : chalk.cyan.dim(pickChar(palettes.ice, adjusted));
     default: // Ocean
       return adjusted > 0.5
-        ? chalk.blue(pickChar(OCEAN_CHARS, adjusted))
-        : chalk.blue.dim(pickChar(OCEAN_CHARS, adjusted));
+        ? chalk.blue(pickChar(palettes.ocean, adjusted))
+        : chalk.blue.dim(pickChar(palettes.ocean, adjusted));
   }
 }
 
