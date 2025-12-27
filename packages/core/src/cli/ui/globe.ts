@@ -3,7 +3,7 @@ import { isInteractive } from './env.js';
 
 export const GLOBE_HEIGHT = 9;
 
-// Earth texture map designed for 9×18 low-resolution output
+// Earth texture map designed for 8×16 low-resolution output
 // 72×18 texture (4:1 aspect ratio for equirectangular projection)
 // Characters: '.'=ocean, 'o'=land, 'i'=ice
 // Columns: 0-12 Pacific, 12-28 Americas, 28-38 Atlantic, 38-50 Europe/Africa, 50-68 Asia, 68-72 Pacific
@@ -67,16 +67,19 @@ function renderSphere(
       const lon = Math.atan2(nx, nz) + rotation; // -PI to PI, plus rotation
 
       // Map to texture coordinates
-      const texY = Math.floor(((lat + Math.PI / 2) / Math.PI) * texHeight);
-      const texX =
-        Math.floor(((lon + Math.PI) / (2 * Math.PI)) * texWidth) % texWidth;
-
-      // Clamp texture coordinates
-      const ty = Math.max(0, Math.min(texHeight - 1, texY));
-      const tx = Math.max(
-        0,
-        Math.min(texWidth - 1, (texX + texWidth) % texWidth),
+      // Use Math.round instead of Math.floor for more stable sampling
+      // floor causes aliasing where tiny angle changes jump between texture pixels
+      // round samples from pixel centers, making the animation smoother
+      const texY = Math.round(
+        ((lat + Math.PI / 2) / Math.PI) * (texHeight - 1),
       );
+      const rawTexX = Math.round(((lon + Math.PI) / (2 * Math.PI)) * texWidth);
+      // Handle wrap-around (rawTexX could be exactly texWidth after rounding)
+      const texX = ((rawTexX % texWidth) + texWidth) % texWidth;
+
+      // Clamp texture coordinates (texX already normalized via modulo above)
+      const ty = Math.max(0, Math.min(texHeight - 1, texY));
+      const tx = Math.max(0, Math.min(texWidth - 1, texX));
 
       // Get character from texture
       const char = texture[ty]?.[tx] || ' ';
@@ -188,7 +191,7 @@ let framesCache: string[] | null = null;
  */
 export function getGlobeFrames(): string[] {
   if (!framesCache) {
-    // 18 chars wide (9 height * 2 for aspect), 9 lines tall, 24 frames for smooth rotation
+    // Width 18 gives a rounder appearance (slightly wider than 2:1 ratio)
     framesCache = generateFrames(18, GLOBE_HEIGHT, 24);
   }
   return framesCache;
