@@ -2,6 +2,7 @@ import { defineCommand, runMain } from 'citty';
 import { config as loadDotenv } from 'dotenv';
 import { checkCommand } from './commands/check.js';
 import { compileCommand } from './commands/compile.js';
+import { debugCommand } from './commands/debug.js';
 import { extractCommand } from './commands/extract.js';
 import { statsCommand } from './commands/stats.js';
 import { translateCommand } from './commands/translate.js';
@@ -36,6 +37,7 @@ const main = defineCommand({
     check: checkCommand,
     stats: statsCommand,
     translate: translateCommand,
+    debug: debugCommand,
   },
 });
 
