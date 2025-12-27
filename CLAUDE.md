@@ -174,16 +174,11 @@ Source Code → Babel Plugin → PO Files → Compiler → JavaScript → Runtim
 
 ### Babel Plugin Transformations
 
-The Babel plugin (`packages/core/src/babel/plugin.ts`) has three modes:
+The Babel plugin (`packages/core/src/babel/plugin.ts`) has two main modes:
 
-#### Development Mode (`mode: 'development'`)
+> **Important**: The bundler plugins (Vite, Next.js, Metro) always use `mode: 'production'`, even during `pnpm dev`. The mode name refers to _how_ the plugin operates, not which environment you're in.
 
-- **No transformation** - code runs as-is
-- Optional extraction via `onExtract` callback
-- `<Trans>` renders children directly
-- `useT()` performs runtime lookups against loaded translations
-
-#### Production Mode - Inlined (`mode: 'production'`)
+#### Inlined Mode (`mode: 'production'`) — Used by all bundlers
 
 Transforms components to internal versions with pre-compiled translations baked in:
 
@@ -209,7 +204,7 @@ t('Hello {name}', { name: 'Ben' });
 t('Hello {name}', { key123: { en: '...', es: '...' } }, { name: 'Ben' });
 ```
 
-#### Production Mode - Suspense (`mode: 'production-suspense'`)
+#### Suspense Mode (`mode: 'production-suspense'`) — Optional for lazy loading
 
 Uses dynamic imports with React 19's `use()` hook for lazy loading:
 
@@ -228,7 +223,17 @@ const __$idiomaLoad = {
 <__TransSuspense __key="abc123" __chunk={__$idiomaChunk} __load={__$idiomaLoad} />
 ```
 
-#### Prop Meanings
+#### Extract-Only Mode (`mode: 'development'`) — Rarely used
+
+This mode extracts messages but performs no transformation. It's the default if no mode is specified, but bundler plugins always override it. Useful for:
+
+- Tests that need extraction without transformation
+- Custom build pipelines
+- Debugging extraction behavior
+
+In this mode, `Trans` renders children directly and `useT` falls back to source text (no translations available).
+
+#### Prop Meanings (for transformed code)
 
 - `__t`: Translation object `{ locale: translatedString | function }`
 - `__a`: Arguments for placeholders `{ name: value }`
@@ -324,58 +329,50 @@ msgstr "{count, plural, one {# item} other {# items}}"
 };
 ```
 
-#### At Runtime (Development Only)
+#### Runtime ICU Helpers (source code only)
 
-`packages/core/src/icu/index.ts` provides runtime helpers:
+`packages/core/src/icu/index.ts` provides `plural()`, `select()`, and `selectOrdinal()` helpers that developers use in source code:
 
 ```tsx
-plural(count, { one: '# item', other: '# items' });
-// Uses Intl.PluralRules with synced locale from IdiomaProvider
+<Trans>You have {plural(count, { one: '# item', other: '# items' })}</Trans>
 ```
+
+These helpers are only used during extraction to serialize to ICU format. At runtime, the compiled JS functions handle the logic directly—the helper functions aren't called in production.
 
 ### Runtime Behavior
 
-#### Trans Component
+Since bundlers always use inlined or suspense mode, here's what actually runs:
 
-**Development** (`packages/react/src/createTrans.tsx`):
+#### Trans Component (`packages/react/src/Trans.tsx`)
 
-- Simply renders children unchanged
-- Context not required (static content)
+**Inlined Mode** — `__Trans` component:
 
-**Production - Inlined** (`packages/react/src/Trans.tsx`):
-
-- `__Trans` receives pre-compiled translations
+- Receives pre-compiled translations via `__t` prop
 - Uses `IdiomaContext` to get current locale
 - Calls `renderMessage()` which handles:
   1. ICU functions (plurals/selects compiled to JS functions)
   2. Component tag interpolation (`<Link>text</Link>`)
   3. Value interpolation (`{name}`)
 
-**Production - Suspense** (`packages/react/src/runtime-suspense/index.tsx`):
+**Suspense Mode** — `__TransSuspense` component (`packages/react/src/runtime-suspense/`):
 
-- `__TransSuspense` uses React 19's `use()` hook
+- Uses React 19's `use()` hook
 - Suspends while translations load via dynamic import
 - Module-level cache prevents re-fetching
 
-#### useT Hook
+#### useT Hook (`packages/react/src/createUseT.tsx`)
 
-**Development**:
+**Inlined Mode**:
 
-- Returns function that hashes source text
-- Looks up in runtime translations object
-- Falls back to source text
-
-**Production - Inlined**:
-
-- Detects if 2nd arg is Babel-inlined translations
+- Detects if 2nd arg is Babel-inlined translations (has shape `{ key: { locale: translation } }`)
 - Uses inlined data when present
-- Falls back to runtime lookup for dynamic strings
+- Falls back to runtime lookup for dynamic strings (rare edge case)
 
-**Production - Suspense**:
+**Suspense Mode** — `__useTSuspense`:
 
-- `__useTSuspense` receives chunk ID and loader
+- Receives chunk ID and loader from Babel
 - Uses `use()` hook for loading
-- Returns hashing function for lookups
+- Returns function that looks up by key in loaded chunk
 
 #### Interpolation System
 
