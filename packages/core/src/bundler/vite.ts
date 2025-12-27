@@ -201,9 +201,13 @@ export default function idiomaVitePlugin(
 
       // Handle source file changes - queue for incremental extraction
       // Uses .gitignore patterns automatically
+      const matchesSourcePattern = /\.(tsx?|jsx?)$/.test(file);
+      const isIgnored = shouldIgnorePath(file, projectRoot, ignorePatterns);
+      // Skip files inside idiomaDir (those are generated, not user source)
+      const absIdiomaDir = join(projectRoot, idiomaDir);
+      const isInsideIdiomaDir = file.startsWith(absIdiomaDir);
       const isSourceFile =
-        /\.(tsx?|jsx?)$/.test(file) &&
-        !shouldIgnorePath(file, projectRoot, ignorePatterns);
+        matchesSourcePattern && !isIgnored && !isInsideIdiomaDir;
 
       if (isSourceFile && debouncedExtractor) {
         debouncedExtractor.add(file);
