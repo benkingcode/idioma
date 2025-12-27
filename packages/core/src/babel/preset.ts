@@ -25,8 +25,7 @@ interface PresetResult {
 /**
  * Babel preset for Idioma i18n.
  *
- * Automatically configures the Idioma Babel plugin with appropriate
- * mode based on NODE_ENV.
+ * Configures the Idioma Babel plugin with inlined or suspense mode.
  *
  * @example
  * // babel.config.js
@@ -48,8 +47,8 @@ export default function idiomaBabelPreset(
   _api?: unknown,
   options: IdiomaBabelPresetOptions = {},
 ): PresetResult {
-  const mode =
-    process.env.NODE_ENV === 'production' ? 'production' : 'development';
+  // Determine mode: 'suspense' for lazy loading, 'inlined' for baked-in translations
+  const mode = options.useSuspense ? 'suspense' : 'inlined';
 
   // Use @idioma/core/babel which resolves to the plugin
   const pluginPath = '@idioma/core/babel';

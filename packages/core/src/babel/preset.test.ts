@@ -1,14 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import idiomaBabelPreset from './preset';
 
 describe('idiomaBabelPreset', () => {
-  const originalEnv = process.env.NODE_ENV;
-
-  beforeEach(() => {
-    // Reset NODE_ENV for each test
-    process.env.NODE_ENV = originalEnv;
-  });
-
   it('exports a function', () => {
     expect(typeof idiomaBabelPreset).toBe('function');
   });
@@ -29,31 +22,25 @@ describe('idiomaBabelPreset', () => {
     expect(pluginPath).toBe('@idioma/core/babel');
   });
 
-  it('sets mode to development when NODE_ENV is development', () => {
-    process.env.NODE_ENV = 'development';
-
+  it('defaults to inlined mode', () => {
     const result = idiomaBabelPreset();
 
     const [, options] = result.plugins[0];
-    expect(options.mode).toBe('development');
+    expect(options.mode).toBe('inlined');
   });
 
-  it('sets mode to production when NODE_ENV is production', () => {
-    process.env.NODE_ENV = 'production';
-
-    const result = idiomaBabelPreset();
+  it('sets mode to suspense when useSuspense is true', () => {
+    const result = idiomaBabelPreset(undefined, { useSuspense: true });
 
     const [, options] = result.plugins[0];
-    expect(options.mode).toBe('production');
+    expect(options.mode).toBe('suspense');
   });
 
-  it('defaults to development mode when NODE_ENV is not set', () => {
-    delete process.env.NODE_ENV;
-
-    const result = idiomaBabelPreset();
+  it('sets mode to inlined when useSuspense is false', () => {
+    const result = idiomaBabelPreset(undefined, { useSuspense: false });
 
     const [, options] = result.plugins[0];
-    expect(options.mode).toBe('development');
+    expect(options.mode).toBe('inlined');
   });
 
   it('passes through custom options', () => {
@@ -64,7 +51,7 @@ describe('idiomaBabelPreset', () => {
     });
 
     const [, options] = result.plugins[0];
-    expect(options.useSuspense).toBe(true);
+    expect(options.mode).toBe('suspense');
     expect(options.locales).toEqual(['en', 'es']);
     expect(options.outputDir).toBe('./src/i18n');
   });

@@ -58,17 +58,19 @@ function parseExpressionToAst(expr: string): t.Expression {
 }
 
 export interface IdiomaPluginOptions {
-  /** Plugin mode: 'development' or 'production' */
-  mode?: 'development' | 'production';
-  /** Pre-compiled translations object (for production, inlined mode) */
+  /**
+   * Plugin mode:
+   * - 'inlined': Bakes all translations into the bundle (default)
+   * - 'suspense': Uses dynamic imports for lazy loading (React 19+)
+   */
+  mode?: 'inlined' | 'suspense';
+  /** Pre-compiled translations object (for inlined mode) */
   translations?: Record<
     string,
     Record<string, string | ((args: Record<string, unknown>) => string)>
   >;
-  /** Callback for extracted messages (for extraction phase) */
+  /** Callback for extracted messages (runs during transformation) */
   onExtract?: (message: ExtractedMessage) => void;
-  /** Enable Suspense mode with dynamic imports */
-  useSuspense?: boolean;
   /** All supported locales (required for suspense mode) */
   locales?: string[];
   /** Output directory path for import paths (required for suspense mode) */
@@ -94,17 +96,15 @@ interface PluginState {
 /**
  * Idioma Babel plugin for transforming Trans components and useT hooks.
  *
- * In development mode:
- * - Leaves code unchanged
- * - Optionally extracts messages via onExtract callback
- *
- * In production mode (inlined):
+ * In inlined mode (default):
  * - Transforms <Trans>...</Trans> to <__Trans __t={...} __a={...} __c={...} />
- * - Inlines pre-compiled translations
+ * - Inlines pre-compiled translations into the bundle
  *
- * In production mode (suspense):
+ * In suspense mode:
  * - Transforms <Trans>...</Trans> to <__TransSuspense __key={...} __chunk={...} __load={...} />
- * - Injects dynamic import loaders
+ * - Injects dynamic import loaders for lazy loading
+ *
+ * Extraction (via onExtract callback) runs in both modes.
  */
 export default function idiomaPlugin(): PluginObj<PluginState> {
   return {
@@ -131,7 +131,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           const { opts, idiomaUsed, chunkId } = state;
 
           // Handle Suspense mode - inject chunk loaders
-          if (opts.mode === 'production' && opts.useSuspense && idiomaUsed) {
+          if (opts.mode === 'suspense' && idiomaUsed) {
             const { locales, outputDir, projectRoot } = opts;
             if (!locales || !outputDir || !projectRoot) {
               return;
@@ -199,8 +199,8 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
             path.unshiftContainer('body', [importDecl, chunkDecl, loadDecl]);
           }
 
-          // Handle non-Suspense production mode - inject __Trans import
-          if (opts.mode === 'production' && !opts.useSuspense && idiomaUsed) {
+          // Handle inlined mode - inject __Trans import
+          if (opts.mode !== 'suspense' && idiomaUsed) {
             const transImport = t.importDeclaration(
               [
                 t.importSpecifier(
@@ -318,8 +318,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         const bindingType = translatableBindings.get(calleeName);
 
         // Handle useT() calls in suspense mode
-        // Unlike Trans, useT transforms in BOTH dev and prod for consistent Suspense behavior
-        if (bindingType === 'useT' && opts.useSuspense) {
+        if (bindingType === 'useT' && opts.mode === 'suspense') {
           // Mark that idioma is used (triggers chunk/loader injection)
           state.idiomaUsed = true;
 
@@ -386,12 +385,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           });
         }
 
-        // In development mode, don't transform
-        if (opts.mode !== 'production') {
-          return;
-        }
-
-        // Production mode: inline translations
+        // Inline translations
         const translations = opts.translations || {};
         const localeMessages = translations[key];
 
@@ -440,7 +434,6 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       JSXElement(path: NodePath<t.JSXElement>, state) {
         const { opts, filename, translatableBindings, resolvedIdiomaDir } =
           state;
-        const mode = opts.mode || 'development';
 
         // Skip if idiomaDir not configured
         if (!resolvedIdiomaDir) {
@@ -480,14 +473,8 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           opts.onExtract(extracted);
         }
 
-        // In development mode, leave the code unchanged
-        if (mode === 'development') {
-          return;
-        }
-
-        // Production mode: transform the component
+        // Skip transformation if no message extracted (key-only Trans or empty)
         if (!extracted) {
-          // Key-only Trans or empty - skip transformation
           return;
         }
 
@@ -495,7 +482,8 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         state.idiomaUsed = true;
         state.idiomaKeys.add(extracted.key);
 
-        if (opts.useSuspense) {
+        // Transform based on mode
+        if (opts.mode === 'suspense') {
           transformTransSuspense(path, extracted);
         } else {
           transformTransComponent(path, extracted, opts.translations || {});

@@ -174,11 +174,13 @@ Source Code → Babel Plugin → PO Files → Compiler → JavaScript → Runtim
 
 ### Babel Plugin Transformations
 
-The Babel plugin (`packages/core/src/babel/plugin.ts`) has two main modes:
+The Babel plugin (`packages/core/src/babel/plugin.ts`) has two modes:
 
-> **Important**: The bundler plugins (Vite, Next.js, Metro) always use `mode: 'production'`, even during `pnpm dev`. The mode name refers to _how_ the plugin operates, not which environment you're in.
+```typescript
+mode?: 'inlined' | 'suspense'; // default: 'inlined'
+```
 
-#### Inlined Mode (`mode: 'production'`) — Used by all bundlers
+#### Inlined Mode (`mode: 'inlined'`) — Default
 
 Transforms components to internal versions with pre-compiled translations baked in:
 
@@ -204,7 +206,7 @@ t('Hello {name}', { name: 'Ben' });
 t('Hello {name}', { key123: { en: '...', es: '...' } }, { name: 'Ben' });
 ```
 
-#### Suspense Mode (`mode: 'production-suspense'`) — Optional for lazy loading
+#### Suspense Mode (`mode: 'suspense'`) — For lazy loading (React 19+)
 
 Uses dynamic imports with React 19's `use()` hook for lazy loading:
 
@@ -222,16 +224,6 @@ const __$idiomaLoad = {
 // becomes:
 <__TransSuspense __key="abc123" __chunk={__$idiomaChunk} __load={__$idiomaLoad} />
 ```
-
-#### Extract-Only Mode (`mode: 'development'`) — Rarely used
-
-This mode extracts messages but performs no transformation. It's the default if no mode is specified, but bundler plugins always override it. Useful for:
-
-- Tests that need extraction without transformation
-- Custom build pipelines
-- Debugging extraction behavior
-
-In this mode, `Trans` renders children directly and `useT` falls back to source text (no translations available).
 
 #### Prop Meanings (for transformed code)
 
@@ -519,8 +511,8 @@ Batch translates messages with system prompt that ensures:
 babelConfig.plugins.push([
   '@idioma/core/babel',
   {
-    mode: 'production',
-    translations: loadedTranslations,
+    mode: useSuspense ? 'suspense' : 'inlined',
+    translations: loadedTranslations, // only for inlined mode
     idiomaDir: '/abs/path/to/idioma',
   },
 ]);

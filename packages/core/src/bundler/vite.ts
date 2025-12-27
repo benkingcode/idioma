@@ -210,22 +210,20 @@ export default function idiomaVitePlugin(
     // Inject Babel plugin for all builds (dev and production)
     api: {
       reactBabel(babelConfig: { plugins: unknown[] }) {
-        // Always use production mode to enable Trans transformations
-        // (this is needed for locale switching to work in dev)
         const pluginOptions: Record<string, unknown> = {
-          mode: 'production',
+          // Use 'suspense' for lazy loading, 'inlined' for baked-in translations
+          mode: useSuspense ? 'suspense' : 'inlined',
           // Pass idiomaDir for robust config-based import detection
           idiomaDir: join(projectRoot, idiomaDir),
         };
 
-        // Pass loaded translations for inlining (non-suspense mode)
+        // Pass loaded translations for inlining (inlined mode only)
         if (!useSuspense && loadedTranslations) {
           pluginOptions.translations = loadedTranslations;
         }
 
         // Add suspense-specific options
         if (useSuspense) {
-          pluginOptions.useSuspense = true;
           pluginOptions.locales = locales;
           pluginOptions.outputDir = outputDir;
           pluginOptions.projectRoot = projectRoot;

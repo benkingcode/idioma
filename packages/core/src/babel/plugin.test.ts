@@ -28,7 +28,7 @@ describe('Idioma Babel Plugin', () => {
         const x = <Trans>Hello world</Trans>
       `;
 
-      const result = transform(code, { mode: 'development' });
+      const result = transform(code, { mode: 'inlined' });
 
       // After Babel, JSX becomes React.createElement
       // In dev mode, Trans should remain as Trans (not __Trans)
@@ -43,7 +43,7 @@ describe('Idioma Babel Plugin', () => {
         const t = useT()
       `;
 
-      const result = transform(code, { mode: 'development' });
+      const result = transform(code, { mode: 'inlined' });
 
       expect(result).toContain('useT()');
       expect(result).not.toContain('__useT');
@@ -59,7 +59,7 @@ describe('Idioma Babel Plugin', () => {
         `;
 
         const result = transform(code, {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir: TEST_IDIOMA_DIR,
           translations: {},
         });
@@ -78,7 +78,7 @@ describe('Idioma Babel Plugin', () => {
         `;
 
         const result = transform(code, {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir: TEST_IDIOMA_DIR,
           translations: {},
         });
@@ -95,9 +95,8 @@ describe('Idioma Babel Plugin', () => {
         `;
 
         const result = transform(code, {
-          mode: 'production',
+          mode: 'suspense',
           idiomaDir: TEST_IDIOMA_DIR,
-          useSuspense: true,
           locales: ['en', 'es'],
           outputDir: './idioma',
           projectRoot: '/project',
@@ -115,7 +114,7 @@ describe('Idioma Babel Plugin', () => {
         `;
 
         const result = transform(code, {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir: TEST_IDIOMA_DIR,
           translations: {},
         });
@@ -133,7 +132,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '00000000': {
@@ -155,7 +154,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {},
       });
@@ -171,7 +170,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {},
       });
@@ -187,7 +186,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           greeting: {
@@ -209,7 +208,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {},
       });
@@ -225,7 +224,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '00000000': {
@@ -239,27 +238,13 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('import { __Trans } from "@idioma/react"');
     });
 
-    it('does not inject __Trans import in development mode', () => {
-      const code = `
-        import { Trans } from './idioma'
-        const x = <Trans>Hello world</Trans>
-      `;
-
-      const result = transform(code, {
-        mode: 'development',
-        idiomaDir: TEST_IDIOMA_DIR,
-      });
-
-      expect(result).not.toContain('import { __Trans }');
-    });
-
     it('does not inject __Trans import when no Trans is used', () => {
       const code = `
         const x = <div>Hello</div>
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         translations: {},
       });
 
@@ -277,7 +262,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -300,7 +285,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -311,9 +296,8 @@ describe('Idioma Babel Plugin', () => {
 
   describe('suspense mode', () => {
     const suspenseOptions = {
-      mode: 'production' as const,
+      mode: 'suspense' as const,
       idiomaDir: TEST_IDIOMA_DIR,
-      useSuspense: true,
       locales: ['en', 'es'],
       outputDir: './idioma',
       projectRoot: '/project',
@@ -425,7 +409,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
       });
 
@@ -442,7 +426,7 @@ describe('Idioma Babel Plugin', () => {
 
       // Key for 'Hello world' is '003B4Ntk'
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '003B4Ntk': {
@@ -464,7 +448,7 @@ describe('Idioma Babel Plugin', () => {
 
       // Key for 'Hello {name}' is '000VsT4w'
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '000VsT4w': {
@@ -489,7 +473,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '00000000': {
@@ -513,7 +497,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -531,7 +515,7 @@ describe('Idioma Babel Plugin', () => {
       // Key for 'Submit' (without context in transformation - context is in 3rd arg)
       // For now, context support in t() is limited - the call still uses the plain key
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '000os6FO': {
@@ -553,7 +537,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         outputDir: './idioma',
       });
@@ -571,7 +555,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         outputDir: './idioma',
         translations: {
@@ -593,7 +577,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         outputDir: './idioma',
         translations: {
@@ -621,7 +605,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -642,7 +626,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -667,7 +651,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -689,7 +673,7 @@ describe('Idioma Babel Plugin', () => {
         const x = <Trans>You have {plural(count, { one: "# item", other: "# items" })} in cart</Trans>
       `;
       transform(transCode, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => transExtracted.push(msg),
       });
@@ -701,7 +685,7 @@ describe('Idioma Babel Plugin', () => {
         const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
       `;
       transform(tCode, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => tExtracted.push(msg),
       });
@@ -723,7 +707,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -749,7 +733,7 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(
         code,
         {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir,
           translations: {},
         },
@@ -768,7 +752,7 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(
         code,
         {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir,
           translations: {},
         },
@@ -788,7 +772,7 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(
         code,
         {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir,
           translations: {},
         },
@@ -808,7 +792,7 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(
         code,
         {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir,
           translations: {},
         },
@@ -827,7 +811,7 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(
         code,
         {
-          mode: 'production',
+          mode: 'inlined',
           idiomaDir,
           translations: {},
         },
@@ -847,9 +831,8 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(
         code,
         {
-          mode: 'production',
+          mode: 'suspense',
           idiomaDir,
-          useSuspense: true,
           locales: ['en', 'es'],
           outputDir: './idioma',
           projectRoot: '/project',
@@ -871,7 +854,7 @@ describe('Idioma Babel Plugin', () => {
       transform(
         code,
         {
-          mode: 'development',
+          mode: 'inlined',
           idiomaDir,
           onExtract: (msg) => extracted.push(msg),
         },
@@ -893,7 +876,7 @@ describe('Idioma Babel Plugin', () => {
       transform(
         code,
         {
-          mode: 'development',
+          mode: 'inlined',
           idiomaDir,
           onExtract: (msg) => extracted.push(msg),
         },
@@ -907,8 +890,8 @@ describe('Idioma Babel Plugin', () => {
 
   describe('useT suspense mode', () => {
     const suspenseOptions = {
+      mode: 'suspense' as const,
       idiomaDir: TEST_IDIOMA_DIR,
-      useSuspense: true,
       locales: ['en', 'es'],
       outputDir: './idioma',
       projectRoot: '/project',
@@ -924,7 +907,6 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
         ...suspenseOptions,
       });
 
@@ -942,12 +924,9 @@ describe('Idioma Babel Plugin', () => {
         }
       `;
 
-      const result = transform(code, {
-        mode: 'development',
-        ...suspenseOptions,
-      });
+      const result = transform(code, suspenseOptions);
 
-      // Unlike Trans, useT should transform in dev mode too for suspense
+      // useT transforms in suspense mode
       expect(result).toContain('__useTSuspense');
       expect(result).toContain('__$idiomaChunk');
       expect(result).toContain('__$idiomaLoad');
@@ -960,7 +939,6 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
         ...suspenseOptions,
       });
 
@@ -979,7 +957,6 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
         ...suspenseOptions,
       });
 
@@ -999,7 +976,6 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
         ...suspenseOptions,
       });
 
@@ -1022,7 +998,6 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
         ...suspenseOptions,
       });
 
@@ -1043,37 +1018,20 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
         ...suspenseOptions,
       });
 
       expect(result).toContain('__useTSuspense');
     });
 
-    it('does not transform useT in non-suspense mode', () => {
+    it('does not transform useT in inlined mode', () => {
       const code = `
         import { useT } from './idioma'
         const t = useT()
       `;
 
       const result = transform(code, {
-        mode: 'production',
-        idiomaDir: TEST_IDIOMA_DIR,
-        useSuspense: false,
-      });
-
-      expect(result).toContain('useT()');
-      expect(result).not.toContain('__useTSuspense');
-    });
-
-    it('does not transform useT when useSuspense is not set', () => {
-      const code = `
-        import { useT } from './idioma'
-        const t = useT()
-      `;
-
-      const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
       });
 
@@ -1093,7 +1051,6 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
         ...suspenseOptions,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -1114,7 +1071,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -1132,7 +1089,7 @@ describe('Idioma Babel Plugin', () => {
 
       // Key for 'Hello world' is '003B4Ntk'
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         translations: {
           '003B4Ntk': {
@@ -1156,7 +1113,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -1177,7 +1134,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
@@ -1196,7 +1153,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       const result = transform(code, {
-        mode: 'production',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
       });
 
@@ -1214,7 +1171,7 @@ describe('Idioma Babel Plugin', () => {
       `;
 
       transform(code, {
-        mode: 'development',
+        mode: 'inlined',
         idiomaDir: TEST_IDIOMA_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
