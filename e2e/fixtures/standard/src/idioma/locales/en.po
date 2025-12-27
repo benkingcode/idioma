@@ -3,122 +3,118 @@ msgstr ""
 "Language: en\n"
 "Content-Type: text/plain\n"
 
-#: src/components/BasicTrans.tsx:8
+#: src/components/BasicTrans.tsx
 msgid "000e6cSN"
 msgstr "Hello, World!"
 
-#: src/components/BasicTrans.tsx:13
+#: src/components/BasicTrans.tsx
 msgid "002LT9uM"
 msgstr "Welcome to our application"
 
-#: src/components/BasicTrans.tsx:18
+#: src/components/BasicTrans.tsx
 msgid "greeting.farewell"
 msgstr "Goodbye!"
 
-#: src/components/ComponentTags.tsx:27
+#: src/components/ComponentTags.tsx
 msgid "001K244T"
 msgstr "Click <Link>here</Link> to continue"
 
-#: src/components/ComponentTags.tsx:34
+#: src/components/ComponentTags.tsx
 msgid "002MF83G"
 msgstr "Read the <Link>terms</Link> and <Bold>privacy policy</Bold>"
 
-#: src/components/ComponentTags.tsx:41
+#: src/components/ComponentTags.tsx
 msgid "000OaF1m"
 msgstr "Hello <Bold>{name}</Bold>!"
 
-#: src/components/ComponentTags.tsx:48
+#: src/components/ComponentTags.tsx
 msgid "002eTXHM"
 msgstr "This is <Bold>bold</Bold>, this is <Italic>italic</Italic>, and normal"
 
-#: src/components/ComponentTags.tsx:55
+#: src/components/ComponentTags.tsx
 msgid "0013HsIP"
 msgstr "<Bold> Important: <Italic>read carefully</Italic> </Bold>"
 
-#: src/components/EdgeCases.tsx:15
+#: src/components/EdgeCases.tsx
 msgid "002TXdYD"
 msgstr "Value: [{emptyString}]"
 
-#: src/components/EdgeCases.tsx:20
+#: src/components/EdgeCases.tsx
 msgid "002Baos1"
 msgstr "Count: {zero}"
 
-#: src/components/EdgeCases.tsx:25
+#: src/components/EdgeCases.tsx
 msgid "0043ID7R"
 msgstr "Null: [{nullValue}]"
 
-#: src/components/EdgeCases.tsx:30
+#: src/components/EdgeCases.tsx
 msgid "003jykkI"
 msgstr "This message might not be translated"
 
-#: src/components/EdgeCases.tsx:35
+#: src/components/EdgeCases.tsx
 msgid "0047ZVOp"
 msgstr ""
 "This is a longer piece of text that spans multiple words and tests how the "
 "system handles longer content in translations"
 
-#: src/components/EdgeCases.tsx:43
+#: src/components/EdgeCases.tsx
 msgid "001r7GGR"
 msgstr "Special: & < > \"quotes\""
 
-#: src/components/EdgeCases.tsx:54
+#: src/components/EdgeCases.tsx
 msgid "004JLiGr"
 msgstr "Emoji: 🎉 and symbols: © ® ™"
 
-#: src/components/Interpolation.tsx:12
+#: src/components/Interpolation.tsx
 msgid "0024c34D"
 msgstr "Hello, {name}!"
 
-#: src/components/Interpolation.tsx:17
+#: src/components/Interpolation.tsx
 msgid "003lIRId"
 msgstr "Welcome, {firstName} {lastName}!"
 
-#: src/components/Interpolation.tsx:24
+#: src/components/Interpolation.tsx
 msgid "000iXvMP"
 msgstr "Before {name} after"
 
-#: src/components/Interpolation.tsx:29
+#: src/components/Interpolation.tsx
 msgid "002r0ybS"
 msgstr "You have {0} items"
 
-#: src/components/Plurals.tsx:12
+#: src/components/Plurals.tsx
 msgid "000w9C8y"
 msgstr "You have {count, plural, one {# item} other {# items}}"
 
-#: src/components/Plurals.tsx:19
+#: src/components/Plurals.tsx
 msgid "0048f6Nc"
 msgstr "{count, plural, zero {No messages} one {# message} other {# messages}}"
 
-#: src/components/Plurals.tsx:30
+#: src/components/Plurals.tsx
 msgid "002EaYd6"
 msgstr "There {count, plural, one {is # apple} other {are # apples}} in the basket"
 
-#: src/components/Plurals.tsx:38
+#: src/components/Plurals.tsx
 msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
 
-#: src/components/EdgeCases.tsx:49
-#: src/components/EdgeCases.tsx:49
-#: src/components/EdgeCases.tsx:49
+#: src/components/EdgeCases.tsx
 msgid "004Dt4mI"
 msgstr "Hello {name}!"
 
-#: src/components/UseT.tsx:7
+#: src/components/UseT.tsx
 msgid "002UQheH"
 msgstr "Hello from useT!"
 
-#: src/components/UseT.tsx:10
+#: src/components/UseT.tsx
 msgid "003X3cVZ"
 msgstr "Welcome, {name}!"
 
-#: src/components/UseT.tsx:13
+#: src/components/UseT.tsx
 msgid "001gZ2vk"
 msgstr "{count} items by {author}"
 
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx
 msgid "002RXyTq"
 msgstr "Inline translation"

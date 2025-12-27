@@ -3,143 +3,141 @@ msgstr ""
 "Language: es\n"
 "Content-Type: text/plain\n"
 
-#: src/components/BasicTrans.tsx:8
+#: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "000e6cSN"
 msgstr "¡Hola, Mundo!"
 
-#: src/components/BasicTrans.tsx:13
+#: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "002LT9uM"
 msgstr "Bienvenido a nuestra aplicación"
 
-#: src/components/BasicTrans.tsx:18
+#: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "greeting.farewell"
 msgstr "¡Adiós!"
 
-#: src/components/ComponentTags.tsx:27
+#: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "001K244T"
 msgstr "Haz clic <Link>aquí</Link> para continuar"
 
-#: src/components/ComponentTags.tsx:34
+#: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "002MF83G"
 msgstr "Lee los <Link>términos</Link> y la <Bold>política de privacidad</Bold>"
 
-#: src/components/ComponentTags.tsx:41
+#: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "000OaF1m"
 msgstr "¡Hola <Bold>{name}</Bold>!"
 
-#: src/components/ComponentTags.tsx:48
+#: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "002eTXHM"
 msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal"
 
-#: src/components/ComponentTags.tsx:55
+#: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "0013HsIP"
 msgstr "<Bold> Importante: <Italic>lee con atención</Italic> </Bold>"
 
-#: src/components/EdgeCases.tsx:13
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "002TXdYD"
 msgstr "Valor: [{emptyString}]"
 
-#: src/components/EdgeCases.tsx:18
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "002Baos1"
 msgstr "Contador: {zero}"
 
-#: src/components/EdgeCases.tsx:23
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "0043ID7R"
 msgstr "Nulo: [{nullValue}]"
 
-#: src/components/EdgeCases.tsx:28
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "003jykkI"
 msgstr "Este mensaje podría no estar traducido"
 
-#: src/components/EdgeCases.tsx:33
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "0047ZVOp"
 msgstr ""
 "Este es un texto más largo que abarca varias palabras y prueba cómo el "
 "sistema maneja contenido más extenso en traducciones"
 
-#: src/components/EdgeCases.tsx:41
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "001r7GGR"
 msgstr "Especial: & < > \"comillas\""
 
-#: src/components/EdgeCases.tsx:46
+#: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "004JLiGr"
 msgstr "Emoji: 🎉 y símbolos: © ® ™"
 
-#: src/components/Interpolation.tsx:12
+#: src/components/Interpolation.tsx
 #, ai-translated
 msgid "0024c34D"
 msgstr "¡Hola, {name}!"
 
-#: src/components/Interpolation.tsx:17
+#: src/components/Interpolation.tsx
 #, ai-translated
 msgid "003lIRId"
 msgstr "¡Bienvenido, {firstName} {lastName}!"
 
-#: src/components/Interpolation.tsx:24
+#: src/components/Interpolation.tsx
 #, ai-translated
 msgid "000iXvMP"
 msgstr "Antes {name} después"
 
-#: src/components/Interpolation.tsx:29
+#: src/components/Interpolation.tsx
 #, ai-translated
 msgid "002r0ybS"
 msgstr "Tienes {0} elementos"
 
-#: src/components/Plurals.tsx:12
+#: src/components/Plurals.tsx
 #, ai-translated
 msgid "000w9C8y"
 msgstr "Tienes {count, plural, one {# artículo} other {# artículos}}"
 
-#: src/components/Plurals.tsx:19
+#: src/components/Plurals.tsx
 #, ai-translated
 msgid "0048f6Nc"
 msgstr "{count, plural, zero {Sin mensajes} one {# mensaje} other {# mensajes}}"
 
-#: src/components/Plurals.tsx:30
+#: src/components/Plurals.tsx
 #, ai-translated
 msgid "002EaYd6"
 msgstr "There {count, plural, one {is # apple} other {are # apples}} in the basket"
 
-#: src/components/Plurals.tsx:38
+#: src/components/Plurals.tsx
 #, ai-translated
 msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
 
-#: src/components/UseT.tsx:7
+#: src/components/UseT.tsx
 #, ai-translated
 msgid "002UQheH"
 msgstr "¡Hola desde useT!"
 
-#: src/components/UseT.tsx:10
+#: src/components/UseT.tsx
 #, ai-translated
 msgid "003X3cVZ"
 msgstr "Bienvenido, {name}!"
 
-#: src/components/UseT.tsx:13
+#: src/components/UseT.tsx
 #, ai-translated
 msgid "001gZ2vk"
 msgstr "{count} elementos de {author}"
 
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
-#: src/components/UseT.tsx:30
+#: src/components/UseT.tsx
 #, ai-translated
 msgid "002RXyTq"
 msgstr "Traducción en línea"
