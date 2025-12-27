@@ -354,15 +354,37 @@ export function createAnthropicContextProvider(
   };
 }
 
+export interface DryRunContextProviderOptions {
+  /** Project-specific guidelines for AI context generation */
+  guidelines?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
+}
+
 /**
  * Create a dry run context provider that returns "Dry run" for all messages
- * without making any AI API calls.
+ * without making any AI API calls. Still logs prompts in verbose mode.
  */
-export function createDryRunContextProvider(): ContextProvider {
+export function createDryRunContextProvider(
+  options: DryRunContextProviderOptions = {},
+): ContextProvider {
+  const { guidelines, onVerbose } = options;
+  const systemPrompt = buildContextSystemPrompt(guidelines);
+
   return {
     async generateContext(
       request: FileContextRequest,
     ): Promise<GeneratedContext[]> {
+      if (onVerbose) {
+        const userContent = formatContextRequest(request);
+
+        onVerbose(
+          `\n${formatHeader(`Context Generation: ${request.filePath} (${request.messages.length} messages)`)}`,
+        );
+        onVerbose(formatBox('System Prompt', systemPrompt));
+        onVerbose(formatBox('User Content', userContent));
+      }
+
       return request.messages.map((m) => ({
         key: m.key,
         context: 'Dry run',

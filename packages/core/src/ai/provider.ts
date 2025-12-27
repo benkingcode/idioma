@@ -174,15 +174,49 @@ export function createAnthropicProvider(
   };
 }
 
+export interface DryRunProviderOptions {
+  /** Project-specific guidelines for AI translation */
+  guidelines?: string;
+  /** Callback for verbose logging */
+  onVerbose?: (message: string) => void;
+}
+
 /**
  * Create a dry run translation provider that returns "Dry run" for all messages
- * without making any AI API calls.
+ * without making any AI API calls. Still logs prompts in verbose mode.
  */
-export function createDryRunProvider(): TranslationProvider {
+export function createDryRunProvider(
+  options: DryRunProviderOptions = {},
+): TranslationProvider {
+  const { guidelines, onVerbose } = options;
+
   return {
     name: 'dry-run',
     async translate(request: TranslationRequest): Promise<TranslatedMessage[]> {
-      return request.messages.map((m) => ({
+      const { messages, sourceLocale, targetLocale } = request;
+
+      if (onVerbose) {
+        const systemPrompt = buildTranslationSystemPrompt(
+          sourceLocale,
+          targetLocale,
+          guidelines,
+        );
+
+        const userContent = messages
+          .map((m, i) => {
+            let text = `[${i + 1}] Key: ${m.key}\nSource: ${m.source}`;
+            if (m.context) {
+              text += `\nContext: ${m.context}`;
+            }
+            return text;
+          })
+          .join('\n\n');
+
+        onVerbose(formatBox('System Prompt', systemPrompt));
+        onVerbose(formatBox('User Content', userContent));
+      }
+
+      return messages.map((m) => ({
         key: m.key,
         translation: 'Dry run',
       }));

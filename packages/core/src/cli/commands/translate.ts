@@ -418,7 +418,10 @@ export const translateCommand = defineCommand({
 
     // In dry run mode, use a provider that skips AI calls
     if (args['dry-run']) {
-      provider = createDryRunProvider();
+      provider = createDryRunProvider({
+        guidelines: config.ai?.guidelines,
+        onVerbose,
+      });
     } else if (providerName === 'anthropic') {
       const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
       if (!apiKey) {
@@ -458,7 +461,10 @@ export const translateCommand = defineCommand({
     if (autoContext) {
       // In dry run mode, use a provider that skips AI calls
       if (args['dry-run']) {
-        contextProvider = createDryRunContextProvider();
+        contextProvider = createDryRunContextProvider({
+          guidelines: config.ai?.guidelines,
+          onVerbose,
+        });
       } else if (providerName === 'anthropic') {
         const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
         if (apiKey) {
