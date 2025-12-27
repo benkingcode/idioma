@@ -37,10 +37,14 @@ describe('Context Generation Utilities', () => {
       expect(result).toEqual({ filePath: 'C:/Users/dev/App.tsx', line: 10 });
     });
 
+    it('handles references without line numbers', () => {
+      const result = parseReference('src/App.tsx');
+      expect(result).toEqual({ filePath: 'src/App.tsx', line: 0 });
+    });
+
     it('returns null for invalid format', () => {
       expect(parseReference('invalid')).toBeNull();
       expect(parseReference('')).toBeNull();
-      expect(parseReference('file.tsx')).toBeNull();
     });
 
     it('returns null for non-numeric line', () => {
@@ -328,6 +332,30 @@ describe('Context Generation Utilities', () => {
         key: 'key1',
         source: 'Hello',
         line: 42,
+      } satisfies MessageForContext);
+    });
+
+    it('handles references without line numbers', () => {
+      const messages = new Map<string, Message>([
+        [
+          'key1',
+          {
+            key: 'key1',
+            source: 'Hello',
+            translation: '',
+            references: ['src/App.tsx'],
+          },
+        ],
+      ]);
+
+      const grouped = groupMessagesByFile(messages);
+      const appMessages = grouped.get('src/App.tsx');
+
+      expect(appMessages).toBeDefined();
+      expect(appMessages![0]).toEqual({
+        key: 'key1',
+        source: 'Hello',
+        line: 0,
       } satisfies MessageForContext);
     });
   });

@@ -53,15 +53,22 @@ export interface ParsedReference {
 }
 
 /**
- * Parse a reference string (e.g., "src/App.tsx:42") into file path and line number.
+ * Parse a reference string (e.g., "src/App.tsx:42" or "src/App.tsx") into file path and line number.
  * Handles paths with colons (like Windows paths) by taking the last colon as the separator.
+ * Returns line 0 for references without line numbers.
  */
 export function parseReference(reference: string): ParsedReference | null {
   if (!reference) return null;
 
   // Find the last colon - that's the separator between path and line
   const lastColonIndex = reference.lastIndexOf(':');
-  if (lastColonIndex === -1) return null;
+
+  // No colon - treat entire string as file path with line 0
+  if (lastColonIndex === -1) {
+    // Must look like a file path (has extension)
+    if (!reference.includes('.')) return null;
+    return { filePath: reference, line: 0 };
+  }
 
   const filePath = reference.slice(0, lastColonIndex);
   const lineStr = reference.slice(lastColonIndex + 1);
@@ -69,6 +76,10 @@ export function parseReference(reference: string): ParsedReference | null {
   if (!filePath) return null;
 
   const line = parseInt(lineStr, 10);
+
+  // If the part after colon is not a number, it might be a file path without line number
+  // e.g., "src/App.tsx" where there's no colon at all was handled above
+  // This handles edge cases like malformed references
   if (isNaN(line)) return null;
 
   return { filePath, line };
