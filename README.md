@@ -16,7 +16,7 @@
 - **Vite plugin** — HMR for translations, zero config
 - **Next.js plugin** — Works with App Router and Pages Router
 - **React Native / Metro** — First-class React Native support with Metro bundler
-- **React Server Components** — Native RSC support with async translations
+- **React Server Components** — Native RSC support with synchronous `createT`
 - **Plain JS support** — `createT` for Zod schemas, error handling, and non-React code
 
 ## Quick Start
