@@ -1,4 +1,10 @@
-import type { Catalog, MergeOptions, MergeResult } from './types.js';
+import type {
+  Catalog,
+  IncrementalMergeOptions,
+  IncrementalMergeResult,
+  MergeOptions,
+  MergeResult,
+} from './types.js';
 
 /**
  * Merge extracted messages into an existing catalog.
@@ -73,6 +79,106 @@ export function mergeCatalogs(
       existing.messages.delete(key);
       result.removed.push(key);
     }
+  }
+
+  return result;
+}
+
+/**
+ * Merge messages from a single file into existing catalog.
+ *
+ * Unlike mergeCatalogs(), this function:
+ * 1. First removes filePath from references of all existing messages
+ * 2. Then adds filePath to references of extracted messages (appending, not replacing)
+ * 3. Removes orphaned messages (no references) only if they have no translations in other locales
+ *
+ * This enables incremental extraction where only one file is processed at a time.
+ *
+ * @param existing - The existing catalog with translations (modified in-place)
+ * @param extracted - The newly extracted messages from a single file
+ * @param options - Incremental merge options including filePath and other locale catalogs
+ * @returns Result containing what was added, updated, removed
+ */
+export function mergeFileIntoCatalog(
+  existing: Catalog,
+  extracted: Catalog,
+  options: IncrementalMergeOptions,
+): IncrementalMergeResult {
+  const { filePath, defaultLocale, otherLocaleCatalogs = [] } = options;
+
+  const result: IncrementalMergeResult = {
+    added: [],
+    updated: [],
+    removed: [],
+  };
+
+  // Step 1: Remove filePath from references of all existing messages
+  for (const [key, msg] of existing.messages) {
+    if (msg.references) {
+      msg.references = msg.references.filter((ref) => ref !== filePath);
+    }
+  }
+
+  // Step 2: Process extracted messages - add or update
+  const extractedKeys = new Set<string>();
+  for (const [key, extractedMsg] of extracted.messages) {
+    extractedKeys.add(key);
+
+    const existingMsg = existing.messages.get(key);
+
+    if (!existingMsg) {
+      // New message - add it
+      existing.messages.set(key, {
+        ...extractedMsg,
+        references: [filePath],
+      });
+      result.added.push(key);
+    } else {
+      // Existing message - add filePath to references if not already present
+      if (!existingMsg.references) {
+        existingMsg.references = [];
+      }
+      if (!existingMsg.references.includes(filePath)) {
+        existingMsg.references.push(filePath);
+      }
+      // Update comments if extracted has them
+      if (extractedMsg.comments && extractedMsg.comments.length > 0) {
+        existingMsg.comments = extractedMsg.comments;
+      }
+      result.updated.push(key);
+    }
+  }
+
+  // Step 3: Find and remove orphaned messages (no references, no translations)
+  const keysToRemove: string[] = [];
+
+  for (const [key, msg] of existing.messages) {
+    // Skip if message still has references
+    if (msg.references && msg.references.length > 0) {
+      continue;
+    }
+
+    // Check if any non-default locale has a translation for this message
+    const hasTranslation = otherLocaleCatalogs.some((catalog) => {
+      // Skip if this is the default locale catalog
+      if (catalog.locale === defaultLocale) {
+        return false;
+      }
+      const otherMsg = catalog.messages.get(key);
+      return (
+        otherMsg && otherMsg.translation && otherMsg.translation.length > 0
+      );
+    });
+
+    if (!hasTranslation) {
+      keysToRemove.push(key);
+    }
+  }
+
+  // Remove orphaned messages
+  for (const key of keysToRemove) {
+    existing.messages.delete(key);
+    result.removed.push(key);
   }
 
   return result;

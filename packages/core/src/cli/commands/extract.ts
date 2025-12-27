@@ -156,7 +156,7 @@ export async function extractMessages(
  * @param displayPath - Path to display in locations (relative)
  * @param idiomaDir - Optional absolute path to idioma folder for robust import detection
  */
-async function extractFromFile(
+export async function extractFromFile(
   code: string,
   absolutePath: string,
   displayPath: string,
@@ -273,12 +273,11 @@ async function extractFromFile(
 
                 // Use explicit id or generate hash key from source
                 const key = id || generateKey(source, context, namespace);
-                const line = path.node.loc?.start.line ?? 1;
 
                 messages.push({
                   key,
                   source,
-                  location: `${displayPath}:${line}`,
+                  location: displayPath,
                   context,
                   comment,
                   namespace,
@@ -303,12 +302,11 @@ async function extractFromFile(
 
                 const source = sourceArg.value;
                 const key = generateKey(source);
-                const line = path.node.loc?.start.line ?? 1;
 
                 messages.push({
                   key,
                   source,
-                  location: `${displayPath}:${line}`,
+                  location: displayPath,
                 });
               },
             },
@@ -367,7 +365,7 @@ function parseTransElement(element: t.JSXElement): {
   return { id, context, comment, namespace, source };
 }
 
-function messagesToCatalog(
+export function messagesToCatalog(
   messages: ExtractedMessage[],
   locale: string,
   namespace: string | undefined,
@@ -395,10 +393,13 @@ function messagesToCatalog(
       comments: msg.comment ? [msg.comment] : undefined,
     };
 
-    // If message with same key exists, merge references
+    // If message with same key exists, merge references (deduplicated)
     const existing = catalog.messages.get(msg.key);
     if (existing) {
-      existing.references = [...(existing.references ?? []), msg.location];
+      // Only add if not already present (same file)
+      if (!existing.references?.includes(msg.location)) {
+        existing.references = [...(existing.references ?? []), msg.location];
+      }
     } else {
       catalog.messages.set(msg.key, message);
     }

@@ -308,6 +308,9 @@ importers:
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
+      ignore:
+        specifier: ^7.0.5
+        version: 7.0.5
       next:
         specifier: ^16.1.1
         version: 16.1.1(@babel/core@7.28.5)(@playwright/test@1.57.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2462,6 +2465,10 @@ packages:
 
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
+
+  ignore@7.0.5:
+    resolution: {integrity: sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==}
+    engines: {node: '>= 4'}
 
   image-size@1.2.1:
     resolution: {integrity: sha512-rH+46sQJ2dlwfjfhCyNx5thzrv+dtmBIhPHk0zgRUukHzZ/kRueTJXoYYsclBaKcSMBWuGbOFXtioLpzTb5euw==}
@@ -5451,6 +5458,8 @@ snapshots:
       safer-buffer: 2.1.2
 
   ieee754@1.2.1: {}
+
+  ignore@7.0.5: {}
 
   image-size@1.2.1:
     dependencies:

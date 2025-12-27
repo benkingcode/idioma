@@ -57,3 +57,27 @@ export interface MergeResult {
   /** Messages that were marked fuzzy */
   markedFuzzy: string[];
 }
+
+/**
+ * Options for incremental single-file merge
+ */
+export interface IncrementalMergeOptions {
+  /** The file path being extracted (e.g., "src/App.tsx") - file only, no line numbers */
+  filePath: string;
+  /** The default locale (used to determine if translations exist) */
+  defaultLocale: string;
+  /** Other locale catalogs to check for translations before removing orphans */
+  otherLocaleCatalogs?: Catalog[];
+}
+
+/**
+ * Result of incremental merge operation
+ */
+export interface IncrementalMergeResult {
+  /** Messages that were added */
+  added: string[];
+  /** Messages that were updated (references changed) */
+  updated: string[];
+  /** Messages that were removed (orphaned with no translations) */
+  removed: string[];
+}

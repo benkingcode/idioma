@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { mergeCatalogs } from './merge';
+import { mergeCatalogs, mergeFileIntoCatalog } from './merge';
 import { parsePoString } from './parser';
-import type { Message } from './types';
+import type { Catalog, Message } from './types';
 
 function createMessage(
   source: string,
@@ -427,5 +427,229 @@ msgstr ""
     const updatedMsg = existing.messages.get('button\u0004Submit');
     expect(updatedMsg?.context).toBe('button');
     expect(updatedMsg?.translation).toBe('Enviar'); // Translation preserved
+  });
+});
+
+describe('mergeFileIntoCatalog', () => {
+  function createCatalog(
+    locale: string,
+    messages: Array<{
+      key: string;
+      translation: string;
+      references?: string[];
+    }>,
+  ): Catalog {
+    const catalog: Catalog = {
+      locale,
+      headers: { Language: locale },
+      messages: new Map(),
+    };
+    for (const msg of messages) {
+      catalog.messages.set(msg.key, {
+        key: msg.key,
+        source: msg.key,
+        translation: msg.translation,
+        references: msg.references ?? [],
+      });
+    }
+    return catalog;
+  }
+
+  it('adds new messages with file reference', () => {
+    const existing = createCatalog('es', []);
+    const extracted = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+    ]);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    expect(result.added).toContain('hello');
+    expect(existing.messages.get('hello')?.references).toEqual(['src/App.tsx']);
+  });
+
+  it('removes file reference from existing messages when not in extracted', () => {
+    const existing = createCatalog('es', [
+      {
+        key: 'hello',
+        translation: '',
+        references: ['src/App.tsx', 'src/Other.tsx'],
+      },
+    ]);
+    const extracted = createCatalog('es', []);
+
+    mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    // Should remove src/App.tsx but keep src/Other.tsx
+    expect(existing.messages.get('hello')?.references).toEqual([
+      'src/Other.tsx',
+    ]);
+  });
+
+  it('removes orphaned untranslated messages when no references remain', () => {
+    const existing = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+    ]);
+    const extracted = createCatalog('es', []);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    expect(result.removed).toContain('hello');
+    expect(existing.messages.has('hello')).toBe(false);
+  });
+
+  it('keeps orphaned messages if they have translations in other locales', () => {
+    const existing = createCatalog('en', [
+      { key: 'hello', translation: 'Hello', references: ['src/App.tsx'] },
+    ]);
+    const extracted = createCatalog('en', []);
+
+    // Spanish catalog has a translation for this message
+    const spanishCatalog = createCatalog('es', [
+      { key: 'hello', translation: 'Hola', references: ['src/App.tsx'] },
+    ]);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+      otherLocaleCatalogs: [spanishCatalog],
+    });
+
+    // Should NOT remove because Spanish has a translation
+    expect(result.removed).not.toContain('hello');
+    expect(existing.messages.has('hello')).toBe(true);
+    // References should be empty but message is preserved
+    expect(existing.messages.get('hello')?.references).toEqual([]);
+  });
+
+  it('removes orphaned messages if no other locale has translations', () => {
+    const existing = createCatalog('en', [
+      { key: 'hello', translation: 'Hello', references: ['src/App.tsx'] },
+    ]);
+    const extracted = createCatalog('en', []);
+
+    // Spanish catalog has this message but with empty translation
+    const spanishCatalog = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+    ]);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+      otherLocaleCatalogs: [spanishCatalog],
+    });
+
+    // Should remove because Spanish translation is empty
+    expect(result.removed).toContain('hello');
+    expect(existing.messages.has('hello')).toBe(false);
+  });
+
+  it('adds file to references for existing messages found in extracted', () => {
+    const existing = createCatalog('es', [
+      { key: 'hello', translation: 'Hola', references: ['src/Other.tsx'] },
+    ]);
+    const extracted = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+    ]);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    expect(result.updated).toContain('hello');
+    // Should have both references
+    expect(existing.messages.get('hello')?.references).toContain('src/App.tsx');
+    expect(existing.messages.get('hello')?.references).toContain(
+      'src/Other.tsx',
+    );
+    // Translation should be preserved
+    expect(existing.messages.get('hello')?.translation).toBe('Hola');
+  });
+
+  it('does not duplicate file reference if already present', () => {
+    const existing = createCatalog('es', [
+      { key: 'hello', translation: 'Hola', references: ['src/App.tsx'] },
+    ]);
+    const extracted = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+    ]);
+
+    mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    // Should have only one reference, not duplicated
+    expect(existing.messages.get('hello')?.references).toEqual(['src/App.tsx']);
+  });
+
+  it('preserves translation when updating references', () => {
+    const existing = createCatalog('es', [
+      { key: 'hello', translation: 'Hola', references: ['src/Old.tsx'] },
+    ]);
+    const extracted = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/App.tsx'] },
+    ]);
+
+    mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/App.tsx',
+      defaultLocale: 'en',
+    });
+
+    expect(existing.messages.get('hello')?.translation).toBe('Hola');
+  });
+
+  it('handles messages appearing in multiple files correctly', () => {
+    const existing = createCatalog('es', [
+      {
+        key: 'shared',
+        translation: 'Compartido',
+        references: ['src/A.tsx', 'src/B.tsx'],
+      },
+    ]);
+    // Extracted from A.tsx still has the message
+    const extracted = createCatalog('es', [
+      { key: 'shared', translation: '', references: ['src/A.tsx'] },
+    ]);
+
+    mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/A.tsx',
+      defaultLocale: 'en',
+    });
+
+    // Should still have both references since we only update A.tsx's presence
+    expect(existing.messages.get('shared')?.references).toContain('src/A.tsx');
+    expect(existing.messages.get('shared')?.references).toContain('src/B.tsx');
+  });
+
+  it('removes file reference when message is removed from that file', () => {
+    const existing = createCatalog('es', [
+      {
+        key: 'shared',
+        translation: 'Compartido',
+        references: ['src/A.tsx', 'src/B.tsx'],
+      },
+    ]);
+    // Extracted from A.tsx no longer has the message
+    const extracted = createCatalog('es', []);
+
+    mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/A.tsx',
+      defaultLocale: 'en',
+    });
+
+    // Should only have src/B.tsx now
+    expect(existing.messages.get('shared')?.references).toEqual(['src/B.tsx']);
+    // Message should still exist (not orphaned, has other reference)
+    expect(existing.messages.has('shared')).toBe(true);
   });
 });

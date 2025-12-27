@@ -4,6 +4,12 @@ import type { Plugin, ResolvedConfig } from 'vite';
 import { loadConfig } from '../cli/config.js';
 import { compileTranslations } from '../compiler/compile.js';
 import { ensureGitignore } from '../utils/gitignore.js';
+import {
+  createDebouncedExtractor,
+  type DebouncedExtractor,
+} from './debounce.js';
+import { shouldIgnorePath } from './ignore-patterns.js';
+import { extractAndMergeFile } from './incremental-extract.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -32,6 +38,12 @@ export interface IdiomaViteOptions {
    * @default false
    */
   useSuspense?: boolean;
+  /**
+   * Additional patterns to ignore when watching source files.
+   * By default, patterns from .gitignore are used automatically.
+   * Use this to add extra patterns beyond what's in .gitignore.
+   */
+  ignorePatterns?: string[];
 }
 
 /**
@@ -56,7 +68,7 @@ export interface IdiomaViteOptions {
 export default function idiomaVitePlugin(
   options: IdiomaViteOptions = {},
 ): Plugin {
-  const { watch } = options;
+  const { watch, ignorePatterns } = options;
 
   // These are populated from config in buildStart
   let idiomaDir: string;
@@ -70,6 +82,7 @@ export default function idiomaVitePlugin(
   let isDevMode = false;
   let projectRoot = '';
   let loadedTranslations: Record<string, Record<string, unknown>> | undefined;
+  let debouncedExtractor: DebouncedExtractor | null = null;
 
   async function loadIdiomaConfig() {
     // Load config from idioma.config.ts, with options as overrides
@@ -139,25 +152,58 @@ export default function idiomaVitePlugin(
         }
       }
 
-      // Set up file watching in dev mode
+      // Set up incremental extraction in dev mode
       if (isDevMode && watch !== false) {
-        // In a real implementation, we'd use chokidar here
-        // For now, we rely on Vite's HMR for the output files
+        debouncedExtractor = createDebouncedExtractor(
+          async (files) => {
+            for (const file of files) {
+              await extractAndMergeFile({
+                filePath: file,
+                projectRoot,
+                idiomaDir: join(projectRoot, idiomaDir),
+                localeDir: join(projectRoot, localeDir),
+                defaultLocale,
+                locales: locales ?? [defaultLocale],
+              });
+            }
+            // Recompile after extraction
+            await compile();
+          },
+          {
+            delay: 200,
+            onComplete: ({ files }) => {
+              console.log(`[idioma] Extracted from ${files.length} file(s)`);
+            },
+            onError: (error) => {
+              console.error('[idioma] Extraction error:', error);
+            },
+          },
+        );
       }
     },
 
-    // Handle HMR for PO files
+    // Handle HMR for PO files and source files
     handleHotUpdate({ file, server }) {
+      // Handle PO file changes - recompile translations
       if (file.endsWith('.po') && file.includes(localeDir)) {
-        // Recompile and trigger full reload
         compile().then(() => {
           server.ws.send({
             type: 'full-reload',
             path: '*',
           });
         });
-
         return [];
+      }
+
+      // Handle source file changes - queue for incremental extraction
+      // Uses .gitignore patterns automatically
+      const isSourceFile =
+        /\.(tsx?|jsx?)$/.test(file) &&
+        !shouldIgnorePath(file, projectRoot, ignorePatterns);
+
+      if (isSourceFile && debouncedExtractor) {
+        debouncedExtractor.add(file);
+        // Don't block HMR - extraction happens async
       }
     },
 

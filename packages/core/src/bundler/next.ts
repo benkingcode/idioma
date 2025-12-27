@@ -3,6 +3,12 @@ import type { NextConfig } from 'next';
 import type { Compiler, Configuration as WebpackConfiguration } from 'webpack';
 import { compileTranslations } from '../compiler/compile.js';
 import { ensureGitignore } from '../utils/gitignore.js';
+import {
+  createDebouncedExtractor,
+  type DebouncedExtractor,
+} from './debounce.js';
+import { shouldIgnorePath } from './ignore-patterns.js';
+import { extractAndMergeFile } from './incremental-extract.js';
 
 export interface IdiomaNextOptions {
   /**
@@ -26,6 +32,12 @@ export interface IdiomaNextOptions {
    * @default false
    */
   useSuspense?: boolean;
+  /**
+   * Additional patterns to ignore when watching source files.
+   * By default, patterns from .gitignore are used automatically.
+   * Use this to add extra patterns beyond what's in .gitignore.
+   */
+  ignorePatterns?: string[];
 }
 
 interface WebpackContext {
@@ -43,17 +55,55 @@ interface IdiomaWebpackPluginOptions {
   dev: boolean;
   projectRoot: string;
   hasCustomLocalesDir: boolean;
+  ignorePatterns?: string[];
 }
 
 /**
- * Webpack plugin that compiles translations and watches for PO file changes.
+ * Webpack plugin that compiles translations and watches for file changes.
  */
 class IdiomaWebpackPlugin {
   private options: IdiomaWebpackPluginOptions;
   private hasCompiled = false;
+  private debouncedExtractor: DebouncedExtractor | null = null;
 
   constructor(options: IdiomaWebpackPluginOptions) {
     this.options = options;
+
+    // Initialize debounced extractor for dev mode
+    if (options.dev) {
+      this.debouncedExtractor = createDebouncedExtractor(
+        async (files) => {
+          for (const file of files) {
+            await extractAndMergeFile({
+              filePath: file,
+              projectRoot: options.projectRoot,
+              idiomaDir: options.idiomaDir,
+              localeDir: options.localeDir,
+              defaultLocale: options.defaultLocale,
+              locales: options.locales ?? [options.defaultLocale],
+            });
+          }
+          // Recompile after extraction
+          await compileTranslations({
+            localeDir: options.localeDir,
+            outputDir: options.outputDir,
+            defaultLocale: options.defaultLocale,
+            locales: options.locales,
+            useSuspense: options.useSuspense,
+            projectRoot: options.projectRoot,
+          });
+        },
+        {
+          delay: 200,
+          onComplete: ({ files }) => {
+            console.log(`[idioma] Extracted from ${files.length} file(s)`);
+          },
+          onError: (error) => {
+            console.error('[idioma] Extraction error:', error);
+          },
+        },
+      );
+    }
   }
 
   apply(compiler: Compiler) {
@@ -91,14 +141,15 @@ class IdiomaWebpackPlugin {
       },
     );
 
-    // In dev mode, watch for PO file changes
+    // In dev mode, watch for file changes
     if (this.options.dev) {
       compiler.hooks.watchRun.tapAsync(
         pluginName,
         async (watching: Compiler, callback: (err?: Error) => void) => {
           const changedFiles = watching.modifiedFiles ?? new Set<string>();
-          const hasPoChanges = [...changedFiles].some((f) => f.endsWith('.po'));
 
+          // Handle PO file changes - recompile translations
+          const hasPoChanges = [...changedFiles].some((f) => f.endsWith('.po'));
           if (hasPoChanges) {
             try {
               await compileTranslations({
@@ -112,6 +163,22 @@ class IdiomaWebpackPlugin {
             } catch (error) {
               console.error('[idioma] Recompilation error:', error);
             }
+          }
+
+          // Handle source file changes - queue for incremental extraction
+          // Uses .gitignore patterns automatically
+          const sourceFiles = [...changedFiles].filter(
+            (f) =>
+              /\.(tsx?|jsx?)$/.test(f) &&
+              !shouldIgnorePath(
+                f,
+                this.options.projectRoot,
+                this.options.ignorePatterns,
+              ),
+          );
+
+          for (const file of sourceFiles) {
+            this.debouncedExtractor?.add(file);
           }
 
           callback();
@@ -143,8 +210,14 @@ class IdiomaWebpackPlugin {
 export function withIdioma(
   options: IdiomaNextOptions,
 ): (nextConfig?: NextConfig) => NextConfig {
-  const { idiomaDir, localesDir, defaultLocale, locales, useSuspense } =
-    options;
+  const {
+    idiomaDir,
+    localesDir,
+    defaultLocale,
+    locales,
+    useSuspense,
+    ignorePatterns,
+  } = options;
 
   // Compute derived paths
   const localeDir = localesDir ?? join(idiomaDir, 'locales');
@@ -180,6 +253,7 @@ export function withIdioma(
               dev,
               projectRoot,
               hasCustomLocalesDir,
+              ignorePatterns,
             }),
           );
         }

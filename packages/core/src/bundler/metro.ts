@@ -3,6 +3,12 @@ import { watch, type FSWatcher } from 'chokidar';
 import { join, resolve } from 'pathe';
 import { compileTranslations } from '../compiler/compile.js';
 import { ensureGitignore } from '../utils/gitignore.js';
+import {
+  createDebouncedExtractor,
+  type DebouncedExtractor,
+} from './debounce.js';
+import { createChokidarIgnoreFilter } from './ignore-patterns.js';
+import { extractAndMergeFile } from './incremental-extract.js';
 
 export interface IdiomaMetroOptions {
   /**
@@ -28,6 +34,12 @@ export interface IdiomaMetroOptions {
    * @default false
    */
   useSuspense?: boolean;
+  /**
+   * Additional patterns to ignore when watching source files.
+   * By default, patterns from .gitignore are used automatically.
+   * Use this to add extra patterns beyond what's in .gitignore.
+   */
+  ignorePatterns?: string[];
 }
 
 interface MetroConfig {
@@ -66,6 +78,7 @@ export function withIdioma(
     locales,
     watch: enableWatch = true,
     useSuspense,
+    ignorePatterns,
   } = options;
 
   // Compute derived paths
@@ -73,7 +86,9 @@ export function withIdioma(
   const outputDir = idiomaDir;
   const hasCustomLocalesDir = !!localesDir;
 
-  let watcher: FSWatcher | null = null;
+  let poWatcher: FSWatcher | null = null;
+  let sourceWatcher: FSWatcher | null = null;
+  let debouncedExtractor: DebouncedExtractor | null = null;
   let projectRoot = '';
 
   async function compile(): Promise<void> {
@@ -122,20 +137,76 @@ export function withIdioma(
   }
 
   function setupWatcher(): void {
-    if (watcher) return;
+    // Set up PO file watcher
+    if (!poWatcher) {
+      const poWatchPath = resolve(projectRoot, localeDir, '**/*.po');
 
-    const watchPath = resolve(projectRoot, localeDir, '**/*.po');
+      poWatcher = watch(poWatchPath, {
+        ignoreInitial: true,
+        awaitWriteFinish: {
+          stabilityThreshold: 100,
+          pollInterval: 50,
+        },
+      });
 
-    watcher = watch(watchPath, {
-      ignoreInitial: true,
-      awaitWriteFinish: {
-        stabilityThreshold: 100,
-        pollInterval: 50,
-      },
-    });
+      poWatcher.on('change', handleFileChange);
+      poWatcher.on('add', handleFileAdd);
+    }
 
-    watcher.on('change', handleFileChange);
-    watcher.on('add', handleFileAdd);
+    // Set up source file watcher for incremental extraction
+    if (!sourceWatcher) {
+      // Initialize debounced extractor
+      debouncedExtractor = createDebouncedExtractor(
+        async (files) => {
+          for (const file of files) {
+            await extractAndMergeFile({
+              filePath: file,
+              projectRoot,
+              idiomaDir: resolve(projectRoot, idiomaDir),
+              localeDir: resolve(projectRoot, localeDir),
+              defaultLocale,
+              locales: locales ?? [defaultLocale],
+            });
+          }
+          // Recompile after extraction
+          await compile();
+          await touchOutputFile();
+        },
+        {
+          delay: 200,
+          onComplete: ({ files }) => {
+            console.log(`[idioma] Extracted from ${files.length} file(s)`);
+          },
+          onError: (error) => {
+            console.error('[idioma] Extraction error:', error);
+          },
+        },
+      );
+
+      // Watch source files, using .gitignore patterns automatically
+      const sourceWatchPath = resolve(projectRoot, '**/*.{tsx,jsx,ts,js}');
+      const ignoreFilter = createChokidarIgnoreFilter(
+        projectRoot,
+        ignorePatterns,
+      );
+
+      sourceWatcher = watch(sourceWatchPath, {
+        ignoreInitial: true,
+        ignored: ignoreFilter,
+        awaitWriteFinish: {
+          stabilityThreshold: 100,
+          pollInterval: 50,
+        },
+      });
+
+      sourceWatcher.on('change', (path) => {
+        debouncedExtractor?.add(path);
+      });
+
+      sourceWatcher.on('add', (path) => {
+        debouncedExtractor?.add(path);
+      });
+    }
   }
 
   return async function createConfig(
