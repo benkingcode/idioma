@@ -31,7 +31,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 **Developer Experience**
 
 - **Write natural JSX** — `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
-- **Automatic key generation** — Content-addressable hashing means no manual key management
+- **Flexible key strategy** — Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
 - **AI-powered translation** — Built-in translation with Claude or GPT, with automatic context extraction
 - **Type-safe** — Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
 - **ICU MessageFormat** — Full support for plurals, selects, ordinals, and complex formatting
@@ -385,15 +385,20 @@ export function formatApiError(code: string, locale: string) {
 </Trans>
 ```
 
-### Key-only mode
+### Explicit keys
 
-Use explicit keys instead of source text:
+Use explicit IDs for translations that need to survive source text refactoring:
 
 ```tsx
+// ID-only (translation comes entirely from PO file)
 <Trans id="welcome.hero" />
 <Trans id="greeting" values={{ name: 'Ben' }} />
-<Trans id="cart.items" values={{ count: 3 }} components={[<strong />]} />
+
+// Hybrid: stable ID + fallback content if translation is missing
+<Trans id="checkout.confirm">Confirm Order</Trans>
 ```
+
+This is useful for checkout flows, legal text, or any message that goes through formal translation review. See [Choosing Your Key Strategy](#choosing-your-key-strategy) for guidance.
 
 ### Context
 
@@ -739,14 +744,17 @@ The `context` prop creates different keys for identical text:
 <Trans context="button">Submit</Trans>       // → "r4Yt8wQz" (different key)
 ```
 
-### Trade-off: Source text changes invalidate translations
+### Choosing Your Key Strategy
 
-When you change the source text (even fixing a typo), the hash changes and the old translation no longer applies. This is the trade-off for not managing keys manually.
+Auto-generated keys are convenient but change when source text changes. Explicit IDs are stable across refactoring. Choose based on your needs:
 
-**Mitigations:**
+| Strategy         | Syntax                                               | Best for                                         |
+| ---------------- | ---------------------------------------------------- | ------------------------------------------------ |
+| **Auto keys**    | `<Trans>Confirm Order</Trans>`                       | Rapid iteration; AI retranslation is cheap       |
+| **Explicit IDs** | `<Trans id="checkout.confirm" />`                    | Critical UI, legal text, formal review workflows |
+| **Hybrid**       | `<Trans id="checkout.confirm">Confirm Order</Trans>` | Stable key + readable fallback                   |
 
-- AI translation makes retranslation cheap—run `idioma translate` after text changes
-- For critical messages, use explicit `id` props: `<Trans id="checkout.confirm">Confirm Order</Trans>`
+Most teams use auto keys by default and explicit IDs for checkout flows, legal text, or anything requiring formal translation review.
 
 ## PO File Format
 
@@ -856,6 +864,9 @@ import { IdiomaProvider } from '@/idioma';
 // ID-based (explicit key)
 <Trans id="welcome.hero" />
 <Trans id="greeting" values={{ name: 'Ben' }} />
+
+// Hybrid (stable key + fallback content)
+<Trans id="checkout.confirm">Confirm Order</Trans>
 ```
 
 ### useT Hook
@@ -937,19 +948,19 @@ The Babel plugin extracts messages during build, generates content-addressed key
 
 ## Comparison
 
-| Feature                   | Idioma   | Lingui   | Paraglide    | react-intl | i18next  |
-| ------------------------- | -------- | -------- | ------------ | ---------- | -------- |
-| Runtime size (gzipped)    | ~800B    | ~10KB    | ~2KB         | ~14KB      | ~18KB    |
-| Key management            | Auto     | Auto     | Manual       | Manual     | Manual   |
-| Extraction                | Built-in | Built-in | None         | CLI        | CLI      |
-| AI translation            | Built-in | No       | No           | No         | No       |
-| Compile-time              | Yes      | Yes      | Yes          | Optional   | No       |
-| Component-level splitting | Yes      | No       | Yes          | No         | No       |
-| Lazy loading              | Opt-in   | Yes      | Experimental | Yes        | Yes      |
-| PO format                 | Yes      | Yes      | No           | No         | Plugin   |
-| Number/date formatting    | Use Intl | Use Intl | Use Intl     | Built-in   | Built-in |
-| SSR                       | Yes      | Yes      | Yes          | Yes        | Yes      |
-| RSC                       | Yes      | Yes      | Yes          | No         | Yes      |
+| Feature                   | Idioma        | Lingui        | Paraglide    | react-intl | i18next  |
+| ------------------------- | ------------- | ------------- | ------------ | ---------- | -------- |
+| Runtime size (gzipped)    | ~800B         | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
+| Key management            | Auto + Manual | Auto + Manual | Manual       | Manual     | Manual   |
+| Extraction                | Built-in      | Built-in      | None         | CLI        | CLI      |
+| AI translation            | Built-in      | No            | No           | No         | No       |
+| Compile-time              | Yes           | Yes           | Yes          | Optional   | No       |
+| Component-level splitting | Yes           | No            | Yes          | No         | No       |
+| Lazy loading              | Opt-in        | Yes           | Experimental | Yes        | Yes      |
+| PO format                 | Yes           | Yes           | No           | No         | Plugin   |
+| Number/date formatting    | Use Intl      | Use Intl      | Use Intl     | Built-in   | Built-in |
+| SSR                       | Yes           | Yes           | Yes          | Yes        | Yes      |
+| RSC                       | Yes           | Yes           | Yes          | No         | Yes      |
 
 **Note on runtime size:** Idioma's ~800B runtime handles message rendering. ICU plural/select parsing adds ~2KB when you use those features. The total is still significantly smaller than alternatives because parsing happens at build time for static messages.
 
