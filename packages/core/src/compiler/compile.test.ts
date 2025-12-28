@@ -430,6 +430,173 @@ msgstr "Hello"
     });
   });
 
+  describe('routing compilation', () => {
+    it('generates routes.js when routing.localizedPaths is enabled', async () => {
+      // Create Next.js app structure for route extraction
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.mkdir(join(appDir, 'contact'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+      await fs.writeFile(
+        join(appDir, 'contact', 'page.tsx'),
+        'export default function Contact() {}',
+      );
+
+      // Create PO files with route translations
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+
+#. Route segment
+msgctxt "route:contact"
+msgid "m2RsT5wY"
+msgstr "contact"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+
+#. Route segment
+msgctxt "route:contact"
+msgid "m2RsT5wY"
+msgstr "contacto"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      // Verify routes.js was generated
+      const routesPath = join(outputDir, '.generated', 'routes.js');
+      const content = await fs.readFile(routesPath, 'utf-8');
+
+      expect(content).toContain('export const segments');
+      expect(content).toContain('export const routes');
+      expect(content).toContain('export const reverseRoutes');
+      expect(content).toContain('"sobre"');
+      expect(content).toContain('"contacto"');
+    });
+
+    it('generates routes.d.ts with type declarations', async () => {
+      // Create minimal app structure
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      // Verify routes.d.ts was generated
+      const typesPath = join(outputDir, '.generated', 'routes.d.ts');
+      const content = await fs.readFile(typesPath, 'utf-8');
+
+      expect(content).toContain('export type Locale');
+      expect(content).toContain('export declare const segments');
+      expect(content).toContain('export declare const routes');
+      expect(content).toContain('export declare function getLocalizedPath');
+    });
+
+    it('does not generate routes when routing.localizedPaths is false', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: false,
+          framework: 'next-app',
+        },
+      });
+
+      // routes.js should not exist
+      const routesPath = join(outputDir, '.generated', 'routes.js');
+      await expect(fs.access(routesPath)).rejects.toThrow();
+    });
+  });
+
   describe('concurrent compilation safety', () => {
     it('handles multiple concurrent compileTranslations calls without race conditions', async () => {
       await createPoFile(

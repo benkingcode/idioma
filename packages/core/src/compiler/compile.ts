@@ -13,6 +13,13 @@ import type { Framework } from '../framework.js';
 import { analyzeIcuMessage, type IcuAnalysis } from '../icu/compiler.js';
 import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
+import {
+  compileRoutes,
+  extractRoutes,
+  generateRoutesModule,
+  generateRoutesTypes,
+  ROUTE_CONTEXT_PREFIX,
+} from '../routes/index.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
 import { generateChunkModules } from './generate-chunks.js';
 
@@ -282,6 +289,26 @@ export async function compileTranslations(
   await generateTranslationsJs(generatedDir, allMessages);
   await generateTypesTs(generatedDir, allMessages, [...catalogs.keys()]);
 
+  // Generate routes if localizedPaths is enabled
+  if (routing?.localizedPaths && routing.framework && projectRoot) {
+    const extractedRoutes = await extractRoutes(projectRoot, routing.framework);
+    const routeMessages = extractRouteMessagesFromCatalogs(catalogs, [
+      ...detectedLocales,
+    ]);
+    const compiledRoutes = compileRoutes(extractedRoutes, routeMessages, [
+      ...detectedLocales,
+    ]);
+
+    await fs.writeFile(
+      join(generatedDir, 'routes.js'),
+      generateRoutesModule(compiledRoutes),
+    );
+    await fs.writeFile(
+      join(generatedDir, 'routes.d.ts'),
+      generateRoutesTypes([...detectedLocales]),
+    );
+  }
+
   // Generate suspense-specific files or standard index
   if (useSuspense && locales && projectRoot) {
     // Analyze chunks from catalog references
@@ -304,6 +331,26 @@ export async function compileTranslations(
 
   // Generate plain.ts for imperative translation (user-facing, at outputDir root)
   await generatePlainTs(outputDir);
+}
+
+/**
+ * Extract route messages from catalogs for route compilation.
+ * Filters messages that have the route: context prefix.
+ */
+function extractRouteMessagesFromCatalogs(
+  catalogs: Map<string, Catalog>,
+  locales: string[],
+): Record<string, Message[]> {
+  const result: Record<string, Message[]> = {};
+  for (const locale of locales) {
+    const catalog = catalogs.get(locale);
+    if (catalog) {
+      result[locale] = [...catalog.messages.values()].filter((m) =>
+        m.context?.startsWith(ROUTE_CONTEXT_PREFIX),
+      );
+    }
+  }
+  return result;
 }
 
 /**

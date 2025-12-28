@@ -1,3 +1,8 @@
+import type { Framework } from '../framework.js';
+import { extractNextjsRoutes } from './extract-nextjs.js';
+import { extractTanStackRoutes } from './extract-tanstack.js';
+import type { ExtractedRoute } from './types.js';
+
 /**
  * Route extraction and compilation for localized pathnames.
  *
@@ -18,3 +23,26 @@ export {
   generateRoutesTypes,
   ROUTE_CONTEXT_PREFIX,
 } from './compile.js';
+
+/**
+ * Extract routes from a project based on the detected framework.
+ *
+ * @param projectRoot - Root directory of the project
+ * @param framework - The detected framework type
+ * @returns Extracted routes for the project
+ */
+export async function extractRoutes(
+  projectRoot: string,
+  framework: Framework,
+): Promise<ExtractedRoute[]> {
+  const options = { projectRoot };
+  switch (framework) {
+    case 'next-app':
+    case 'next-pages':
+      return extractNextjsRoutes(options);
+    case 'tanstack':
+      return extractTanStackRoutes(options);
+    default:
+      return [];
+  }
+}
