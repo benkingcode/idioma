@@ -20,24 +20,49 @@ idioma translate
 
 Idioma reads your source code to understand context ("checkout button", "error message in cart"), then translates with that understanding. No more uploading CSVs or waiting for translators on routine updates.
 
-## Why Idioma?
-
-- **~800 bytes runtime** — Translations compile to static imports; the runtime just renders them
-- **Automatic key generation** — Content-addressable hashing means no manual key management
-- **AI-powered translation** — Built-in translation with Claude or GPT, with automatic context extraction from your source code
-- **Type-safe** — Generated TypeScript gives you autocomplete on message IDs, locales, and namespaces
-- **Tree-shaken bundles** — Only translations for components on each page ship to the client
-
 ## Features
 
+**Performance**
+
+- **~800 bytes runtime** — Translations compile to static imports; the runtime just renders them
+- **Tree-shaken bundles** — Only translations for components on each page ship to the client
+- **Compile-time processing** — No runtime parsing or fetching
+
+**Developer Experience**
+
 - **Write natural JSX** — `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
+- **Automatic key generation** — Content-addressable hashing means no manual key management
+- **AI-powered translation** — Built-in translation with Claude or GPT, with automatic context extraction
+- **Type-safe** — Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
 - **ICU MessageFormat** — Full support for plurals, selects, ordinals, and complex formatting
-- **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
+
+**Integrations**
+
 - **Vite plugin** — HMR for translations, zero config
 - **Next.js plugin** — Works with App Router and Pages Router
 - **React Native / Metro** — First-class React Native support with Metro bundler
 - **React Server Components** — Compile-time inlined translations work seamlessly in RSC
+- **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
 - **Plain JS support** — `createT` for Zod schemas, error handling, and non-React code
+
+## Table of Contents
+
+- [Quick Start](#quick-start) — Vite setup
+- [Next.js](#nextjs)
+- [React Native](#react-native)
+- [React Server Components](#react-server-components)
+- [Plain JavaScript](#plain-javascript-outside-react)
+- [Usage](#usage)
+  - [Trans Component](#basic-translation)
+  - [useT Hook](#imperative-usage-with-uset)
+  - [Pluralization](#pluralization)
+  - [Selection](#selection)
+  - [Namespaces](#namespaces)
+- [CLI Commands](#cli-commands)
+- [Configuration](#configuration)
+- [API Reference](#api-reference)
+- [How It Works](#how-it-works)
+- [Comparison](#comparison)
 
 ## Quick Start
 
@@ -200,7 +225,7 @@ Add the Babel preset:
 // babel.config.js
 module.exports = {
   presets: ['module:@react-native/babel-preset'],
-  plugins: [['@idioma/core/babel', { mode: 'production' }]],
+  plugins: ['@idioma/core/babel'],
 };
 ```
 
@@ -208,7 +233,7 @@ Set up the provider in your app root:
 
 ```tsx
 // App.tsx
-import { IdiomaProvider } from './src/idioma';
+import { IdiomaProvider } from '@/idioma';
 
 export default function App() {
   return (
@@ -222,8 +247,8 @@ export default function App() {
 Use translations in your components:
 
 ```tsx
+import { Trans, useT } from '@/idioma';
 import { Text, View } from 'react-native';
-import { Trans, useT } from './src/idioma';
 
 function Greeting({ name }) {
   const t = useT();
@@ -239,6 +264,8 @@ function Greeting({ name }) {
 ```
 
 The Metro plugin automatically compiles translations on startup and watches for PO file changes during development.
+
+> **Tip:** To use `@/idioma` imports in React Native, add [babel-plugin-module-resolver](https://github.com/tleunen/babel-plugin-module-resolver) to your Babel config.
 
 **Note:** Idioma compiles translations at build time. For OTA translation updates without app store releases, you'll need to integrate with a service like Expo Updates or CodePush and rebuild the JS bundle.
 
@@ -807,6 +834,86 @@ import { IdiomaProvider } from '@/idioma';
 | Locale switch        | Instant                | Suspends until loaded  |
 | React version        | 18+                    | 19+ (uses `use` hook)  |
 
+## API Reference
+
+### Trans Component
+
+| Prop         | Type                      | Description                                    |
+| ------------ | ------------------------- | ---------------------------------------------- |
+| `children`   | `ReactNode`               | Message content with interpolations            |
+| `id`         | `string`                  | Explicit message key (alternative to children) |
+| `context`    | `string`                  | Translator context (affects key generation)    |
+| `ns`         | `string`                  | Namespace for organizing translations          |
+| `values`     | `Record<string, unknown>` | Values for placeholder interpolation           |
+| `components` | `ReactNode[]`             | Components for tag interpolation               |
+
+```tsx
+// Children-based (auto-keyed)
+<Trans>Hello {name}</Trans>
+<Trans context="button">Submit</Trans>
+
+// ID-based (explicit key)
+<Trans id="welcome.hero" />
+<Trans id="greeting" values={{ name: 'Ben' }} />
+```
+
+### useT Hook
+
+```ts
+const t = useT();
+
+// Basic usage
+t('Hello world'); // Simple message
+t('Hello {name}', { name: 'Ben' }); // With values
+t('Submit', undefined, { context: 'button' }); // With context
+t('Save', undefined, { ns: 'common' }); // With namespace
+
+// ID-based
+t({ id: 'welcome' });
+t({ id: 'greeting', values: { name: 'Ben' } });
+```
+
+### createT (Plain JS)
+
+```ts
+import { createT } from '@/idioma/plain';
+
+const t = createT('es'); // Create for specific locale
+
+// Same API as useT
+t('Hello world');
+t('Hello {name}', { name: 'Ben' });
+t({ id: 'welcome' });
+```
+
+### ICU Helpers
+
+```ts
+import { plural, select, selectOrdinal } from '@idioma/core/icu';
+
+// Pluralization
+plural(count, { one: '# item', other: '# items' });
+
+// Selection
+select(gender, { male: 'He', female: 'She', other: 'They' });
+
+// Ordinals
+selectOrdinal(place, { one: '#st', two: '#nd', few: '#rd', other: '#th' });
+```
+
+### IdiomaProvider
+
+```tsx
+import { IdiomaProvider, useLocale } from '@/idioma';
+
+<IdiomaProvider locale="en">
+  <App />
+</IdiomaProvider>;
+
+// Get current locale
+const locale = useLocale(); // 'en'
+```
+
 ## How It Works
 
 **Development:**
@@ -847,7 +954,11 @@ The Babel plugin extracts messages during build, generates content-addressed key
 
 ## Editor Support
 
-TypeScript provides autocomplete on message IDs and locales via the generated types.
+TypeScript provides full type safety via generated types:
+
+- **Message keys** — Autocomplete on `id` props and `t({ id: '...' })` calls
+- **Required values** — Type errors when you forget interpolation values (`t('Hello {name}')` requires `{ name: string }`)
+- **Locales** — Autocomplete and validation on locale strings
 
 ## Packages
 
