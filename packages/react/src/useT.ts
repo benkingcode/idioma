@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';

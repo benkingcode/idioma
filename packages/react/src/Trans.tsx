@@ -1,3 +1,5 @@
+'use client';
+
 import { useContext, type ReactNode } from 'react';
 import { IdiomaContext } from './context';
 import { renderMessage, type TransComponent } from './interpolate';

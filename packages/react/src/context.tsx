@@ -1,3 +1,5 @@
+'use client';
+
 import { _syncLocale } from '@idioma/core/icu';
 import {
   createContext,

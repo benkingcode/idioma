@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Suspense-based runtime for @idioma/react.
  *
@@ -6,7 +8,6 @@
  *
  * Requires React 19+.
  */
-
 import {
   createContext,
   use,
