@@ -1,7 +1,11 @@
 import { join } from 'path';
 import type { NextConfig } from 'next';
 import type { Compiler, Configuration as WebpackConfiguration } from 'webpack';
-import { compileTranslations } from '../compiler/compile.js';
+import {
+  compileTranslations,
+  type RoutingCompileOptions,
+} from '../compiler/compile.js';
+import { detectFramework } from '../framework.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
   createDebouncedExtractor,
@@ -38,6 +42,14 @@ export interface IdiomaNextOptions {
    * Use this to add extra patterns beyond what's in .gitignore.
    */
   ignorePatterns?: string[];
+  /**
+   * Enable routing integration for localized Link component.
+   * When true, generates a Link component in the idioma/index.ts output.
+   */
+  routing?: {
+    /** Enable localized pathnames (e.g., /es/sobre instead of /es/about) */
+    localizedPaths?: boolean;
+  };
 }
 
 interface WebpackContext {
@@ -56,6 +68,7 @@ interface IdiomaWebpackPluginOptions {
   projectRoot: string;
   hasCustomLocalesDir: boolean;
   ignorePatterns?: string[];
+  routing?: RoutingCompileOptions;
 }
 
 /**
@@ -91,6 +104,7 @@ class IdiomaWebpackPlugin {
             locales: options.locales,
             useSuspense: options.useSuspense,
             projectRoot: options.projectRoot,
+            routing: options.routing,
           });
         },
         {
@@ -124,6 +138,15 @@ class IdiomaWebpackPlugin {
             skipLocalesDir: this.options.hasCustomLocalesDir,
           });
 
+          // Detect framework if routing is enabled but framework not yet detected
+          let routing = this.options.routing;
+          if (routing && !routing.framework) {
+            const framework = await detectFramework(this.options.projectRoot);
+            routing = { ...routing, framework };
+            // Update options for future calls
+            this.options.routing = routing;
+          }
+
           await compileTranslations({
             localeDir: this.options.localeDir,
             outputDir: this.options.outputDir,
@@ -131,6 +154,7 @@ class IdiomaWebpackPlugin {
             locales: this.options.locales,
             useSuspense: this.options.useSuspense,
             projectRoot: this.options.projectRoot,
+            routing,
           });
 
           this.hasCompiled = true;
@@ -159,6 +183,7 @@ class IdiomaWebpackPlugin {
                 locales: this.options.locales,
                 useSuspense: this.options.useSuspense,
                 projectRoot: this.options.projectRoot,
+                routing: this.options.routing,
               });
             } catch (error) {
               console.error('[idioma] Recompilation error:', error);
@@ -217,6 +242,7 @@ export function withIdioma(
     locales,
     useSuspense,
     ignorePatterns,
+    routing,
   } = options;
 
   // Compute derived paths
@@ -226,6 +252,19 @@ export function withIdioma(
 
   let pluginAdded = false;
   const projectRoot = process.cwd();
+
+  // Build routing options if configured
+  let routingOptions: RoutingCompileOptions | undefined;
+  if (routing) {
+    // Detect App Router vs Pages Router synchronously
+    // Framework detection is async, but for Next.js we do it at plugin creation
+    // The actual detection happens in beforeCompile hook
+    routingOptions = {
+      enabled: true,
+      localizedPaths: routing.localizedPaths ?? false,
+      framework: null, // Will be detected at compile time
+    };
+  }
 
   return function createNextConfig(nextConfig: NextConfig = {}): NextConfig {
     return {
@@ -254,6 +293,7 @@ export function withIdioma(
               projectRoot,
               hasCustomLocalesDir,
               ignorePatterns,
+              routing: routingOptions,
             }),
           );
         }

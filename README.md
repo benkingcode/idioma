@@ -778,23 +778,39 @@ export default createIdiomaMiddleware({
 export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
 ```
 
-Use the localized Link component:
+When routing is configured, the `Link` component is auto-generated in your `idioma/index.ts`:
 
 ```tsx
-// app/[lang]/layout.tsx
-import { Link } from '@idioma/next';
-import { routes } from './idioma/.generated/routes';
+// Inside IdiomaProvider tree - locale is read from context automatically
+import { Link } from './idioma';
 
 function Navigation() {
   return (
     <nav>
-      <Link href="/about" routes={routes}>
-        About
-      </Link>
-      <Link href="/blog" routes={routes}>
-        Blog
+      <Link href="/about">About</Link>
+      {/* Language switcher */}
+      <Link href="/about" locale="es">
+        ES
       </Link>
     </nav>
+  );
+}
+```
+
+```tsx
+// Server Component (outside IdiomaProvider) - must pass locale prop explicitly
+import { Link } from './idioma';
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  return (
+    <Link href="/about" locale={lang}>
+      About
+    </Link>
   );
 }
 ```
@@ -820,19 +836,14 @@ export function generateMetadata({ params }: { params: { lang: string } }) {
 
 ### Next.js (Pages Router)
 
-Pages Router uses Next.js's built-in `i18n` config for detection and prefixes. Idioma adds localized paths:
+Pages Router uses Next.js's built-in `i18n` config for detection and prefixes. When routing is configured, the `Link` is auto-generated:
 
 ```tsx
 // pages/_app.tsx
-import { routes } from '@/idioma/.generated/routes';
-import { Link, useLocalizedPath } from '@idioma/next/pages';
+import { Link } from './idioma';
 
 function Navigation() {
-  return (
-    <Link href="/about" routes={routes}>
-      About
-    </Link>
-  );
+  return <Link href="/about">About</Link>;
 }
 ```
 
@@ -844,24 +855,31 @@ Install the TanStack package:
 npm install @idioma/tanstack
 ```
 
-Use the localized Link and hooks:
+When routing is configured, the `Link` is auto-generated:
 
 ```tsx
-import { HreflangLinks, Link, useLocalizedPath } from '@idioma/tanstack';
-import { routes } from './idioma/.generated/routes';
+import { Link } from './idioma';
 
 function Navigation() {
   return (
     <nav>
-      <Link to="/about" routes={routes}>
-        About
-      </Link>
-      <Link to="/blog" routes={routes}>
-        Blog
+      {/* Locale from IdiomaProvider context */}
+      <Link to="/about">About</Link>
+
+      {/* Language switcher - explicit locale */}
+      <Link to="/about" locale="es">
+        ES
       </Link>
     </nav>
   );
 }
+```
+
+For SEO hreflang tags:
+
+```tsx
+import { HreflangLinks } from '@idioma/tanstack';
+import { routes } from './idioma/.generated/routes';
 
 function Head() {
   return (

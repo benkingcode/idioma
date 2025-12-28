@@ -114,6 +114,8 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `po/` - PO file parser and merge utilities
 - `keys/` - Message key generation (murmurhash-based)
 - `ai/` - AI translation: context generation from source code, unified provider via Vercel AI SDK
+- `routes/` - Route extraction and compilation for localized paths
+- `framework.ts` - Framework detection utility (next-app, next-pages, tanstack)
 
 **@idioma/react** (`packages/react/`) - Runtime components
 
@@ -127,14 +129,14 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 **@idioma/next** (`packages/next/`) - Next.js integration
 
 - `middleware.ts` - `createIdiomaMiddleware()` for locale detection and URL rewriting
-- `link.tsx` - Localized `Link` component for App Router
+- `link.tsx` - Localized `Link` component and `createLink()` factory for App Router
 - `server/` - `generateIdiomaMetadata()` for SEO, `setLocale()` for cookies
-- `pages/` - Pages Router support with `Link` and `useLocalizedPath`
+- `pages/` - Pages Router support with `Link`, `createLink()`, and `useLocalizedPath`
 
 **@idioma/tanstack** (`packages/tanstack/`) - TanStack Router integration
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`
-- `link.tsx` - Localized `Link` component
+- `link.tsx` - Localized `Link` component and `createLink()` factory
 - `head.tsx` - `HreflangLinks` component and `useHreflangLinks()` for SEO
 
 ### Configuration
@@ -150,6 +152,10 @@ export default defineConfig({
   // localesDir: './locales',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
+  // Optional: enable routing integration (auto-generates Link component)
+  routing: {
+    localizedPaths: true, // Enable translated URL paths (/es/sobre instead of /es/about)
+  },
 });
 ```
 
@@ -163,11 +169,12 @@ src/idioma/
 ├── locales/             # PO files (git tracked)
 │   ├── en.po
 │   └── es.po
-├── index.ts             # User import: Trans, useT, etc.
+├── index.ts             # User import: Trans, useT, Link (when routing enabled)
 ├── plain.ts             # User import: createT (non-React)
 └── .generated/          # Internal files (gitignored)
     ├── translations.js
-    └── types.ts
+    ├── types.ts
+    └── routes.js        # Only when routing.localizedPaths: true
 ```
 
 ---
@@ -577,6 +584,28 @@ The compiler reconstructs full paths by:
 2. Looking up each segment translation
 3. Preserving dynamic segments `[param]` as-is
 4. Joining back with `/`
+
+#### Auto-Generated Link Component
+
+When `routing` is configured in `idioma.config.ts`, the compiler automatically generates a pre-configured `Link` component in `index.ts`:
+
+```typescript
+// Auto-generated in idioma/index.ts when routing is enabled
+import { createLink } from '@idioma/next'; // or @idioma/next/pages, @idioma/tanstack
+import { routes } from './.generated/routes';
+
+export const Link = createLink(routes);
+```
+
+**Framework Detection** (`packages/core/src/framework.ts`):
+
+The compiler detects the framework from `package.json` and directory structure:
+
+- `next-app` - Next.js with App Router (has `app/` directory)
+- `next-pages` - Next.js with Pages Router (has `pages/` but no `app/`)
+- `tanstack` - TanStack Router (has `@tanstack/react-router` dependency)
+
+This determines which package to import `createLink` from.
 
 ### Bundler Integration
 

@@ -62,3 +62,11 @@ export {
   createIdiomaMiddleware,
   type IdiomaMiddlewareConfig,
 } from './middleware.js';
+
+export {
+  createLink,
+  Link,
+  resolveLocalizedHref,
+  type LinkProps,
+  type RoutesMap,
+} from './link.js';

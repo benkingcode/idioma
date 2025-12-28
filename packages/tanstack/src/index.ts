@@ -20,7 +20,13 @@
  * ```
  */
 
-export { Link, type LinkProps } from './link.js';
+export {
+  createLink,
+  Link,
+  resolveLocalizedPath,
+  type LinkProps,
+  type RoutesMap,
+} from './link.js';
 export { useLocale, useLocalizedPath } from './hooks.js';
 export {
   HreflangLinks,

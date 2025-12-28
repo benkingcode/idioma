@@ -2,7 +2,11 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { loadConfig } from '../cli/config.js';
-import { createCompileLock } from '../compiler/compile.js';
+import {
+  createCompileLock,
+  type RoutingCompileOptions,
+} from '../compiler/compile.js';
+import { detectFramework } from '../framework.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
   createDebouncedExtractor,
@@ -78,6 +82,7 @@ export default function idiomaVitePlugin(
   let locales: string[] | undefined;
   let useSuspense: boolean | undefined;
   let hasCustomLocalesDir = false;
+  let routingOptions: RoutingCompileOptions | undefined;
 
   let isDevMode = false;
   let projectRoot = '';
@@ -101,6 +106,16 @@ export default function idiomaVitePlugin(
     locales = options.locales ?? config.locales;
     useSuspense = options.useSuspense ?? config.useSuspense;
     hasCustomLocalesDir = !!(options.localesDir ?? config.localesDir);
+
+    // Load routing options if configured
+    if (config.routing) {
+      const framework = await detectFramework(projectRoot);
+      routingOptions = {
+        enabled: true,
+        localizedPaths: config.routing.localizedPaths ?? false,
+        framework,
+      };
+    }
   }
 
   async function compile() {
@@ -116,6 +131,7 @@ export default function idiomaVitePlugin(
         useSuspense,
         locales,
         projectRoot,
+        routing: routingOptions,
       });
     } catch (error) {
       console.error('[idioma] Compilation error:', error);

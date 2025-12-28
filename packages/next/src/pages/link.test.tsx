@@ -4,7 +4,7 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { Link } from './link.js';
+import { createLink, Link, resolveLocalizedPath } from './link.js';
 
 // Mock next/link
 vi.mock('next/link', () => ({
@@ -108,5 +108,83 @@ describe('Pages Link component', () => {
       expect(link.className).toContain('nav-link');
       expect(link.getAttribute('data-testid')).toBe('about-link');
     });
+  });
+});
+
+describe('resolveLocalizedPath', () => {
+  it('returns original path without routes', () => {
+    expect(resolveLocalizedPath('/about', 'en')).toBe('/about');
+    expect(resolveLocalizedPath('/about', 'es')).toBe('/about');
+  });
+
+  it('translates path with routes', () => {
+    const routes = {
+      en: { '/about': '/about' },
+      es: { '/about': '/sobre' },
+    };
+
+    expect(resolveLocalizedPath('/about', 'en', routes)).toBe('/about');
+    expect(resolveLocalizedPath('/about', 'es', routes)).toBe('/sobre');
+  });
+
+  it('falls back to original path when no translation', () => {
+    const routes = {
+      en: { '/about': '/about' },
+      es: {},
+    };
+
+    expect(resolveLocalizedPath('/contact', 'es', routes)).toBe('/contact');
+  });
+});
+
+describe('createLink factory', () => {
+  const routes = {
+    en: { '/about': '/about' },
+    es: { '/about': '/sobre' },
+    fr: { '/about': '/a-propos' },
+  };
+
+  it('creates Link with routes pre-configured', () => {
+    const LocalizedLink = createLink(routes);
+
+    render(<LocalizedLink href="/about">About</LocalizedLink>);
+
+    const link = screen.getByRole('link', { name: 'About' });
+    // Router locale is 'es' from mock
+    expect(link.getAttribute('href')).toBe('/sobre');
+  });
+
+  it('allows prop routes to override factory routes', () => {
+    const factoryRoutes = {
+      es: { '/about': '/sobre' },
+    };
+
+    const propRoutes = {
+      es: { '/about': '/acerca' },
+    };
+
+    const LocalizedLink = createLink(factoryRoutes);
+
+    render(
+      <LocalizedLink href="/about" routes={propRoutes}>
+        About
+      </LocalizedLink>,
+    );
+
+    const link = screen.getByRole('link', { name: 'About' });
+    expect(link.getAttribute('href')).toBe('/acerca');
+  });
+
+  it('allows locale prop to override router locale', () => {
+    const LocalizedLink = createLink(routes);
+
+    render(
+      <LocalizedLink href="/about" locale="fr">
+        About
+      </LocalizedLink>,
+    );
+
+    const link = screen.getByRole('link', { name: 'About' });
+    expect(link.getAttribute('href')).toBe('/a-propos');
   });
 });

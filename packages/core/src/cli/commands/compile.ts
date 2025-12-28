@@ -1,7 +1,11 @@
 import { defineCommand } from 'citty';
-import { compileTranslations } from '../../compiler/compile.js';
+import {
+  compileTranslations,
+  type RoutingCompileOptions,
+} from '../../compiler/compile.js';
+import { detectFramework } from '../../framework.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
+import { getIdiomaPaths, loadConfig, type IdiomaConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 import { ensureExtracted } from './ensure-extracted.js';
 
@@ -17,6 +21,24 @@ export interface CompileCommandOptions {
   useSuspense?: boolean;
   locales?: string[];
   projectRoot?: string;
+  routing?: RoutingCompileOptions;
+}
+
+/**
+ * Build routing compile options from config.
+ */
+async function buildRoutingOptions(
+  config: IdiomaConfig,
+  projectRoot: string,
+): Promise<RoutingCompileOptions | undefined> {
+  if (!config.routing) return undefined;
+
+  const framework = await detectFramework(projectRoot);
+  return {
+    enabled: true,
+    localizedPaths: config.routing.localizedPaths ?? false,
+    framework,
+  };
 }
 
 /**
@@ -32,6 +54,7 @@ export async function runCompile(
     useSuspense,
     locales,
     projectRoot,
+    routing,
   } = options;
 
   await compileTranslations({
@@ -41,6 +64,7 @@ export async function runCompile(
     useSuspense,
     locales,
     projectRoot,
+    routing,
   });
 
   // Read back results to get stats
@@ -95,6 +119,7 @@ export const compileCommand = defineCommand({
     spinner.start('Compiling translations...');
 
     try {
+      const routing = await buildRoutingOptions(config, cwd);
       const result = await runCompile({
         localeDir,
         outputDir,
@@ -102,6 +127,7 @@ export const compileCommand = defineCommand({
         useSuspense: config.useSuspense,
         locales: config.locales,
         projectRoot: cwd,
+        routing,
       });
 
       spinner.succeed(

@@ -3,22 +3,31 @@
  *
  * @example
  * ```tsx
+ * // idioma/index.ts
+ * import { createLink } from '@idioma/next/pages';
+ * import { routes } from './.generated/routes';
+ *
+ * export const Link = createLink(routes);
+ *
  * // In a Pages Router component
- * import { Link, useLocalizedPath } from '@idioma/next/pages';
- * import { routes } from './idioma/.generated/routes';
+ * import { Link } from './idioma';
  *
  * function Navigation() {
- *   const aboutPath = useLocalizedPath('/about', routes);
- *
  *   return (
  *     <nav>
- *       <Link href="/about" routes={routes}>About</Link>
- *       <Link href="/blog" routes={routes}>Blog</Link>
+ *       <Link href="/about">About</Link>
+ *       <Link href="/blog">Blog</Link>
  *     </nav>
  *   );
  * }
  * ```
  */
 
-export { Link, type PagesLinkProps } from './link.js';
+export {
+  createLink,
+  Link,
+  resolveLocalizedPath,
+  type PagesLinkProps,
+  type RoutesMap,
+} from './link.js';
 export { useLocalizedPath } from './hooks.js';
