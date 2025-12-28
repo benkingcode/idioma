@@ -1,0 +1,79 @@
+{
+  "name": "@idioma/next",
+  "version": "0.1.0",
+  "description": "Next.js integration for Idioma i18n - App Router and Pages Router support",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./middleware": {
+      "types": "./dist/middleware.d.mts",
+      "import": "./dist/middleware.mjs"
+    },
+    "./navigation": {
+      "types": "./dist/navigation.d.mts",
+      "import": "./dist/navigation.mjs"
+    },
+    "./link": {
+      "types": "./dist/link.d.mts",
+      "import": "./dist/link.mjs"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.mts",
+      "import": "./dist/server/index.mjs"
+    },
+    "./pages": {
+      "types": "./dist/pages/index.d.mts",
+      "import": "./dist/pages/index.mjs"
+    },
+    "./pages/middleware": {
+      "types": "./dist/pages/middleware.d.mts",
+      "import": "./dist/pages/middleware.mjs"
+    },
+    "./pages/link": {
+      "types": "./dist/pages/link.d.mts",
+      "import": "./dist/pages/link.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@idioma/core": "workspace:*",
+    "@idioma/react": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=13.0.0",
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "jsdom": "^26.0.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "keywords": [
+    "idioma",
+    "i18n",
+    "next.js",
+    "nextjs",
+    "app-router",
+    "pages-router",
+    "internationalization",
+    "localization"
+  ],
+  "license": "MIT"
+}

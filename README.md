@@ -60,6 +60,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
   - [Namespaces](#namespaces)
 - [CLI Commands](#cli-commands)
 - [Configuration](#configuration)
+- [Routing](#routing)
 - [API Reference](#api-reference)
 - [How It Works](#how-it-works)
 - [Comparison](#comparison)
@@ -714,6 +715,188 @@ Use simple, friendly language. Avoid complex vocabulary.`,
 });
 ```
 
+## Routing
+
+Idioma supports localized URLs (e.g., `/es/sobre` instead of `/es/about`) via optional framework-specific packages.
+
+### Enabling Localized Paths
+
+Add the `routing` config to enable URL localization:
+
+```ts
+// idioma.config.ts
+export default defineConfig({
+  idiomaDir: './src/idioma',
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'fr'],
+  routing: {
+    localizedPaths: true, // Enable path translation
+    prefixStrategy: 'as-needed', // 'always' or 'as-needed' (default)
+  },
+});
+```
+
+When `localizedPaths: true`, `idioma extract` automatically scans your route structure and adds route segments to PO files:
+
+```po
+#: app/about/page.tsx
+msgctxt "route:about"
+msgid "xY3pQ7wR"
+msgstr "sobre"
+
+#: app/blog/[slug]/page.tsx
+msgctxt "route:blog"
+msgid "aB9cD3eF"
+msgstr "articulos"
+```
+
+Route segments are translated individually (not full paths), preventing translator errors with slashes or dynamic segments like `[slug]`.
+
+### Next.js (App Router)
+
+Install the Next.js package:
+
+```bash
+npm install @idioma/next
+```
+
+Set up middleware for locale detection and URL rewriting:
+
+```ts
+// middleware.ts
+import { createIdiomaMiddleware } from '@idioma/next/middleware';
+import { reverseRoutes, routes } from './src/idioma/.generated/routes';
+
+export default createIdiomaMiddleware({
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'fr'],
+  prefixStrategy: 'as-needed',
+  routes, // Only needed if localizedPaths: true
+  reverseRoutes, // Only needed if localizedPaths: true
+});
+
+export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
+```
+
+Use the localized Link component:
+
+```tsx
+// app/[lang]/layout.tsx
+import { Link } from '@idioma/next';
+import { routes } from './idioma/.generated/routes';
+
+function Navigation() {
+  return (
+    <nav>
+      <Link href="/about" routes={routes}>
+        About
+      </Link>
+      <Link href="/blog" routes={routes}>
+        Blog
+      </Link>
+    </nav>
+  );
+}
+```
+
+Generate SEO metadata:
+
+```tsx
+// app/[lang]/about/page.tsx
+import { routes } from '@/idioma/.generated/routes';
+import { generateIdiomaMetadata } from '@idioma/next/server';
+
+export function generateMetadata({ params }: { params: { lang: string } }) {
+  return generateIdiomaMetadata({
+    pathname: '/about',
+    baseUrl: 'https://example.com',
+    locales: ['en', 'es', 'fr'],
+    defaultLocale: 'en',
+    currentLocale: params.lang,
+    routes,
+  });
+}
+```
+
+### Next.js (Pages Router)
+
+Pages Router uses Next.js's built-in `i18n` config for detection and prefixes. Idioma adds localized paths:
+
+```tsx
+// pages/_app.tsx
+import { routes } from '@/idioma/.generated/routes';
+import { Link, useLocalizedPath } from '@idioma/next/pages';
+
+function Navigation() {
+  return (
+    <Link href="/about" routes={routes}>
+      About
+    </Link>
+  );
+}
+```
+
+### TanStack Router
+
+Install the TanStack package:
+
+```bash
+npm install @idioma/tanstack
+```
+
+Use the localized Link and hooks:
+
+```tsx
+import { HreflangLinks, Link, useLocalizedPath } from '@idioma/tanstack';
+import { routes } from './idioma/.generated/routes';
+
+function Navigation() {
+  return (
+    <nav>
+      <Link to="/about" routes={routes}>
+        About
+      </Link>
+      <Link to="/blog" routes={routes}>
+        Blog
+      </Link>
+    </nav>
+  );
+}
+
+function Head() {
+  return (
+    <HreflangLinks
+      pathname="/about"
+      baseUrl="https://example.com"
+      locales={['en', 'es', 'fr']}
+      defaultLocale="en"
+      routes={routes}
+    />
+  );
+}
+```
+
+### How Route Compilation Works
+
+1. **Extract**: `idioma extract` scans your route structure and adds segments to PO files
+2. **Translate**: Translators (or AI) translate individual segments: `about` → `sobre`
+3. **Compile**: `idioma compile` generates a routes map:
+
+```js
+// .generated/routes.js
+export const routes = {
+  en: { '/about': '/about', '/blog/[slug]': '/blog/[slug]' },
+  es: { '/about': '/sobre', '/blog/[slug]': '/articulos/[slug]' },
+};
+
+export const reverseRoutes = {
+  en: { '/about': '/about' },
+  es: { '/sobre': '/about', '/articulos/[slug]': '/blog/[slug]' },
+};
+```
+
+Dynamic segments like `[slug]` are preserved—only static segments are translated.
+
 ## Locale Fallbacks
 
 When a translation is missing, Idioma follows a fallback chain:
@@ -976,6 +1159,8 @@ TypeScript provides full type safety via generated types:
 
 - **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
 - **@idioma/react** — Runtime components (~800 bytes gzipped)
+- **@idioma/next** — Next.js integration (App Router middleware, Pages Router hooks, SEO metadata)
+- **@idioma/tanstack** — TanStack Router integration (localized Link, hreflang components)
 
 ## License
 

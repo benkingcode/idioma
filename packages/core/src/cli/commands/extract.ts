@@ -9,8 +9,15 @@ import { generateKey } from '../../keys/generator.js';
 import { mergeCatalogs } from '../../po/merge.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import type { Catalog, Message } from '../../po/types.js';
+import {
+  extractNextjsRoutes,
+  extractTanStackRoutes,
+  getTranslatableSegments,
+  ROUTE_CONTEXT_PREFIX,
+} from '../../routes/index.js';
+import type { ExtractedRoute, Framework } from '../../routes/index.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
+import { getIdiomaPaths, loadConfig, type IdiomaConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 
 export interface ExtractedMessage {
@@ -34,11 +41,15 @@ export interface ExtractOptions {
   clean?: boolean;
   /** Absolute path to idioma folder for robust import detection */
   idiomaDir?: string;
+  /** Routing configuration for extracting localized paths */
+  routing?: IdiomaConfig['routing'];
 }
 
 export interface ExtractResult {
   messages: ExtractedMessage[];
   files: number;
+  /** Number of route segments extracted (when localizedPaths enabled) */
+  routeSegments?: number;
 }
 
 /**
@@ -55,6 +66,7 @@ export async function extractMessages(
     locales,
     clean,
     idiomaDir,
+    routing,
   } = options;
 
   // Find all source files
@@ -78,6 +90,14 @@ export async function extractMessages(
       idiomaDir,
     );
     messages.push(...fileMessages);
+  }
+
+  // Extract routes if localizedPaths is enabled
+  let routeSegments = 0;
+  if (routing?.localizedPaths) {
+    const routeMessages = await extractRouteMessages(cwd, routing);
+    routeSegments = routeMessages.length;
+    messages.push(...routeMessages);
   }
 
   // Ensure locale directory exists
@@ -147,7 +167,7 @@ export async function extractMessages(
     }
   }
 
-  return { messages, files: files.length };
+  return { messages, files: files.length, routeSegments };
 }
 
 /**
@@ -416,6 +436,104 @@ export function messagesToCatalog(
   return catalog;
 }
 
+/**
+ * Detect the framework being used based on package.json dependencies.
+ */
+async function detectFramework(cwd: string): Promise<Framework | null> {
+  try {
+    const pkgPath = join(cwd, 'package.json');
+    const content = await fs.readFile(pkgPath, 'utf-8');
+    const pkg = JSON.parse(content) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+
+    const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+    // Check for TanStack Router first (more specific)
+    if (allDeps['@tanstack/react-router'] || allDeps['@tanstack/router']) {
+      return 'tanstack';
+    }
+
+    // Check for Next.js
+    if (allDeps['next']) {
+      // Determine App vs Pages router by checking for app/ directory
+      const hasAppDir =
+        (await directoryExists(join(cwd, 'app'))) ||
+        (await directoryExists(join(cwd, 'src', 'app')));
+      return hasAppDir ? 'nextjs-app' : 'nextjs-pages';
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function directoryExists(dir: string): Promise<boolean> {
+  try {
+    const stat = await fs.stat(dir);
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract routes and convert to messages for PO files.
+ */
+async function extractRouteMessages(
+  cwd: string,
+  routing: NonNullable<IdiomaConfig['routing']>,
+): Promise<ExtractedMessage[]> {
+  const framework = await detectFramework(cwd);
+  if (!framework) {
+    console.warn(
+      '[idioma] Could not detect framework for route extraction. ' +
+        'Skipping route extraction.',
+    );
+    return [];
+  }
+
+  // Extract routes based on framework
+  let routes: ExtractedRoute[];
+  const exclude = routing.exclude ?? ['api/**', '_next/**'];
+
+  if (framework === 'tanstack') {
+    routes = await extractTanStackRoutes({ projectRoot: cwd, exclude });
+  } else {
+    routes = await extractNextjsRoutes({ projectRoot: cwd, exclude });
+  }
+
+  // Convert routes to messages (one per unique translatable segment)
+  const messages: ExtractedMessage[] = [];
+  const seenSegments = new Set<string>();
+
+  for (const route of routes) {
+    const translatableSegments = getTranslatableSegments(route.segments);
+
+    for (const segment of translatableSegments) {
+      // Skip if we've already added this segment
+      if (seenSegments.has(segment)) continue;
+      seenSegments.add(segment);
+
+      // Context is "route:{segment}" to identify as a route segment
+      const context = `${ROUTE_CONTEXT_PREFIX}${segment}`;
+      const key = generateKey(segment, context);
+
+      messages.push({
+        key,
+        source: segment,
+        location: route.source,
+        line: 0, // Routes don't have line numbers
+        context,
+      });
+    }
+  }
+
+  return messages;
+}
+
 export const extractCommand = defineCommand({
   meta: {
     name: 'extract',
@@ -454,11 +572,16 @@ export const extractCommand = defineCommand({
         clean: args.clean,
         // Pass absolute idiomaDir for robust import detection
         idiomaDir: resolve(cwd, config.idiomaDir),
+        // Pass routing config for route extraction
+        routing: config.routing,
       });
 
-      spinner.succeed(
-        `Extracted ${result.messages.length} messages from ${result.files} files`,
-      );
+      // Build success message
+      let successMsg = `Extracted ${result.messages.length} messages from ${result.files} files`;
+      if (result.routeSegments && result.routeSegments > 0) {
+        successMsg += ` (including ${result.routeSegments} route segments)`;
+      }
+      spinner.succeed(successMsg);
 
       if (args.watch) {
         console.log('Watching for changes...');

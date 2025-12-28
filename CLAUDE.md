@@ -124,6 +124,19 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `runtime-suspense/` - Suspense-based lazy loading (React 19+)
 - `server/` - Server-side rendering utilities
 
+**@idioma/next** (`packages/next/`) - Next.js integration
+
+- `middleware.ts` - `createIdiomaMiddleware()` for locale detection and URL rewriting
+- `link.tsx` - Localized `Link` component for App Router
+- `server/` - `generateIdiomaMetadata()` for SEO, `setLocale()` for cookies
+- `pages/` - Pages Router support with `Link` and `useLocalizedPath`
+
+**@idioma/tanstack** (`packages/tanstack/`) - TanStack Router integration
+
+- `hooks.ts` - `useLocale()`, `useLocalizedPath()`
+- `link.tsx` - Localized `Link` component
+- `head.tsx` - `HreflangLinks` component and `useHreflangLinks()` for SEO
+
 ### Configuration
 
 Projects use `idioma.config.ts`:
@@ -495,6 +508,75 @@ idioma translate --dry-run --verbose
 ```
 
 This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for all translations. Useful for debugging guidelines and reviewing what context the AI receives.
+
+### Route Extraction and Compilation
+
+When `routing.localizedPaths: true` is set in config, Idioma extracts and compiles route segments.
+
+**Files**: `packages/core/src/routes/`
+
+#### Route Extraction
+
+- `extract-nextjs.ts` - Scans `app/` or `pages/` directories for route files
+- `extract-tanstack.ts` - Parses TanStack Router file conventions and `createFileRoute()` calls
+- `types.ts` - `ExtractedRoute`, `isDynamicSegment()`, `isRouteGroup()`, `getTranslatableSegments()`
+
+**Extraction Flow**:
+
+1. Detect framework from `package.json` (next vs @tanstack/react-router)
+2. Scan route directories for page files
+3. Parse directory structure to route paths
+4. Filter out dynamic segments `[slug]` and route groups `(marketing)`
+5. Add translatable segments to PO files with `route:` context prefix
+
+```po
+#: app/about/page.tsx
+msgctxt "route:about"
+msgid "xY3pQ7wR"
+msgstr "sobre"
+```
+
+**Why segments, not full paths?**
+
+- Translators see simple words: `blog`, `about`, `contact`
+- No risk of breaking slashes or bracket syntax
+- Dynamic segments `[slug]` never exposed to translation
+- Path structure reconstructed at compile time
+
+#### Route Compilation
+
+`packages/core/src/routes/compile.ts`:
+
+- `compileRoutes()` - Builds route maps from translated segments
+- `generateRoutesModule()` - Generates JavaScript exports
+- `generateRoutesTypes()` - Generates TypeScript types
+- `ROUTE_CONTEXT_PREFIX = 'route:'` - Prefix for route context in PO files
+
+**Compiled Output** (`.generated/routes.js`):
+
+```javascript
+export const segments = {
+  en: { about: 'about', blog: 'blog' },
+  es: { about: 'sobre', blog: 'articulos' },
+};
+
+export const routes = {
+  en: { '/about': '/about', '/blog/[slug]': '/blog/[slug]' },
+  es: { '/about': '/sobre', '/blog/[slug]': '/articulos/[slug]' },
+};
+
+export const reverseRoutes = {
+  en: { '/about': '/about' },
+  es: { '/sobre': '/about', '/articulos/[slug]': '/blog/[slug]' },
+};
+```
+
+The compiler reconstructs full paths by:
+
+1. Splitting canonical path into segments
+2. Looking up each segment translation
+3. Preserving dynamic segments `[param]` as-is
+4. Joining back with `/`
 
 ### Bundler Integration
 

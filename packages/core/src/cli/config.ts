@@ -23,6 +23,44 @@ const AiConfigSchema = z
   })
   .optional();
 
+/** Locale detection configuration */
+const DetectionConfigSchema = z.object({
+  /** Cookie name for storing locale preference */
+  cookieName: z.string().default('IDIOMA_LOCALE'),
+  /** Detection priority order */
+  order: z
+    .array(z.enum(['cookie', 'header', 'path']))
+    .default(['cookie', 'header']),
+});
+
+/** Routing configuration for localized paths */
+const RoutingConfigSchema = z
+  .object({
+    /**
+     * Enable localized pathnames (e.g., /es/sobre instead of /es/about).
+     * When enabled, route segments are extracted to PO files for translation.
+     * @default false
+     */
+    localizedPaths: z.boolean().default(false),
+    /**
+     * Locale prefix strategy for URLs.
+     * - 'always': All locales prefixed (e.g., /en/about, /es/about)
+     * - 'as-needed': Default locale unprefixed (e.g., /about, /es/about)
+     * @default 'as-needed'
+     */
+    prefixStrategy: z.enum(['always', 'as-needed']).default('as-needed'),
+    /**
+     * Glob patterns for routes to exclude from localization.
+     * @default ['api/**', '_next/**']
+     */
+    exclude: z.array(z.string()).default(['api/**', '_next/**']),
+    /**
+     * Locale detection settings for middleware.
+     */
+    detection: DetectionConfigSchema.optional(),
+  })
+  .optional();
+
 /**
  * Zod schema for Idioma configuration.
  * This is the single source of truth - IdiomaConfig type is derived from this.
@@ -63,6 +101,11 @@ const IdiomaConfigSchema = z.object({
    * Uses the Vercel AI SDK - install your preferred provider package (e.g., @ai-sdk/anthropic).
    */
   ai: AiConfigSchema,
+  /**
+   * Routing configuration for localized paths and middleware.
+   * Used by @idioma/next and @idioma/tanstack packages.
+   */
+  routing: RoutingConfigSchema,
 });
 
 /** Idioma configuration type - derived from the Zod schema */
