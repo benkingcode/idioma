@@ -937,19 +937,19 @@ The Babel plugin extracts messages during build, generates content-addressed key
 
 ## Comparison
 
-| Feature                   | Idioma   | react-intl | i18next  | LinguiJS |
-| ------------------------- | -------- | ---------- | -------- | -------- |
-| Runtime size              | ~800B    | ~13KB      | ~40KB    | ~5KB     |
-| Key management            | Auto     | Manual     | Manual   | Auto     |
-| Extraction                | Built-in | CLI        | CLI      | Built-in |
-| AI translation            | Built-in | No         | No       | No       |
-| Compile-time              | Yes      | Optional   | No       | Yes      |
-| Component-level splitting | Yes      | No         | No       | No       |
-| Lazy loading              | Opt-in   | Yes        | Yes      | Yes      |
-| PO format                 | Yes      | No         | Plugin   | Yes      |
-| Number/date formatting    | Use Intl | Built-in   | Built-in | Use Intl |
-| SSR                       | Yes      | Yes        | Yes      | Yes      |
-| RSC                       | Yes      | No         | No       | Partial  |
+| Feature                   | Idioma   | Lingui   | Paraglide    | react-intl | i18next  |
+| ------------------------- | -------- | -------- | ------------ | ---------- | -------- |
+| Runtime size (gzipped)    | ~800B    | ~10KB    | ~2KB         | ~14KB      | ~18KB    |
+| Key management            | Auto     | Auto     | Manual       | Manual     | Manual   |
+| Extraction                | Built-in | Built-in | None         | CLI        | CLI      |
+| AI translation            | Built-in | No       | No           | No         | No       |
+| Compile-time              | Yes      | Yes      | Yes          | Optional   | No       |
+| Component-level splitting | Yes      | No       | Yes          | No         | No       |
+| Lazy loading              | Opt-in   | Yes      | Experimental | Yes        | Yes      |
+| PO format                 | Yes      | Yes      | No           | No         | Plugin   |
+| Number/date formatting    | Use Intl | Use Intl | Use Intl     | Built-in   | Built-in |
+| SSR                       | Yes      | Yes      | Yes          | Yes        | Yes      |
+| RSC                       | Yes      | Yes      | Yes          | No         | Yes      |
 
 **Note on runtime size:** Idioma's ~800B runtime handles message rendering. ICU plural/select parsing adds ~2KB when you use those features. The total is still significantly smaller than alternatives because parsing happens at build time for static messages.
 
