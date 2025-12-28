@@ -27,7 +27,7 @@ describe('SimpleAnimatedHeader', () => {
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'idioma translate | Auto context: on | Model: anthropic (claude-sonnet-4)',
+      'idioma translate | Auto context: on | Model: claude-sonnet-4 (anthropic)',
     );
   });
 
@@ -41,7 +41,7 @@ describe('SimpleAnimatedHeader', () => {
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'idioma translate | Auto context: off | Model: openai (gpt-4o)',
+      'idioma translate | Auto context: off | Model: gpt-4o (openai)',
     );
   });
 
