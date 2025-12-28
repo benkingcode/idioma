@@ -606,11 +606,13 @@ idioma extract --watch   # Watch for changes
 
 ### compile
 
-Compile PO files to TypeScript:
+Compile PO files to JavaScript:
 
 ```bash
 idioma compile
 ```
+
+> **Note:** The Vite, Next.js, and Metro plugins run `compile` automatically during build. You only need to run this manually if you're using a different bundler or want to inspect the generated output.
 
 ### translate
 
