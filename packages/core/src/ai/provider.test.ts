@@ -1,12 +1,20 @@
-import { describe, expect, it, vi } from 'vitest';
+import type { LanguageModel } from 'ai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildTranslationSystemPrompt,
-  createAnthropicProvider,
   createDryRunProvider,
-  createOpenAIProvider,
+  createTranslationProvider,
   type TranslationProvider,
   type TranslationRequest,
 } from './provider';
+
+// Mock the ai package
+vi.mock('ai', () => ({
+  generateText: vi.fn(),
+  Output: {
+    object: vi.fn((opts: { schema: unknown }) => opts),
+  },
+}));
 
 describe('AI Translation Providers', () => {
   describe('TranslationProvider interface', () => {
@@ -23,59 +31,215 @@ describe('AI Translation Providers', () => {
     });
   });
 
-  describe('createAnthropicProvider', () => {
-    it('creates a provider with name "anthropic"', () => {
-      const provider = createAnthropicProvider({ apiKey: 'test-key' });
-      expect(provider.name).toBe('anthropic');
+  describe('createTranslationProvider', () => {
+    let mockModel: LanguageModel;
+    let mockGenerateText: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      // Create a mock LanguageModel
+      mockModel = {
+        modelId: 'test-model',
+        provider: 'test-provider',
+        specificationVersion: 'v1',
+      } as unknown as LanguageModel;
+
+      // Get the mocked generateText function
+      const aiModule = await import('ai');
+      mockGenerateText = aiModule.generateText as ReturnType<typeof vi.fn>;
+      mockGenerateText.mockReset();
+    });
+
+    it('creates a provider with name "ai-sdk"', () => {
+      const provider = createTranslationProvider({ model: mockModel });
+      expect(provider.name).toBe('ai-sdk');
     });
 
     it('has a translate method', () => {
-      const provider = createAnthropicProvider({ apiKey: 'test-key' });
+      const provider = createTranslationProvider({ model: mockModel });
       expect(typeof provider.translate).toBe('function');
     });
 
-    it('uses custom model if provided', () => {
-      const provider = createAnthropicProvider({
-        apiKey: 'test-key',
-        model: 'claude-3-haiku-20240307',
+    it('calls generateText with correct parameters', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          translations: [{ key: 'greeting', translation: 'Hola' }],
+        },
       });
-      expect(provider.name).toBe('anthropic');
+
+      const provider = createTranslationProvider({ model: mockModel });
+
+      const request: TranslationRequest = {
+        messages: [{ key: 'greeting', source: 'Hello' }],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      await provider.translate(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: mockModel,
+          system: expect.stringContaining('from en to es'),
+          prompt: expect.stringContaining('Hello'),
+        }),
+      );
     });
 
-    it('accepts guidelines option', () => {
-      const provider = createAnthropicProvider({
-        apiKey: 'test-key',
+    it('returns translated messages from AI response', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          translations: [
+            { key: 'greeting', translation: 'Hola' },
+            { key: 'farewell', translation: 'Adiós' },
+          ],
+        },
+      });
+
+      const provider = createTranslationProvider({ model: mockModel });
+
+      const request: TranslationRequest = {
+        messages: [
+          { key: 'greeting', source: 'Hello' },
+          { key: 'farewell', source: 'Goodbye' },
+        ],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      const result = await provider.translate(request);
+
+      expect(result).toEqual([
+        { key: 'greeting', translation: 'Hola' },
+        { key: 'farewell', translation: 'Adiós' },
+      ]);
+    });
+
+    it('includes context in prompt when provided', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          translations: [{ key: 'greeting', translation: 'Hola' }],
+        },
+      });
+
+      const provider = createTranslationProvider({ model: mockModel });
+
+      const request: TranslationRequest = {
+        messages: [
+          { key: 'greeting', source: 'Hello', context: 'Informal greeting' },
+        ],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      await provider.translate(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining('Context: Informal greeting'),
+        }),
+      );
+    });
+
+    it('passes providerOptions through to generateText', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          translations: [{ key: 'greeting', translation: 'Hola' }],
+        },
+      });
+
+      const providerOptions = {
+        anthropic: { thinking: { type: 'enabled', budgetTokens: 10000 } },
+      };
+
+      const provider = createTranslationProvider({
+        model: mockModel,
+        providerOptions,
+      });
+
+      const request: TranslationRequest = {
+        messages: [{ key: 'greeting', source: 'Hello' }],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      await provider.translate(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          providerOptions,
+        }),
+      );
+    });
+
+    it('includes guidelines in system prompt when provided', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          translations: [{ key: 'greeting', translation: 'Hola' }],
+        },
+      });
+
+      const provider = createTranslationProvider({
+        model: mockModel,
         guidelines: 'Use formal language for this business app.',
       });
-      expect(provider.name).toBe('anthropic');
-    });
-  });
 
-  describe('createOpenAIProvider', () => {
-    it('creates a provider with name "openai"', () => {
-      const provider = createOpenAIProvider({ apiKey: 'test-key' });
-      expect(provider.name).toBe('openai');
+      const request: TranslationRequest = {
+        messages: [{ key: 'greeting', source: 'Hello' }],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      await provider.translate(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          system: expect.stringContaining(
+            'Use formal language for this business app.',
+          ),
+        }),
+      );
     });
 
-    it('has a translate method', () => {
-      const provider = createOpenAIProvider({ apiKey: 'test-key' });
-      expect(typeof provider.translate).toBe('function');
-    });
-
-    it('uses custom model if provided', () => {
-      const provider = createOpenAIProvider({
-        apiKey: 'test-key',
-        model: 'gpt-4o-mini',
+    it('calls onVerbose callback when provided', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          translations: [{ key: 'greeting', translation: 'Hola' }],
+        },
       });
-      expect(provider.name).toBe('openai');
+
+      const onVerbose = vi.fn();
+      const provider = createTranslationProvider({
+        model: mockModel,
+        onVerbose,
+      });
+
+      const request: TranslationRequest = {
+        messages: [{ key: 'greeting', source: 'Hello' }],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      await provider.translate(request);
+
+      expect(onVerbose).toHaveBeenCalled();
     });
 
-    it('accepts guidelines option', () => {
-      const provider = createOpenAIProvider({
-        apiKey: 'test-key',
-        guidelines: 'Use formal language for this business app.',
+    it('throws when generateText returns no output', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: null,
       });
-      expect(provider.name).toBe('openai');
+
+      const provider = createTranslationProvider({ model: mockModel });
+
+      const request: TranslationRequest = {
+        messages: [{ key: 'greeting', source: 'Hello' }],
+        sourceLocale: 'en',
+        targetLocale: 'es',
+      };
+
+      await expect(provider.translate(request)).rejects.toThrow(
+        'No output from AI provider',
+      );
     });
   });
 

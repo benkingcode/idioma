@@ -204,7 +204,6 @@ describe('CLI Config', () => {
           idiomaDir: './src/idioma',
           defaultLocale: 'en',
           ai: {
-            provider: 'anthropic',
             guidelines: 'This is a formal business app. Use professional language.',
           },
         }
@@ -213,7 +212,6 @@ describe('CLI Config', () => {
 
       const config = await loadConfig(tempDir);
 
-      expect(config.ai?.provider).toBe('anthropic');
       expect(config.ai?.guidelines).toBe(
         'This is a formal business app. Use professional language.',
       );
@@ -236,19 +234,6 @@ describe('CLI Config', () => {
         );
 
         await expect(loadConfig(tempDir)).rejects.toThrow('defaultLocale');
-      });
-
-      it('throws on invalid ai.provider', async () => {
-        await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
-          `export default {
-            idiomaDir: './src/idioma',
-            defaultLocale: 'en',
-            ai: { provider: 'chatgpt' }
-          }`,
-        );
-
-        await expect(loadConfig(tempDir)).rejects.toThrow('ai.provider');
       });
 
       it('throws on wrong type for idiomaDir', async () => {

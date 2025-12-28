@@ -1,3 +1,4 @@
+import { anthropic } from '@ai-sdk/anthropic';
 import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
@@ -5,7 +6,6 @@ export default defineConfig({
   defaultLocale: 'en',
   locales: ['en', 'es'],
   ai: {
-    provider: 'anthropic',
-    model: 'claude-haiku-4-5',
+    model: anthropic('claude-haiku-4-5'),
   },
 });

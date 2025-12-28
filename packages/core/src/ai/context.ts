@@ -1,10 +1,14 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import Anthropic from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
+import type { generateText as generateTextFn, LanguageModel } from 'ai';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 import { extractFromFile } from '../cli/commands/extract.js';
 import type { Catalog, Message } from '../po/types.js';
 import { formatBox, formatHeader, formatKeyValueList } from './format.js';
+
+/** Provider options type extracted from generateText parameters */
+type ProviderOptions = Parameters<typeof generateTextFn>[0]['providerOptions'];
 
 /**
  * Prefix used to identify AI-generated context comments in PO files.
@@ -182,20 +186,12 @@ export function groupMessagesByFile(
 // Context Providers
 // ============================================================================
 
-export interface AnthropicContextProviderOptions {
-  apiKey: string;
-  model?: string;
+export interface ContextProviderOptions {
+  model: LanguageModel;
   /** Project-specific guidelines for AI context generation */
   guidelines?: string;
-  /** Callback for verbose logging */
-  onVerbose?: (message: string) => void;
-}
-
-export interface OpenAIContextProviderOptions {
-  apiKey: string;
-  model?: string;
-  /** Project-specific guidelines for AI context generation */
-  guidelines?: string;
+  /** Provider-specific options passed through to generateText() */
+  providerOptions?: ProviderOptions;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
 }
@@ -267,19 +263,25 @@ ${messageList}`;
 }
 
 /**
- * Create an Anthropic context provider.
+ * Zod schema for structured context output
  */
-export function createAnthropicContextProvider(
-  options: AnthropicContextProviderOptions,
-): ContextProvider {
-  const {
-    apiKey,
-    model = 'claude-sonnet-4-20250514',
-    guidelines,
-    onVerbose,
-  } = options;
+const ContextResultSchema = z.object({
+  contexts: z.array(
+    z.object({
+      key: z.string(),
+      context: z.string(),
+    }),
+  ),
+});
 
-  const client = new Anthropic({ apiKey });
+/**
+ * Create a context provider using the Vercel AI SDK.
+ * Accepts any LanguageModel from @ai-sdk/* packages.
+ */
+export function createContextProvider(
+  options: ContextProviderOptions,
+): ContextProvider {
+  const { model, guidelines, providerOptions, onVerbose } = options;
   const systemPrompt = buildContextSystemPrompt(guidelines);
 
   return {
@@ -296,64 +298,33 @@ export function createAnthropicContextProvider(
         onVerbose(formatBox('User Content', userContent));
       }
 
-      const response = await client.messages.create({
+      const result = await generateText({
         model,
-        max_tokens: 4096,
+        output: Output.object({ schema: ContextResultSchema }),
         system: systemPrompt,
-        messages: [{ role: 'user', content: userContent }],
-        tools: [
-          {
-            name: 'submit_contexts',
-            description:
-              'Submit the generated contexts for translatable strings',
-            input_schema: {
-              type: 'object' as const,
-              properties: {
-                contexts: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      key: {
-                        type: 'string',
-                        description: 'The message key',
-                      },
-                      context: {
-                        type: 'string',
-                        description: 'Helpful context for translators',
-                      },
-                    },
-                    required: ['key', 'context'],
-                  },
-                },
-              },
-              required: ['contexts'],
-            },
-          },
-        ],
-        tool_choice: { type: 'tool', name: 'submit_contexts' },
+        prompt: userContent,
+        providerOptions,
       });
 
-      // Extract contexts from tool use response
-      const toolUse = response.content.find((c) => c.type === 'tool_use');
-      if (!toolUse || toolUse.type !== 'tool_use') {
-        throw new Error('No tool use response from Anthropic');
+      if (!result.output) {
+        throw new Error('No output from AI provider');
       }
-
-      const input = toolUse.input as { contexts: GeneratedContext[] };
 
       if (onVerbose) {
         onVerbose(
           formatBox(
             'Response',
             formatKeyValueList(
-              input.contexts.map((c) => ({ key: c.key, value: c.context })),
+              result.output.contexts.map((c) => ({
+                key: c.key,
+                value: c.context,
+              })),
             ),
           ),
         );
       }
 
-      return input.contexts;
+      return result.output.contexts;
     },
   };
 }
@@ -397,90 +368,6 @@ export function createDryRunContextProvider(
   };
 }
 
-/**
- * Create an OpenAI context provider.
- */
-export function createOpenAIContextProvider(
-  options: OpenAIContextProviderOptions,
-): ContextProvider {
-  const { apiKey, model = 'gpt-4o', guidelines, onVerbose } = options;
-
-  const client = new OpenAI({ apiKey });
-  const systemPrompt = buildContextSystemPrompt(guidelines);
-
-  return {
-    async generateContext(
-      request: FileContextRequest,
-    ): Promise<GeneratedContext[]> {
-      const userContent = formatContextRequest(request);
-
-      if (onVerbose) {
-        onVerbose(
-          `\n${formatHeader(`Context Generation: ${request.filePath} (${request.messages.length} messages)`)}`,
-        );
-        onVerbose(formatBox('System Prompt', systemPrompt));
-        onVerbose(formatBox('User Content', userContent));
-      }
-
-      const response = await client.chat.completions.create({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'contexts',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                contexts: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      key: { type: 'string' },
-                      context: { type: 'string' },
-                    },
-                    required: ['key', 'context'],
-                    additionalProperties: false,
-                  },
-                },
-              },
-              required: ['contexts'],
-              additionalProperties: false,
-            },
-          },
-        },
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('No response from OpenAI');
-      }
-
-      const parsed = JSON.parse(content) as {
-        contexts: GeneratedContext[];
-      };
-
-      if (onVerbose) {
-        onVerbose(
-          formatBox(
-            'Response',
-            formatKeyValueList(
-              parsed.contexts.map((c) => ({ key: c.key, value: c.context })),
-            ),
-          ),
-        );
-      }
-
-      return parsed.contexts;
-    },
-  };
-}
-
 // ============================================================================
 // Orchestration
 // ============================================================================
@@ -505,7 +392,7 @@ export interface ContextGenerationOptions {
   /** Root directory for resolving source file paths */
   projectRoot: string;
   /** Absolute path to idioma directory (for extracting line numbers) */
-  idiomaDir: string;
+  idiomaDir?: string;
   /** Catalog to generate context for */
   catalog: Catalog;
   /** Context provider to use */
@@ -595,23 +482,27 @@ export async function generateContextForCatalog(
       continue;
     }
 
-    // Extract from this file to get accurate line numbers
-    // (PO references are file-only, so we re-extract for line info)
-    const extractedMessages = await extractFromFile(
-      fileContent,
-      fullPath,
-      filePath,
-      idiomaDir,
-    );
+    // Update messages with accurate line numbers if idiomaDir is provided
+    let messagesWithLines = messages;
+    if (idiomaDir) {
+      // Extract from this file to get accurate line numbers
+      // (PO references are file-only, so we re-extract for line info)
+      const extractedMessages = await extractFromFile(
+        fileContent,
+        fullPath,
+        filePath,
+        idiomaDir,
+      );
 
-    // Build a lookup map from key -> line number
-    const lineByKey = new Map(extractedMessages.map((m) => [m.key, m.line]));
+      // Build a lookup map from key -> line number
+      const lineByKey = new Map(extractedMessages.map((m) => [m.key, m.line]));
 
-    // Update messages with accurate line numbers
-    const messagesWithLines = messages.map((m) => ({
-      ...m,
-      line: lineByKey.get(m.key) ?? m.line,
-    }));
+      // Update messages with accurate line numbers
+      messagesWithLines = messages.map((m) => ({
+        ...m,
+        line: lineByKey.get(m.key) ?? m.line,
+      }));
+    }
 
     // Generate context for all messages in this file
     const contexts = await provider.generateContext({

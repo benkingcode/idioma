@@ -11,6 +11,7 @@
     "translate": "dotenv -e ../../../.env.local -- idioma translate"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
     "@idioma/core": "workspace:*",
     "@idioma/react": "workspace:*",
     "@tanstack/react-router": "^1.94.0",

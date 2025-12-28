@@ -113,7 +113,7 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `icu/` - ICU MessageFormat parser and compiler
 - `po/` - PO file parser and merge utilities
 - `keys/` - Message key generation (murmurhash-based)
-- `ai/` - AI translation: context generation from source code, provider abstraction (Anthropic/OpenAI)
+- `ai/` - AI translation: context generation from source code, unified provider via Vercel AI SDK
 
 **@idioma/react** (`packages/react/`) - Runtime components
 
@@ -484,8 +484,7 @@ Batch translates messages with system prompt that ensures:
 
 **Providers**:
 
-- Anthropic (Claude Sonnet 4) - uses tool calling for structured output
-- OpenAI (GPT-4o) - uses JSON schema mode
+Uses the [Vercel AI SDK](https://ai-sdk.dev/) for unified provider access. Users configure `ai.model` in their config with any `LanguageModel` from `@ai-sdk/*` packages (anthropic, openai, google, etc.). Translation uses `generateText()` with `Output.object()` for structured output.
 
 **Dry Run Mode**:
 

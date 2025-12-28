@@ -11,7 +11,7 @@ msgstr "Acerca de nuestra empresa"
 #: src/routes/about.lazy.tsx
 #, ai-translated
 msgid "004U2qa8"
-msgstr "Aprende más sobre lo que hacemos"
+msgstr "Obtén más información sobre lo que hacemos"
 
 #: src/routes/contact.lazy.tsx
 #, ai-translated
@@ -31,4 +31,4 @@ msgstr "Bienvenido a nuestro sitio web"
 #: src/routes/index.lazy.tsx
 #, ai-translated
 msgid "000SSgaT"
-msgstr "Esta es la página de inicio con traducciones únicas"
+msgstr "Esta es la página principal con traducciones únicas"

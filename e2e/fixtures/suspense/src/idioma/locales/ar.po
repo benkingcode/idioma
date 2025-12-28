@@ -6,12 +6,12 @@ msgstr ""
 #: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "000e6cSN"
-msgstr "مرحباً بالعالم!"
+msgstr "مرحبا، العالم!"
 
 #: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "002LT9uM"
-msgstr "أهلا وسهلا بك في تطبيقنا"
+msgstr "مرحبا بك في تطبيقنا"
 
 #: src/components/BasicTrans.tsx
 #, ai-translated
@@ -21,12 +21,12 @@ msgstr "وداعا!"
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "001K244T"
-msgstr "اضغط <Link>هنا</Link> للمتابعة"
+msgstr "انقر <Link>هنا</Link> للمتابعة"
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "002MF83G"
-msgstr "اقرأ <Link>الشروط</Link> و<Bold>سياسة الخصوصية</Bold>"
+msgstr "اقرأ <Link>الشروط</Link> و <Bold>سياسة الخصوصية</Bold>"
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
@@ -36,12 +36,12 @@ msgstr "مرحبا <Bold>{name}</Bold>!"
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "002eTXHM"
-msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، وعادي"
+msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، والعادي"
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "0013HsIP"
-msgstr "<Bold> تنبيه مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
+msgstr "<Bold> مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -56,19 +56,19 @@ msgstr "العدد: {zero}"
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "0043ID7R"
-msgstr "قيمة فارغة: [{nullValue}]"
+msgstr "فارغ: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "003jykkI"
-msgstr "قد لا تكون هذه الرسالة مترجمة"
+msgstr "قد لا يتم ترجمة هذه الرسالة"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "0047ZVOp"
 msgstr ""
-"هذا نص أطول يمتد عبر عدة كلمات ويختبر كيفية تعامل النظام مع المحتوى الأطول "
-"في الترجمات"
+"هذا نص أطول يمتد على عدة كلمات ويختبر كيفية تعامل النظام مع محتوى أطول في "
+"الترجمات"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -83,12 +83,12 @@ msgstr "رموز تعبيرية: 🎉 والرموز: © ® ™"
 #: src/components/Interpolation.tsx
 #, ai-translated
 msgid "0024c34D"
-msgstr "مرحباً، {name}!"
+msgstr "مرحبا، {name}!"
 
 #: src/components/Interpolation.tsx
 #, ai-translated
 msgid "003lIRId"
-msgstr "أهلا وسهلا، {firstName} {lastName}!"
+msgstr "مرحبا، {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx
 #, ai-translated
@@ -113,7 +113,7 @@ msgstr "{count, plural, zero {لا توجد رسائل} one {# رسالة} other
 #: src/components/Plurals.tsx
 #, ai-translated
 msgid "002EaYd6"
-msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
+msgstr "هناك {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
 
 #: src/components/Plurals.tsx
 #, ai-translated
@@ -130,14 +130,14 @@ msgstr "مرحبا من useT!"
 #: src/components/UseT.tsx
 #, ai-translated
 msgid "003X3cVZ"
-msgstr "أهلا بك، {name}!"
+msgstr "أهلا وسهلا، {name}!"
 
 #: src/components/UseT.tsx
 #, ai-translated
 msgid "001gZ2vk"
-msgstr "{count} عناصر بقلم {author}"
+msgstr "{count} عنصر بواسطة {author}"
 
 #: src/components/UseT.tsx
 #, ai-translated
 msgid "002RXyTq"
-msgstr "ترجمة سطرية"
+msgstr "الترجمة المضمنة"

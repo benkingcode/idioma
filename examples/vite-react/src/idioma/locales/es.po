@@ -6,7 +6,7 @@ msgstr ""
 #: src/App.tsx
 #, extracted, ai-translated
 msgid "000QnNwH"
-msgstr "Ejemplo de idioma"
+msgstr "Ejemplo de Idioma"
 
 #: src/App.tsx
 #, extracted, ai-translated
@@ -26,7 +26,7 @@ msgstr "Pluralización"
 #: src/App.tsx
 #, extracted, ai-translated
 msgid "0013HYrG"
-msgstr "API imperativo"
+msgstr "API Imperativo"
 
 #: src/components/Counter.tsx
 #, extracted, ai-translated
@@ -41,7 +41,7 @@ msgstr "¡Hola, {name}!"
 #: src/components/Messages.tsx
 #, extracted, ai-translated
 msgid "0030Ae50"
-msgstr "¡Bienvenido de nuevo!"
+msgstr "¡Bienvenido de vuelta!"
 
 #: src/components/Messages.tsx
 #, extracted, ai-translated

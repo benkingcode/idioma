@@ -26,7 +26,7 @@ msgstr "Haz clic <Link>aquí</Link> para continuar"
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "002MF83G"
-msgstr "Lee los <Link>términos</Link> y <Bold>política de privacidad</Bold>"
+msgstr "Lee los <Link>términos</Link> y la <Bold>política de privacidad</Bold>"
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
@@ -41,7 +41,7 @@ msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "0013HsIP"
-msgstr "<Bold> Importante: <Italic>lee con atención</Italic> </Bold>"
+msgstr "<Bold> Importante: <Italic>léelo cuidadosamente</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -51,7 +51,7 @@ msgstr "Valor: [{emptyString}]"
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "002Baos1"
-msgstr "Cantidad: {zero}"
+msgstr "Conteo: {zero}"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -61,14 +61,14 @@ msgstr "Nulo: [{nullValue}]"
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "003jykkI"
-msgstr "Este mensaje podría no estar traducido"
+msgstr "Es posible que este mensaje no esté traducido"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "0047ZVOp"
 msgstr ""
 "Este es un texto más largo que abarca múltiples palabras y prueba cómo el "
-"sistema maneja contenido más extenso en traducciones"
+"sistema maneja contenido más extenso en las traducciones"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -88,7 +88,7 @@ msgstr "¡Hola, {name}!"
 #: src/components/Interpolation.tsx
 #, ai-translated
 msgid "003lIRId"
-msgstr "¡Bienvenido, {firstName} {lastName}!"
+msgstr "Bienvenido, {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx
 #, ai-translated
@@ -113,7 +113,7 @@ msgstr "{count, plural, zero {Sin mensajes} one {# mensaje} other {# mensajes}}"
 #: src/components/Plurals.tsx
 #, ai-translated
 msgid "002EaYd6"
-msgstr "Hay {count, plural, one {# manzana} other {# manzanas}} en la cesta"
+msgstr "Hay {count, plural, one {# manzana} other {# manzanas}} en la canasta"
 
 #: src/components/Plurals.tsx
 #, ai-translated
@@ -121,24 +121,29 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# "
 "archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other "
-"{# archivos (otro)}}"
+"{# archivos (otros)}}"
 
 #: src/components/EdgeCases.tsx
+#, ai-translated
 msgid "004Dt4mI"
-msgstr ""
+msgstr "¡Hola {name}!"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "002UQheH"
 msgstr "¡Hola desde useT!"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "003X3cVZ"
 msgstr "¡Bienvenido, {name}!"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "001gZ2vk"
 msgstr "{count} elementos por {author}"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "002RXyTq"
 msgstr "Traducción en línea"

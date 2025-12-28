@@ -1,9 +1,8 @@
 import { join, resolve } from 'path';
 import { defineCommand } from 'citty';
 import {
-  createAnthropicContextProvider,
+  createContextProvider,
   createDryRunContextProvider,
-  createOpenAIContextProvider,
   generateContextForCatalog,
   type ContextFileProgress,
   type ContextProvider,
@@ -14,9 +13,8 @@ import {
   formatKeyValueList,
 } from '../../ai/format.js';
 import {
-  createAnthropicProvider,
   createDryRunProvider,
-  createOpenAIProvider,
+  createTranslationProvider,
   type MessageToTranslate,
   type TranslationProvider,
 } from '../../ai/provider.js';
@@ -373,11 +371,6 @@ export const translateCommand = defineCommand({
       description:
         'Target locale to translate (translates all locales if not specified)',
     },
-    provider: {
-      type: 'string',
-      description: 'AI provider (anthropic or openai)',
-      default: 'anthropic',
-    },
     force: {
       type: 'boolean',
       description: 'Retranslate existing translations',
@@ -418,46 +411,46 @@ export const translateCommand = defineCommand({
       ? (msg: string) => console.log(msg)
       : undefined;
 
+    // Get AI config
+    const { model, guidelines, providerOptions } = config.ai ?? {};
+
     // Create provider
     let provider: TranslationProvider;
-    const providerName = args.provider as string;
 
     // In dry run mode, use a provider that skips AI calls
     if (args['dry-run']) {
       provider = createDryRunProvider({
-        guidelines: config.ai?.guidelines,
-        onVerbose,
-      });
-    } else if (providerName === 'anthropic') {
-      const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
-      if (!apiKey) {
-        console.error('Error: ANTHROPIC_API_KEY not set');
-        process.exitCode = 1;
-        return;
-      }
-      provider = createAnthropicProvider({
-        apiKey,
-        model: config.ai?.model,
-        guidelines: config.ai?.guidelines,
-        onVerbose,
-      });
-    } else if (providerName === 'openai') {
-      const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        console.error('Error: OPENAI_API_KEY not set');
-        process.exitCode = 1;
-        return;
-      }
-      provider = createOpenAIProvider({
-        apiKey,
-        model: config.ai?.model,
-        guidelines: config.ai?.guidelines,
+        guidelines,
         onVerbose,
       });
     } else {
-      console.error(`Error: Unknown provider: ${providerName}`);
-      process.exitCode = 1;
-      return;
+      // Require explicit model configuration
+      if (!model) {
+        console.error('Error: AI model not configured.\n');
+        console.error('Add to idioma.config.ts:');
+        console.error('');
+        console.error('  import { anthropic } from "@ai-sdk/anthropic";');
+        console.error('');
+        console.error('  export default defineConfig({');
+        console.error('    // ... other config');
+        console.error('    ai: {');
+        console.error('      model: anthropic("claude-sonnet-4-20250514"),');
+        console.error('    },');
+        console.error('  });');
+        console.error('');
+        console.error(
+          'See https://ai-sdk.dev/providers for available providers.',
+        );
+        process.exitCode = 1;
+        return;
+      }
+
+      provider = createTranslationProvider({
+        model,
+        guidelines,
+        providerOptions,
+        onVerbose,
+      });
     }
 
     // Create context provider if auto-context is enabled
@@ -465,32 +458,18 @@ export const translateCommand = defineCommand({
     let contextProvider: ContextProvider | undefined;
 
     if (autoContext) {
-      // In dry run mode, use a provider that skips AI calls
       if (args['dry-run']) {
         contextProvider = createDryRunContextProvider({
-          guidelines: config.ai?.guidelines,
+          guidelines,
           onVerbose,
         });
-      } else if (providerName === 'anthropic') {
-        const apiKey = config.ai?.apiKey || process.env.ANTHROPIC_API_KEY;
-        if (apiKey) {
-          contextProvider = createAnthropicContextProvider({
-            apiKey,
-            model: config.ai?.model,
-            guidelines: config.ai?.guidelines,
-            onVerbose,
-          });
-        }
-      } else if (providerName === 'openai') {
-        const apiKey = config.ai?.apiKey || process.env.OPENAI_API_KEY;
-        if (apiKey) {
-          contextProvider = createOpenAIContextProvider({
-            apiKey,
-            model: config.ai?.model,
-            guidelines: config.ai?.guidelines,
-            onVerbose,
-          });
-        }
+      } else if (model) {
+        contextProvider = createContextProvider({
+          model,
+          guidelines,
+          providerOptions,
+          onVerbose,
+        });
       }
     }
 
@@ -511,12 +490,20 @@ export const translateCommand = defineCommand({
     }
 
     // Start animated header (globe + config info)
+    // Extract model info (LanguageModel can be string or object with provider/modelId)
+    const modelInfo =
+      model && typeof model === 'object'
+        ? { provider: model.provider, modelId: model.modelId }
+        : typeof model === 'string'
+          ? { provider: 'ai-sdk', modelId: model }
+          : undefined;
+
     const header = createAnimatedHeader();
     header.start({
       title: 'idioma translate',
       autoContext,
-      provider: providerName,
-      model: config.ai?.model,
+      provider: args['dry-run'] ? 'dry-run' : (modelInfo?.provider ?? 'ai-sdk'),
+      model: modelInfo?.modelId,
     });
 
     // Ensure PO files exist (auto-extract if missing)

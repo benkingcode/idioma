@@ -4,117 +4,145 @@ msgstr ""
 "Content-Type: text/plain\n"
 
 #: src/components/BasicTrans.tsx
+#. [AI Context]: Simple greeting text displayed in a paragraph element on the basic translation component page
 msgid "000e6cSN"
 msgstr "Hello, World!"
 
 #: src/components/BasicTrans.tsx
+#. [AI Context]: Welcome message displayed in a paragraph element, introduces the application to users
 msgid "002LT9uM"
 msgstr "Welcome to our application"
 
 #: src/components/BasicTrans.tsx
+#. [AI Context]: Farewell greeting text displayed in a paragraph element with explicit translation ID
 msgid "greeting.farewell"
 msgstr "Goodbye!"
 
 #: src/components/ComponentTags.tsx
+#. [AI Context]: Message with clickable link component. Users see this text with "here" as a clickable link element.
 msgid "001K244T"
 msgstr "Click <Link>here</Link> to continue"
 
 #: src/components/ComponentTags.tsx
+#. [AI Context]: Message with two clickable link components. Text contains two separate linked elements: "terms" and "privacy policy" (bolded).
 msgid "002MF83G"
 msgstr "Read the <Link>terms</Link> and <Bold>privacy policy</Bold>"
 
 #: src/components/ComponentTags.tsx
+#. [AI Context]: Greeting message with dynamic name interpolation inside bold component. The {name} placeholder is replaced with 'World' and displayed as bold text.
 msgid "000OaF1m"
 msgstr "Hello <Bold>{name}</Bold>!"
 
 #: src/components/ComponentTags.tsx
+#. [AI Context]: Message demonstrating mixed formatting with bold and italic components. Contains multiple styled text segments: bold text, italic text, and plain text.
 msgid "002eTXHM"
 msgstr "This is <Bold>bold</Bold>, this is <Italic>italic</Italic>, and normal"
 
 #: src/components/ComponentTags.tsx
+#. [AI Context]: Important notice with nested components. The entire message is bold, with "read carefully" additionally italicized for emphasis.
 msgid "0013HsIP"
 msgstr "<Bold> Important: <Italic>read carefully</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Test text displaying an empty string value in brackets; part of edge case testing for empty content handling
 msgid "002TXdYD"
 msgstr "Value: [{emptyString}]"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Test text displaying the numeric value zero; edge case for handling falsy but valid values in translations
 msgid "002Baos1"
 msgstr "Count: {zero}"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Test text displaying a null value in brackets; edge case for null value handling in the translation system
 msgid "0043ID7R"
 msgstr "Null: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Test message used to verify fallback behavior when a translation is missing or unavailable
 msgid "003jykkI"
 msgstr "This message might not be translated"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Long-form test text spanning multiple lines; tests how the translation system handles extended content
 msgid "0047ZVOp"
 msgstr ""
 "This is a longer piece of text that spans multiple words and tests how the "
 "system handles longer content in translations"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Test text containing HTML-encoded special characters (&, <, >) and quoted text; edge case for special character handling in translations
 msgid "001r7GGR"
 msgstr "Special: & < > \"quotes\""
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Test text with emoji and Unicode symbols (©, ®, ™); edge case for Unicode character support in translations
 msgid "004JLiGr"
 msgstr "Emoji: 🎉 and symbols: © ® ™"
 
 #: src/components/Interpolation.tsx
+#. [AI Context]: Greeting message with a single name placeholder. Displays in a paragraph; translators should preserve the {name} placeholder position.
 msgid "0024c34D"
 msgstr "Hello, {name}!"
 
 #: src/components/Interpolation.tsx
+#. [AI Context]: Welcome message with two consecutive name placeholders (first and last name). Displays in a paragraph; placeholders may be reordered if grammar requires it.
 msgid "003lIRId"
 msgstr "Welcome, {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx
+#. [AI Context]: Paragraph text with a name placeholder surrounded by text on both sides. Translators should keep the {name} placeholder in the appropriate position for the target language.
 msgid "000iXvMP"
 msgstr "Before {name} after"
 
 #: src/components/Interpolation.tsx
+#. [AI Context]: Item count message with a numeric placeholder. Displays in a paragraph; the {0} placeholder represents a number and should remain in the translated text.
 msgid "002r0ybS"
 msgstr "You have {0} items"
 
 #: src/components/Plurals.tsx
+#. [AI Context]: Inventory message with basic plural forms. Shows 'one' when count is exactly 1, 'other' for 0 or 2+. The '#' symbol is replaced with the numeric count.
 msgid "000w9C8y"
 msgstr "You have {count, plural, one {# item} other {# items}}"
 
 #: src/components/Plurals.tsx
+#. [AI Context]: Message notification with three plural forms: 'zero' for no messages, 'one' for exactly 1 message, 'other' for 2+. The '#' symbol is replaced with the count.
 msgid "0048f6Nc"
 msgstr "{count, plural, zero {No messages} one {# message} other {# messages}}"
 
 #: src/components/Plurals.tsx
+#. [AI Context]: Descriptive sentence with embedded plural form that adjusts verb conjugation and noun. Shows 'one' for exactly 1 item, 'other' for 0 or 2+. The '#' symbol is replaced with the count.
 msgid "002EaYd6"
 msgstr "There {count, plural, one {is # apple} other {are # apples}} in the basket"
 
 #: src/components/Plurals.tsx
+#. [AI Context]: Complex plural form demonstrating all CLDR plural categories for languages like Arabic. Uses 'zero', 'one', 'two', 'few', 'many', and 'other' forms based on the count value. The '#' symbol is replaced with the numeric count.
 msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
 "(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
 
 #: src/components/EdgeCases.tsx
+#. [AI Context]: Template text with a placeholder {name} parameter; tests placeholder substitution when parameter is not provided
 msgid "004Dt4mI"
 msgstr "Hello {name}!"
 
 #: src/components/UseT.tsx
+#. [AI Context]: Simple greeting message displayed in a paragraph element. Basic text with no variables or formatting.
 msgid "002UQheH"
 msgstr "Hello from useT!"
 
 #: src/components/UseT.tsx
+#. [AI Context]: Welcome message with one placeholder variable {name} that gets replaced with a user/developer name at runtime.
 msgid "003X3cVZ"
 msgstr "Welcome, {name}!"
 
 #: src/components/UseT.tsx
+#. [AI Context]: Message with two placeholder variables: {count} for a numeric item count and {author} for a name or identifier. Both are required.
 msgid "001gZ2vk"
 msgstr "{count} items by {author}"
 
 #: src/components/UseT.tsx
+#. [AI Context]: Inline translation text displayed in a paragraph element. Simple message without variables or special formatting.
 msgid "002RXyTq"
 msgstr "Inline translation"

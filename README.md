@@ -623,7 +623,6 @@ idioma translate                    # Translate missing messages
 idioma translate --force            # Retranslate all messages
 idioma translate --dry-run          # Run without API calls or saving
 idioma translate --verbose          # Show AI prompts and responses
-idioma translate --provider openai  # Use OpenAI instead of Anthropic
 idioma translate --no-auto-context  # Skip automatic context generation
 ```
 
@@ -697,11 +696,11 @@ export default defineConfig({
   // Files to scan for messages (default: ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'])
   sourcePatterns: ['src/**/*.tsx', 'src/**/*.jsx'],
 
-  // AI translation config
+  // AI translation config (uses Vercel AI SDK)
+  // Install your preferred provider: pnpm add @ai-sdk/anthropic
   ai: {
-    provider: 'anthropic', // or 'openai'
-    model: 'claude-sonnet-4-20250514', // default: claude-sonnet-4-20250514 (Anthropic) or gpt-4o (OpenAI)
-    // Uses ANTHROPIC_API_KEY or OPENAI_API_KEY env var
+    model: anthropic('claude-sonnet-4-5'), // import { anthropic } from '@ai-sdk/anthropic'
+    // See https://ai-sdk.dev/providers for other providers (openai, google, etc.)
 
     // Project-specific guidelines for AI translation
     guidelines: `This is a children's educational game for ages 4-8.

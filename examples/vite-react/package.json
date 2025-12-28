@@ -12,6 +12,7 @@
     "compile": "idioma compile"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
     "@idioma/react": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

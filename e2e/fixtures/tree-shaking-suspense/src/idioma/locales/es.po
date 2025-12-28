@@ -11,7 +11,7 @@ msgstr "Acerca de nuestra empresa"
 #: src/routes/about.lazy.tsx
 #, ai-translated
 msgid "004U2qa8"
-msgstr "Conoce más sobre lo que hacemos"
+msgstr "Obtén más información sobre lo que hacemos"
 
 #: src/routes/contact.lazy.tsx
 #, ai-translated
@@ -21,7 +21,7 @@ msgstr "Ponte en contacto con nosotros"
 #: src/routes/contact.lazy.tsx
 #, ai-translated
 msgid "002p8oRq"
-msgstr "Envíanos un mensaje y te responderemos"
+msgstr "Envíanos un mensaje y responderemos"
 
 #: src/routes/index.lazy.tsx
 #, ai-translated

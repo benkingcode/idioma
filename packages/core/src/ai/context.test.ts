@@ -1,14 +1,14 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import type { LanguageModel } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Catalog, Message } from '../po/types';
 import {
   addAIContext,
   AI_CONTEXT_PREFIX,
   buildContextSystemPrompt,
-  createAnthropicContextProvider,
+  createContextProvider,
   createDryRunContextProvider,
-  createOpenAIContextProvider,
   generateContextForCatalog,
   groupMessagesByFile,
   hasAIContext,
@@ -19,6 +19,14 @@ import {
   type GeneratedContext,
   type MessageForContext,
 } from './context';
+
+// Mock the ai package
+vi.mock('ai', () => ({
+  generateText: vi.fn(),
+  Output: {
+    object: vi.fn((opts: { schema: unknown }) => opts),
+  },
+}));
 
 describe('Context Generation Utilities', () => {
   describe('AI_CONTEXT_PREFIX', () => {
@@ -375,49 +383,208 @@ describe('Context Providers', () => {
     });
   });
 
-  describe('createAnthropicContextProvider', () => {
+  describe('createContextProvider', () => {
+    let mockModel: LanguageModel;
+    let mockGenerateText: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      // Create a mock LanguageModel
+      mockModel = {
+        modelId: 'test-model',
+        provider: 'test-provider',
+        specificationVersion: 'v1',
+      } as unknown as LanguageModel;
+
+      // Get the mocked generateText function
+      const aiModule = await import('ai');
+      mockGenerateText = aiModule.generateText as ReturnType<typeof vi.fn>;
+      mockGenerateText.mockReset();
+    });
+
     it('creates a provider with generateContext method', () => {
-      const provider = createAnthropicContextProvider({ apiKey: 'test-key' });
+      const provider = createContextProvider({ model: mockModel });
       expect(typeof provider.generateContext).toBe('function');
     });
 
-    it('uses custom model if provided', () => {
-      const provider = createAnthropicContextProvider({
-        apiKey: 'test-key',
-        model: 'claude-3-haiku-20240307',
+    it('calls generateText with correct parameters', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          contexts: [{ key: 'btn', context: 'Button label' }],
+        },
       });
-      expect(typeof provider.generateContext).toBe('function');
+
+      const provider = createContextProvider({ model: mockModel });
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const App = () => <button>Click me</button>;',
+        messages: [{ key: 'btn', source: 'Click me', line: 1 }],
+      };
+
+      await provider.generateContext(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: mockModel,
+          system: expect.stringContaining('technical writer'),
+          prompt: expect.stringContaining('Click me'),
+        }),
+      );
     });
 
-    it('accepts guidelines option', () => {
-      const provider = createAnthropicContextProvider({
-        apiKey: 'test-key',
+    it('returns generated contexts from AI response', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          contexts: [
+            { key: 'btn1', context: 'Primary action button' },
+            { key: 'btn2', context: 'Submit form button' },
+          ],
+        },
+      });
+
+      const provider = createContextProvider({ model: mockModel });
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent:
+          'const App = () => <><button>Click</button><button>Submit</button></>;',
+        messages: [
+          { key: 'btn1', source: 'Click', line: 1 },
+          { key: 'btn2', source: 'Submit', line: 1 },
+        ],
+      };
+
+      const result = await provider.generateContext(request);
+
+      expect(result).toEqual([
+        { key: 'btn1', context: 'Primary action button' },
+        { key: 'btn2', context: 'Submit form button' },
+      ]);
+    });
+
+    it('includes file content in prompt', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          contexts: [{ key: 'btn', context: 'Button label' }],
+        },
+      });
+
+      const provider = createContextProvider({ model: mockModel });
+
+      const fileContent = 'const App = () => <button>Click me</button>;';
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent,
+        messages: [{ key: 'btn', source: 'Click me', line: 1 }],
+      };
+
+      await provider.generateContext(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: expect.stringContaining(fileContent),
+        }),
+      );
+    });
+
+    it('passes providerOptions through to generateText', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          contexts: [{ key: 'btn', context: 'Button label' }],
+        },
+      });
+
+      const providerOptions = {
+        anthropic: { thinking: { type: 'enabled', budgetTokens: 10000 } },
+      };
+
+      const provider = createContextProvider({
+        model: mockModel,
+        providerOptions,
+      });
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const x = 1;',
+        messages: [{ key: 'btn', source: 'Click', line: 1 }],
+      };
+
+      await provider.generateContext(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          providerOptions,
+        }),
+      );
+    });
+
+    it('includes guidelines in system prompt when provided', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          contexts: [{ key: 'btn', context: 'Button label' }],
+        },
+      });
+
+      const provider = createContextProvider({
+        model: mockModel,
         guidelines: 'This is a formal business app.',
       });
-      expect(typeof provider.generateContext).toBe('function');
-    });
-  });
 
-  describe('createOpenAIContextProvider', () => {
-    it('creates a provider with generateContext method', () => {
-      const provider = createOpenAIContextProvider({ apiKey: 'test-key' });
-      expect(typeof provider.generateContext).toBe('function');
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const x = 1;',
+        messages: [{ key: 'btn', source: 'Click', line: 1 }],
+      };
+
+      await provider.generateContext(request);
+
+      expect(mockGenerateText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          system: expect.stringContaining('This is a formal business app.'),
+        }),
+      );
     });
 
-    it('uses custom model if provided', () => {
-      const provider = createOpenAIContextProvider({
-        apiKey: 'test-key',
-        model: 'gpt-4o-mini',
+    it('calls onVerbose callback when provided', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: {
+          contexts: [{ key: 'btn', context: 'Button label' }],
+        },
       });
-      expect(typeof provider.generateContext).toBe('function');
+
+      const onVerbose = vi.fn();
+      const provider = createContextProvider({
+        model: mockModel,
+        onVerbose,
+      });
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const x = 1;',
+        messages: [{ key: 'btn', source: 'Click', line: 1 }],
+      };
+
+      await provider.generateContext(request);
+
+      expect(onVerbose).toHaveBeenCalled();
     });
 
-    it('accepts guidelines option', () => {
-      const provider = createOpenAIContextProvider({
-        apiKey: 'test-key',
-        guidelines: 'This is a formal business app.',
+    it('throws when generateText returns no output', async () => {
+      mockGenerateText.mockResolvedValue({
+        output: null,
       });
-      expect(typeof provider.generateContext).toBe('function');
+
+      const provider = createContextProvider({ model: mockModel });
+
+      const request: FileContextRequest = {
+        filePath: 'src/App.tsx',
+        fileContent: 'const x = 1;',
+        messages: [{ key: 'btn', source: 'Click', line: 1 }],
+      };
+
+      await expect(provider.generateContext(request)).rejects.toThrow(
+        'No output from AI provider',
+      );
     });
   });
 

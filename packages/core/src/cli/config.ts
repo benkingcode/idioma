@@ -1,7 +1,27 @@
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import { pathToFileURL } from 'url';
+import type { generateText as generateTextFn, LanguageModel } from 'ai';
+import { createJiti } from 'jiti';
 import { z } from 'zod';
+
+/** Re-export LanguageModel for users to reference in their config */
+export type { LanguageModel } from 'ai';
+
+/** Provider options type extracted from generateText parameters */
+export type ProviderOptions = Parameters<
+  typeof generateTextFn
+>[0]['providerOptions'];
+
+/** AI configuration schema - uses z.any() since LanguageModel can't be validated at runtime */
+const AiConfigSchema = z
+  .object({
+    model: z.any().optional() as z.ZodOptional<z.ZodType<LanguageModel>>,
+    guidelines: z.string().optional(),
+    providerOptions: z.any().optional() as z.ZodOptional<
+      z.ZodType<ProviderOptions>
+    >,
+  })
+  .optional();
 
 /**
  * Zod schema for Idioma configuration.
@@ -38,20 +58,11 @@ const IdiomaConfigSchema = z.object({
    * @default false
    */
   useSuspense: z.boolean().optional(),
-  /** AI translation provider configuration */
-  ai: z
-    .object({
-      provider: z.enum(['anthropic', 'openai']),
-      model: z.string().optional(),
-      apiKey: z.string().optional(),
-      /**
-       * Project-specific guidelines for AI translation.
-       * Describe your app's tone, audience, and any special requirements.
-       * @example "This is a children's educational game. Use simple, friendly language."
-       */
-      guidelines: z.string().optional(),
-    })
-    .optional(),
+  /**
+   * AI translation provider configuration.
+   * Uses the Vercel AI SDK - install your preferred provider package (e.g., @ai-sdk/anthropic).
+   */
+  ai: AiConfigSchema,
 });
 
 /** Idioma configuration type - derived from the Zod schema */
@@ -146,38 +157,12 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
 async function loadConfigFile(configPath: string): Promise<unknown> {
   const absolutePath = resolve(configPath);
 
-  if (configPath.endsWith('.ts')) {
-    // For TypeScript, we need to use a bundler or ts-node
-    // In a real implementation, we'd use jiti or tsx
-    // For now, we'll use a simpler approach with eval
-    const content = await fs.readFile(absolutePath, 'utf-8');
+  // Use jiti to load TypeScript/JavaScript config files with proper import support
+  const jiti = createJiti(absolutePath, {
+    // Enable native ESM interop
+    interopDefault: true,
+  });
 
-    // Simple transform: remove TypeScript-specific syntax
-    const jsContent = content
-      .replace(/export\s+default\s+/, 'module.exports = ')
-      .replace(/:\s*IdiomaConfig/g, '')
-      .replace(/import.*from.*['"].*['"]\s*;?\n?/g, '');
-
-    // Create a temporary .mjs file
-    const tempPath = absolutePath + '.mjs';
-    // Inject defineConfig as a local function (it's just a pass-through)
-    const defineConfigShim = 'const defineConfig = (c) => c;\n';
-    const mjsContent =
-      defineConfigShim +
-      jsContent.replace('module.exports = ', 'export default ');
-    await fs.writeFile(tempPath, mjsContent);
-
-    try {
-      const fileUrl = pathToFileURL(tempPath).href;
-      const module = await import(fileUrl);
-      return module.default;
-    } finally {
-      await fs.unlink(tempPath).catch(() => {});
-    }
-  } else {
-    // For JS, import directly
-    const fileUrl = pathToFileURL(absolutePath).href;
-    const module = await import(fileUrl);
-    return module.default ?? module;
-  }
+  const module = await jiti.import(absolutePath);
+  return (module as { default?: unknown }).default ?? module;
 }

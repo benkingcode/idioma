@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "^2.11.4",
+    "ai": "^6.0.0",
     "chalk": "^5.6.2",
     "chokidar": "^3.6.0",
     "ci-info": "^4.3.1",
@@ -67,6 +68,7 @@
     "consola": "^3.4.2",
     "fast-glob": "^3.3.3",
     "gettext-parser": "^8.0.0",
+    "jiti": "^2.6.1",
     "murmurhash-js": "^1.0.0",
     "ora": "^9.0.0",
     "pathe": "^1.1.2",
@@ -87,7 +89,7 @@
     }
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.32.0",
+    "@ai-sdk/anthropic": "^3.0.0",
     "@babel/core": "^7.28.5",
     "@babel/generator": "^7.28.5",
     "@babel/parser": "^7.28.5",
@@ -104,7 +106,6 @@
     "dotenv": "^17.2.3",
     "ignore": "^7.0.5",
     "next": "^16.1.1",
-    "openai": "^4.0.0",
     "vite": "^5.4.21",
     "webpack": "^5.104.1"
   },

@@ -1,6 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
+import type { generateText as generateTextFn, LanguageModel } from 'ai';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 import { formatBox } from './format.js';
+
+/** Provider options type extracted from generateText parameters */
+type ProviderOptions = Parameters<typeof generateTextFn>[0]['providerOptions'];
 
 export interface MessageToTranslate {
   key: string;
@@ -24,20 +28,12 @@ export interface TranslationProvider {
   translate(request: TranslationRequest): Promise<TranslatedMessage[]>;
 }
 
-export interface AnthropicProviderOptions {
-  apiKey: string;
-  model?: string;
+export interface TranslationProviderOptions {
+  model: LanguageModel;
   /** Project-specific guidelines for AI translation */
   guidelines?: string;
-  /** Callback for verbose logging */
-  onVerbose?: (message: string) => void;
-}
-
-export interface OpenAIProviderOptions {
-  apiKey: string;
-  model?: string;
-  /** Project-specific guidelines for AI translation */
-  guidelines?: string;
+  /** Provider-specific options passed through to generateText() */
+  providerOptions?: ProviderOptions;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
 }
@@ -88,22 +84,28 @@ ${guidelines}`;
 }
 
 /**
- * Create an Anthropic translation provider.
+ * Zod schema for structured translation output
  */
-export function createAnthropicProvider(
-  options: AnthropicProviderOptions,
-): TranslationProvider {
-  const {
-    apiKey,
-    model = 'claude-sonnet-4-20250514',
-    guidelines,
-    onVerbose,
-  } = options;
+const TranslationResultSchema = z.object({
+  translations: z.array(
+    z.object({
+      key: z.string(),
+      translation: z.string(),
+    }),
+  ),
+});
 
-  const client = new Anthropic({ apiKey });
+/**
+ * Create a translation provider using the Vercel AI SDK.
+ * Accepts any LanguageModel from @ai-sdk/* packages.
+ */
+export function createTranslationProvider(
+  options: TranslationProviderOptions,
+): TranslationProvider {
+  const { model, guidelines, providerOptions, onVerbose } = options;
 
   return {
-    name: 'anthropic',
+    name: 'ai-sdk',
     async translate(request: TranslationRequest): Promise<TranslatedMessage[]> {
       const { messages, sourceLocale, targetLocale } = request;
 
@@ -128,48 +130,19 @@ export function createAnthropicProvider(
         onVerbose(formatBox('User Content', userContent));
       }
 
-      const response = await client.messages.create({
+      const result = await generateText({
         model,
-        max_tokens: 4096,
+        output: Output.object({ schema: TranslationResultSchema }),
         system: systemPrompt,
-        messages: [{ role: 'user', content: userContent }],
-        tools: [
-          {
-            name: 'submit_translations',
-            description: 'Submit the translated messages',
-            input_schema: {
-              type: 'object' as const,
-              properties: {
-                translations: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      key: { type: 'string', description: 'The message key' },
-                      translation: {
-                        type: 'string',
-                        description: 'The translated text',
-                      },
-                    },
-                    required: ['key', 'translation'],
-                  },
-                },
-              },
-              required: ['translations'],
-            },
-          },
-        ],
-        tool_choice: { type: 'tool', name: 'submit_translations' },
+        prompt: userContent,
+        providerOptions,
       });
 
-      // Extract translations from tool use response
-      const toolUse = response.content.find((c) => c.type === 'tool_use');
-      if (!toolUse || toolUse.type !== 'tool_use') {
-        throw new Error('No tool use response from Anthropic');
+      if (!result.output) {
+        throw new Error('No output from AI provider');
       }
 
-      const input = toolUse.input as { translations: TranslatedMessage[] };
-      return input.translations;
+      return result.output.translations;
     },
   };
 }
@@ -220,89 +193,6 @@ export function createDryRunProvider(
         key: m.key,
         translation: 'Dry run',
       }));
-    },
-  };
-}
-
-/**
- * Create an OpenAI translation provider.
- */
-export function createOpenAIProvider(
-  options: OpenAIProviderOptions,
-): TranslationProvider {
-  const { apiKey, model = 'gpt-4o', guidelines, onVerbose } = options;
-
-  const client = new OpenAI({ apiKey });
-
-  return {
-    name: 'openai',
-    async translate(request: TranslationRequest): Promise<TranslatedMessage[]> {
-      const { messages, sourceLocale, targetLocale } = request;
-
-      const systemPrompt = buildTranslationSystemPrompt(
-        sourceLocale,
-        targetLocale,
-        guidelines,
-      );
-
-      const userContent = messages
-        .map((m, i) => {
-          let text = `[${i + 1}] Key: ${m.key}\nSource: ${m.source}`;
-          if (m.context) {
-            text += `\nContext: ${m.context}`;
-          }
-          return text;
-        })
-        .join('\n\n');
-
-      if (onVerbose) {
-        onVerbose(formatBox('System Prompt', systemPrompt));
-        onVerbose(formatBox('User Content', userContent));
-      }
-
-      const response = await client.chat.completions.create({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'translations',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                translations: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      key: { type: 'string' },
-                      translation: { type: 'string' },
-                    },
-                    required: ['key', 'translation'],
-                    additionalProperties: false,
-                  },
-                },
-              },
-              required: ['translations'],
-              additionalProperties: false,
-            },
-          },
-        },
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('No response from OpenAI');
-      }
-
-      const parsed = JSON.parse(content) as {
-        translations: TranslatedMessage[];
-      };
-      return parsed.translations;
     },
   };
 }

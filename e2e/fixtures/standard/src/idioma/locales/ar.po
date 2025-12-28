@@ -6,7 +6,7 @@ msgstr ""
 #: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "000e6cSN"
-msgstr "مرحبا، يا عالم!"
+msgstr "مرحبا، العالم!"
 
 #: src/components/BasicTrans.tsx
 #, ai-translated
@@ -16,7 +16,7 @@ msgstr "مرحبا بك في تطبيقنا"
 #: src/components/BasicTrans.tsx
 #, ai-translated
 msgid "greeting.farewell"
-msgstr "وداعا!"
+msgstr "مع السلامة!"
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
@@ -36,12 +36,12 @@ msgstr "مرحبا <Bold>{name}</Bold>!"
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "002eTXHM"
-msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، والنص العادي"
+msgstr "هذا <Bold>عريض</Bold>، وهذا <Italic>مائل</Italic>، وعادي"
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
 msgid "0013HsIP"
-msgstr "<Bold> هام: <Italic>اقرأ بعناية</Italic> </Bold>"
+msgstr "<Bold> مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -56,7 +56,7 @@ msgstr "العدد: {zero}"
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "0043ID7R"
-msgstr "قيمة فارغة: [{nullValue}]"
+msgstr "فارغ: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -67,13 +67,13 @@ msgstr "قد لا تتم ترجمة هذه الرسالة"
 #, ai-translated
 msgid "0047ZVOp"
 msgstr ""
-"هذا نص أطول يمتد على عدة كلمات ويختبر كيف يتعامل النظام مع المحتوى الأطول "
-"في الترجمات"
+"هذه قطعة نصية أطول تمتد على عدة كلمات وتختبر كيفية تعامل النظام مع المحتوى "
+"الأطول في الترجمات"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "001r7GGR"
-msgstr "خاص: & < > \"علامات الاقتباس\""
+msgstr "خاص: & < > \"علامات اقتباس\""
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -119,25 +119,30 @@ msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في
 #, ai-translated
 msgid "004CDxng"
 msgstr ""
-"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
-"(اثنين)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
+"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفان "
+"(اثنان)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
 
 #: src/components/EdgeCases.tsx
+#, ai-translated
 msgid "004Dt4mI"
-msgstr ""
+msgstr "مرحبا {name}!"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "002UQheH"
 msgstr "مرحبا من useT!"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "003X3cVZ"
 msgstr "أهلا وسهلا، {name}!"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "001gZ2vk"
 msgstr "{count} عناصر بواسطة {author}"
 
 #: src/components/UseT.tsx
+#, ai-translated
 msgid "002RXyTq"
 msgstr "ترجمة مضمنة"
