@@ -39,6 +39,7 @@ const CONTENT_LINES = 4; // Fixed number of content lines below header
 
 /**
  * Format model info for display.
+ * Shows model ID prominently, provider in parentheses.
  * Truncates long model names to avoid breaking layout.
  */
 function formatModelInfo(provider: string, model?: string): string {
@@ -46,7 +47,7 @@ function formatModelInfo(provider: string, model?: string): string {
     const maxLen = 25;
     const shortModel =
       model.length > maxLen ? model.slice(0, maxLen - 3) + '...' : model;
-    return `${provider} ${colors().dim(`(${shortModel})`)}`;
+    return `${shortModel} ${colors().dim(`(${provider})`)}`;
   }
   return provider;
 }
@@ -266,9 +267,7 @@ export class SimpleAnimatedHeader implements AnimatedHeader {
   start(options: AnimatedHeaderOptions): void {
     this.options = options;
     const contextStatus = options.autoContext ? 'on' : 'off';
-    const modelInfo = options.model
-      ? `${options.provider} (${options.model})`
-      : options.provider;
+    const modelInfo = formatModelInfo(options.provider, options.model);
 
     console.log(
       `${options.title} | Auto context: ${contextStatus} | Model: ${modelInfo}`,
