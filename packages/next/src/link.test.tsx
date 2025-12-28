@@ -4,7 +4,12 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { createLink, Link, resolveLocalizedHref } from './link.js';
+import {
+  createLink,
+  Link,
+  resolveLocalizedHref,
+  resolveLocalizedPath,
+} from './link.js';
 
 // Mock next/link
 vi.mock('next/link', () => ({
@@ -50,6 +55,43 @@ describe('resolveLocalizedHref', () => {
     };
 
     expect(resolveLocalizedHref('/contact', 'es', routes)).toBe('/es/contact');
+  });
+});
+
+describe('resolveLocalizedPath', () => {
+  it('returns path as-is without routes', () => {
+    expect(resolveLocalizedPath('/about', 'en')).toBe('/about');
+    expect(resolveLocalizedPath('/about', 'es')).toBe('/about');
+  });
+
+  it('translates path with routes (no locale prefix)', () => {
+    const routes = {
+      en: { '/about': '/about' },
+      es: { '/about': '/sobre' },
+    };
+
+    expect(resolveLocalizedPath('/about', 'en', routes)).toBe('/about');
+    expect(resolveLocalizedPath('/about', 'es', routes)).toBe('/sobre');
+  });
+
+  it('falls back to original path when no translation', () => {
+    const routes = {
+      en: { '/about': '/about' },
+      es: {},
+    };
+
+    expect(resolveLocalizedPath('/contact', 'es', routes)).toBe('/contact');
+  });
+
+  it('is consistent with @idioma/next/pages and @idioma/tanstack', () => {
+    const routes = {
+      en: { '/about': '/about', '/blog': '/blog' },
+      es: { '/about': '/sobre', '/blog': '/articulos' },
+    };
+
+    // No locale prefix added - just path translation
+    expect(resolveLocalizedPath('/about', 'es', routes)).toBe('/sobre');
+    expect(resolveLocalizedPath('/blog', 'es', routes)).toBe('/articulos');
   });
 });
 

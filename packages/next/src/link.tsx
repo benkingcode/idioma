@@ -20,24 +20,42 @@ export interface LinkProps extends Omit<
 }
 
 /**
+ * Resolves a canonical path to a localized path (without locale prefix).
+ * Consistent with @idioma/next/pages and @idioma/tanstack.
+ *
+ * @example
+ * ```tsx
+ * resolveLocalizedPath('/about', 'es', routes); // => '/sobre'
+ * ```
+ */
+export function resolveLocalizedPath(
+  path: string,
+  locale: string,
+  routes?: RoutesMap,
+): string {
+  if (!routes) return path;
+  const localeRoutes = routes[locale];
+  if (localeRoutes?.[path]) {
+    return localeRoutes[path];
+  }
+  return path;
+}
+
+/**
  * Resolves a canonical path to a localized href with locale prefix.
- * Pure function for path resolution.
+ * App Router-specific: adds locale prefix since App Router doesn't have built-in locale handling.
+ *
+ * @example
+ * ```tsx
+ * resolveLocalizedHref('/about', 'es', routes); // => '/es/sobre'
+ * ```
  */
 export function resolveLocalizedHref(
   href: string,
   locale: string,
   routes?: RoutesMap,
 ): string {
-  // Get localized path if routes map is provided
-  let localizedPath = href;
-  if (routes) {
-    const localeRoutes = routes[locale];
-    if (localeRoutes?.[href]) {
-      localizedPath = localeRoutes[href];
-    }
-  }
-
-  // Add locale prefix
+  const localizedPath = resolveLocalizedPath(href, locale, routes);
   return `/${locale}${localizedPath}`;
 }
 

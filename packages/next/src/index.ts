@@ -67,6 +67,7 @@ export {
   createLink,
   Link,
   resolveLocalizedHref,
+  resolveLocalizedPath,
   type LinkProps,
   type RoutesMap,
 } from './link.js';
