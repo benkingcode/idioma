@@ -139,7 +139,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `server/` - `setLocale()` for cookies
 - `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
-**@idiomi/tanstack-react** (`packages/tanstack/`) - TanStack Router integration for React
+**@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router integration for React
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`
 - `link.tsx` - `createLink()` factory for localized Link component
