@@ -2,7 +2,7 @@
 
 **AI-first, compile-time i18n for React. Write in English, ship in every language.**
 
-~800 bytes runtime. Automatic key generation. AI-powered translation that understands your codebase and key context.
+~2KB runtime (smaller than alternatives). Automatic key generation. AI-powered translation that understands your codebase and context.
 
 Traditional i18n workflow: Write code → Extract messages → Upload to TMS → Wait for translators → Download → Test → Find bugs → Repeat.
 
@@ -24,7 +24,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 
 **Performance**
 
-- **~800 bytes runtime** — Translations compile to static imports; the runtime just renders them
+- **~2-3KB runtime** — Translations compile to static imports; the runtime just renders them
 - **Tree-shaken bundles** — Only translations for components on each page ship to the client
 - **Compile-time processing** — No runtime parsing or fetching
 
@@ -63,6 +63,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - [Routing](#routing)
 - [API Reference](#api-reference)
 - [How It Works](#how-it-works)
+- [Why Idioma?](#why-idioma)
 - [Comparison](#comparison)
 
 ## Quick Start
@@ -1194,23 +1195,59 @@ React context provides locale, renders translated text
 
 The Babel plugin extracts messages during build, generates content-addressed keys, and transforms components to use the compiled translation object.
 
+## Why Idioma?
+
+Most i18n libraries load translation catalogs at runtime. Your app fetches a JSON file with all 2,000 messages, even if the current page only uses 100. This is the approach taken by i18next, react-intl, next-intl, and even compile-time libraries like Lingui.
+
+Idioma takes a different approach: **translations are compiled into each component at build time**. The Babel plugin transforms `<Trans>Hello</Trans>` into `<__Trans __t={{ en: "Hello", es: "Hola" }} />`. No runtime fetch. No catalog loading. Each page's bundle contains only the translations that page actually uses.
+
+### "But doesn't that explode bundle size?"
+
+This is a common concern. If you're baking 5 locales into the bundle, isn't that 5× bigger?
+
+Here's the math for a typical app (2,000 total messages, 50 used on home page, 5 locales, ~50 bytes/message):
+
+| Approach                              | What loads                 | Size                      |
+| ------------------------------------- | -------------------------- | ------------------------- |
+| **Runtime catalog** (Lingui, i18next) | All messages, 1 locale     | 2,000 × 50B = **100KB**   |
+| **Idioma default**                    | Page messages, all locales | 50 × 5 × 50B = **12.5KB** |
+| **Idioma Suspense**                   | Page messages, 1 locale    | 50 × 50B = **2.5KB**      |
+
+The locale multiplier (5×) is dwarfed by component-level splitting (40×). Idioma's "all locales" approach is still **8× smaller** than loading a full catalog for one locale.
+
+### Trade-offs
+
+**Idioma optimizes for:**
+
+- Smallest possible per-page bundles
+- Zero runtime fetching (great for edge/static)
+- Instant rendering (no loading states for translations)
+
+**At the cost of:**
+
+- Locale switching requires the new locale to already be in the bundle (default mode) or a dynamic import (Suspense mode)
+- Slightly larger bundles if users never switch locales
+
+For apps where users stick to one language (most apps), the default mode is ideal. For apps with many locales or frequent switching, enable Suspense mode.
+
 ## Comparison
 
-| Feature                   | Idioma        | Lingui        | Paraglide    | react-intl | i18next  |
-| ------------------------- | ------------- | ------------- | ------------ | ---------- | -------- |
-| Runtime size (gzipped)    | ~800B         | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
-| Key management            | Auto + Manual | Auto + Manual | Manual       | Manual     | Manual   |
-| Extraction                | Built-in      | Built-in      | None         | CLI        | CLI      |
-| AI translation            | Built-in      | No            | No           | No         | No       |
-| Compile-time              | Yes           | Yes           | Yes          | Optional   | No       |
-| Component-level splitting | Yes           | No            | Yes          | No         | No       |
-| Lazy loading              | Opt-in        | Yes           | Experimental | Yes        | Yes      |
-| PO format                 | Yes           | Yes           | No           | No         | Plugin   |
-| Number/date formatting    | Use Intl      | Use Intl      | Use Intl     | Built-in   | Built-in |
-| SSR                       | Yes           | Yes           | Yes          | Yes        | Yes      |
-| RSC                       | Yes           | Yes           | Yes          | No         | Yes      |
+| Feature                   | Idioma        | Lingui         | next-intl  | Paraglide     | react-intl | i18next  |
+| ------------------------- | ------------- | -------------- | ---------- | ------------- | ---------- | -------- |
+| Runtime size (gzipped)    | ~2-3KB        | ~3KB           | ~13KB      | ~2KB          | ~14KB      | ~22KB    |
+| Key management            | Auto + Manual | Auto + Manual  | Manual     | Manual        | Manual     | Manual   |
+| Extraction                | Built-in CLI  | Built-in CLI   | No         | IDE extension | CLI        | CLI      |
+| AI translation            | Built-in      | No             | No         | No            | No         | No       |
+| Compile-time              | Yes           | Yes            | No         | Yes           | Optional   | No       |
+| Component-level splitting | Yes           | Experimental\* | No         | Yes           | No         | No       |
+| Lazy loading              | Opt-in        | Yes            | Yes        | No            | Yes        | Yes      |
+| Message format            | PO (ICU)      | PO (ICU)       | JSON (ICU) | JSON          | JSON (ICU) | JSON     |
+| Number/date formatting    | Use Intl      | Use Intl       | Built-in   | Use Intl      | Built-in   | Built-in |
+| SSR                       | Yes           | Yes            | Yes        | Yes           | Yes        | Yes      |
+| RSC                       | Yes           | Yes            | Yes        | Yes           | No         | Yes      |
+| Primary framework         | Any           | Any            | Next.js    | Any           | Any        | Any      |
 
-**Note on runtime size:** Idioma's ~800B runtime handles message rendering. ICU plural/select parsing adds ~2KB when you use those features. The total is still significantly smaller than alternatives because parsing happens at build time for static messages.
+\* Lingui has [experimental dependency-tree crawling](https://lingui.dev/guides/message-extraction#dependency-tree-crawling) for per-page catalog extraction, but wiring up route-to-catalog loading requires custom integration.
 
 ## Editor Support
 
@@ -1223,7 +1260,7 @@ TypeScript provides full type safety via generated types:
 ## Packages
 
 - **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
-- **@idioma/react** — Runtime components (~800 bytes gzipped), `getLocaleHead` for programmatic SEO
+- **@idioma/react** — Runtime components (~2-3KB gzipped with ICU), `getLocaleHead` for programmatic SEO
 - **@idioma/next** — Next.js integration (middleware factory, LocaleHead component, localized Link)
 - **@idioma/tanstack** — TanStack Router integration (LocaleHead component, localized Link)
 
