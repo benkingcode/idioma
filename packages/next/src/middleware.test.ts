@@ -157,6 +157,37 @@ describe('createIdiomiMiddleware', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('prefix strategy: never', () => {
+    it('never redirects when prefixStrategy is never', () => {
+      const middleware = createIdiomiMiddleware({
+        ...baseConfig,
+        prefixStrategy: 'never',
+        detection: { order: ['header'] },
+      });
+      const request = createMockRequest('/about', {
+        'accept-language': 'es-ES',
+      });
+
+      const result = middleware(request as never);
+
+      // Should not redirect even though detected locale is not default
+      expect(result).toBeUndefined();
+    });
+
+    it('still detects locale from path when prefixStrategy is never', () => {
+      const middleware = createIdiomiMiddleware({
+        ...baseConfig,
+        prefixStrategy: 'never',
+      });
+      const request = createMockRequest('/es/about');
+
+      const result = middleware(request as never);
+
+      // No redirect, just passes through
+      expect(result).toBeUndefined();
+    });
+  });
 });
 
 describe('locale negotiation with language distance', () => {

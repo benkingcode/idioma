@@ -22,6 +22,11 @@ import {
 } from '../routes/index.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
 import { generateChunkModules } from './generate-chunks.js';
+import {
+  generateConfigModule,
+  generateConfigTypes,
+  type DetectionOptions,
+} from './generate-config.js';
 
 /**
  * Creates a compilation lock to prevent concurrent compilations.
@@ -69,7 +74,9 @@ export interface RoutingCompileOptions {
   /** Base URL for absolute hreflang links and canonical URLs (optional) */
   metadataBase?: string;
   /** Locale prefix strategy for URLs */
-  prefixStrategy?: 'always' | 'as-needed';
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
+  /** Locale detection settings */
+  detection?: DetectionOptions;
 }
 
 export interface CompileOptions {
@@ -310,6 +317,26 @@ export async function compileTranslations(
     await fs.writeFile(
       join(generatedDir, 'routes.d.ts'),
       generateRoutesTypes([...detectedLocales]),
+    );
+  }
+
+  // Generate config files when routing is enabled (for middleware/locale detection)
+  if (routing?.enabled) {
+    const allLocales = locales ?? [...detectedLocales];
+    const configOptions = {
+      locales: allLocales,
+      defaultLocale,
+      prefixStrategy: routing.prefixStrategy,
+      detection: routing.detection,
+    };
+
+    await fs.writeFile(
+      join(generatedDir, 'config.js'),
+      generateConfigModule(configOptions),
+    );
+    await fs.writeFile(
+      join(generatedDir, 'config.d.ts'),
+      generateConfigTypes(configOptions),
     );
   }
 
@@ -778,6 +805,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
   const exports: string[] = [];
   const isNextJs =
     routing.framework === 'next-app' || routing.framework === 'next-pages';
+  const isTanStack = routing.framework === 'tanstack';
 
   if (routing.localizedPaths) {
     // Import routes and create Link with routes pre-configured
@@ -791,6 +819,18 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       imports.push(
         `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
       );
+    }
+
+    // Add middleware factory import for TanStack Start
+    if (isTanStack) {
+      imports.push(
+        `import { createMiddlewareFactory } from '@idiomi/tanstack-react/middleware';`,
+      );
+      imports.push(
+        `import { locales as configLocales, defaultLocale as configDefaultLocale, prefixStrategy, detection } from './.generated/config';`,
+      );
+      imports.push(`import { redirect } from '@tanstack/react-router';`);
+      imports.push(`import { matchLocale } from '@idiomi/core/locale';`);
     }
 
     exports.push('');
@@ -824,6 +864,16 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push(`  routes,`);
       exports.push(`  reverseRoutes,`);
       exports.push(`});`);
+    }
+
+    // Generate createMiddleware factory for TanStack Start
+    if (isTanStack) {
+      exports.push(`export const createMiddleware = createMiddlewareFactory({`);
+      exports.push(`  locales: configLocales,`);
+      exports.push(`  defaultLocale: configDefaultLocale,`);
+      exports.push(`});`);
+      exports.push('');
+      exports.push(...generateTanStackSpaLoader());
     }
 
     // Re-export getLocaleHead for programmatic use
@@ -923,4 +973,86 @@ export type { Locale, TranslationKey, MessageValues };
 `;
 
   await fs.writeFile(join(outputDir, 'plain.ts'), content, 'utf-8');
+}
+
+/**
+ * Generate TanStack Router SPA locale loader code.
+ * This provides localeLoader (for beforeLoad) and detectClientLocale for SPAs.
+ */
+function generateTanStackSpaLoader(): string[] {
+  return [
+    `/**`,
+    ` * TanStack Router beforeLoad function for locale detection.`,
+    ` * Handles URL prefix strategy and redirects.`,
+    ` */`,
+    `export function localeLoader({`,
+    `  location,`,
+    `}: {`,
+    `  location: { pathname: string; search: string; hash: string };`,
+    `}) {`,
+    `  const pathLocale = extractLocaleFromPath(location.pathname);`,
+    ``,
+    `  // Strategy: 'never' - no URL prefixes, just detect`,
+    `  if (prefixStrategy === 'never') {`,
+    `    return { locale: pathLocale ?? detectClientLocale() };`,
+    `  }`,
+    ``,
+    `  // No locale in path - check if we need to redirect`,
+    `  if (!pathLocale) {`,
+    `    const detected = detectClientLocale();`,
+    ``,
+    `    // Redirect if: always prefix OR detected is non-default`,
+    `    if (prefixStrategy === 'always' || detected !== configDefaultLocale) {`,
+    `      throw redirect({`,
+    `        to: \`/\${detected}\${location.pathname}\${location.search}\${location.hash}\`,`,
+    `      });`,
+    `    }`,
+    ``,
+    `    return { locale: detected };`,
+    `  }`,
+    ``,
+    `  // Locale in path - use it`,
+    `  return { locale: pathLocale };`,
+    `}`,
+    ``,
+    `/** Low-level detection (exported for manual use cases) */`,
+    `export function detectClientLocale(): string {`,
+    `  for (const source of detection.order) {`,
+    `    if (source === 'cookie') {`,
+    `      const cookie = getCookie(detection.cookieName);`,
+    `      if (cookie && configLocales.includes(cookie)) return cookie;`,
+    `    }`,
+    `    if (source === 'header') {`,
+    `      // 'header' = navigator.languages on client (skip during SSR)`,
+    `      if (typeof navigator !== 'undefined' && navigator.languages?.length) {`,
+    `        const matched = matchLocale(navigator.languages, {`,
+    `          locales: configLocales as unknown as string[],`,
+    `          defaultLocale: configDefaultLocale,`,
+    `          algorithm: detection.algorithm,`,
+    `        });`,
+    `        // Only use if it's not just the default (actual match found)`,
+    `        const langString = navigator.languages.join(',');`,
+    `        if (matched !== configDefaultLocale || langString.includes(matched)) {`,
+    `          return matched;`,
+    `        }`,
+    `      }`,
+    `    }`,
+    `  }`,
+    `  return configDefaultLocale;`,
+    `}`,
+    ``,
+    `function extractLocaleFromPath(pathname: string): string | undefined {`,
+    `  const segment = pathname.split('/')[1];`,
+    `  if (segment && (configLocales as readonly string[]).includes(segment)) {`,
+    `    return segment;`,
+    `  }`,
+    `  return undefined;`,
+    `}`,
+    ``,
+    `function getCookie(name: string): string | undefined {`,
+    `  if (typeof document === 'undefined') return undefined;`,
+    `  const match = document.cookie.match(new RegExp(\`(?:^|;\\\\s*)\${name}=([^;]*)\`));`,
+    `  return match?.[1];`,
+    `}`,
+  ];
 }

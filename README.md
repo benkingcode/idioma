@@ -782,11 +782,24 @@ export default defineConfig({
   locales: ['en', 'es', 'fr'],
   routing: {
     localizedPaths: true, // Enable path translation
-    prefixStrategy: 'as-needed', // 'always' or 'as-needed' (default)
+    prefixStrategy: 'as-needed', // 'always', 'as-needed' (default), or 'never'
     metadataBase: 'https://example.com', // Optional: for absolute hreflang URLs
+    detection: {
+      order: ['cookie', 'header'], // Detection priority (header = Accept-Language on server, navigator.languages on client)
+      cookieName: 'IDIOMI_LOCALE', // Cookie name for locale preference
+      algorithm: 'best fit', // 'best fit' (language distance) or 'lookup' (strict)
+    },
   },
 });
 ```
+
+**Prefix strategies:**
+
+| Strategy      | Default locale URL | Non-default URL | Behavior                        |
+| ------------- | ------------------ | --------------- | ------------------------------- |
+| `'never'`     | `/about`           | `/about`        | No prefixes, locale from detect |
+| `'as-needed'` | `/about`           | `/es/about`     | Prefix only non-default         |
+| `'always'`    | `/en/about`        | `/es/about`     | Always prefix                   |
 
 When `localizedPaths: true`, `idiomi extract` automatically scans your route structure and adds route segments to PO files:
 
@@ -950,6 +963,49 @@ Install the TanStack package:
 
 ```bash
 npm install @idiomi/tanstack-react
+```
+
+**For TanStack Start (SSR):** Set up middleware for locale detection:
+
+```ts
+// src/start.ts
+import { createMiddleware } from '@/idiomi';
+import { createStart } from '@tanstack/react-start';
+
+export const startInstance = createStart(() => ({
+  requestMiddleware: [createMiddleware()],
+}));
+```
+
+**For TanStack Router (SPA):** Use the generated `localeLoader` in your root route:
+
+```tsx
+// routes/__root.tsx
+import { IdiomiProvider, localeLoader } from '@/idiomi';
+import { createRootRoute, Outlet } from '@tanstack/react-router';
+
+export const Route = createRootRoute({
+  beforeLoad: localeLoader,
+  component: RootComponent,
+});
+
+function RootComponent() {
+  const { locale } = Route.useRouteContext();
+  return (
+    <IdiomiProvider locale={locale}>
+      <Outlet />
+    </IdiomiProvider>
+  );
+}
+```
+
+The `localeLoader` handles URL prefix detection and redirects based on your `prefixStrategy` config. For manual locale detection, use `detectClientLocale()`:
+
+```tsx
+import { detectClientLocale } from '@/idiomi';
+
+// Returns locale from navigator.languages or cookie
+const locale = detectClientLocale();
 ```
 
 When routing is configured, the `Link` is auto-generated:

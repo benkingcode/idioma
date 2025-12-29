@@ -10,9 +10,10 @@ export interface IdiomiMiddlewareConfig {
    * Locale prefix strategy for URLs.
    * - 'always': All locales prefixed (e.g., /en/about, /es/about)
    * - 'as-needed': Default locale unprefixed (e.g., /about, /es/about)
+   * - 'never': No locale prefixes in URLs
    * @default 'as-needed'
    */
-  prefixStrategy?: 'always' | 'as-needed';
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
   /** Detection settings */
   detection?: {
     /** Cookie name for storing locale preference */
@@ -107,7 +108,7 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
     const locale = detectedLocale || defaultLocale;
 
     // Handle prefix strategy
-    if (!pathLocale) {
+    if (prefixStrategy !== 'never' && !pathLocale) {
       // No locale in path
       if (prefixStrategy === 'always' || locale !== defaultLocale) {
         // Redirect to add locale prefix
@@ -225,7 +226,7 @@ export interface MiddlewareRuntimeConfig {
    * Locale prefix strategy for URLs.
    * @default 'as-needed'
    */
-  prefixStrategy?: 'always' | 'as-needed';
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
   /** Detection settings */
   detection?: {
     cookieName?: string;

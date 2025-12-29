@@ -139,11 +139,12 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `server/` - `setLocale()` for cookies
 - `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
-**@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router integration for React
+**@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router/Start integration for React
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`
 - `link.tsx` - `createLink()` factory for localized Link component
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags
+- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection
 
 ### Configuration
 
@@ -600,7 +601,7 @@ When `routing` is configured in `idiomi.config.ts`, the compiler automatically g
 ```typescript
 // Auto-generated in idiomi/index.ts when routing.localizedPaths: true
 import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/pages, @idiomi/tanstack-react
-import { createMiddlewareFactory } from '@idiomi/next/middleware';
+import { createMiddlewareFactory } from '@idiomi/next/middleware'; // or @idiomi/tanstack-react/middleware
 import { reverseRoutes, routes } from './.generated/routes';
 
 // Pre-configured with routes from compiled translations
@@ -614,7 +615,7 @@ export const LocaleHead = createLocaleHead({
   routes,
 });
 
-// Pre-configured middleware factory (Next.js only)
+// Pre-configured middleware factory (Next.js and TanStack Start)
 export const createMiddleware = createMiddlewareFactory({
   locales: ['en', 'es', 'fr'],
   defaultLocale: 'en',
@@ -624,6 +625,14 @@ export const createMiddleware = createMiddlewareFactory({
 
 // Re-export pure function for programmatic use
 export { getLocaleHead } from '@idiomi/react';
+
+// TanStack Router SPA only: locale detection for beforeLoad (generated inline)
+export function localeLoader({ location }) {
+  /* ... */
+}
+export function detectClientLocale() {
+  /* ... */
+}
 ```
 
 **Framework Detection** (`packages/core/src/framework.ts`):
