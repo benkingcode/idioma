@@ -118,6 +118,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `po/` - PO file parser and merge utilities
 - `keys/` - Message key generation (murmurhash-based)
 - `ai/` - AI translation: context generation from source code, unified provider via Vercel AI SDK
+- `locale/` - Locale matching utilities using `@formatjs/intl-localematcher` for BCP 47-compliant matching
 - `routes/` - Route extraction and compilation for localized paths
 - `framework.ts` - Framework detection utility (next-app, next-pages, tanstack)
 
@@ -632,6 +633,15 @@ export function localeLoader({ location }) {
 }
 export function detectClientLocale() {
   /* ... */
+}
+
+// TanStack Router only: URL rewrite functions for localized paths
+// Use with createRouter({ rewrite: { input: deLocalizeUrl, output: localizeUrl } })
+export function deLocalizeUrl(url: URL): URL {
+  /* Transform /es/sobre → /es/about for route matching */
+}
+export function localizeUrl(url: URL): URL {
+  /* Transform /es/about → /es/sobre for display */
 }
 ```
 

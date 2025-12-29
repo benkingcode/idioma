@@ -977,6 +977,24 @@ export const startInstance = createStart(() => ({
 }));
 ```
 
+**For localized paths:** Use the generated `deLocalizeUrl` and `localizeUrl` functions with TanStack Router's `rewrite` option to preserve localized URLs in the browser (e.g., `/es/sobre` stays visible while internally routing to `/es/about`):
+
+```ts
+// app/router.tsx
+import { deLocalizeUrl, localizeUrl } from '@/idiomi';
+import { createRouter } from '@tanstack/react-router';
+
+export const router = createRouter({
+  routeTree,
+  rewrite: {
+    // Transform localized URL → canonical for route matching
+    input: (url) => deLocalizeUrl(url),
+    // Transform canonical → localized for display
+    output: (url) => localizeUrl(url),
+  },
+});
+```
+
 **For TanStack Router (SPA):** Use the generated `localeLoader` in your root route:
 
 ```tsx
