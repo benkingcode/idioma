@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs';
 import { join, relative } from 'path';
+import { parse } from '@babel/parser';
+import type { Node, ObjectExpression } from '@babel/types';
 import type { ExtractedRoute, ExtractRoutesOptions } from './types.js';
 import { isRouteGroup } from './types.js';
 
@@ -46,9 +48,55 @@ async function findRouteTree(projectRoot: string): Promise<string | null> {
 }
 
 /**
+ * Simple recursive AST walker.
+ * Visits every node in the tree and calls the callback.
+ */
+function walk(node: Node, callback: (node: Node) => void): void {
+  callback(node);
+  for (const key in node) {
+    const child = (node as unknown as Record<string, unknown>)[key];
+    if (Array.isArray(child)) {
+      for (const item of child) {
+        if (item && typeof item === 'object' && 'type' in item) {
+          walk(item as Node, callback);
+        }
+      }
+    } else if (child && typeof child === 'object' && 'type' in child) {
+      walk(child as Node, callback);
+    }
+  }
+}
+
+/**
+ * Extract id and path string values from an ObjectExpression AST node.
+ */
+function extractIdAndPath(obj: ObjectExpression): {
+  id?: string;
+  path?: string;
+} {
+  let id: string | undefined;
+  let path: string | undefined;
+
+  for (const prop of obj.properties) {
+    if (prop.type !== 'ObjectProperty') continue;
+    if (prop.key.type !== 'Identifier') continue;
+
+    const key = prop.key.name;
+    if (key === 'id' || key === 'path') {
+      if (prop.value.type === 'StringLiteral') {
+        if (key === 'id') id = prop.value.value;
+        if (key === 'path') path = prop.value.value;
+      }
+    }
+  }
+
+  return { id, path };
+}
+
+/**
  * Extract routes from TanStack Router's generated routeTree.gen.ts.
  *
- * Parses the .update({ id, path, getParentRoute }) definitions to extract routes.
+ * Uses AST parsing to find .update({ id, path, getParentRoute }) definitions.
  * TanStack's route tree structure already separates locale from content routes:
  * - Parent route has the locale param: { path: '/{-$locale}' }
  * - Child routes have clean paths: { path: '/about' }
@@ -61,27 +109,46 @@ async function extractFromRouteTree(
 ): Promise<ExtractedRoute[]> {
   const content = await fs.readFile(routeTreePath, 'utf-8');
 
-  // Match .update({ id: '...', path: '...' }) definitions
-  // The path property contains just the segment for this route, not the full path
-  const updateRegex =
-    /\.update\(\{\s*id:\s*['"]([^'"]+)['"]\s*,\s*path:\s*['"]([^'"]+)['"]/g;
+  const ast = parse(content, {
+    sourceType: 'module',
+    plugins: ['typescript'],
+  });
 
   const routes: ExtractedRoute[] = [];
-  let match;
 
-  while ((match = updateRegex.exec(content)) !== null) {
-    const path = match[2];
-    if (!path) continue;
+  walk(ast, (node) => {
+    // Find .update() call expressions
+    if (node.type !== 'CallExpression') return;
+
+    // Check if it's a .update() call: SomeRoute.update({ ... })
+    if (node.callee.type !== 'MemberExpression') return;
+    if (node.callee.property.type !== 'Identifier') return;
+    if (node.callee.property.name !== 'update') return;
+
+    // Get the first argument (should be an object expression)
+    // Handle TypeScript `as any` casts by unwrapping TSAsExpression
+    let arg = node.arguments[0];
+    if (!arg) return;
+
+    // Unwrap TSAsExpression (e.g., `{ id: '...' } as any`)
+    if (arg.type === 'TSAsExpression') {
+      arg = arg.expression;
+    }
+    if (arg.type !== 'ObjectExpression') return;
+
+    // Extract id and path from the object
+    const { path } = extractIdAndPath(arg);
+    if (!path) return;
 
     // Skip routes that are just locale params (these are parent layout routes)
     // Examples: /{-$locale}, /{$locale}, /$locale, /$lang
     if (isLocaleRoute(path)) {
-      continue;
+      return;
     }
 
     // Skip root route (just /)
     if (path === '/') {
-      continue;
+      return;
     }
 
     // Parse segments from the path
@@ -92,7 +159,7 @@ async function extractFromRouteTree(
 
     // Skip if no translatable segments remain
     if (filteredSegments.length === 0) {
-      continue;
+      return;
     }
 
     // Build the canonical path from filtered segments
@@ -104,7 +171,7 @@ async function extractFromRouteTree(
       type: 'page',
       segments: filteredSegments,
     });
-  }
+  });
 
   return deduplicateRoutes(routes);
 }
