@@ -144,8 +144,10 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.tsx` - `createLink()` factory for localized Link component, `resolveLocalizedHref()` for URL resolution with prefix strategy
-- `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags
-- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection
+- `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
+- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection (SSR only)
+
+**TanStack SPA vs SSR separation**: The compiler generates browser-safe code for SPAs (`localeLoader`, `detectClientLocale`) that doesn't import from `@tanstack/react-start` or other SSR-only packages. For TanStack Start SSR, users import middleware manually from `@idiomi/tanstack-react/middleware`.
 
 ### Configuration
 
@@ -615,12 +617,14 @@ export const Link = createLink({
   prefixStrategy,
 });
 
-// Pre-configured with locales, defaultLocale, routes, metadataBase, prefixStrategy
+// Pre-configured with locales, defaultLocale, routes, reverseRoutes, metadataBase, prefixStrategy
+// reverseRoutes is used to convert localized URLs back to canonical paths for hreflang generation
 export const LocaleHead = createLocaleHead({
   metadataBase: 'https://example.com',
   locales,
   defaultLocale,
   routes,
+  reverseRoutes,
 });
 
 // Pre-configured middleware factory (Next.js and TanStack Start)
@@ -635,11 +639,12 @@ export const createMiddleware = createMiddlewareFactory({
 export { getLocaleHead } from '@idiomi/react';
 
 // TanStack Router SPA only: locale detection for beforeLoad (generated inline)
+// IMPORTANT: Uses location.searchStr (raw string like "?foo=bar"), NOT location.search (parsed object)
 export function localeLoader({ location }) {
-  /* ... */
+  /* Detects locale, redirects if needed based on prefixStrategy */
 }
 export function detectClientLocale() {
-  /* ... */
+  /* Returns locale from cookie or navigator.languages */
 }
 
 // TanStack Router only: URL rewrite functions for localized paths

@@ -995,20 +995,24 @@ export const router = createRouter({
 });
 ```
 
-**For TanStack Router (SPA):** Use the generated `localeLoader` in your root route:
+**For TanStack Router (SPA):** Use the generated `localeLoader` in your locale layout route. With TanStack's optional `{-$locale}` parameter pattern, place it on the layout route that handles the locale segment:
 
 ```tsx
-// routes/__root.tsx
-import { IdiomiProvider, localeLoader } from '@/idiomi';
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+// routes/{-$locale}/route.tsx
+import { detectClientLocale, IdiomiProvider, localeLoader } from '@/idiomi';
+import type { Locale } from '@/idiomi';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 
-export const Route = createRootRoute({
+export const Route = createFileRoute('/{-$locale}')({
   beforeLoad: localeLoader,
-  component: RootComponent,
+  component: LocaleLayout,
 });
 
-function RootComponent() {
-  const { locale } = Route.useRouteContext();
+function LocaleLayout() {
+  const { locale: urlLocale } = Route.useParams();
+  // Use URL locale if present, otherwise detect from cookie/browser
+  const locale = (urlLocale as Locale) ?? detectClientLocale();
+
   return (
     <IdiomiProvider locale={locale}>
       <Outlet />
