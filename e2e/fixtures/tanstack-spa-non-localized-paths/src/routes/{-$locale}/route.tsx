@@ -51,13 +51,17 @@ function Navigation() {
     const currentPath = window.location.pathname;
     const pathWithoutLocale = currentPath.replace(/^\/(en|es)/, '') || '/';
 
+    // Preserve query params and hash
+    const searchParams = window.location.search;
+    const hash = window.location.hash;
+
     // Build new URL with locale prefix (if needed)
     const newPath =
       newLocale === 'en'
         ? pathWithoutLocale
         : `/${newLocale}${pathWithoutLocale}`;
 
-    navigate({ to: newPath });
+    navigate({ to: `${newPath}${searchParams}${hash}` });
   };
 
   return (

@@ -107,8 +107,8 @@ export function createIdiomiProvider() {
 /**
  * Creates a useLocale hook that returns the current locale.
  */
-export function createUseLocale() {
-  return function useLocale(): string {
+export function createUseLocale<L extends string = string>() {
+  return function useLocale(): L {
     const context = useContext(IdiomiContext);
     if (!context) {
       throw new Error(
@@ -116,7 +116,7 @@ export function createUseLocale() {
           'Make sure to wrap your app with <IdiomiProvider>.',
       );
     }
-    return context.locale;
+    return context.locale as L;
   };
 }
 

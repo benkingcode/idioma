@@ -1,9 +1,30 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useMatch,
+} from '@tanstack/react-router';
 import { Trans, useLocale, useT } from '../../idiomi';
 
 export const Route = createFileRoute('/{-$locale}/blog')({
-  component: BlogPage,
+  component: BlogLayout,
 });
+
+function BlogLayout() {
+  // Check if we're on a child route (blog post)
+  const childMatch = useMatch({
+    from: '/{-$locale}/blog/$slug',
+    shouldThrow: false,
+  });
+
+  // If on a child route, render the outlet
+  if (childMatch) {
+    return <Outlet />;
+  }
+
+  // Otherwise render the blog list
+  return <BlogPage />;
+}
 
 function BlogPage() {
   const t = useT();

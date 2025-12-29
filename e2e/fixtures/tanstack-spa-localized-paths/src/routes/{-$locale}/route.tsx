@@ -55,6 +55,10 @@ function Navigation() {
     const currentPath = window.location.pathname;
     const pathWithoutLocale = currentPath.replace(/^\/(en|es)/, '') || '/';
 
+    // Preserve query params and hash
+    const searchParams = window.location.search;
+    const hash = window.location.hash;
+
     // Translate back to canonical path, then to new locale's path
     const canonicalPath = getCanonicalPath(pathWithoutLocale, locale);
     const localizedPath = getLocalizedPath(canonicalPath, newLocale);
@@ -63,7 +67,7 @@ function Navigation() {
     const newPath =
       newLocale === 'en' ? localizedPath : `/${newLocale}${localizedPath}`;
 
-    navigate({ to: newPath });
+    navigate({ to: `${newPath}${searchParams}${hash}` });
   };
 
   return (

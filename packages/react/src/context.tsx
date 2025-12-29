@@ -59,15 +59,15 @@ export function createIdiomiProvider() {
  * @throws Error if used outside of IdiomiProvider
  *
  * @example
- * const useLocale = createUseLocale()
+ * const useLocale = createUseLocale<Locale>()
  *
  * function Component() {
- *   const locale = useLocale()
+ *   const locale = useLocale() // typed as Locale
  *   return <div>Current locale: {locale}</div>
  * }
  */
-export function createUseLocale() {
-  return function useLocale(): string {
+export function createUseLocale<L extends string = string>() {
+  return function useLocale(): L {
     const context = useContext(IdiomiContext);
     if (!context) {
       throw new Error(
@@ -75,6 +75,6 @@ export function createUseLocale() {
           'Make sure to wrap your app with <IdiomiProvider>.',
       );
     }
-    return context.locale;
+    return context.locale as L;
   };
 }

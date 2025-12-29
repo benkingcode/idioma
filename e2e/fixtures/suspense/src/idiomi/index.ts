@@ -16,6 +16,6 @@ const config = {
 export const Trans = createTransSuspense<IdiomiTypes>(config);
 export const useT = createUseTSuspense<IdiomiTypes>(config);
 export const IdiomiProvider = createIdiomiProvider();
-export const useLocale = createUseLocale();
+export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };

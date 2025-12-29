@@ -977,7 +977,7 @@ export const startInstance = createStart(() => ({
 }));
 ```
 
-**For localized paths:** Use the generated `deLocalizeUrl` and `localizeUrl` functions with TanStack Router's `rewrite` option to preserve localized URLs in the browser (e.g., `/es/sobre` stays visible while internally routing to `/es/about`):
+**For localized paths:** Use the generated `deLocalizeUrl` and `localizeUrl` functions with TanStack Router's `rewrite` option to handle path translation (e.g., `/es/sobre` ↔ `/es/about`):
 
 ```ts
 // app/router.tsx
@@ -987,13 +987,17 @@ import { createRouter } from '@tanstack/react-router';
 export const router = createRouter({
   routeTree,
   rewrite: {
-    // Transform localized URL → canonical for route matching
+    // Transform localized path → canonical for route matching
+    // e.g., /es/sobre → /es/about
     input: ({ url }) => deLocalizeUrl(url),
-    // Transform canonical → localized for display
+    // Transform canonical → localized for link generation
+    // e.g., /es/about → /es/sobre (also strips /en prefix when as-needed)
     output: ({ url }) => localizeUrl(url),
   },
 });
 ```
+
+> **Note:** URL rewriting handles **path translation** only (e.g., "sobre" ↔ "about"). It does NOT change the browser URL. For URL prefix redirects based on locale detection, use `localeLoader` in `beforeLoad`.
 
 **For TanStack Router (SPA):** Use the generated `localeLoader` in your locale layout route. With TanStack's optional `{-$locale}` parameter pattern, place it on the layout route that handles the locale segment:
 
@@ -1021,14 +1025,24 @@ function LocaleLayout() {
 }
 ```
 
-The `localeLoader` handles URL prefix detection and redirects based on your `prefixStrategy` config. For manual locale detection, use `detectClientLocale()`:
+The `localeLoader` handles all redirect logic based on your `prefixStrategy` config:
+
+- **No prefix in URL** + detected non-default locale → redirects to add prefix (`/` → `/es/`)
+- **No prefix in URL** + detected is default locale → stays at unprefixed URL
+- **Default locale prefix** + `as-needed` strategy → redirects to strip prefix (`/en/about` → `/about`)
+- **Non-default locale prefix** → uses it directly
+
+For manual locale detection (e.g., outside routes), use `detectClientLocale()`:
 
 ```tsx
 import { detectClientLocale } from '@/idiomi';
 
-// Returns locale from navigator.languages or cookie
+// Returns locale from cookie (IDIOMI_LOCALE) or navigator.languages
+// Detection order is configurable via routing.detection.order
 const locale = detectClientLocale();
 ```
+
+Locale detection follows the configured order (default: `['cookie', 'header']`). On the client, `'header'` reads from `navigator.languages`. The cookie is set automatically when users switch locales via your UI.
 
 **Navigation:** Use TanStack Router's native `<Link>` component directly. With optional locale params (`{-$locale}`), passing `params={{}}` inherits the current locale automatically:
 

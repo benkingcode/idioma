@@ -13,6 +13,6 @@ import type { IdiomiTypes, Locale } from './.generated/types';
 export const Trans = createTrans<IdiomiTypes>();
 export const useT = createUseT<IdiomiTypes>();
 export const IdiomiProvider = createIdiomiProvider();
-export const useLocale = createUseLocale();
+export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };

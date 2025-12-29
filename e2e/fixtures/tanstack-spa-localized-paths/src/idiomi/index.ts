@@ -53,16 +53,24 @@ export function localeLoader({
     return { locale: detected };
   }
 
-  // Locale in path - use it
+  // Default locale in path with 'as-needed' - redirect to strip prefix
+  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {
+    const pathWithoutLocale = location.pathname.slice(pathLocale.length + 1) || '/';
+    throw redirect({
+      to: `${pathWithoutLocale}${location.searchStr}${location.hash}`,
+    });
+  }
+
+  // Non-default locale in path - use it
   return { locale: pathLocale };
 }
 
 /** Low-level detection (exported for manual use cases) */
-export function detectClientLocale(): string {
+export function detectClientLocale(): Locale {
   for (const source of detection.order) {
     if (source === 'cookie') {
       const cookie = getCookie(detection.cookieName);
-      if (cookie && locales.includes(cookie)) return cookie;
+      if (cookie && (locales as readonly string[]).includes(cookie)) return cookie as Locale;
     }
     if (source === 'header') {
       // 'header' = navigator.languages on client (skip during SSR)
@@ -76,7 +84,7 @@ export function detectClientLocale(): string {
 }
 
 /** Simple browser-compatible locale matching (no Node.js deps) */
-function matchBrowserLocale(browserLocales: readonly string[]): string | undefined {
+function matchBrowserLocale(browserLocales: readonly string[]): Locale | undefined {
   for (const browserLang of browserLocales) {
     const normalized = browserLang.toLowerCase();
     // Exact match
@@ -93,10 +101,10 @@ function matchBrowserLocale(browserLocales: readonly string[]): string | undefin
   return undefined;
 }
 
-function extractLocaleFromPath(pathname: string): string | undefined {
+function extractLocaleFromPath(pathname: string): Locale | undefined {
   const segment = pathname.split('/')[1];
   if (segment && (locales as readonly string[]).includes(segment)) {
-    return segment;
+    return segment as Locale;
   }
   return undefined;
 }
@@ -121,13 +129,33 @@ function getCookie(name: string): string | undefined {
  */
 export function deLocalizeUrl(url: URL): URL {
   const pathLocale = extractLocaleFromPath(url.pathname);
+
+  // No locale in URL - return unchanged, let localeLoader handle redirect
+  // The {-$locale} optional segment will match unprefixed paths
   if (!pathLocale) return url;
 
   const localeReverse = reverseRoutes[pathLocale];
   if (!localeReverse) return url;
 
   const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';
-  const canonicalPath = localeReverse[pathWithoutLocale];
+
+  // Try exact match first
+  let canonicalPath = localeReverse[pathWithoutLocale];
+
+  // If no exact match, try matching base path for dynamic routes
+  // e.g., /articulos/my-post -> match /articulos, translate to /blog, result: /blog/my-post
+  if (!canonicalPath && pathWithoutLocale !== '/') {
+    const segments = pathWithoutLocale.split('/').filter(Boolean);
+    for (let i = segments.length - 1; i > 0; i--) {
+      const basePath = '/' + segments.slice(0, i).join('/');
+      const baseCanonical = localeReverse[basePath];
+      if (baseCanonical) {
+        const trailing = '/' + segments.slice(i).join('/');
+        canonicalPath = baseCanonical + trailing;
+        break;
+      }
+    }
+  }
 
   if (canonicalPath && canonicalPath !== pathWithoutLocale) {
     const newUrl = new URL(url);
@@ -157,7 +185,25 @@ export function localizeUrl(url: URL): URL {
 
   // Get localized path (path translation)
   const localeRoutes = routes[pathLocale];
-  const localizedPath = localeRoutes?.[pathWithoutLocale] ?? pathWithoutLocale;
+  let localizedPath = localeRoutes?.[pathWithoutLocale];
+
+  // If no exact match, try matching base path for dynamic routes
+  // e.g., /blog/my-post -> match /blog, translate to /articulos, result: /articulos/my-post
+  if (!localizedPath && pathWithoutLocale !== '/') {
+    const segments = pathWithoutLocale.split('/').filter(Boolean);
+    for (let i = segments.length - 1; i > 0; i--) {
+      const basePath = '/' + segments.slice(0, i).join('/');
+      const baseLocalized = localeRoutes?.[basePath];
+      if (baseLocalized) {
+        const trailing = '/' + segments.slice(i).join('/');
+        localizedPath = baseLocalized + trailing;
+        break;
+      }
+    }
+  }
+
+  // Default to original path if no translation found
+  if (!localizedPath) localizedPath = pathWithoutLocale;
 
   // Build final URL
   const newUrl = new URL(url);
@@ -178,6 +224,6 @@ export { getLocaleHead } from '@idiomi/react';
 export const Trans = createTrans<IdiomiTypes>();
 export const useT = createUseT<IdiomiTypes>();
 export const IdiomiProvider = createIdiomiProvider();
-export const useLocale = createUseLocale();
+export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };

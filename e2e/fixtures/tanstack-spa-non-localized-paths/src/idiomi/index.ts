@@ -50,16 +50,24 @@ export function localeLoader({
     return { locale: detected };
   }
 
-  // Locale in path - use it
+  // Default locale in path with 'as-needed' - redirect to strip prefix
+  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {
+    const pathWithoutLocale = location.pathname.slice(pathLocale.length + 1) || '/';
+    throw redirect({
+      to: `${pathWithoutLocale}${location.searchStr}${location.hash}`,
+    });
+  }
+
+  // Non-default locale in path - use it
   return { locale: pathLocale };
 }
 
 /** Low-level detection (exported for manual use cases) */
-export function detectClientLocale(): string {
+export function detectClientLocale(): Locale {
   for (const source of detection.order) {
     if (source === 'cookie') {
       const cookie = getCookie(detection.cookieName);
-      if (cookie && locales.includes(cookie)) return cookie;
+      if (cookie && (locales as readonly string[]).includes(cookie)) return cookie as Locale;
     }
     if (source === 'header') {
       // 'header' = navigator.languages on client (skip during SSR)
@@ -73,7 +81,7 @@ export function detectClientLocale(): string {
 }
 
 /** Simple browser-compatible locale matching (no Node.js deps) */
-function matchBrowserLocale(browserLocales: readonly string[]): string | undefined {
+function matchBrowserLocale(browserLocales: readonly string[]): Locale | undefined {
   for (const browserLang of browserLocales) {
     const normalized = browserLang.toLowerCase();
     // Exact match
@@ -90,10 +98,10 @@ function matchBrowserLocale(browserLocales: readonly string[]): string | undefin
   return undefined;
 }
 
-function extractLocaleFromPath(pathname: string): string | undefined {
+function extractLocaleFromPath(pathname: string): Locale | undefined {
   const segment = pathname.split('/')[1];
   if (segment && (locales as readonly string[]).includes(segment)) {
-    return segment;
+    return segment as Locale;
   }
   return undefined;
 }
@@ -133,6 +141,6 @@ export { getLocaleHead } from '@idiomi/react';
 export const Trans = createTrans<IdiomiTypes>();
 export const useT = createUseT<IdiomiTypes>();
 export const IdiomiProvider = createIdiomiProvider();
-export const useLocale = createUseLocale();
+export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };
