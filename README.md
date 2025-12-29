@@ -780,7 +780,7 @@ When routing is configured, the `Link` component is auto-generated in your `idio
 
 ```tsx
 // Inside IdiomaProvider tree - locale is read from context automatically
-import { Link } from './idioma';
+import { Link } from '@/idioma';
 
 function Navigation() {
   return (
@@ -797,7 +797,7 @@ function Navigation() {
 
 ```tsx
 // Server Component (outside IdiomaProvider) - must pass locale prop explicitly
-import { Link } from './idioma';
+import { Link } from '@/idioma';
 
 export default async function Page({
   params,
@@ -884,7 +884,7 @@ Pages Router uses Next.js's built-in `i18n` config for detection and prefixes. W
 
 ```tsx
 // pages/_app.tsx
-import { Link } from './idioma';
+import { Link } from '@/idioma';
 
 function Navigation() {
   return <Link href="/about">About</Link>;
@@ -902,7 +902,7 @@ npm install @idioma/tanstack
 When routing is configured, the `Link` is auto-generated:
 
 ```tsx
-import { Link } from './idioma';
+import { Link } from '@/idioma';
 
 function Navigation() {
   return (
@@ -922,7 +922,7 @@ function Navigation() {
 For SEO hreflang tags, use the same `LocaleHead` component:
 
 ```tsx
-import { LocaleHead } from './idioma';
+import { LocaleHead } from '@/idioma';
 
 function Head() {
   // Inside IdiomaProvider - pathname and locale from hooks
