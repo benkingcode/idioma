@@ -1,0 +1,49 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/App.tsx
+#, extracted
+msgid "000VjZ5b"
+msgstr "Idiomi Example"
+
+#: src/App.tsx
+#, extracted
+msgid "000esfJJ"
+msgstr "Language"
+
+#: src/App.tsx
+#, extracted
+msgid "000KJdVL"
+msgstr "Interpolation"
+
+#: src/App.tsx
+#, extracted
+msgid "004exRVE"
+msgstr "Pluralization"
+
+#: src/App.tsx
+#, extracted
+msgid "0013HYrG"
+msgstr "Imperative API"
+
+#: src/components/Counter.tsx
+#, extracted
+msgid "0019RXs4"
+msgstr "You have {count} {itemLabel} in your cart."
+
+#: src/components/Greeting.tsx
+#, extracted
+msgid "0024c34D"
+msgstr "Hello, {name}!"
+
+#: src/components/Messages.tsx
+#, extracted
+msgid "0030Ae50"
+msgstr "Welcome back!"
+
+#: src/components/Messages.tsx
+#, extracted
+msgid "003tPdPT"
+msgstr "You have {count} notifications."

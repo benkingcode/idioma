@@ -1,0 +1,144 @@
+msgid ""
+msgstr ""
+"Language: ar\n"
+"Content-Type: text/plain\n"
+
+#: src/components/BasicTrans.tsx
+#, extracted
+msgid "000e6cSN"
+msgstr ""
+
+#: src/components/BasicTrans.tsx
+#, extracted
+msgid "002LT9uM"
+msgstr ""
+
+#: src/components/BasicTrans.tsx
+#, extracted
+msgid "greeting.farewell"
+msgstr ""
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "001K244T"
+msgstr ""
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "002MF83G"
+msgstr ""
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "000OaF1m"
+msgstr ""
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "002eTXHM"
+msgstr ""
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "0013HsIP"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "002TXdYD"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "002Baos1"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "0043ID7R"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "003jykkI"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "0047ZVOp"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "001r7GGR"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "004Dt4mI"
+msgstr ""
+
+#: src/components/EdgeCases.tsx
+#, extracted
+msgid "004JLiGr"
+msgstr ""
+
+#: src/components/Interpolation.tsx
+#, extracted
+msgid "0024c34D"
+msgstr ""
+
+#: src/components/Interpolation.tsx
+#, extracted
+msgid "003lIRId"
+msgstr ""
+
+#: src/components/Interpolation.tsx
+#, extracted
+msgid "000iXvMP"
+msgstr ""
+
+#: src/components/Interpolation.tsx
+#, extracted
+msgid "002r0ybS"
+msgstr ""
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "000w9C8y"
+msgstr ""
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "0048f6Nc"
+msgstr ""
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "002EaYd6"
+msgstr ""
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "004CDxng"
+msgstr ""
+
+#: src/components/UseT.tsx
+#, extracted
+msgid "002UQheH"
+msgstr ""
+
+#: src/components/UseT.tsx
+#, extracted
+msgid "003X3cVZ"
+msgstr ""
+
+#: src/components/UseT.tsx
+#, extracted
+msgid "001gZ2vk"
+msgstr ""
+
+#: src/components/UseT.tsx
+#, extracted
+msgid "002RXyTq"
+msgstr ""

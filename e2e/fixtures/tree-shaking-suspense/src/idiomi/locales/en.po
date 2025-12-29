@@ -1,0 +1,34 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/about.lazy.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/routes/about.lazy.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Learn more about what we do"
+
+#: src/routes/contact.lazy.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr "Get in touch with us"
+
+#: src/routes/contact.lazy.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr "Send us a message and we will respond"
+
+#: src/routes/index.lazy.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/routes/index.lazy.tsx
+#, extracted
+msgid "000SSgaT"
+msgstr "This is the home page with unique translations"

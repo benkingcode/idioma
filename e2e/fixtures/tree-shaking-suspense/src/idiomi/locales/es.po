@@ -1,0 +1,34 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/about.lazy.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr ""
+
+#: src/routes/about.lazy.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr ""
+
+#: src/routes/contact.lazy.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr ""
+
+#: src/routes/contact.lazy.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr ""
+
+#: src/routes/index.lazy.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr ""
+
+#: src/routes/index.lazy.tsx
+#, extracted
+msgid "000SSgaT"
+msgstr ""

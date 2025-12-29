@@ -1,0 +1,49 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/App.tsx
+#, extracted
+msgid "000VjZ5b"
+msgstr ""
+
+#: src/App.tsx
+#, extracted
+msgid "000esfJJ"
+msgstr ""
+
+#: src/App.tsx
+#, extracted
+msgid "000KJdVL"
+msgstr ""
+
+#: src/App.tsx
+#, extracted
+msgid "004exRVE"
+msgstr ""
+
+#: src/App.tsx
+#, extracted
+msgid "0013HYrG"
+msgstr ""
+
+#: src/components/Counter.tsx
+#, extracted
+msgid "0019RXs4"
+msgstr ""
+
+#: src/components/Greeting.tsx
+#, extracted
+msgid "0024c34D"
+msgstr ""
+
+#: src/components/Messages.tsx
+#, extracted
+msgid "0030Ae50"
+msgstr ""
+
+#: src/components/Messages.tsx
+#, extracted
+msgid "003tPdPT"
+msgstr ""
