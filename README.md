@@ -45,6 +45,28 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
 - **Plain JS support** — `createT` for Zod schemas, error handling, and non-React code
 
+## Table of Contents
+
+- [Context-Aware AI Translation](#context-aware-ai-translation)
+- [Quick Start](#quick-start) — Vite setup
+- [Next.js](#nextjs)
+- [React Native](#react-native)
+- [React Server Components](#react-server-components)
+- [Plain JavaScript](#plain-javascript-outside-react)
+- [Usage](#usage)
+  - [Trans Component](#basic-translation)
+  - [useT Hook](#imperative-usage-with-uset)
+  - [Pluralization](#pluralization)
+  - [Selection](#selection)
+  - [Namespaces](#namespaces)
+- [CLI Commands](#cli-commands)
+- [Configuration](#configuration)
+- [Routing](#routing)
+- [API Reference](#api-reference)
+- [How It Works](#how-it-works)
+- [Why Idioma?](#why-idioma)
+- [Comparison](#comparison)
+
 ## Context-Aware AI Translation
 
 Most AI translation tools translate strings in isolation. "Submit" becomes "Enviar"—but is it a button label? A form title? A legal document submission? Context matters.
@@ -93,28 +115,6 @@ msgstr "Algo salió mal"
 Notice "Submit" becomes "Realizar pedido" (Place order), not generic "Enviar"—because the AI understood it's a checkout confirmation button.
 
 This context is saved in your PO files and reused for future translations, so you pay for context generation once per message.
-
-## Table of Contents
-
-- [Context-Aware AI Translation](#context-aware-ai-translation)
-- [Quick Start](#quick-start) — Vite setup
-- [Next.js](#nextjs)
-- [React Native](#react-native)
-- [React Server Components](#react-server-components)
-- [Plain JavaScript](#plain-javascript-outside-react)
-- [Usage](#usage)
-  - [Trans Component](#basic-translation)
-  - [useT Hook](#imperative-usage-with-uset)
-  - [Pluralization](#pluralization)
-  - [Selection](#selection)
-  - [Namespaces](#namespaces)
-- [CLI Commands](#cli-commands)
-- [Configuration](#configuration)
-- [Routing](#routing)
-- [API Reference](#api-reference)
-- [How It Works](#how-it-works)
-- [Why Idioma?](#why-idioma)
-- [Comparison](#comparison)
 
 ## Quick Start
 
