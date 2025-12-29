@@ -461,7 +461,7 @@ async function detectFramework(cwd: string): Promise<Framework | null> {
       const hasAppDir =
         (await directoryExists(join(cwd, 'app'))) ||
         (await directoryExists(join(cwd, 'src', 'app')));
-      return hasAppDir ? 'nextjs-app' : 'nextjs-pages';
+      return hasAppDir ? 'next-app' : 'next-pages';
     }
 
     return null;
@@ -510,7 +510,10 @@ async function extractRouteMessages(
   const seenSegments = new Set<string>();
 
   for (const route of routes) {
-    const translatableSegments = getTranslatableSegments(route.segments);
+    const translatableSegments = getTranslatableSegments(
+      route.segments,
+      framework,
+    );
 
     for (const segment of translatableSegments) {
       // Skip if we've already added this segment

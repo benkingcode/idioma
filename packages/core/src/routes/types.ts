@@ -4,7 +4,11 @@
  * Routes are extracted as individual path segments (not full paths) to:
  * 1. Keep translations simple for translators (just words like "about", "blog")
  * 2. Prevent accidental breakage of slashes or bracket syntax
- * 3. Never expose dynamic segments [param] to translation
+ * 3. Never expose dynamic segments to translation
+ *
+ * Dynamic segment syntax varies by framework:
+ * - Next.js: [param], [...slug], [[...optional]]
+ * - TanStack: $param, $[param], {$param}, {-$param}, $ (splat)
  */
 
 /** A single extracted route from the filesystem */
@@ -30,7 +34,7 @@ export interface RouteSegment {
 }
 
 /** Framework type for route extraction */
-export type Framework = 'nextjs-app' | 'nextjs-pages' | 'tanstack';
+export type Framework = 'next-app' | 'next-pages' | 'tanstack';
 
 /** Options for route extraction */
 export interface ExtractRoutesOptions {
@@ -49,11 +53,44 @@ export interface CompiledRoutes {
 }
 
 /**
- * Check if a segment is dynamic (should not be translated).
- * Dynamic segments: [param], [...slug], [[...optional]]
+ * Check if a segment is dynamic in Next.js (should not be translated).
+ *
+ * Next.js syntax: [param], [...slug], [[...optional]]
  */
-export function isDynamicSegment(segment: string): boolean {
+export function isNextJsDynamicSegment(segment: string): boolean {
   return segment.startsWith('[') && segment.endsWith(']');
+}
+
+/**
+ * Check if a segment is dynamic in TanStack Router (should not be translated).
+ *
+ * TanStack syntax: $param, $[param], {$param}, {-$param}, $ (splat)
+ */
+export function isTanStackDynamicSegment(segment: string): boolean {
+  // $param, $[param], $ (splat)
+  if (segment.startsWith('$')) {
+    return true;
+  }
+
+  // {$param}, {-$param} (params with special chars or optional)
+  if (segment.startsWith('{') && segment.includes('$')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if a segment is dynamic for the given framework.
+ */
+export function isDynamicSegment(
+  segment: string,
+  framework: Framework,
+): boolean {
+  if (framework === 'tanstack') {
+    return isTanStackDynamicSegment(segment);
+  }
+  return isNextJsDynamicSegment(segment);
 }
 
 /**
@@ -68,8 +105,12 @@ export function isRouteGroup(segment: string): boolean {
  * Get translatable segments from a path.
  * Filters out dynamic segments and route groups.
  */
-export function getTranslatableSegments(segments: string[]): string[] {
+export function getTranslatableSegments(
+  segments: string[],
+  framework: Framework,
+): string[] {
   return segments.filter(
-    (seg) => !isDynamicSegment(seg) && !isRouteGroup(seg) && seg.length > 0,
+    (seg) =>
+      !isDynamicSegment(seg, framework) && !isRouteGroup(seg) && seg.length > 0,
   );
 }

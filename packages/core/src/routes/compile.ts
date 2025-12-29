@@ -1,5 +1,5 @@
 import type { Message } from '../po/types.js';
-import type { CompiledRoutes, ExtractedRoute } from './types.js';
+import type { CompiledRoutes, ExtractedRoute, Framework } from './types.js';
 import { isDynamicSegment } from './types.js';
 
 /** Route context prefix in PO files */
@@ -16,11 +16,13 @@ export const ROUTE_CONTEXT_PREFIX = 'route:';
  * @param routes - Routes extracted from the project
  * @param messages - Messages per locale from PO files (only route: context entries)
  * @param locales - List of supported locales
+ * @param framework - Framework type for dynamic segment detection
  */
 export function compileRoutes(
   routes: ExtractedRoute[],
   messages: Record<string, Message[]>,
   locales: string[],
+  framework: Framework,
 ): CompiledRoutes {
   // Step 1: Build segment translation maps from PO messages
   const segments: Record<string, Record<string, string>> = {};
@@ -70,7 +72,7 @@ export function compileRoutes(
       // Translate each segment of the path
       const translatedSegments = route.segments.map((seg) => {
         // Dynamic segments are preserved as-is
-        if (isDynamicSegment(seg)) {
+        if (isDynamicSegment(seg, framework)) {
           return seg;
         }
         // Look up translation, fall back to original

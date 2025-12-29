@@ -14,17 +14,45 @@ import type { ExtractedRoute } from './types.js';
 
 describe('route types', () => {
   describe('isDynamicSegment', () => {
-    it('identifies dynamic segments', () => {
-      expect(isDynamicSegment('[slug]')).toBe(true);
-      expect(isDynamicSegment('[...slug]')).toBe(true);
-      expect(isDynamicSegment('[[...slug]]')).toBe(true);
-      expect(isDynamicSegment('[id]')).toBe(true);
+    describe('Next.js syntax', () => {
+      it('identifies dynamic segments', () => {
+        expect(isDynamicSegment('[slug]', 'next-app')).toBe(true);
+        expect(isDynamicSegment('[...slug]', 'next-app')).toBe(true);
+        expect(isDynamicSegment('[[...slug]]', 'next-app')).toBe(true);
+        expect(isDynamicSegment('[id]', 'next-app')).toBe(true);
+      });
+
+      it('identifies static segments', () => {
+        expect(isDynamicSegment('about', 'next-app')).toBe(false);
+        expect(isDynamicSegment('blog', 'next-app')).toBe(false);
+        expect(isDynamicSegment('contact-us', 'next-app')).toBe(false);
+      });
+
+      it('does not recognize TanStack syntax', () => {
+        expect(isDynamicSegment('$slug', 'next-app')).toBe(false);
+        expect(isDynamicSegment('{$locale}', 'next-app')).toBe(false);
+      });
     });
 
-    it('identifies static segments', () => {
-      expect(isDynamicSegment('about')).toBe(false);
-      expect(isDynamicSegment('blog')).toBe(false);
-      expect(isDynamicSegment('contact-us')).toBe(false);
+    describe('TanStack syntax', () => {
+      it('identifies dynamic segments', () => {
+        expect(isDynamicSegment('$slug', 'tanstack')).toBe(true);
+        expect(isDynamicSegment('$userId', 'tanstack')).toBe(true);
+        expect(isDynamicSegment('$', 'tanstack')).toBe(true); // splat
+        expect(isDynamicSegment('{$locale}', 'tanstack')).toBe(true);
+        expect(isDynamicSegment('{-$locale}', 'tanstack')).toBe(true);
+      });
+
+      it('identifies static segments', () => {
+        expect(isDynamicSegment('about', 'tanstack')).toBe(false);
+        expect(isDynamicSegment('blog', 'tanstack')).toBe(false);
+        expect(isDynamicSegment('contact-us', 'tanstack')).toBe(false);
+      });
+
+      it('does not recognize Next.js syntax', () => {
+        expect(isDynamicSegment('[slug]', 'tanstack')).toBe(false);
+        expect(isDynamicSegment('[...slug]', 'tanstack')).toBe(false);
+      });
     });
   });
 
@@ -43,18 +71,29 @@ describe('route types', () => {
   });
 
   describe('getTranslatableSegments', () => {
-    it('filters out dynamic segments and groups', () => {
+    it('filters out Next.js dynamic segments and groups', () => {
       const segments = ['(marketing)', 'blog', '[slug]', 'comments'];
-      expect(getTranslatableSegments(segments)).toEqual(['blog', 'comments']);
+      expect(getTranslatableSegments(segments, 'next-app')).toEqual([
+        'blog',
+        'comments',
+      ]);
+    });
+
+    it('filters out TanStack dynamic segments and groups', () => {
+      const segments = ['(marketing)', 'blog', '$slug', 'comments'];
+      expect(getTranslatableSegments(segments, 'tanstack')).toEqual([
+        'blog',
+        'comments',
+      ]);
     });
 
     it('handles empty array', () => {
-      expect(getTranslatableSegments([])).toEqual([]);
+      expect(getTranslatableSegments([], 'next-app')).toEqual([]);
     });
 
     it('handles all dynamic/group segments', () => {
       const segments = ['(auth)', '[userId]', '[[...params]]'];
-      expect(getTranslatableSegments(segments)).toEqual([]);
+      expect(getTranslatableSegments(segments, 'next-app')).toEqual([]);
     });
   });
 });
@@ -107,7 +146,7 @@ describe('compileRoutes', () => {
       ],
     };
 
-    const compiled = compileRoutes(routes, messages, ['en', 'es']);
+    const compiled = compileRoutes(routes, messages, ['en', 'es'], 'next-app');
 
     // Check full route maps
     expect(compiled.routes.en).toEqual({
@@ -159,7 +198,7 @@ describe('compileRoutes', () => {
       ],
     };
 
-    const compiled = compileRoutes(routes, messages, ['en', 'es']);
+    const compiled = compileRoutes(routes, messages, ['en', 'es'], 'next-app');
 
     expect(compiled.routes.en['/blog/[slug]']).toBe('/blog/[slug]');
     expect(compiled.routes.es['/blog/[slug]']).toBe('/articulos/[slug]');
@@ -188,7 +227,7 @@ describe('compileRoutes', () => {
       fr: [],
     };
 
-    const compiled = compileRoutes(routes, messages, ['en', 'fr']);
+    const compiled = compileRoutes(routes, messages, ['en', 'fr'], 'next-app');
 
     expect(compiled.routes.en['/about']).toBe('/about');
     expect(compiled.routes.fr['/about']).toBe('/about'); // Falls back to original
@@ -221,11 +260,46 @@ describe('compileRoutes', () => {
       ],
     };
 
-    const compiled = compileRoutes(routes, messages, ['en']);
+    const compiled = compileRoutes(routes, messages, ['en'], 'next-app');
 
     // Only the route context message should be used
     expect(compiled.routes.en).toEqual({ '/about': '/about' });
     expect(Object.keys(compiled.routes.en)).toHaveLength(1);
+  });
+
+  it('preserves TanStack dynamic segments in paths', () => {
+    const routes: ExtractedRoute[] = [
+      {
+        path: '/blog/$slug',
+        source: 'src/routes/blog.$slug.tsx',
+        type: 'page',
+        segments: ['blog', '$slug'],
+      },
+    ];
+
+    const messages: Record<string, Message[]> = {
+      en: [
+        {
+          key: 'abc',
+          source: 'blog',
+          translation: 'blog',
+          context: 'route:blog',
+        },
+      ],
+      es: [
+        {
+          key: 'abc',
+          source: 'blog',
+          translation: 'articulos',
+          context: 'route:blog',
+        },
+      ],
+    };
+
+    const compiled = compileRoutes(routes, messages, ['en', 'es'], 'tanstack');
+
+    expect(compiled.routes.en['/blog/$slug']).toBe('/blog/$slug');
+    expect(compiled.routes.es['/blog/$slug']).toBe('/articulos/$slug');
   });
 });
 

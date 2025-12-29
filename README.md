@@ -815,7 +815,7 @@ msgid "aB9cD3eF"
 msgstr "articulos"
 ```
 
-Route segments are translated individually (not full paths), preventing translator errors with slashes or dynamic segments like `[slug]`.
+Route segments are translated individually (not full paths), preventing translator errors with slashes or dynamic segments (`[slug]` in Next.js, `$slug` in TanStack).
 
 ### Next.js (App Router)
 
@@ -1083,22 +1083,23 @@ function ServerHead({
 
 1. **Extract**: `idiomi extract` scans your route structure and adds segments to PO files
 2. **Translate**: Translators (or AI) translate individual segments: `about` → `sobre`
-3. **Compile**: `idiomi compile` generates a routes map:
+3. **Compile**: `idiomi compile` generates a routes map using framework-native syntax:
 
 ```js
-// .generated/routes.js
+// .generated/routes.js (Next.js)
 export const routes = {
   en: { '/about': '/about', '/blog/[slug]': '/blog/[slug]' },
   es: { '/about': '/sobre', '/blog/[slug]': '/articulos/[slug]' },
 };
 
-export const reverseRoutes = {
-  en: { '/about': '/about' },
-  es: { '/sobre': '/about', '/articulos/[slug]': '/blog/[slug]' },
+// .generated/routes.js (TanStack)
+export const routes = {
+  en: { '/about': '/about', '/blog/$slug': '/blog/$slug' },
+  es: { '/about': '/sobre', '/blog/$slug': '/articulos/$slug' },
 };
 ```
 
-Dynamic segments like `[slug]` are preserved—only static segments are translated.
+Dynamic segments are preserved using each framework's native syntax—only static segments are translated.
 
 ## Locale Fallbacks
 

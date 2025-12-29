@@ -306,9 +306,12 @@ export async function compileTranslations(
     const routeMessages = extractRouteMessagesFromCatalogs(catalogs, [
       ...detectedLocales,
     ]);
-    const compiledRoutes = compileRoutes(extractedRoutes, routeMessages, [
-      ...detectedLocales,
-    ]);
+    const compiledRoutes = compileRoutes(
+      extractedRoutes,
+      routeMessages,
+      [...detectedLocales],
+      routing.framework,
+    );
 
     await fs.writeFile(
       join(generatedDir, 'routes.js'),
