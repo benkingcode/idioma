@@ -86,10 +86,14 @@ async function extractFromRoutesDir(
     const path = parseRouteFileName(routeFile);
     const segments = pathToSegments(path);
 
-    // Filter out $lang segment if first
-    const filteredSegments = segments.filter(
-      (seg, idx) => !(idx === 0 && seg === '$lang'),
-    );
+    // Filter out locale param segment if first ($lang, {-$locale}, etc.)
+    const filteredSegments = segments.filter((seg, idx) => {
+      if (idx !== 0) return true;
+      // Skip $lang, {-$locale}, {$locale}, etc.
+      if (seg === '$lang') return false;
+      if (seg.match(/^\{-?\$locale\}$/)) return false;
+      return true;
+    });
 
     // Normalize $param to [param] for consistency
     const normalizedSegments = filteredSegments.map((seg) =>
@@ -169,10 +173,14 @@ async function extractFromSourceFiles(
         const normalizedPath = routePath.replace(/\$([^/]+)/g, '[$1]');
         const segments = pathToSegments(normalizedPath);
 
-        // Filter out [lang] if first
-        const filteredSegments = segments.filter(
-          (seg, idx) => !(idx === 0 && seg === '[lang]'),
-        );
+        // Filter out locale param segment if first ([lang], {-$locale}, etc.)
+        const filteredSegments = segments.filter((seg, idx) => {
+          if (idx !== 0) return true;
+          // Skip [lang], {-$locale}, {$locale}, etc.
+          if (seg === '[lang]') return false;
+          if (seg.match(/^\{-?\$locale\}$/)) return false;
+          return true;
+        });
 
         routes.push({
           path:

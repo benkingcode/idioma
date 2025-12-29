@@ -1,0 +1,59 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/routes/index.tsx
+#, extracted
+msgid "004WjXeB"
+msgstr "Esta es la pagina de inicio con rutas de prefijo"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Conoce mas sobre lo que hacemos"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "002nB7Kd"
+msgstr "Nuestro Blog"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "003X9pLm"
+msgstr "Lee nuestros ultimos articulos y actualizaciones"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr "Contactanos"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr "Envianos un mensaje y te responderemos"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "0039uF2j"
+msgstr ""
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "00403S5Z"
+msgstr ""
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "003bBaea"
+msgstr ""

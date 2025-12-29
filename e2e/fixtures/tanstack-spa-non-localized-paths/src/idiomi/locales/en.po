@@ -1,0 +1,59 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/routes/index.tsx
+#, extracted
+msgid "004WjXeB"
+msgstr "This is the home page with prefix-only routing"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Learn more about what we do"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "002nB7Kd"
+msgstr "Our Blog"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "003X9pLm"
+msgstr "Read our latest articles and updates"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr "Get in touch with us"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr "Send us a message and we will respond"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "00403S5Z"
+msgstr "Read our latest articles and updates"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "003bBaea"
+msgstr "This is the home page with non-localized paths routing"

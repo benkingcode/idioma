@@ -1,0 +1,31 @@
+{
+  "name": "e2e-fixture-tanstack-spa-non-localized-paths",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:fixture": "vite",
+    "build:fixture": "vite build",
+    "preview": "vite preview",
+    "extract": "idiomi extract",
+    "compile": "idiomi compile",
+    "translate": "dotenv -e ../../../.env.local -- idiomi translate"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@idiomi/core": "workspace:*",
+    "@idiomi/react": "workspace:*",
+    "@idiomi/tanstack-react": "workspace:*",
+    "@tanstack/react-router": "^1.94.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tanstack/router-plugin": "^1.94.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "dotenv-cli": "^8.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

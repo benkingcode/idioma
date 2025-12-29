@@ -1,0 +1,107 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/routes/index.tsx
+#, extracted
+msgid "004WjXeB"
+msgstr "Esta es la pagina de inicio con rutas localizadas"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Conoce mas sobre lo que hacemos"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "002nB7Kd"
+msgstr "Nuestro Blog"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "003X9pLm"
+msgstr "Lee nuestros ultimos articulos y actualizaciones"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr "Contactanos"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr "Envianos un mensaje y te responderemos"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "0039uF2j"
+msgstr ""
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "00403S5Z"
+msgstr ""
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "004RNHTH"
+msgstr ""
+
+#: src/routes/about.tsx
+#, extracted
+msgctxt "route:about"
+msgid "001QnRtS"
+msgstr "sobre"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgctxt "route:about"
+msgid "003R6yRq"
+msgstr ""
+
+#: src/routes/blog.tsx
+#, extracted
+msgctxt "route:blog"
+msgid "002TmPvW"
+msgstr "articulos"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgctxt "route:blog"
+msgid "0030YUzz"
+msgstr ""
+
+#: src/routes/contact.tsx
+#, extracted
+msgctxt "route:contact"
+msgid "003YkRxZ"
+msgstr "contacto"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgctxt "route:contact"
+msgid "002dJ8dM"
+msgstr ""
+
+#: src/routes/{-$locale}/route.tsx
+#, extracted
+msgctxt "route:route"
+msgid "004OHIwg"
+msgstr ""
+
+#: src/routes/{-$locale}/tests.tsx
+#, extracted
+msgctxt "route:tests"
+msgid "000x7Jli"
+msgstr ""

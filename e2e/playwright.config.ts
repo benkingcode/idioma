@@ -20,7 +20,11 @@ export default defineConfig({
     // Standard mode tests (non-Suspense)
     {
       name: 'standard',
-      testIgnore: [/suspense\/.*\.spec\.ts$/, /tree-shaking\/.*\.spec\.ts$/],
+      testIgnore: [
+        /suspense\/.*\.spec\.ts$/,
+        /tree-shaking\/.*\.spec\.ts$/,
+        /routing\/.*\.spec\.ts$/,
+      ],
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:5173',
@@ -53,6 +57,42 @@ export default defineConfig({
         baseURL: 'http://localhost:5176',
       },
     },
+    // TanStack Router SPA - Localized paths (route translation)
+    {
+      name: 'tanstack-spa-localized-paths',
+      testMatch: /routing\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5177',
+      },
+    },
+    // TanStack Router SPA - Non-localized paths (prefix only)
+    {
+      name: 'tanstack-spa-non-localized-paths',
+      testMatch: /routing\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5178',
+      },
+    },
+    // Shared routing tests - run on localized paths fixture
+    {
+      name: 'tanstack-spa-localized-paths-shared',
+      testMatch: /routing\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5177',
+      },
+    },
+    // Shared routing tests - run on non-localized paths fixture
+    {
+      name: 'tanstack-spa-non-localized-paths-shared',
+      testMatch: /routing\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5178',
+      },
+    },
   ],
 
   webServer: [
@@ -82,6 +122,21 @@ export default defineConfig({
       url: 'http://localhost:5176',
       reuseExistingServer: !CI,
       timeout: 180000,
+    },
+    // TanStack Router SPA fixtures
+    {
+      command:
+        'pnpm --filter e2e-fixture-tanstack-spa-localized-paths dev:fixture --port 5177',
+      url: 'http://localhost:5177',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        'pnpm --filter e2e-fixture-tanstack-spa-non-localized-paths dev:fixture --port 5178',
+      url: 'http://localhost:5178',
+      reuseExistingServer: !CI,
+      timeout: 120000,
     },
   ],
 });
