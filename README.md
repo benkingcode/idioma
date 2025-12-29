@@ -33,7 +33,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - **Write natural JSX** — `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
 - **Flexible key strategy** — Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
 - **AI-powered translation** — Built-in translation with Claude or GPT, with automatic context extraction
-- **Type-safe** — Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
+- **Type-safe** — Generated TypeScript types for message keys and required values (forget `{name}` and TypeScript tells you)
 - **ICU MessageFormat** — Full support for plurals, selects, ordinals, and complex formatting
 
 **Integrations**
@@ -45,8 +45,58 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
 - **Plain JS support** — `createT` for Zod schemas, error handling, and non-React code
 
+## Context-Aware AI Translation
+
+Most AI translation tools translate strings in isolation. "Submit" becomes "Enviar"—but is it a button label? A form title? A legal document submission? Context matters.
+
+Idioma reads your source code to understand where each message appears:
+
+```tsx
+// src/components/Checkout.tsx
+function Checkout() {
+  return (
+    <div>
+      <h1>
+        <Trans>Review your order</Trans>
+      </h1>
+      <CartSummary />
+      <Button type="submit">
+        <Trans>Submit</Trans>
+      </Button>
+      <ErrorBoundary fallback={<Trans>Something went wrong</Trans>}>
+        <PaymentForm />
+      </ErrorBoundary>
+    </div>
+  );
+}
+```
+
+When you run `idioma translate`, the AI analyzes your code structure and generates translator context:
+
+```po
+#. [AI Context]: Page heading shown when user reviews items before payment
+#: src/components/Checkout.tsx:8
+msgid "Review your order"
+msgstr "Revisa tu pedido"
+
+#. [AI Context]: Button label to confirm and submit the order for payment
+#: src/components/Checkout.tsx:12
+msgid "Submit"
+msgstr "Realizar pedido"
+
+#. [AI Context]: Error message shown when payment processing fails unexpectedly
+#: src/components/Checkout.tsx:13
+msgid "Something went wrong"
+msgstr "Algo salió mal"
+```
+
+Notice "Submit" becomes "Realizar pedido" (Place order), not generic "Enviar"—because the AI understood it's a checkout confirmation button.
+
+This context is saved in your PO files and reused for future translations, so you pay for context generation once per message.
+
 ## Table of Contents
 
+- [Context-Aware AI Translation](#context-aware-ai-translation)
 - [Quick Start](#quick-start) — Vite setup
 - [Next.js](#nextjs)
 - [React Native](#react-native)
