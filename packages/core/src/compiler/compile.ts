@@ -815,7 +815,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     );
     // Import config values for Link and middleware
     imports.push(
-      `import { locales as configLocales, defaultLocale as configDefaultLocale, prefixStrategy, detection } from './.generated/config';`,
+      `import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';`,
     );
 
     // Add middleware factory import for Next.js
@@ -839,7 +839,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Generate Link with config (consistent for all frameworks)
     exports.push('export const Link = createLink({');
     exports.push('  routes,');
-    exports.push('  defaultLocale: configDefaultLocale,');
+    exports.push('  defaultLocale,');
     exports.push('  prefixStrategy,');
     exports.push('});');
 
@@ -876,8 +876,8 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Generate createMiddleware factory for TanStack Start
     if (isTanStack) {
       exports.push(`export const createMiddleware = createMiddlewareFactory({`);
-      exports.push(`  locales: configLocales,`);
-      exports.push(`  defaultLocale: configDefaultLocale,`);
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
       exports.push(`});`);
       exports.push('');
       exports.push(...generateTanStackSpaLoader());
@@ -1011,7 +1011,7 @@ function generateTanStackSpaLoader(): string[] {
     `    const detected = detectClientLocale();`,
     ``,
     `    // Redirect if: always prefix OR detected is non-default`,
-    `    if (prefixStrategy === 'always' || detected !== configDefaultLocale) {`,
+    `    if (prefixStrategy === 'always' || detected !== defaultLocale) {`,
     `      throw redirect({`,
     `        to: \`/\${detected}\${location.pathname}\${location.search}\${location.hash}\`,`,
     `      });`,
@@ -1029,30 +1029,30 @@ function generateTanStackSpaLoader(): string[] {
     `  for (const source of detection.order) {`,
     `    if (source === 'cookie') {`,
     `      const cookie = getCookie(detection.cookieName);`,
-    `      if (cookie && configLocales.includes(cookie)) return cookie;`,
+    `      if (cookie && locales.includes(cookie)) return cookie;`,
     `    }`,
     `    if (source === 'header') {`,
     `      // 'header' = navigator.languages on client (skip during SSR)`,
     `      if (typeof navigator !== 'undefined' && navigator.languages?.length) {`,
     `        const matched = matchLocale(navigator.languages, {`,
-    `          locales: configLocales as unknown as string[],`,
-    `          defaultLocale: configDefaultLocale,`,
+    `          locales: locales as unknown as string[],`,
+    `          defaultLocale,`,
     `          algorithm: detection.algorithm,`,
     `        });`,
     `        // Only use if it's not just the default (actual match found)`,
     `        const langString = navigator.languages.join(',');`,
-    `        if (matched !== configDefaultLocale || langString.includes(matched)) {`,
+    `        if (matched !== defaultLocale || langString.includes(matched)) {`,
     `          return matched;`,
     `        }`,
     `      }`,
     `    }`,
     `  }`,
-    `  return configDefaultLocale;`,
+    `  return defaultLocale;`,
     `}`,
     ``,
     `function extractLocaleFromPath(pathname: string): string | undefined {`,
     `  const segment = pathname.split('/')[1];`,
-    `  if (segment && (configLocales as readonly string[]).includes(segment)) {`,
+    `  if (segment && (locales as readonly string[]).includes(segment)) {`,
     `    return segment;`,
     `  }`,
     `  return undefined;`,
