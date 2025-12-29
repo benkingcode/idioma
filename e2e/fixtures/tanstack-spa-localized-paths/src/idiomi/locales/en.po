@@ -4,6 +4,7 @@ msgstr ""
 "Content-Type: text/plain\n"
 
 #: src/routes/{-$locale}/index.tsx
+#. [AI Context]: Main page heading displayed at the top of the home page
 #, extracted
 msgid "0043pNTf"
 msgstr "Welcome to our website"
@@ -14,11 +15,13 @@ msgid "004WjXeB"
 msgstr "This is the home page with localized paths routing"
 
 #: src/routes/{-$locale}/about.tsx
+#. [AI Context]: Page heading for the About page, displayed in an h1 element at the top of the page
 #, extracted
 msgid "000Emt1m"
 msgstr "About our company"
 
 #: src/routes/{-$locale}/about.tsx
+#. [AI Context]: Descriptive paragraph text below the About page heading, providing introductory information about the company
 #, extracted
 msgid "004U2qa8"
 msgstr "Learn more about what we do"
@@ -34,29 +37,58 @@ msgid "003X9pLm"
 msgstr "Read our latest articles and updates"
 
 #: src/routes/{-$locale}/contact.tsx
+#. [AI Context]: Page heading for the contact page displayed at the top
 #, extracted
 msgid "0034rp6e"
 msgstr "Get in touch with us"
 
 #: src/routes/{-$locale}/contact.tsx
+#. [AI Context]: Description text below the contact page heading explaining the purpose of the contact form
 #, extracted
 msgid "002p8oRq"
 msgstr "Send us a message and we will respond"
 
 #: src/routes/{-$locale}/blog.tsx
+#. [AI Context]: Main page heading for the blog section
 #, extracted
 msgid "0039uF2j"
 msgstr "Our Blog"
 
 #: src/routes/{-$locale}/blog.tsx
+#. [AI Context]: Subtitle describing the blog content, displayed below the main heading
 #, extracted
 msgid "00403S5Z"
 msgstr "Read our latest articles and updates"
 
 #: src/routes/{-$locale}/index.tsx
+#. [AI Context]: Descriptive paragraph text on the home page explaining the site's localized routing feature
 #, extracted
 msgid "004RNHTH"
 msgstr "This is the home page with localized paths routing"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#. [AI Context]: Page heading displayed at the top of an individual blog post page
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#. [AI Context]: Description text on blog post page with dynamic {topic} parameter replaced by the blog post slug/title
+#, extracted
+msgid "003LYDLw"
+msgstr "This is a blog post about {topic}"
+
+#: src/routes/{-$locale}/blog.tsx
+#. [AI Context]: Link text for a blog post title in the blog post list
+#, extracted
+msgid "000SuTYU"
+msgstr "Hello World"
+
+#: src/routes/{-$locale}/blog.tsx
+#. [AI Context]: Link text for another blog post title in the blog post list
+#, extracted
+msgid "000bv8XP"
+msgstr "Getting Started"
 
 #: src/routes/about.tsx
 #, extracted
@@ -64,7 +96,7 @@ msgctxt "route:about"
 msgid "001QnRtS"
 msgstr "about"
 
-#: src/routes/{-$locale}/about.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:about"
 msgid "003R6yRq"
@@ -76,7 +108,7 @@ msgctxt "route:blog"
 msgid "002TmPvW"
 msgstr "blog"
 
-#: src/routes/{-$locale}/blog.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:blog"
 msgid "0030YUzz"
@@ -88,7 +120,7 @@ msgctxt "route:contact"
 msgid "003YkRxZ"
 msgstr "contact"
 
-#: src/routes/{-$locale}/contact.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:contact"
 msgid "002dJ8dM"
@@ -100,7 +132,7 @@ msgctxt "route:route"
 msgid "004OHIwg"
 msgstr "route"
 
-#: src/routes/{-$locale}/tests.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:tests"
 msgid "000x7Jli"

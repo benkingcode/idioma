@@ -15,6 +15,7 @@ import { Route as Char123LocaleChar125TestsRouteImport } from './routes/{-$local
 import { Route as Char123LocaleChar125ContactRouteImport } from './routes/{-$locale}/contact'
 import { Route as Char123LocaleChar125BlogRouteImport } from './routes/{-$locale}/blog'
 import { Route as Char123LocaleChar125AboutRouteImport } from './routes/{-$locale}/about'
+import { Route as Char123LocaleChar125BlogSlugRouteImport } from './routes/{-$locale}/blog.$slug'
 
 const Char123LocaleChar125RouteRoute =
   Char123LocaleChar125RouteRouteImport.update({
@@ -52,30 +53,39 @@ const Char123LocaleChar125AboutRoute =
     path: '/about',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125BlogSlugRoute =
+  Char123LocaleChar125BlogSlugRouteImport.update({
+    id: '/$slug',
+    path: '/$slug',
+    getParentRoute: () => Char123LocaleChar125BlogRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
-  '/{-$locale}/blog': typeof Char123LocaleChar125BlogRoute
+  '/{-$locale}/blog': typeof Char123LocaleChar125BlogRouteWithChildren
   '/{-$locale}/contact': typeof Char123LocaleChar125ContactRoute
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
 }
 export interface FileRoutesByTo {
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
-  '/{-$locale}/blog': typeof Char123LocaleChar125BlogRoute
+  '/{-$locale}/blog': typeof Char123LocaleChar125BlogRouteWithChildren
   '/{-$locale}/contact': typeof Char123LocaleChar125ContactRoute
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/{-$locale}': typeof Char123LocaleChar125RouteRouteWithChildren
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
-  '/{-$locale}/blog': typeof Char123LocaleChar125BlogRoute
+  '/{-$locale}/blog': typeof Char123LocaleChar125BlogRouteWithChildren
   '/{-$locale}/contact': typeof Char123LocaleChar125ContactRoute
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/contact'
     | '/{-$locale}/tests'
     | '/{-$locale}/'
+    | '/{-$locale}/blog/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/{-$locale}/about'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/contact'
     | '/{-$locale}/tests'
     | '/{-$locale}'
+    | '/{-$locale}/blog/$slug'
   id:
     | '__root__'
     | '/{-$locale}'
@@ -101,6 +113,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/contact'
     | '/{-$locale}/tests'
     | '/{-$locale}/'
+    | '/{-$locale}/blog/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -151,12 +164,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125AboutRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/blog/$slug': {
+      id: '/{-$locale}/blog/$slug'
+      path: '/$slug'
+      fullPath: '/{-$locale}/blog/$slug'
+      preLoaderRoute: typeof Char123LocaleChar125BlogSlugRouteImport
+      parentRoute: typeof Char123LocaleChar125BlogRoute
+    }
   }
 }
 
+interface Char123LocaleChar125BlogRouteChildren {
+  Char123LocaleChar125BlogSlugRoute: typeof Char123LocaleChar125BlogSlugRoute
+}
+
+const Char123LocaleChar125BlogRouteChildren: Char123LocaleChar125BlogRouteChildren =
+  {
+    Char123LocaleChar125BlogSlugRoute: Char123LocaleChar125BlogSlugRoute,
+  }
+
+const Char123LocaleChar125BlogRouteWithChildren =
+  Char123LocaleChar125BlogRoute._addFileChildren(
+    Char123LocaleChar125BlogRouteChildren,
+  )
+
 interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125AboutRoute: typeof Char123LocaleChar125AboutRoute
-  Char123LocaleChar125BlogRoute: typeof Char123LocaleChar125BlogRoute
+  Char123LocaleChar125BlogRoute: typeof Char123LocaleChar125BlogRouteWithChildren
   Char123LocaleChar125ContactRoute: typeof Char123LocaleChar125ContactRoute
   Char123LocaleChar125TestsRoute: typeof Char123LocaleChar125TestsRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
@@ -165,7 +199,7 @@ interface Char123LocaleChar125RouteRouteChildren {
 const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChildren =
   {
     Char123LocaleChar125AboutRoute: Char123LocaleChar125AboutRoute,
-    Char123LocaleChar125BlogRoute: Char123LocaleChar125BlogRoute,
+    Char123LocaleChar125BlogRoute: Char123LocaleChar125BlogRouteWithChildren,
     Char123LocaleChar125ContactRoute: Char123LocaleChar125ContactRoute,
     Char123LocaleChar125TestsRoute: Char123LocaleChar125TestsRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,

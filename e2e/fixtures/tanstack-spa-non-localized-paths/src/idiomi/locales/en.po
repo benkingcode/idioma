@@ -57,3 +57,23 @@ msgstr "Read our latest articles and updates"
 #, extracted
 msgid "003bBaea"
 msgstr "This is the home page with non-localized paths routing"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "003LYDLw"
+msgstr "This is a blog post about {topic}"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000SuTYU"
+msgstr "Hello World"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000bv8XP"
+msgstr "Getting Started"

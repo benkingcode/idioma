@@ -46,17 +46,37 @@ msgstr "Envianos un mensaje y te responderemos"
 #: src/routes/{-$locale}/blog.tsx
 #, extracted
 msgid "0039uF2j"
-msgstr ""
+msgstr "Nuestro Blog"
 
 #: src/routes/{-$locale}/blog.tsx
 #, extracted
 msgid "00403S5Z"
-msgstr ""
+msgstr "Lee nuestros ultimos articulos y actualizaciones"
 
 #: src/routes/{-$locale}/index.tsx
 #, extracted
 msgid "004RNHTH"
-msgstr ""
+msgstr "Esta es la pagina de inicio con rutas localizadas"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "002mrR1N"
+msgstr "Articulo del Blog"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "003LYDLw"
+msgstr "Este es un articulo sobre {topic}"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000SuTYU"
+msgstr "Hola Mundo"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000bv8XP"
+msgstr "Primeros Pasos"
 
 #: src/routes/about.tsx
 #, extracted
@@ -64,11 +84,11 @@ msgctxt "route:about"
 msgid "001QnRtS"
 msgstr "sobre"
 
-#: src/routes/{-$locale}/about.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:about"
 msgid "003R6yRq"
-msgstr ""
+msgstr "sobre"
 
 #: src/routes/blog.tsx
 #, extracted
@@ -76,11 +96,11 @@ msgctxt "route:blog"
 msgid "002TmPvW"
 msgstr "articulos"
 
-#: src/routes/{-$locale}/blog.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr ""
+msgstr "articulos"
 
 #: src/routes/contact.tsx
 #, extracted
@@ -88,20 +108,20 @@ msgctxt "route:contact"
 msgid "003YkRxZ"
 msgstr "contacto"
 
-#: src/routes/{-$locale}/contact.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:contact"
 msgid "002dJ8dM"
-msgstr ""
+msgstr "contacto"
 
 #: src/routes/{-$locale}/route.tsx
 #, extracted
 msgctxt "route:route"
 msgid "004OHIwg"
-msgstr ""
+msgstr "route"
 
-#: src/routes/{-$locale}/tests.tsx
+#: src/routeTree.gen.ts
 #, extracted
 msgctxt "route:tests"
 msgid "000x7Jli"
-msgstr ""
+msgstr "tests"

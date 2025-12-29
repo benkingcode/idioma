@@ -46,14 +46,34 @@ msgstr "Envianos un mensaje y te responderemos"
 #: src/routes/{-$locale}/blog.tsx
 #, extracted
 msgid "0039uF2j"
-msgstr ""
+msgstr "Nuestro Blog"
 
 #: src/routes/{-$locale}/blog.tsx
 #, extracted
 msgid "00403S5Z"
-msgstr ""
+msgstr "Lee nuestros ultimos articulos y actualizaciones"
 
 #: src/routes/{-$locale}/index.tsx
 #, extracted
 msgid "003bBaea"
-msgstr ""
+msgstr "Esta es la pagina de inicio con rutas de prefijo"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "002mrR1N"
+msgstr "Articulo del Blog"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "003LYDLw"
+msgstr "Este es un articulo sobre {topic}"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000SuTYU"
+msgstr "Hola Mundo"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000bv8XP"
+msgstr "Primeros Pasos"

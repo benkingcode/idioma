@@ -4,7 +4,9 @@ import {
   useLocalizedPath,
 } from '@idiomi/tanstack-react/hooks';
 import { defaultLocale, prefixStrategy } from '../idiomi/.generated/config';
-import { routes } from '../idiomi/.generated/routes';
+
+// Non-localized paths: no route translations exist
+const routes = {};
 
 // Build linkConfig for useLocalizedHref
 const linkConfig = {
