@@ -31,6 +31,13 @@ const DetectionConfigSchema = z.object({
   order: z
     .array(z.enum(['cookie', 'header', 'path']))
     .default(['cookie', 'header']),
+  /**
+   * Locale matching algorithm for Accept-Language header.
+   * - 'best fit': Uses language distance (e.g., en-GB matches en-US)
+   * - 'lookup': Strict RFC 4647 matching (e.g., en-GB only matches en)
+   * @default 'best fit'
+   */
+  algorithm: z.enum(['lookup', 'best fit']).default('best fit'),
 });
 
 /** Routing configuration for localized paths */

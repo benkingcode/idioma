@@ -159,6 +159,112 @@ describe('createIdiomiMiddleware', () => {
   });
 });
 
+describe('locale negotiation with language distance', () => {
+  it('matches en-GB to en-US via language distance', () => {
+    const middleware = createIdiomiMiddleware({
+      defaultLocale: 'de',
+      locales: ['en-US', 'es', 'de'],
+      prefixStrategy: 'always',
+    });
+    const request = createMockRequest('/about', {
+      'accept-language': 'en-GB',
+    });
+
+    const result = middleware(request as never);
+
+    // Should redirect to en-US (closest match to en-GB)
+    expect(result?.status).toBe(307);
+    expect(result?.headers.get('location')).toContain('/en-US/');
+  });
+
+  it('matches zh-TW to zh-Hant via script', () => {
+    const middleware = createIdiomiMiddleware({
+      defaultLocale: 'en',
+      locales: ['en', 'zh-Hans', 'zh-Hant'],
+      prefixStrategy: 'always',
+    });
+    const request = createMockRequest('/about', {
+      'accept-language': 'zh-TW',
+    });
+
+    const result = middleware(request as never);
+
+    // zh-TW should match zh-Hant (Traditional Chinese)
+    expect(result?.status).toBe(307);
+    expect(result?.headers.get('location')).toContain('/zh-Hant/');
+  });
+
+  it('matches pt-BR to pt-PT via language distance', () => {
+    const middleware = createIdiomiMiddleware({
+      defaultLocale: 'en',
+      locales: ['pt-PT', 'es', 'en'],
+      prefixStrategy: 'always',
+    });
+    const request = createMockRequest('/about', {
+      'accept-language': 'pt-BR',
+    });
+
+    const result = middleware(request as never);
+
+    // pt-BR should match pt-PT (same language family)
+    expect(result?.status).toBe(307);
+    expect(result?.headers.get('location')).toContain('/pt-PT/');
+  });
+
+  it('uses lookup algorithm when configured (strict matching)', () => {
+    const middleware = createIdiomiMiddleware({
+      defaultLocale: 'de',
+      locales: ['en-US', 'de'],
+      prefixStrategy: 'always',
+      detection: { algorithm: 'lookup' },
+    });
+    const request = createMockRequest('/about', {
+      'accept-language': 'en-GB',
+    });
+
+    const result = middleware(request as never);
+
+    // With lookup, en-GB won't match en-US (no language distance)
+    // Falls back to default locale (de)
+    expect(result?.status).toBe(307);
+    expect(result?.headers.get('location')).toContain('/de/');
+  });
+
+  it('preserves full locale codes in redirect', () => {
+    const middleware = createIdiomiMiddleware({
+      defaultLocale: 'en',
+      locales: ['en-GB', 'en-US', 'en'],
+      prefixStrategy: 'always',
+    });
+    const request = createMockRequest('/about', {
+      'accept-language': 'en-GB',
+    });
+
+    const result = middleware(request as never);
+
+    // Should match en-GB exactly
+    expect(result?.status).toBe(307);
+    expect(result?.headers.get('location')).toContain('/en-GB/');
+  });
+
+  it('respects quality factors with language distance', () => {
+    const middleware = createIdiomiMiddleware({
+      defaultLocale: 'en',
+      locales: ['en', 'es', 'de'],
+      prefixStrategy: 'always',
+    });
+    const request = createMockRequest('/about', {
+      'accept-language': 'fr;q=0.9,es;q=0.8,de;q=0.3',
+    });
+
+    const result = middleware(request as never);
+
+    // fr has no match, es is next highest priority
+    expect(result?.status).toBe(307);
+    expect(result?.headers.get('location')).toContain('/es/');
+  });
+});
+
 describe('createMiddlewareFactory', () => {
   const factoryConfig = {
     locales: ['en', 'es', 'fr'],

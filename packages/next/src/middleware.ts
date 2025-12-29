@@ -1,3 +1,4 @@
+import { matchLocale } from '@idiomi/core/locale';
 import { NextRequest, NextResponse } from 'next/server';
 
 export interface IdiomiMiddlewareConfig {
@@ -18,6 +19,13 @@ export interface IdiomiMiddlewareConfig {
     cookieName?: string;
     /** Detection priority order */
     order?: Array<'cookie' | 'header' | 'path'>;
+    /**
+     * Locale matching algorithm for Accept-Language header.
+     * - 'best fit': Uses language distance (e.g., en-GB matches en-US)
+     * - 'lookup': Strict RFC 4647 matching (e.g., en-GB only matches en)
+     * @default 'best fit'
+     */
+    algorithm?: 'lookup' | 'best fit';
   };
   /** Route translations - only needed when localizedPaths is enabled */
   routes?: Record<string, Record<string, string>>;
@@ -62,8 +70,11 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
     reverseRoutes,
   } = config;
 
-  const { cookieName = 'IDIOMA_LOCALE', order = ['cookie', 'header'] } =
-    detection;
+  const {
+    cookieName = 'IDIOMA_LOCALE',
+    order = ['cookie', 'header'],
+    algorithm = 'best fit',
+  } = detection;
 
   return function middleware(request: NextRequest): NextResponse | undefined {
     const { pathname } = request.nextUrl;
@@ -82,7 +93,14 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
     // Detect preferred locale (if not in path)
     let detectedLocale = pathLocale;
     if (!detectedLocale) {
-      detectedLocale = detectLocale(request, order, cookieName, locales);
+      detectedLocale = detectLocale(
+        request,
+        order,
+        cookieName,
+        locales,
+        defaultLocale,
+        algorithm,
+      );
     }
 
     // Use default locale if nothing detected
@@ -149,57 +167,40 @@ function detectLocale(
   order: Array<'cookie' | 'header' | 'path'>,
   cookieName: string,
   locales: string[],
+  defaultLocale: string,
+  algorithm: 'lookup' | 'best fit',
 ): string | undefined {
   for (const method of order) {
     let detected: string | undefined;
 
     switch (method) {
-      case 'cookie':
-        detected = request.cookies.get(cookieName)?.value;
+      case 'cookie': {
+        const cookieValue = request.cookies.get(cookieName)?.value;
+        if (cookieValue && locales.includes(cookieValue)) {
+          detected = cookieValue;
+        }
         break;
-      case 'header':
-        detected = parseAcceptLanguage(
-          request.headers.get('accept-language'),
-          locales,
-        );
+      }
+      case 'header': {
+        const acceptLanguage = request.headers.get('accept-language');
+        if (acceptLanguage) {
+          const matched = matchLocale(acceptLanguage, {
+            locales,
+            defaultLocale,
+            algorithm,
+          });
+          // Only use if it's not just the default (actual match found)
+          if (matched !== defaultLocale || acceptLanguage.includes(matched)) {
+            detected = matched;
+          }
+        }
         break;
+      }
       // 'path' is handled separately before this function
     }
 
-    if (detected && locales.includes(detected)) {
+    if (detected) {
       return detected;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * Parse Accept-Language header and return best matching locale.
- */
-function parseAcceptLanguage(
-  header: string | null,
-  locales: string[],
-): string | undefined {
-  if (!header) return undefined;
-
-  // Parse header: "en-US,en;q=0.9,es;q=0.8"
-  const languages = header.split(',').map((lang) => {
-    const [code, quality] = lang.trim().split(';q=');
-    const langCode = code?.split('-')[0]?.toLowerCase() ?? '';
-    return {
-      code: langCode,
-      quality: quality ? parseFloat(quality) : 1,
-    };
-  });
-
-  // Sort by quality
-  languages.sort((a, b) => b.quality - a.quality);
-
-  // Find first matching locale
-  for (const { code } of languages) {
-    if (locales.includes(code)) {
-      return code;
     }
   }
 
@@ -229,6 +230,13 @@ export interface MiddlewareRuntimeConfig {
   detection?: {
     cookieName?: string;
     order?: Array<'cookie' | 'header' | 'path'>;
+    /**
+     * Locale matching algorithm for Accept-Language header.
+     * - 'best fit': Uses language distance (e.g., en-GB matches en-US)
+     * - 'lookup': Strict RFC 4647 matching (e.g., en-GB only matches en)
+     * @default 'best fit'
+     */
+    algorithm?: 'lookup' | 'best fit';
   };
 }
 
