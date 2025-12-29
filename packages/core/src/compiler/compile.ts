@@ -874,6 +874,8 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push(`});`);
       exports.push('');
       exports.push(...generateTanStackSpaLoader());
+      // Add rewrite functions for TanStack Router's rewrite option
+      exports.push(...generateTanStackRewriteFunctions());
     }
 
     // Re-export getLocaleHead for programmatic use
@@ -1053,6 +1055,67 @@ function generateTanStackSpaLoader(): string[] {
     `  if (typeof document === 'undefined') return undefined;`,
     `  const match = document.cookie.match(new RegExp(\`(?:^|;\\\\s*)\${name}=([^;]*)\`));`,
     `  return match?.[1];`,
+    `}`,
+  ];
+}
+
+/**
+ * Generate TanStack Router rewrite functions for localized paths.
+ * These work with createRouter({ rewrite: { input, output } }).
+ */
+function generateTanStackRewriteFunctions(): string[] {
+  return [
+    ``,
+    `/**`,
+    ` * Transform localized URL to canonical for route matching.`,
+    ` * Use with TanStack Router's rewrite.input option.`,
+    ` * @example`,
+    ` * const router = createRouter({`,
+    ` *   routeTree,`,
+    ` *   rewrite: {`,
+    ` *     input: ({ url }) => deLocalizeUrl(url),`,
+    ` *     output: ({ url }) => localizeUrl(url),`,
+    ` *   },`,
+    ` * });`,
+    ` */`,
+    `export function deLocalizeUrl(url: URL): URL {`,
+    `  const pathLocale = extractLocaleFromPath(url.pathname);`,
+    `  if (!pathLocale) return url;`,
+    ``,
+    `  const localeReverse = reverseRoutes[pathLocale];`,
+    `  if (!localeReverse) return url;`,
+    ``,
+    `  const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';`,
+    `  const canonicalPath = localeReverse[pathWithoutLocale];`,
+    ``,
+    `  if (canonicalPath && canonicalPath !== pathWithoutLocale) {`,
+    `    const newUrl = new URL(url);`,
+    `    newUrl.pathname = \`/\${pathLocale}\${canonicalPath}\`;`,
+    `    return newUrl;`,
+    `  }`,
+    `  return url;`,
+    `}`,
+    ``,
+    `/**`,
+    ` * Transform canonical URL to localized for link generation.`,
+    ` * Use with TanStack Router's rewrite.output option.`,
+    ` */`,
+    `export function localizeUrl(url: URL): URL {`,
+    `  const pathLocale = extractLocaleFromPath(url.pathname);`,
+    `  if (!pathLocale) return url;`,
+    ``,
+    `  const localeRoutes = routes[pathLocale];`,
+    `  if (!localeRoutes) return url;`,
+    ``,
+    `  const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';`,
+    `  const localizedPath = localeRoutes[pathWithoutLocale];`,
+    ``,
+    `  if (localizedPath && localizedPath !== pathWithoutLocale) {`,
+    `    const newUrl = new URL(url);`,
+    `    newUrl.pathname = \`/\${pathLocale}\${localizedPath}\`;`,
+    `    return newUrl;`,
+    `  }`,
+    `  return url;`,
     `}`,
   ];
 }

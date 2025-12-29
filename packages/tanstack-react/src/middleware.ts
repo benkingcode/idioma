@@ -1,4 +1,8 @@
-import { matchLocale } from '@idiomi/core/locale';
+import {
+  isLocaleCompatible,
+  matchLocale,
+  parseAcceptLanguageHeader,
+} from '@idiomi/core/locale';
 import { redirect } from '@tanstack/react-router';
 import { createMiddleware } from '@tanstack/react-start';
 
@@ -95,9 +99,19 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
               defaultLocale,
               algorithm,
             });
-            // Only use if it's not just the default (actual match found)
-            if (matched !== defaultLocale || acceptLanguage.includes(matched)) {
+            if (matched !== defaultLocale) {
+              // Real match found (not just fallback to default)
               detectedLocale = matched;
+            } else {
+              // Check if user actually requested the default locale
+              // (e.g., 'en' header should match 'en-US' default via language distance)
+              const requestedLocales =
+                parseAcceptLanguageHeader(acceptLanguage);
+              if (
+                isLocaleCompatible(requestedLocales, defaultLocale, algorithm)
+              ) {
+                detectedLocale = matched;
+              }
             }
           }
         }

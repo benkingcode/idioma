@@ -1,4 +1,5 @@
 export {
+  isLocaleCompatible,
   matchLocale,
   parseAcceptLanguageHeader,
   type MatchLocaleOptions,

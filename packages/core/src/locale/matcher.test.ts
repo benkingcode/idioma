@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isLocaleCompatible,
   matchLocale,
   parseAcceptLanguageHeader,
   type MatchLocaleOptions,
@@ -194,5 +195,46 @@ describe('matchLocale', () => {
 
       expect(result).toBe('en-GB');
     });
+  });
+});
+
+describe('isLocaleCompatible', () => {
+  it('returns true when exact match exists', () => {
+    expect(isLocaleCompatible(['en', 'fr'], 'en')).toBe(true);
+  });
+
+  it('returns true when base language matches via best fit', () => {
+    // User requests 'en', target is 'en-US' - should match via language distance
+    expect(isLocaleCompatible(['en'], 'en-US')).toBe(true);
+  });
+
+  it('returns true when regional variant matches base', () => {
+    // User requests 'en-GB', target is 'en' - should match
+    expect(isLocaleCompatible(['en-GB'], 'en')).toBe(true);
+  });
+
+  it('returns true when regional variants match via distance', () => {
+    // User requests 'en-GB', target is 'en-US' - should match via language distance
+    expect(isLocaleCompatible(['en-GB'], 'en-US')).toBe(true);
+  });
+
+  it('returns false when no match', () => {
+    expect(isLocaleCompatible(['de', 'fr'], 'en')).toBe(false);
+  });
+
+  it('returns false for empty requested locales', () => {
+    expect(isLocaleCompatible([], 'en')).toBe(false);
+  });
+
+  it('handles Chinese variants correctly', () => {
+    // zh-TW (Traditional Chinese) should match zh-Hant
+    expect(isLocaleCompatible(['zh-TW'], 'zh-Hant')).toBe(true);
+  });
+
+  it('respects lookup algorithm (strict matching)', () => {
+    // With lookup, en-GB should NOT match en-US (no language distance)
+    expect(isLocaleCompatible(['en-GB'], 'en-US', 'lookup')).toBe(false);
+    // But en-GB should still match en (parent)
+    expect(isLocaleCompatible(['en-GB'], 'en', 'lookup')).toBe(true);
   });
 });

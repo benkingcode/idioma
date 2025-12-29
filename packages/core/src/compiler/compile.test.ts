@@ -776,6 +776,69 @@ msgstr "Hello"
       // Should import from TanStack package
       expect(content).toContain("from '@idiomi/tanstack-react'");
     });
+
+    it('generates deLocalizeUrl and localizeUrl for TanStack with localizedPaths', async () => {
+      // Create TanStack app structure
+      const routesDir = join(tempDir, 'src', 'routes');
+      await fs.mkdir(routesDir, { recursive: true });
+      await fs.writeFile(
+        join(routesDir, 'about.tsx'),
+        "import { createFileRoute } from '@tanstack/react-router';\nexport const Route = createFileRoute('/about')({});",
+      );
+
+      // Create PO files with route translations
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en', 'es'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'tanstack',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should export deLocalizeUrl for router rewrite.input
+      expect(content).toContain('export function deLocalizeUrl');
+      // Should export localizeUrl for router rewrite.output
+      expect(content).toContain('export function localizeUrl');
+      // Should import routes and reverseRoutes
+      expect(content).toContain('reverseRoutes');
+      expect(content).toContain('routes');
+    });
   });
 
   describe('concurrent compilation safety', () => {

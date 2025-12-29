@@ -131,3 +131,46 @@ export function matchLocale(
     return defaultLocale;
   }
 }
+
+/**
+ * Check if any of the requested locales would match the target locale
+ * using the same BCP 47 matching algorithm as matchLocale.
+ *
+ * This is useful for verifying if a matched locale was actually requested
+ * by the user, or if it was just a fallback to the default locale.
+ *
+ * @param requestedLocales - Array of locale codes the user requested
+ * @param targetLocale - The locale to check compatibility with
+ * @param algorithm - Matching algorithm to use (defaults to 'best fit')
+ * @returns true if any requested locale would match the target
+ *
+ * @example
+ * // User requests 'en', check if it matches 'en-US'
+ * isLocaleCompatible(['en'], 'en-US') // => true (via language distance)
+ *
+ * @example
+ * // User requests 'de', check if it matches 'en'
+ * isLocaleCompatible(['de'], 'en') // => false (no match)
+ */
+export function isLocaleCompatible(
+  requestedLocales: string[],
+  targetLocale: string,
+  algorithm: 'lookup' | 'best fit' = 'best fit',
+): boolean {
+  if (requestedLocales.length === 0) return false;
+
+  try {
+    // Use formatjsMatch with target as the only available locale.
+    // If it returns the target, the request is compatible.
+    // Use a sentinel value as default that can never be a real locale.
+    const result = formatjsMatch(
+      requestedLocales,
+      [targetLocale],
+      '__no_match__',
+      { algorithm },
+    );
+    return result === targetLocale;
+  } catch {
+    return false;
+  }
+}

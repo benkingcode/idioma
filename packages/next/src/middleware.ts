@@ -1,4 +1,8 @@
-import { matchLocale } from '@idiomi/core/locale';
+import {
+  isLocaleCompatible,
+  matchLocale,
+  parseAcceptLanguageHeader,
+} from '@idiomi/core/locale';
 import { NextRequest, NextResponse } from 'next/server';
 
 export interface IdiomiMiddlewareConfig {
@@ -18,7 +22,13 @@ export interface IdiomiMiddlewareConfig {
   detection?: {
     /** Cookie name for storing locale preference */
     cookieName?: string;
-    /** Detection priority order */
+    /**
+     * Detection priority order for locale detection.
+     *
+     * Note: Path locale (`/en/...`) is always checked first, regardless of this order.
+     * This setting only affects detection when no locale is in the URL path.
+     * The `'path'` value is accepted for backwards compatibility but has no effect.
+     */
     order?: Array<'cookie' | 'header' | 'path'>;
     /**
      * Locale matching algorithm for Accept-Language header.
@@ -190,9 +200,18 @@ function detectLocale(
             defaultLocale,
             algorithm,
           });
-          // Only use if it's not just the default (actual match found)
-          if (matched !== defaultLocale || acceptLanguage.includes(matched)) {
+          if (matched !== defaultLocale) {
+            // Real match found (not just fallback to default)
             detected = matched;
+          } else {
+            // Check if user actually requested the default locale
+            // (e.g., 'en' header should match 'en-US' default via language distance)
+            const requestedLocales = parseAcceptLanguageHeader(acceptLanguage);
+            if (
+              isLocaleCompatible(requestedLocales, defaultLocale, algorithm)
+            ) {
+              detected = matched;
+            }
           }
         }
         break;
@@ -230,6 +249,10 @@ export interface MiddlewareRuntimeConfig {
   /** Detection settings */
   detection?: {
     cookieName?: string;
+    /**
+     * Detection priority order. Path locale is always checked first.
+     * @see IdiomiMiddlewareConfig.detection.order
+     */
     order?: Array<'cookie' | 'header' | 'path'>;
     /**
      * Locale matching algorithm for Accept-Language header.
