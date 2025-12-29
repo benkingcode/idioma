@@ -4,136 +4,140 @@ msgstr ""
 "Content-Type: text/plain\n"
 
 #: src/components/BasicTrans.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "000e6cSN"
-msgstr ""
+msgstr "مرحبا، العالم!"
 
 #: src/components/BasicTrans.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002LT9uM"
-msgstr ""
+msgstr "مرحبا بك في تطبيقنا"
 
 #: src/components/BasicTrans.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "greeting.farewell"
-msgstr ""
+msgstr "وداعا!"
 
 #: src/components/ComponentTags.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "001K244T"
-msgstr ""
+msgstr "انقر <Link>هنا</Link> للمتابعة"
 
 #: src/components/ComponentTags.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002MF83G"
-msgstr ""
+msgstr "اقرأ <Link>الشروط</Link> و<Bold>سياسة الخصوصية</Bold>"
 
 #: src/components/ComponentTags.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "000OaF1m"
-msgstr ""
+msgstr "مرحبا <Bold>{name}</Bold>!"
 
 #: src/components/ComponentTags.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002eTXHM"
-msgstr ""
+msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، والعادي"
 
 #: src/components/ComponentTags.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "0013HsIP"
-msgstr ""
+msgstr "<Bold> مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002TXdYD"
-msgstr ""
+msgstr "القيمة: [{emptyString}]"
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002Baos1"
-msgstr ""
+msgstr "العدد: {zero}"
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "0043ID7R"
-msgstr ""
+msgstr "فارغ: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "003jykkI"
-msgstr ""
+msgstr "قد لا تتم ترجمة هذه الرسالة"
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "0047ZVOp"
 msgstr ""
+"هذا نص أطول يمتد على عدة كلمات ويختبر كيفية قيام النظام بالتعامل مع المحتوى "
+"الأطول في الترجمات"
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "001r7GGR"
-msgstr ""
+msgstr "خاص: & < > \"علامات اقتباس\""
 
 #: src/components/EdgeCases.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "004JLiGr"
-msgstr ""
+msgstr "رموز تعبيرية: 🎉 والرموز: © ® ™"
 
 #: src/components/Interpolation.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "0024c34D"
-msgstr ""
+msgstr "مرحبا، {name}!"
 
 #: src/components/Interpolation.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "003lIRId"
-msgstr ""
+msgstr "مرحبا، {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "000iXvMP"
-msgstr ""
+msgstr "قبل {name} بعد"
 
 #: src/components/Interpolation.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002r0ybS"
-msgstr ""
+msgstr "لديك {0} عنصر"
 
 #: src/components/Plurals.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "000w9C8y"
-msgstr ""
+msgstr "لديك {count, plural, one {# عنصر} other {# عناصر}}"
 
 #: src/components/Plurals.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "0048f6Nc"
-msgstr ""
+msgstr "{count, plural, zero {لا توجد رسائل} one {# رسالة} other {# رسائل}}"
 
 #: src/components/Plurals.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002EaYd6"
-msgstr ""
+msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
 
 #: src/components/Plurals.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "004CDxng"
 msgstr ""
+"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
+"(اثنان)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
 
 #: src/components/UseT.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002UQheH"
-msgstr ""
+msgstr "مرحبا من useT!"
 
 #: src/components/UseT.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "003X3cVZ"
-msgstr ""
+msgstr "مرحبا بك، {name}!"
 
 #: src/components/UseT.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "001gZ2vk"
-msgstr ""
+msgstr "{count} عنصر بواسطة {author}"
 
 #: src/components/UseT.tsx
-#, extracted
+#, extracted, ai-translated
 msgid "002RXyTq"
-msgstr ""
+msgstr "ترجمة مضمنة"

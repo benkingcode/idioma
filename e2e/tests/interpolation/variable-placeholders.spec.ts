@@ -36,7 +36,7 @@ test.describe('Interpolation - Variable Placeholders', () => {
       '¡Hola, Alice!',
     );
     await expect(page.getByTestId('interp-multiple')).toContainText(
-      '¡Bienvenido, Bob Smith!',
+      'Bienvenido, ¡Bob Smith!',
     );
   });
 

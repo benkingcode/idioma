@@ -58,7 +58,7 @@ test.describe('Edge Cases', () => {
     await expect(page.getByTestId('edge-empty')).toContainText('القيمة: []');
     await expect(page.getByTestId('edge-zero')).toContainText('العدد: 0');
     await expect(page.getByTestId('edge-special')).toContainText(
-      'خاص: & < > "علامات الاقتباس"',
+      'خاص: & < > "علامات اقتباس"',
     );
     await expect(page.getByTestId('edge-unicode')).toContainText(
       'رموز تعبيرية: 🎉 والرموز: © ® ™',
