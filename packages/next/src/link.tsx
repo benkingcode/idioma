@@ -21,7 +21,7 @@ export interface LinkProps extends Omit<
 
 /**
  * Resolves a canonical path to a localized path (without locale prefix).
- * Consistent with @idioma/next/pages and @idioma/tanstack.
+ * Consistent with @idioma/next/pages and @idioma/tanstack-react.
  *
  * @example
  * ```tsx

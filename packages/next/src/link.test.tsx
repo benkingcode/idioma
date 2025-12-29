@@ -85,7 +85,7 @@ describe('resolveLocalizedPath', () => {
     expect(resolveLocalizedPath('/contact', 'es', routes)).toBe('/contact');
   });
 
-  it('is consistent with @idioma/next/pages and @idioma/tanstack', () => {
+  it('is consistent with @idioma/next/pages and @idioma/tanstack-react', () => {
     const routes = {
       en: { '/about': '/about', '/blog': '/blog' },
       es: { '/about': '/sobre', '/blog': '/articulos' },

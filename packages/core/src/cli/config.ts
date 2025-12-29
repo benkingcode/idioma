@@ -110,7 +110,7 @@ const IdiomaConfigSchema = z.object({
   ai: AiConfigSchema,
   /**
    * Routing configuration for localized paths and middleware.
-   * Used by @idioma/next and @idioma/tanstack packages.
+   * Used by @idioma/next and @idioma/tanstack-react packages.
    */
   routing: RoutingConfigSchema,
 });

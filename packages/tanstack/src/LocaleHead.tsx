@@ -32,7 +32,7 @@ export interface LocaleHeadConfig {
  * @example
  * ```tsx
  * // idioma/index.ts
- * import { createLocaleHead } from '@idioma/tanstack';
+ * import { createLocaleHead } from '@idioma/tanstack-react';
  * import { routes } from './.generated/routes';
  *
  * export const LocaleHead = createLocaleHead({

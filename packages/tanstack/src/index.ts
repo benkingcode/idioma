@@ -4,7 +4,7 @@
  * @example
  * ```tsx
  * // idioma/index.ts - configure once
- * import { createLink, createLocaleHead } from '@idioma/tanstack';
+ * import { createLink, createLocaleHead } from '@idioma/tanstack-react';
  * import { routes } from './.generated/routes';
  *
  * export const Link = createLink(routes);

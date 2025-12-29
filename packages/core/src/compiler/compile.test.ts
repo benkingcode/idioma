@@ -774,7 +774,7 @@ msgstr "Hello"
       const content = await fs.readFile(indexPath, 'utf-8');
 
       // Should import from TanStack package
-      expect(content).toContain("from '@idioma/tanstack'");
+      expect(content).toContain("from '@idioma/tanstack-react'");
     });
   });
 

@@ -6,7 +6,7 @@ import { useContext } from 'react';
  *
  * @example
  * ```tsx
- * import { useLocale } from '@idioma/tanstack/hooks';
+ * import { useLocale } from '@idioma/tanstack-react/hooks';
  *
  * function MyComponent() {
  *   const locale = useLocale();
@@ -33,7 +33,7 @@ export function useLocale(): string {
  *
  * @example
  * ```tsx
- * import { useLocalizedPath } from '@idioma/tanstack/hooks';
+ * import { useLocalizedPath } from '@idioma/tanstack-react/hooks';
  * import { routes } from './idioma/.generated/routes';
  *
  * function Navigation() {

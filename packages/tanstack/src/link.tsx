@@ -46,7 +46,7 @@ export function resolveLocalizedPath(
  * @example
  * ```tsx
  * // idioma/index.ts
- * import { createLink } from '@idioma/tanstack';
+ * import { createLink } from '@idioma/tanstack-react';
  * import { routes } from './.generated/routes';
  *
  * export const Link = createLink(routes);

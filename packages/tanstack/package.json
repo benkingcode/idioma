@@ -1,5 +1,5 @@
 {
-  "name": "@idioma/tanstack",
+  "name": "@idioma/tanstack-react",
   "version": "0.1.0",
   "description": "TanStack Router integration for Idioma i18n - SPA and SSR support",
   "type": "module",

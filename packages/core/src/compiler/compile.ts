@@ -753,7 +753,7 @@ function getLinkPackage(framework: Framework): string | null {
     case 'next-pages':
       return '@idioma/next/pages';
     case 'tanstack':
-      return '@idioma/tanstack';
+      return '@idioma/tanstack-react';
     default:
       return null;
   }

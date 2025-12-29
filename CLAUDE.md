@@ -139,7 +139,7 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `server/` - `setLocale()` for cookies
 - `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
-**@idioma/tanstack** (`packages/tanstack/`) - TanStack Router integration
+**@idioma/tanstack-react** (`packages/tanstack/`) - TanStack Router integration for React
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`
 - `link.tsx` - `createLink()` factory for localized Link component
@@ -599,7 +599,7 @@ When `routing` is configured in `idioma.config.ts`, the compiler automatically g
 
 ```typescript
 // Auto-generated in idioma/index.ts when routing.localizedPaths: true
-import { createLink, createLocaleHead } from '@idioma/next'; // or @idioma/next/pages, @idioma/tanstack
+import { createLink, createLocaleHead } from '@idioma/next'; // or @idioma/next/pages, @idioma/tanstack-react
 import { createMiddlewareFactory } from '@idioma/next/middleware';
 import { reverseRoutes, routes } from './.generated/routes';
 
