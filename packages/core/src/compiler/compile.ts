@@ -66,6 +66,10 @@ export interface RoutingCompileOptions {
   localizedPaths: boolean;
   /** Detected framework for determining which Link package to use */
   framework: Framework;
+  /** Base URL for absolute hreflang links and canonical URLs (optional) */
+  metadataBase?: string;
+  /** Locale prefix strategy for URLs */
+  prefixStrategy?: 'always' | 'as-needed';
 }
 
 export interface CompileOptions {
@@ -309,6 +313,9 @@ export async function compileTranslations(
     );
   }
 
+  // Ensure we have locales for code generation
+  const allLocales = locales ?? [...detectedLocales];
+
   // Generate suspense-specific files or standard index
   if (useSuspense && locales && projectRoot) {
     // Analyze chunks from catalog references
@@ -323,10 +330,20 @@ export async function compileTranslations(
     });
 
     // Generate suspense-aware index.ts (user-facing, at outputDir root)
-    await generateIndexTsSuspense(outputDir, locales, routing);
+    await generateIndexTsSuspense({
+      outputDir,
+      locales: allLocales,
+      defaultLocale,
+      routing,
+    });
   } else {
     // Generate standard index.ts (user-facing, at outputDir root)
-    await generateIndexTs(outputDir, routing);
+    await generateIndexTs({
+      outputDir,
+      locales: allLocales,
+      defaultLocale,
+      routing,
+    });
   }
 
   // Generate plain.ts for imperative translation (user-facing, at outputDir root)
@@ -742,38 +759,99 @@ function getLinkPackage(framework: Framework): string | null {
   }
 }
 
+/** Options for generating route-aware code */
+interface RouteAwareCodeOptions {
+  routing: RoutingCompileOptions;
+  locales: string[];
+  defaultLocale: string;
+}
+
 /**
- * Generate Link component code for index.ts.
+ * Generate all route-aware code for index.ts (Link, LocaleHead, createMiddleware, etc.)
  */
-function generateLinkCode(routing: RoutingCompileOptions): string {
+function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
+  const { routing, locales, defaultLocale } = options;
   const pkg = getLinkPackage(routing.framework);
   if (!pkg) return '';
 
-  const lines: string[] = [];
+  const imports: string[] = [];
+  const exports: string[] = [];
+  const isNextJs =
+    routing.framework === 'next-app' || routing.framework === 'next-pages';
 
   if (routing.localizedPaths) {
     // Import routes and create Link with routes pre-configured
-    lines.push(`import { createLink } from '${pkg}';`);
-    lines.push(`import { routes } from './.generated/routes';`);
-    lines.push('');
-    lines.push('export const Link = createLink(routes);');
+    imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+    imports.push(
+      `import { routes, reverseRoutes } from './.generated/routes';`,
+    );
+
+    // Add middleware factory import for Next.js
+    if (isNextJs) {
+      imports.push(
+        `import { createMiddlewareFactory } from '@idioma/next/middleware';`,
+      );
+    }
+
+    exports.push('');
+    exports.push('export const Link = createLink(routes);');
+
+    // Generate LocaleHead with config
+    const localeHeadConfig: string[] = [];
+    if (routing.metadataBase) {
+      localeHeadConfig.push(
+        `  metadataBase: ${JSON.stringify(routing.metadataBase)},`,
+      );
+    }
+    localeHeadConfig.push(`  locales: ${JSON.stringify(locales)},`);
+    localeHeadConfig.push(`  defaultLocale: ${JSON.stringify(defaultLocale)},`);
+    localeHeadConfig.push(`  routes,`);
+    if (routing.prefixStrategy) {
+      localeHeadConfig.push(
+        `  prefixStrategy: ${JSON.stringify(routing.prefixStrategy)},`,
+      );
+    }
+
+    exports.push(`export const LocaleHead = createLocaleHead({`);
+    exports.push(...localeHeadConfig);
+    exports.push(`});`);
+
+    // Generate createMiddleware factory for Next.js
+    if (isNextJs) {
+      exports.push(`export const createMiddleware = createMiddlewareFactory({`);
+      exports.push(`  locales: ${JSON.stringify(locales)},`);
+      exports.push(`  defaultLocale: ${JSON.stringify(defaultLocale)},`);
+      exports.push(`  routes,`);
+      exports.push(`  reverseRoutes,`);
+      exports.push(`});`);
+    }
+
+    // Re-export getLocaleHead for programmatic use
+    exports.push(`export { getLocaleHead } from '@idioma/react';`);
   } else {
     // Just re-export the base Link (handles locale prefix only)
-    lines.push(`export { Link, createLink } from '${pkg}';`);
+    imports.push(`export { Link, createLink } from '${pkg}';`);
   }
 
-  return lines.join('\n');
+  return [...imports, ...exports].join('\n');
 }
 
-async function generateIndexTs(
-  outputDir: string,
-  routing?: RoutingCompileOptions,
-): Promise<void> {
+interface GenerateIndexOptions {
+  outputDir: string;
+  locales: string[];
+  defaultLocale: string;
+  routing?: RoutingCompileOptions;
+}
+
+async function generateIndexTs(options: GenerateIndexOptions): Promise<void> {
+  const { outputDir, locales, defaultLocale, routing } = options;
   // In non-suspense mode, Babel inlines translations at build time.
   // We call createTrans/createUseT without passing translations to avoid
   // importing translations.js at runtime, which enables tree shaking.
-  const linkCode =
-    routing?.enabled && routing.framework ? generateLinkCode(routing) : '';
+  const routeAwareCode =
+    routing?.enabled && routing.framework
+      ? generateRouteAwareCode({ routing, locales, defaultLocale })
+      : '';
 
   const content = `// Auto-generated by @idioma/core
 // Do not edit directly
@@ -786,7 +864,7 @@ import {
   createUseT,
 } from '@idioma/react';
 import type { IdiomaTypes, Locale } from './.generated/types';
-${linkCode ? linkCode + '\n' : ''}
+${routeAwareCode ? routeAwareCode + '\n' : ''}
 export const Trans = createTrans<IdiomaTypes>();
 export const useT = createUseT<IdiomaTypes>();
 export const IdiomaProvider = createIdiomaProvider();
@@ -799,12 +877,13 @@ export type { IdiomaTypes, Locale };
 }
 
 async function generateIndexTsSuspense(
-  outputDir: string,
-  locales: string[],
-  routing?: RoutingCompileOptions,
+  options: GenerateIndexOptions,
 ): Promise<void> {
-  const linkCode =
-    routing?.enabled && routing.framework ? generateLinkCode(routing) : '';
+  const { outputDir, locales, defaultLocale, routing } = options;
+  const routeAwareCode =
+    routing?.enabled && routing.framework
+      ? generateRouteAwareCode({ routing, locales, defaultLocale })
+      : '';
 
   const content = `// Auto-generated by @idioma/core
 // Do not edit directly
@@ -816,7 +895,7 @@ import {
   createUseTSuspense,
 } from '@idioma/react/runtime-suspense';
 import type { IdiomaTypes, Locale } from './.generated/types';
-${linkCode ? linkCode + '\n' : ''}
+${routeAwareCode ? routeAwareCode + '\n' : ''}
 const config = {
   locales: ${JSON.stringify(locales)} as const,
 };

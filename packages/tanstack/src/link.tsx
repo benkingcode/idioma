@@ -85,28 +85,3 @@ export function createLink(routes?: RoutesMap) {
     return <TanStackLink to={localizedPath} {...props} />;
   };
 }
-
-/**
- * Localized Link component for TanStack Router.
- *
- * Automatically transforms paths using the routes map when localized
- * paths are enabled.
- *
- * - With IdiomaProvider: locale is optional (from context)
- * - For language switchers: pass explicit locale prop
- *
- * @example
- * ```tsx
- * // With provider - no locale needed
- * <Link to="/about">About</Link>
- *
- * // Language switcher
- * <Link to="/about" locale="es">Español</Link>
- *
- * // With localized paths
- * import { routes } from './idioma/.generated/routes';
- * <Link to="/about" routes={routes}>Sobre</Link>
- * // Renders to="/sobre" when locale is "es"
- * ```
- */
-export const Link = createLink();

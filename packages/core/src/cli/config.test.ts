@@ -301,5 +301,41 @@ describe('CLI Config', () => {
         warnSpy.mockRestore();
       });
     });
+
+    describe('routing config', () => {
+      it('accepts routing.metadataBase', async () => {
+        const configContent = `
+          export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            routing: {
+              metadataBase: 'https://example.com',
+            },
+          }
+        `;
+        await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+        const config = await loadConfig(tempDir);
+
+        expect(config.routing?.metadataBase).toBe('https://example.com');
+      });
+
+      it('allows routing.metadataBase to be omitted (defaults to undefined)', async () => {
+        const configContent = `
+          export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            routing: {
+              localizedPaths: true,
+            },
+          }
+        `;
+        await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+        const config = await loadConfig(tempDir);
+
+        expect(config.routing?.metadataBase).toBeUndefined();
+      });
+    });
   });
 });

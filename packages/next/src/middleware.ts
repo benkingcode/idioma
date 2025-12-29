@@ -205,3 +205,74 @@ function parseAcceptLanguage(
 
   return undefined;
 }
+
+/** Configuration baked in by the factory */
+export interface MiddlewareFactoryConfig {
+  /** All supported locales */
+  locales: string[];
+  /** Default/source locale */
+  defaultLocale: string;
+  /** Route translations map (from compiled routes) */
+  routes?: Record<string, Record<string, string>>;
+  /** Reverse route maps (from compiled routes) */
+  reverseRoutes?: Record<string, Record<string, string>>;
+}
+
+/** Runtime options that can be overridden */
+export interface MiddlewareRuntimeConfig {
+  /**
+   * Locale prefix strategy for URLs.
+   * @default 'as-needed'
+   */
+  prefixStrategy?: 'always' | 'as-needed';
+  /** Detection settings */
+  detection?: {
+    cookieName?: string;
+    order?: Array<'cookie' | 'header' | 'path'>;
+  };
+}
+
+/**
+ * Factory to create a simplified middleware creator with config pre-baked.
+ *
+ * Use this in your generated idioma/index.ts to avoid passing routes.
+ *
+ * @example
+ * ```typescript
+ * // Generated in idioma/index.ts
+ * import { createMiddlewareFactory } from '@idioma/next/middleware';
+ * import { routes, reverseRoutes } from './.generated/routes';
+ *
+ * export const createMiddleware = createMiddlewareFactory({
+ *   locales: ['en', 'es', 'fr'],
+ *   defaultLocale: 'en',
+ *   routes,
+ *   reverseRoutes,
+ * });
+ *
+ * // Then in middleware.ts
+ * import { createMiddleware } from './src/idioma';
+ *
+ * export default createMiddleware(); // Uses all defaults!
+ *
+ * // Or with runtime overrides:
+ * export default createMiddleware({
+ *   prefixStrategy: 'always',
+ * });
+ * ```
+ */
+export function createMiddlewareFactory(
+  factoryConfig: MiddlewareFactoryConfig,
+) {
+  const { locales, defaultLocale, routes, reverseRoutes } = factoryConfig;
+
+  return function createMiddleware(runtimeConfig?: MiddlewareRuntimeConfig) {
+    return createIdiomaMiddleware({
+      locales,
+      defaultLocale,
+      routes,
+      reverseRoutes,
+      ...runtimeConfig,
+    });
+  };
+}

@@ -72,20 +72,3 @@ export function createLink(routes?: RoutesMap) {
     return <NextLink href={localizedPath} locale={locale} {...props} />;
   };
 }
-
-/**
- * Localized Link component for Next.js Pages Router.
- *
- * Automatically transforms paths using the routes map when localized
- * paths are enabled. Uses next/link's built-in locale handling.
- *
- * @example
- * ```tsx
- * // Basic usage (uses router.locale)
- * <Link href="/about">About</Link>
- *
- * // With locale override
- * <Link href="/about" locale="es">Sobre nosotros</Link>
- * ```
- */
-export const Link = createLink();

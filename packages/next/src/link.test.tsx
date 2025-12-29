@@ -6,10 +6,12 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createLink,
-  Link,
   resolveLocalizedHref,
   resolveLocalizedPath,
 } from './link.js';
+
+// Create a base Link for tests (equivalent to old default export)
+const Link = createLink();
 
 // Mock next/link
 vi.mock('next/link', () => ({

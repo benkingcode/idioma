@@ -25,3 +25,12 @@ export {
   interpolateTags,
   type TransComponent,
 } from './interpolate';
+
+// SEO utilities
+export {
+  getLocaleHead,
+  type GetLocaleHeadOptions,
+  type LocaleHeadData,
+  type HreflangLink,
+  type RoutesMap,
+} from './getLocaleHead';

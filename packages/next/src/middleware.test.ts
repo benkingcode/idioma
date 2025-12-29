@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createIdiomaMiddleware } from './middleware.js';
+import {
+  createIdiomaMiddleware,
+  createMiddlewareFactory,
+} from './middleware.js';
 
 // Mock NextRequest with proper URL structure for Next.js middleware
 const createMockRequest = (
@@ -153,5 +156,66 @@ describe('createIdiomaMiddleware', () => {
 
       expect(result).toBeUndefined();
     });
+  });
+});
+
+describe('createMiddlewareFactory', () => {
+  const factoryConfig = {
+    locales: ['en', 'es', 'fr'],
+    defaultLocale: 'en',
+    routes: {
+      en: { '/about': '/about' },
+      es: { '/about': '/sobre' },
+    },
+    reverseRoutes: {
+      en: { '/about': '/about' },
+      es: { '/sobre': '/about' },
+    },
+  };
+
+  it('returns a createMiddleware function', () => {
+    const createMiddleware = createMiddlewareFactory(factoryConfig);
+
+    expect(typeof createMiddleware).toBe('function');
+  });
+
+  it('createMiddleware returns a middleware function', () => {
+    const createMiddleware = createMiddlewareFactory(factoryConfig);
+    const middleware = createMiddleware();
+
+    expect(typeof middleware).toBe('function');
+  });
+
+  it('middleware works with pre-baked config', () => {
+    const createMiddleware = createMiddlewareFactory(factoryConfig);
+    const middleware = createMiddleware();
+    const request = createMockRequest('/es/sobre');
+
+    const result = middleware(request as never);
+
+    // Should rewrite localized path
+    expect(result?.headers?.get('x-idioma-rewrite')).toBeDefined();
+  });
+
+  it('allows runtime config overrides', () => {
+    const createMiddleware = createMiddlewareFactory(factoryConfig);
+    const middleware = createMiddleware({ prefixStrategy: 'always' });
+    const request = createMockRequest('/about');
+
+    const result = middleware(request as never);
+
+    // Should redirect because prefixStrategy is 'always'
+    expect(result?.status).toBe(307);
+  });
+
+  it('uses default prefixStrategy when not overridden', () => {
+    const createMiddleware = createMiddlewareFactory(factoryConfig);
+    const middleware = createMiddleware(); // No runtime config
+    const request = createMockRequest('/about');
+
+    const result = middleware(request as never);
+
+    // Should not redirect with default 'as-needed' strategy for default locale
+    expect(result).toBeUndefined();
   });
 });

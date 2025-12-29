@@ -4,28 +4,20 @@
   "description": "TanStack Router integration for Idioma i18n - SPA and SSR support",
   "type": "module",
   "sideEffects": false,
-  "main": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
-    "./context": {
-      "types": "./dist/context.d.mts",
-      "import": "./dist/context.mjs"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./link": {
-      "types": "./dist/link.d.mts",
-      "import": "./dist/link.mjs"
+      "types": "./dist/link.d.ts",
+      "import": "./dist/link.js"
     },
     "./hooks": {
-      "types": "./dist/hooks.d.mts",
-      "import": "./dist/hooks.mjs"
-    },
-    "./head": {
-      "types": "./dist/head.d.mts",
-      "import": "./dist/head.mjs"
+      "types": "./dist/hooks.d.ts",
+      "import": "./dist/hooks.js"
     }
   },
   "files": [
@@ -46,6 +38,7 @@
     "react": ">=18.0.0"
   },
   "devDependencies": {
+    "@rollup/plugin-babel": "^6.0.0",
     "@tanstack/react-router": "^1.120.5",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",

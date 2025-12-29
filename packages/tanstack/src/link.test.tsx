@@ -4,7 +4,10 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { createLink, Link, resolveLocalizedPath } from './link.js';
+import { createLink, resolveLocalizedPath } from './link.js';
+
+// Create a base Link for tests (equivalent to old default export)
+const Link = createLink();
 
 // Mock TanStack Router's Link
 vi.mock('@tanstack/react-router', () => ({

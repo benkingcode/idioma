@@ -595,6 +595,187 @@ msgstr "Hello"
       const routesPath = join(outputDir, '.generated', 'routes.js');
       await expect(fs.access(routesPath)).rejects.toThrow();
     });
+
+    it('generates LocaleHead export when routing is enabled', async () => {
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en', 'es'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+          metadataBase: 'https://example.com',
+          prefixStrategy: 'as-needed',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should export LocaleHead
+      expect(content).toContain('export const LocaleHead');
+      expect(content).toContain("from '@idioma/next'");
+      // Should include config values
+      expect(content).toContain('metadataBase: "https://example.com"');
+      expect(content).toContain('prefixStrategy: "as-needed"');
+    });
+
+    it('generates createMiddleware export when routing is enabled', async () => {
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should export createMiddleware factory
+      expect(content).toContain('export const createMiddleware');
+      expect(content).toContain("from '@idioma/next/middleware'");
+    });
+
+    it('re-exports getLocaleHead from @idioma/react', async () => {
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should re-export getLocaleHead for programmatic use
+      expect(content).toContain(
+        "export { getLocaleHead } from '@idioma/react'",
+      );
+    });
+
+    it('generates TanStack-specific exports for tanstack framework', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: false,
+          framework: 'tanstack',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should import from TanStack package
+      expect(content).toContain("from '@idioma/tanstack'");
+    });
   });
 
   describe('concurrent compilation safety', () => {

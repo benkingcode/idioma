@@ -37,6 +37,13 @@ const DetectionConfigSchema = z.object({
 const RoutingConfigSchema = z
   .object({
     /**
+     * Base URL for absolute hreflang links and canonical URLs.
+     * Matches Next.js Metadata API naming convention.
+     * When omitted, relative URLs are used (e.g., /es/about).
+     * @example 'https://example.com'
+     */
+    metadataBase: z.string().optional(),
+    /**
      * Enable localized pathnames (e.g., /es/sobre instead of /es/about).
      * When enabled, route segments are extracted to PO files for translation.
      * @default false

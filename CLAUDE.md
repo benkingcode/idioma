@@ -127,21 +127,23 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `useT` hook and `createUseT` factory (compiled output uses `__useT`)
 - `IdiomaContext` and `IdiomaProvider` for locale state
 - `interpolate` for placeholder/tag substitution
+- `getLocaleHead` - Pure function for generating hreflang link data (no hooks)
 - `runtime-suspense/` - Suspense-based lazy loading (React 19+)
 - `server/` - Server-side rendering utilities
 
 **@idioma/next** (`packages/next/`) - Next.js integration
 
-- `middleware.ts` - `createIdiomaMiddleware()` for locale detection and URL rewriting
-- `link.tsx` - Localized `Link` component and `createLink()` factory for App Router
-- `server/` - `generateIdiomaMetadata()` for SEO, `setLocale()` for cookies
-- `pages/` - Pages Router support with `Link`, `createLink()`, and `useLocalizedPath`
+- `middleware.ts` - `createIdiomaMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting
+- `link.tsx` - `createLink()` factory for localized Link component (App Router)
+- `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (App Router)
+- `server/` - `setLocale()` for cookies
+- `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
 **@idioma/tanstack** (`packages/tanstack/`) - TanStack Router integration
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`
-- `link.tsx` - Localized `Link` component and `createLink()` factory
-- `head.tsx` - `HreflangLinks` component and `useHreflangLinks()` for SEO
+- `link.tsx` - `createLink()` factory for localized Link component
+- `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags
 
 ### Configuration
 
@@ -156,9 +158,11 @@ export default defineConfig({
   // localesDir: './locales',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
-  // Optional: enable routing integration (auto-generates Link component)
+  // Optional: enable routing integration (auto-generates Link, LocaleHead, createMiddleware)
   routing: {
     localizedPaths: true, // Enable translated URL paths (/es/sobre instead of /es/about)
+    metadataBase: 'https://example.com', // Optional: for absolute hreflang URLs
+    prefixStrategy: 'as-needed', // 'always' or 'as-needed' (default)
   },
 });
 ```
@@ -173,7 +177,7 @@ src/idioma/
 ├── locales/             # PO files (git tracked)
 │   ├── en.po
 │   └── es.po
-├── index.ts             # User import: Trans, useT, Link (when routing enabled)
+├── index.ts             # User import: Trans, useT, Link, LocaleHead, createMiddleware (when routing enabled)
 ├── plain.ts             # User import: createT (non-React)
 └── .generated/          # Internal files (gitignored)
     ├── translations.js
@@ -589,16 +593,37 @@ The compiler reconstructs full paths by:
 3. Preserving dynamic segments `[param]` as-is
 4. Joining back with `/`
 
-#### Auto-Generated Link Component
+#### Auto-Generated Route-Aware Exports
 
-When `routing` is configured in `idioma.config.ts`, the compiler automatically generates a pre-configured `Link` component in `index.ts`:
+When `routing` is configured in `idioma.config.ts`, the compiler automatically generates pre-configured exports in `index.ts`:
 
 ```typescript
-// Auto-generated in idioma/index.ts when routing is enabled
-import { createLink } from '@idioma/next'; // or @idioma/next/pages, @idioma/tanstack
-import { routes } from './.generated/routes';
+// Auto-generated in idioma/index.ts when routing.localizedPaths: true
+import { createLink, createLocaleHead } from '@idioma/next'; // or @idioma/next/pages, @idioma/tanstack
+import { createMiddlewareFactory } from '@idioma/next/middleware';
+import { reverseRoutes, routes } from './.generated/routes';
 
+// Pre-configured with routes from compiled translations
 export const Link = createLink(routes);
+
+// Pre-configured with locales, defaultLocale, routes, metadataBase, prefixStrategy
+export const LocaleHead = createLocaleHead({
+  metadataBase: 'https://example.com',
+  locales: ['en', 'es', 'fr'],
+  defaultLocale: 'en',
+  routes,
+});
+
+// Pre-configured middleware factory (Next.js only)
+export const createMiddleware = createMiddlewareFactory({
+  locales: ['en', 'es', 'fr'],
+  defaultLocale: 'en',
+  routes,
+  reverseRoutes,
+});
+
+// Re-export pure function for programmatic use
+export { getLocaleHead } from '@idioma/react';
 ```
 
 **Framework Detection** (`packages/core/src/framework.ts`):

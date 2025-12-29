@@ -49,6 +49,10 @@ export interface IdiomaNextOptions {
   routing?: {
     /** Enable localized pathnames (e.g., /es/sobre instead of /es/about) */
     localizedPaths?: boolean;
+    /** Base URL for absolute hreflang links and canonical URLs */
+    metadataBase?: string;
+    /** Locale prefix strategy for URLs */
+    prefixStrategy?: 'always' | 'as-needed';
   };
 }
 
@@ -263,6 +267,8 @@ export function withIdioma(
       enabled: true,
       localizedPaths: routing.localizedPaths ?? false,
       framework: null, // Will be detected at compile time
+      metadataBase: routing.metadataBase,
+      prefixStrategy: routing.prefixStrategy,
     };
   }
 

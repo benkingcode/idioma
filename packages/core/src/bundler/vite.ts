@@ -114,6 +114,8 @@ export default function idiomaVitePlugin(
         enabled: true,
         localizedPaths: config.routing.localizedPaths ?? false,
         framework,
+        metadataBase: config.routing.metadataBase,
+        prefixStrategy: config.routing.prefixStrategy,
       };
     }
   }

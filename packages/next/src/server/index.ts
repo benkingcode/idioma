@@ -14,7 +14,3 @@
  */
 
 export { setLocale } from './locale.js';
-export {
-  generateIdiomaMetadata,
-  type IdiomaMetadataOptions,
-} from './metadata.js';

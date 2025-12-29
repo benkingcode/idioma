@@ -25,9 +25,13 @@
 
 export {
   createLink,
-  Link,
   resolveLocalizedPath,
   type PagesLinkProps,
   type RoutesMap,
 } from './link.js';
 export { useLocalizedPath } from './hooks.js';
+export {
+  createLocaleHead,
+  type LocaleHeadProps,
+  type LocaleHeadConfig,
+} from './LocaleHead.js';

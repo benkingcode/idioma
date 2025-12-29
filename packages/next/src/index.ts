@@ -65,9 +65,14 @@ export {
 
 export {
   createLink,
-  Link,
   resolveLocalizedHref,
   resolveLocalizedPath,
   type LinkProps,
   type RoutesMap,
 } from './link.js';
+
+export {
+  createLocaleHead,
+  type LocaleHeadProps,
+  type LocaleHeadConfig,
+} from './LocaleHead.js';

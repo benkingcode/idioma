@@ -732,6 +732,7 @@ export default defineConfig({
   routing: {
     localizedPaths: true, // Enable path translation
     prefixStrategy: 'as-needed', // 'always' or 'as-needed' (default)
+    metadataBase: 'https://example.com', // Optional: for absolute hreflang URLs
   },
 });
 ```
@@ -764,16 +765,13 @@ Set up middleware for locale detection and URL rewriting:
 
 ```ts
 // middleware.ts
-import { createIdiomaMiddleware } from '@idioma/next/middleware';
-import { reverseRoutes, routes } from './src/idioma/.generated/routes';
+import { createMiddleware } from './src/idioma';
 
-export default createIdiomaMiddleware({
-  defaultLocale: 'en',
-  locales: ['en', 'es', 'fr'],
-  prefixStrategy: 'as-needed',
-  routes, // Only needed if localizedPaths: true
-  reverseRoutes, // Only needed if localizedPaths: true
-});
+// All config (locales, routes, etc.) is pre-baked by the compiler
+export default createMiddleware();
+
+// Or override specific options at runtime:
+// export default createMiddleware({ prefixStrategy: 'always' });
 
 export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
 ```
@@ -815,22 +813,68 @@ export default async function Page({
 }
 ```
 
-Generate SEO metadata:
+Generate SEO hreflang tags using the `LocaleHead` component:
+
+```tsx
+// app/[lang]/layout.tsx (server component)
+import { LocaleHead } from '@/idioma';
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  return (
+    <html lang={lang}>
+      <head>
+        {/* Server components must pass pathname and locale explicitly */}
+        <LocaleHead pathname="/about" locale={lang} />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```tsx
+// Client component (inside IdiomaProvider) - zero props needed
+'use client';
+
+import { LocaleHead } from '@/idioma';
+
+function SomeClientComponent() {
+  // pathname from usePathname(), locale from context
+  return <LocaleHead />;
+}
+```
+
+For programmatic use (e.g., with Next.js Metadata API):
 
 ```tsx
 // app/[lang]/about/page.tsx
-import { routes } from '@/idioma/.generated/routes';
-import { generateIdiomaMetadata } from '@idioma/next/server';
+import { getLocaleHead } from '@/idioma';
 
-export function generateMetadata({ params }: { params: { lang: string } }) {
-  return generateIdiomaMetadata({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  const { links, canonical } = getLocaleHead({
     pathname: '/about',
-    baseUrl: 'https://example.com',
-    locales: ['en', 'es', 'fr'],
-    defaultLocale: 'en',
-    currentLocale: params.lang,
-    routes,
+    locale: lang,
+    // Config values from idioma.config.ts
   });
+
+  return {
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(links.map((l) => [l.hreflang, l.href])),
+    },
+  };
 }
 ```
 
@@ -875,22 +919,25 @@ function Navigation() {
 }
 ```
 
-For SEO hreflang tags:
+For SEO hreflang tags, use the same `LocaleHead` component:
 
 ```tsx
-import { HreflangLinks } from '@idioma/tanstack';
-import { routes } from './idioma/.generated/routes';
+import { LocaleHead } from './idioma';
 
 function Head() {
-  return (
-    <HreflangLinks
-      pathname="/about"
-      baseUrl="https://example.com"
-      locales={['en', 'es', 'fr']}
-      defaultLocale="en"
-      routes={routes}
-    />
-  );
+  // Inside IdiomaProvider - pathname and locale from hooks
+  return <LocaleHead />;
+}
+
+// Or with explicit props for server rendering
+function ServerHead({
+  pathname,
+  locale,
+}: {
+  pathname: string;
+  locale: string;
+}) {
+  return <LocaleHead pathname={pathname} locale={locale} />;
 }
 ```
 
@@ -1176,9 +1223,9 @@ TypeScript provides full type safety via generated types:
 ## Packages
 
 - **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
-- **@idioma/react** — Runtime components (~800 bytes gzipped)
-- **@idioma/next** — Next.js integration (App Router middleware, Pages Router hooks, SEO metadata)
-- **@idioma/tanstack** — TanStack Router integration (localized Link, hreflang components)
+- **@idioma/react** — Runtime components (~800 bytes gzipped), `getLocaleHead` for programmatic SEO
+- **@idioma/next** — Next.js integration (middleware factory, LocaleHead component, localized Link)
+- **@idioma/tanstack** — TanStack Router integration (LocaleHead component, localized Link)
 
 ## License
 

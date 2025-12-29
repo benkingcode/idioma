@@ -108,29 +108,3 @@ export function createLink(routes?: RoutesMap) {
     return <NextLink href={finalHref} {...props} />;
   };
 }
-
-/**
- * Localized Link component for Next.js App Router.
- *
- * - In Client Components with IdiomaProvider: locale is optional (from context)
- * - When imported from Server Components: pass locale prop
- * - For language switchers: pass explicit locale prop
- *
- * @example
- * ```tsx
- * // Client Component with provider - no locale needed
- * <Link href="/about">About</Link>
- *
- * // Language switcher
- * <Link href="/about" locale="es">Español</Link>
- *
- * // From Server Component - must pass locale
- * <Link href="/about" locale={params.lang}>About</Link>
- *
- * // With localized paths
- * import { routes } from './idioma/.generated/routes';
- * <Link href="/about" routes={routes}>About</Link>
- * // Renders: /es/sobre when locale is "es"
- * ```
- */
-export const Link = createLink();
