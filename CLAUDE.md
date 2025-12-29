@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Greenfield Project
+
+**This is a greenfield project with no users yet.** Breaking changes are acceptable—don't waste time on backward compatibility, migration paths, or deprecation notices. Just make the API right.
+
 ## Test-Driven Development (TDD)
 
 **TDD is mandatory for all code changes in this repository.**
