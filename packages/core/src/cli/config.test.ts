@@ -303,6 +303,60 @@ describe('CLI Config', () => {
     });
 
     describe('routing config', () => {
+      it('accepts prefixStrategy: never', async () => {
+        const configContent = `
+          export default {
+            idiomiDir: './src/idiomi',
+            defaultLocale: 'en',
+            routing: {
+              prefixStrategy: 'never',
+            },
+          }
+        `;
+        await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
+
+        const config = await loadConfig(tempDir);
+
+        expect(config.routing?.prefixStrategy).toBe('never');
+      });
+
+      it('allows prefixStrategy: never with localizedPaths: false', async () => {
+        const configContent = `
+          export default {
+            idiomiDir: './src/idiomi',
+            defaultLocale: 'en',
+            routing: {
+              prefixStrategy: 'never',
+              localizedPaths: false,
+            },
+          }
+        `;
+        await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
+
+        const config = await loadConfig(tempDir);
+
+        expect(config.routing?.prefixStrategy).toBe('never');
+        expect(config.routing?.localizedPaths).toBe(false);
+      });
+
+      it('throws when prefixStrategy: never with localizedPaths: true', async () => {
+        const configContent = `
+          export default {
+            idiomiDir: './src/idiomi',
+            defaultLocale: 'en',
+            routing: {
+              prefixStrategy: 'never',
+              localizedPaths: true,
+            },
+          }
+        `;
+        await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
+
+        await expect(loadConfig(tempDir)).rejects.toThrow(
+          'localizedPaths requires a locale prefix',
+        );
+      });
+
       it('accepts routing.metadataBase', async () => {
         const configContent = `
           export default {

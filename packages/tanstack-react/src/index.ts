@@ -3,21 +3,30 @@
  *
  * @example
  * ```tsx
- * // idiomi/index.ts - configure once
- * import { createLink, createLocaleHead } from '@idiomi/tanstack-react';
- * import { routes } from './.generated/routes';
+ * // idiomi/index.ts - configure once with compiled routes
+ * import { createLocaleHead } from '@idiomi/tanstack-react';
+ * import { routes, reverseRoutes } from './.generated/routes';
  *
- * export const Link = createLink(routes);
- * export const LocaleHead = createLocaleHead({ locales: ['en', 'es'], defaultLocale: 'en', routes });
+ * // TanStack Router uses URL rewriting for locale handling.
+ * // Link component is TanStack Router's native <Link> with params={{ locale }}.
  *
- * // components/Navigation.tsx - use configured components
- * import { Link } from '@/idiomi';
+ * export const LocaleHead = createLocaleHead({
+ *   locales: ['en', 'es'],
+ *   defaultLocale: 'en',
+ *   routes,
+ *   reverseRoutes,
+ * });
+ *
+ * // components/Navigation.tsx - use TanStack Router's native Link
+ * import { Link } from '@tanstack/react-router';
+ * import { useLocale } from '@/idiomi';
  *
  * function Navigation() {
+ *   const locale = useLocale();
  *   return (
  *     <nav>
- *       <Link to="/about">About</Link>
- *       <Link to="/blog">Blog</Link>
+ *       <Link to="/{-$locale}/about" params={{ locale }}>About</Link>
+ *       <Link to="/{-$locale}/blog" params={{ locale }}>Blog</Link>
  *     </nav>
  *   );
  * }
@@ -25,11 +34,9 @@
  */
 
 export {
-  createLink,
   resolveLocalizedHref,
   resolveLocalizedPath,
   type LinkConfig,
-  type LinkProps,
   type RoutesMap,
 } from './link.js';
 export { useLocale, useLocalizedHref, useLocalizedPath } from './hooks.js';

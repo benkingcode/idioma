@@ -1,8 +1,12 @@
-import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useNavigate,
+} from '@tanstack/react-router';
 import {
   detectClientLocale,
   IdiomiProvider,
-  Link,
   LocaleHead,
   localeLoader,
   useLocale,
@@ -66,16 +70,20 @@ function Navigation() {
         alignItems: 'center',
       }}
     >
-      <Link to="/" data-testid="nav-home">
+      <Link to="/{-$locale}" params={{ locale }} data-testid="nav-home">
         Home
       </Link>
-      <Link to="/about" data-testid="nav-about">
+      <Link to="/{-$locale}/about" params={{ locale }} data-testid="nav-about">
         About
       </Link>
-      <Link to="/blog" data-testid="nav-blog">
+      <Link to="/{-$locale}/blog" params={{ locale }} data-testid="nav-blog">
         Blog
       </Link>
-      <Link to="/contact" data-testid="nav-contact">
+      <Link
+        to="/{-$locale}/contact"
+        params={{ locale }}
+        data-testid="nav-contact"
+      >
         Contact
       </Link>
       <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>

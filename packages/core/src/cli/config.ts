@@ -60,9 +60,12 @@ const RoutingConfigSchema = z
      * Locale prefix strategy for URLs.
      * - 'always': All locales prefixed (e.g., /en/about, /es/about)
      * - 'as-needed': Default locale unprefixed (e.g., /about, /es/about)
+     * - 'never': No locale prefixes in URLs (incompatible with localizedPaths)
      * @default 'as-needed'
      */
-    prefixStrategy: z.enum(['always', 'as-needed']).default('as-needed'),
+    prefixStrategy: z
+      .enum(['always', 'as-needed', 'never'])
+      .default('as-needed'),
     /**
      * Glob patterns for routes to exclude from localization.
      * @default ['api/**', '_next/**']
@@ -194,6 +197,17 @@ export async function loadConfig(cwd: string): Promise<IdiomiConfig> {
   }
 
   const config = result.data;
+
+  // Validate: localizedPaths requires locale prefix in URLs
+  if (
+    config.routing?.localizedPaths &&
+    config.routing?.prefixStrategy === 'never'
+  ) {
+    throw new Error(
+      '[idiomi] Invalid config: localizedPaths requires a locale prefix in URLs. ' +
+        'Use prefixStrategy: "always" or "as-needed" instead of "never".',
+    );
+  }
 
   // Warn if defaultLocale is not in locales array (when locales specified)
   if (config.locales && !config.locales.includes(config.defaultLocale)) {

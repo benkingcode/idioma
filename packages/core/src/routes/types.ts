@@ -42,8 +42,6 @@ export interface ExtractRoutesOptions {
 
 /** Compiled route maps for runtime use */
 export interface CompiledRoutes {
-  /** Segment translations by locale: { en: { about: 'about' }, es: { about: 'sobre' } } */
-  segments: Record<string, Record<string, string>>;
   /** Full path maps: { en: { '/about': '/about' }, es: { '/about': '/sobre' } } */
   routes: Record<string, Record<string, string>>;
   /** Reverse maps for URL matching: { es: { '/sobre': '/about' } } */

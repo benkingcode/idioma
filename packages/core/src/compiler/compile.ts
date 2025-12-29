@@ -808,25 +808,25 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
   const isTanStack = routing.framework === 'tanstack';
 
   if (routing.localizedPaths) {
-    // Import routes and create Link with routes pre-configured
-    imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+    // Import routes for LocaleHead and URL rewriting
     imports.push(
       `import { routes, reverseRoutes } from './.generated/routes';`,
     );
-    // Import config values for Link and middleware
+    // Import config values for middleware
     imports.push(
       `import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';`,
     );
 
-    // Add middleware factory import for Next.js
+    // TanStack: Users use TanStack's native Link with URL rewriting - no createLink
+    // Next.js: Still uses createLink for backward compatibility
     if (isNextJs) {
+      imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
       imports.push(
         `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
       );
-    }
-
-    // Add TanStack Router imports (SPA-safe, no SSR dependencies)
-    if (isTanStack) {
+    } else if (isTanStack) {
+      // TanStack only needs createLocaleHead (Link is native TanStack Link)
+      imports.push(`import { createLocaleHead } from '${pkg}';`);
       imports.push(`import { redirect } from '@tanstack/react-router';`);
       // Note: createMiddlewareFactory is NOT imported here to avoid @tanstack/react-start deps
       // For TanStack Start SSR, users should import it manually from @idiomi/tanstack-react/middleware
@@ -834,12 +834,14 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
 
     exports.push('');
 
-    // Generate Link with config (consistent for all frameworks)
-    exports.push('export const Link = createLink({');
-    exports.push('  routes,');
-    exports.push('  defaultLocale,');
-    exports.push('  prefixStrategy,');
-    exports.push('});');
+    // Generate Link with config (Next.js only - TanStack uses native Link)
+    if (isNextJs) {
+      exports.push('export const Link = createLink({');
+      exports.push('  routes,');
+      exports.push('  defaultLocale,');
+      exports.push('  prefixStrategy,');
+      exports.push('});');
+    }
 
     // Generate LocaleHead with config
     const localeHeadConfig: string[] = [];
@@ -886,23 +888,29 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(`export { getLocaleHead } from '@idiomi/react';`);
   } else {
     // Routing enabled but no path translation - still need locale prefix support
-    imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
     imports.push(
       `import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';`,
     );
 
-    // Add TanStack Router imports (SPA-safe, no SSR dependencies)
-    if (isTanStack) {
+    // TanStack: Users use TanStack's native Link - no createLink
+    // Next.js: Still uses createLink for backward compatibility
+    if (isNextJs) {
+      imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+    } else if (isTanStack) {
+      // TanStack only needs createLocaleHead (Link is native TanStack Link)
+      imports.push(`import { createLocaleHead } from '${pkg}';`);
       imports.push(`import { redirect } from '@tanstack/react-router';`);
     }
 
     exports.push('');
 
-    // Generate Link with config but without routes (prefix only, no path translation)
-    exports.push('export const Link = createLink({');
-    exports.push('  defaultLocale,');
-    exports.push('  prefixStrategy,');
-    exports.push('});');
+    // Generate Link with config but without routes (Next.js only - TanStack uses native Link)
+    if (isNextJs) {
+      exports.push('export const Link = createLink({');
+      exports.push('  defaultLocale,');
+      exports.push('  prefixStrategy,');
+      exports.push('});');
+    }
 
     // Generate LocaleHead with config but without routes
     const localeHeadConfig: string[] = [];
@@ -923,10 +931,12 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(...localeHeadConfig);
     exports.push(`});`);
 
-    // Generate TanStack SPA loader for locale detection (no rewrite needed)
+    // Generate TanStack SPA loader for locale detection
     if (isTanStack) {
       exports.push('');
       exports.push(...generateTanStackSpaLoader());
+      // Add simple rewrite function for prefix stripping (no path translation)
+      exports.push(...generateTanStackPrefixOnlyRewrite());
     }
 
     // Re-export getLocaleHead for programmatic use
@@ -1159,6 +1169,7 @@ function generateTanStackRewriteFunctions(): string[] {
     `/**`,
     ` * Transform canonical URL to localized for link generation.`,
     ` * Use with TanStack Router's rewrite.output option.`,
+    ` * Handles prefix strategy: strips default locale prefix when 'as-needed'.`,
     ` */`,
     `export function localizeUrl(url: URL): URL {`,
     `  const pathLocale = extractLocaleFromPath(url.pathname);`,
@@ -1166,19 +1177,61 @@ function generateTanStackRewriteFunctions(): string[] {
     `  // The router handles this by using the current locale context`,
     `  if (!pathLocale) return url;`,
     ``,
-    `  const localeRoutes = routes[pathLocale];`,
-    `  if (!localeRoutes) return url;`,
-    ``,
-    `  // The canonical path from router (e.g., /about) needs to be localized`,
-    `  // But we receive URLs like /es/about from the router - need to extract the path`,
     `  const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';`,
-    `  const localizedPath = localeRoutes[pathWithoutLocale];`,
     ``,
-    `  if (localizedPath && localizedPath !== pathWithoutLocale) {`,
-    `    const newUrl = new URL(url);`,
+    `  // Handle prefix strategy: strip prefix for default locale when 'as-needed'`,
+    `  const shouldStripPrefix = prefixStrategy === 'as-needed' && pathLocale === defaultLocale;`,
+    ``,
+    `  // Get localized path (path translation)`,
+    `  const localeRoutes = routes[pathLocale];`,
+    `  const localizedPath = localeRoutes?.[pathWithoutLocale] ?? pathWithoutLocale;`,
+    ``,
+    `  // Build final URL`,
+    `  const newUrl = new URL(url);`,
+    `  if (shouldStripPrefix) {`,
+    `    // No prefix for default locale with 'as-needed' strategy`,
+    `    newUrl.pathname = localizedPath;`,
+    `  } else if (localizedPath !== pathWithoutLocale) {`,
+    `    // Keep prefix, apply path translation`,
     `    newUrl.pathname = \`/\${pathLocale}\${localizedPath}\`;`,
+    `  } else {`,
+    `    // No changes needed`,
+    `    return url;`,
+    `  }`,
+    `  return newUrl;`,
+    `}`,
+  ];
+}
+
+/**
+ * Generate simpler TanStack Router rewrite function for prefix-only handling.
+ * Used when localizedPaths is false - no path translation, just prefix stripping.
+ */
+function generateTanStackPrefixOnlyRewrite(): string[] {
+  return [
+    ``,
+    `/**`,
+    ` * Transform URL for display: strips default locale prefix when 'as-needed'.`,
+    ` * Use with TanStack Router's rewrite.output option.`,
+    ` * @example`,
+    ` * const router = createRouter({`,
+    ` *   routeTree,`,
+    ` *   rewrite: {`,
+    ` *     output: ({ url }) => localizeUrl(url),`,
+    ` *   },`,
+    ` * });`,
+    ` */`,
+    `export function localizeUrl(url: URL): URL {`,
+    `  const pathLocale = extractLocaleFromPath(url.pathname);`,
+    `  if (!pathLocale) return url;`,
+    ``,
+    `  // Strip prefix for default locale when 'as-needed'`,
+    `  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {`,
+    `    const newUrl = new URL(url);`,
+    `    newUrl.pathname = url.pathname.slice(pathLocale.length + 1) || '/';`,
     `    return newUrl;`,
     `  }`,
+    ``,
     `  return url;`,
     `}`,
   ];

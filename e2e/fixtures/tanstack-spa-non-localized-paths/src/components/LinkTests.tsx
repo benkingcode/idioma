@@ -1,8 +1,13 @@
-import { Link, useLocale } from '../idiomi';
+import { Link } from '@tanstack/react-router';
+import { useLocale } from '../idiomi';
 
 /**
  * Component for testing Link behavior with various props.
  * Each link has a data-testid for E2E testing.
+ *
+ * Uses TanStack Router's native Link component.
+ * - params={{ locale }} uses current locale from context
+ * - params={{ locale: 'es' }} sets explicit locale for language switching
  */
 export function LinkTests() {
   const locale = useLocale();
@@ -16,22 +21,34 @@ export function LinkTests() {
         <h3>Links using context locale</h3>
         <ul>
           <li>
-            <Link to="/" data-testid="link-home">
+            <Link to="/{-$locale}" params={{ locale }} data-testid="link-home">
               Home
             </Link>
           </li>
           <li>
-            <Link to="/about" data-testid="link-about">
+            <Link
+              to="/{-$locale}/about"
+              params={{ locale }}
+              data-testid="link-about"
+            >
               About
             </Link>
           </li>
           <li>
-            <Link to="/blog" data-testid="link-blog">
+            <Link
+              to="/{-$locale}/blog"
+              params={{ locale }}
+              data-testid="link-blog"
+            >
               Blog
             </Link>
           </li>
           <li>
-            <Link to="/contact" data-testid="link-contact">
+            <Link
+              to="/{-$locale}/contact"
+              params={{ locale }}
+              data-testid="link-contact"
+            >
               Contact
             </Link>
           </li>
@@ -43,22 +60,38 @@ export function LinkTests() {
         <h3>Links with explicit locale</h3>
         <ul>
           <li>
-            <Link to="/about" locale="en" data-testid="link-about-en">
+            <Link
+              to="/{-$locale}/about"
+              params={{ locale: 'en' }}
+              data-testid="link-about-en"
+            >
               About (EN)
             </Link>
           </li>
           <li>
-            <Link to="/about" locale="es" data-testid="link-about-es">
+            <Link
+              to="/{-$locale}/about"
+              params={{ locale: 'es' }}
+              data-testid="link-about-es"
+            >
               About (ES)
             </Link>
           </li>
           <li>
-            <Link to="/blog" locale="en" data-testid="link-blog-en">
+            <Link
+              to="/{-$locale}/blog"
+              params={{ locale: 'en' }}
+              data-testid="link-blog-en"
+            >
               Blog (EN)
             </Link>
           </li>
           <li>
-            <Link to="/blog" locale="es" data-testid="link-blog-es">
+            <Link
+              to="/{-$locale}/blog"
+              params={{ locale: 'es' }}
+              data-testid="link-blog-es"
+            >
               Blog (ES)
             </Link>
           </li>
@@ -68,11 +101,19 @@ export function LinkTests() {
       {/* Language switcher pattern */}
       <section data-testid="language-switcher">
         <h3>Language Switcher</h3>
-        <Link to="/about" locale="en" data-testid="switcher-en">
+        <Link
+          to="/{-$locale}/about"
+          params={{ locale: 'en' }}
+          data-testid="switcher-en"
+        >
           English
         </Link>
         {' | '}
-        <Link to="/about" locale="es" data-testid="switcher-es">
+        <Link
+          to="/{-$locale}/about"
+          params={{ locale: 'es' }}
+          data-testid="switcher-es"
+        >
           Espanol
         </Link>
       </section>

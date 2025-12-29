@@ -8,7 +8,8 @@ test.describe('Link Component - Localized Paths', () => {
   test('renders links with untranslated paths in default locale', async ({
     page,
   }) => {
-    // English (default) should not translate paths
+    // English (default) should not have prefix (prefixStrategy: 'as-needed')
+    // The localizeUrl rewrite function strips the /en prefix for display
     await expect(page.getByTestId('nav-home')).toHaveAttribute('href', '/');
     await expect(page.getByTestId('nav-about')).toHaveAttribute(
       'href',

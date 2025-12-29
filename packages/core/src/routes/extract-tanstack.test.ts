@@ -9,7 +9,7 @@ const fixtureRoot = join(__dirname, '__fixtures__', 'tanstack');
 describe('extractTanStackRoutes', () => {
   beforeEach(async () => {
     // Create fixture directories
-    await fs.mkdir(join(fixtureRoot, 'src', 'routes'), { recursive: true });
+    await fs.mkdir(join(fixtureRoot, 'src'), { recursive: true });
   });
 
   afterEach(async () => {
@@ -17,266 +17,228 @@ describe('extractTanStackRoutes', () => {
     await fs.rm(fixtureRoot, { recursive: true, force: true });
   });
 
-  describe('file-based routing', () => {
-    it('extracts routes from routes/ directory', async () => {
+  describe('routeTree.gen.ts parsing', () => {
+    it('parses FileRoutesByFullPath interface', async () => {
       await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'index.tsx'),
-        'export const Route = createFileRoute("/")({ component: Home })',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'about.tsx'),
-        'export const Route = createFileRoute("/about")({ component: About })',
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/about': typeof AboutRoute
+          '/blog': typeof BlogRoute
+          '/contact': typeof ContactRoute
+        }
+        `,
       );
 
       const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
 
       expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/',
-          segments: [],
-        }),
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
       );
       expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/about',
-          segments: ['about'],
-        }),
+        expect.objectContaining({ path: '/blog', segments: ['blog'] }),
+      );
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/contact', segments: ['contact'] }),
       );
     });
 
-    it('handles dynamic segments ($param)', async () => {
+    it('strips {-$locale} optional prefix from paths', async () => {
       await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'blog.$slug.tsx'),
-        'export const Route = createFileRoute("/blog/$slug")({})',
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/{-$locale}': typeof LocaleRoute
+          '/{-$locale}/about': typeof AboutRoute
+          '/{-$locale}/blog': typeof BlogRoute
+          '/{-$locale}/': typeof IndexRoute
+        }
+        `,
       );
 
       const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
 
-      // TanStack's $slug should be normalized to [slug]
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/', segments: [] }),
+      );
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
+      );
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/blog', segments: ['blog'] }),
+      );
+    });
+
+    it('strips {$locale} required prefix from paths', async () => {
+      await fs.writeFile(
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/{$locale}/about': typeof AboutRoute
+          '/{$locale}/contact': typeof ContactRoute
+        }
+        `,
+      );
+
+      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
+
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
+      );
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/contact', segments: ['contact'] }),
+      );
+    });
+
+    it('strips $locale prefix from paths', async () => {
+      await fs.writeFile(
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/$locale/about': typeof AboutRoute
+        }
+        `,
+      );
+
+      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
+
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
+      );
+    });
+
+    it('preserves dynamic segments like $slug', async () => {
+      await fs.writeFile(
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/{-$locale}/blog/$slug': typeof BlogPostRoute
+          '/{-$locale}/users/$userId/posts/$postId': typeof UserPostRoute
+        }
+        `,
+      );
+
+      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
+
       expect(routes).toContainEqual(
         expect.objectContaining({
           path: '/blog/[slug]',
           segments: ['blog', '[slug]'],
         }),
       );
-    });
-
-    it('handles nested file naming convention', async () => {
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'blog.index.tsx'),
-        'export const Route = createFileRoute("/blog")({})',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'blog.$postId.tsx'),
-        'export const Route = createFileRoute("/blog/$postId")({})',
-      );
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
       expect(routes).toContainEqual(
         expect.objectContaining({
-          path: '/blog',
-          segments: ['blog'],
-        }),
-      );
-      expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/blog/[postId]',
-          segments: ['blog', '[postId]'],
+          path: '/users/[userId]/posts/[postId]',
+          segments: ['users', '[userId]', 'posts', '[postId]'],
         }),
       );
     });
 
-    it('skips layout files (_layout, __root)', async () => {
+    it('handles empty interface', async () => {
       await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', '__root.tsx'),
-        'export const Route = createRootRoute()({})',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', '_layout.tsx'),
-        'export const Route = createFileRoute("/_layout")({})',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'about.tsx'),
-        'export const Route = createFileRoute("/about")({})',
-      );
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
-      expect(routes).not.toContainEqual(
-        expect.objectContaining({ path: '/__root' }),
-      );
-      expect(routes).not.toContainEqual(
-        expect.objectContaining({ path: '/_layout' }),
-      );
-      expect(routes).toContainEqual(
-        expect.objectContaining({ path: '/about' }),
-      );
-    });
-
-    it('skips pathless layout files (trailing underscore)', async () => {
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'dashboard_.tsx'),
-        'export const Route = createFileRoute("/dashboard_")({})',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'about.tsx'),
-        'export const Route = createFileRoute("/about")({})',
-      );
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
-      expect(routes).not.toContainEqual(
-        expect.objectContaining({ path: '/dashboard_' }),
-      );
-      expect(routes).toContainEqual(
-        expect.objectContaining({ path: '/about' }),
-      );
-    });
-
-    it('handles route groups (parentheses)', async () => {
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', '(auth).login.tsx'),
-        'export const Route = createFileRoute("/(auth)/login")({})',
-      );
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
-      // Route group should be ignored in path
-      expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/login',
-          segments: ['login'],
-        }),
-      );
-    });
-
-    it('filters out $lang segment when first', async () => {
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', '$lang.about.tsx'),
-        'export const Route = createFileRoute("/$lang/about")({})',
-      );
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
-      expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/about',
-          segments: ['about'],
-        }),
-      );
-    });
-  });
-
-  describe('createFileRoute fallback extraction', () => {
-    it('extracts routes from createFileRoute calls in source', async () => {
-      // Put source file outside routes/ directory
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'custom-routes.tsx'),
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
         `
-        import { createFileRoute } from '@tanstack/react-router';
-
-        export const Route1 = createFileRoute('/dashboard')({ component: Dashboard });
-        export const Route2 = createFileRoute('/settings')({ component: Settings });
+        export interface FileRoutesByFullPath {
+        }
         `,
       );
-
-      // Remove routes directory
-      await fs.rm(join(fixtureRoot, 'src', 'routes'), {
-        recursive: true,
-        force: true,
-      });
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
-      expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/dashboard',
-          segments: ['dashboard'],
-        }),
-      );
-      expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/settings',
-          segments: ['settings'],
-        }),
-      );
-    });
-
-    it('normalizes $param to [param] in createFileRoute paths', async () => {
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'custom-routes.tsx'),
-        `
-        import { createFileRoute } from '@tanstack/react-router';
-        export const Route = createFileRoute('/users/$userId')({ component: User });
-        `,
-      );
-
-      await fs.rm(join(fixtureRoot, 'src', 'routes'), {
-        recursive: true,
-        force: true,
-      });
-
-      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
-
-      expect(routes).toContainEqual(
-        expect.objectContaining({
-          path: '/users/[userId]',
-          segments: ['users', '[userId]'],
-        }),
-      );
-    });
-  });
-
-  describe('edge cases', () => {
-    it('returns empty array when no routes found', async () => {
-      await fs.rm(join(fixtureRoot, 'src', 'routes'), {
-        recursive: true,
-        force: true,
-      });
 
       const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
 
       expect(routes).toEqual([]);
     });
 
-    it('deduplicates routes with same path', async () => {
+    it('handles multi-line interface with comments', async () => {
       await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'about.tsx'),
-        'export const Route = createFileRoute("/about")({})',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'about.ts'),
-        'export const Route = createFileRoute("/about")({})',
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        // Auto-generated by TanStack Router
+        export interface FileRoutesByFullPath {
+          // Home route
+          '/{-$locale}/': typeof IndexRoute
+          // About page
+          '/{-$locale}/about': typeof AboutRoute
+        }
+        `,
       );
 
       const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
 
-      const aboutRoutes = routes.filter((r) => r.path === '/about');
-      expect(aboutRoutes).toHaveLength(1);
-    });
-
-    it('respects exclude patterns', async () => {
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'about.tsx'),
-        'export const Route = createFileRoute("/about")({})',
-      );
-      await fs.writeFile(
-        join(fixtureRoot, 'src', 'routes', 'admin.tsx'),
-        'export const Route = createFileRoute("/admin")({})',
-      );
-
-      const routes = await extractTanStackRoutes({
-        projectRoot: fixtureRoot,
-        exclude: ['**/admin*'],
-      });
-
-      expect(routes).not.toContainEqual(
-        expect.objectContaining({ path: '/admin' }),
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/', segments: [] }),
       );
       expect(routes).toContainEqual(
-        expect.objectContaining({ path: '/about' }),
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
       );
+    });
+
+    it('deduplicates routes from routeTree.gen.ts', async () => {
+      await fs.writeFile(
+        join(fixtureRoot, 'src', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/{-$locale}': typeof LocaleRoute
+          '/{-$locale}/': typeof IndexRoute
+        }
+        `,
+      );
+
+      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
+
+      // Both paths resolve to '/' - should be deduplicated
+      const rootRoutes = routes.filter((r) => r.path === '/');
+      expect(rootRoutes).toHaveLength(1);
+    });
+
+    it('finds routeTree.gen.ts in app/ directory', async () => {
+      // Some projects use app/ instead of src/
+      await fs.mkdir(join(fixtureRoot, 'app'), { recursive: true });
+      await fs.writeFile(
+        join(fixtureRoot, 'app', 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/about': typeof AboutRoute
+        }
+        `,
+      );
+
+      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
+
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
+      );
+    });
+
+    it('finds routeTree.gen.ts at project root', async () => {
+      await fs.writeFile(
+        join(fixtureRoot, 'routeTree.gen.ts'),
+        `
+        export interface FileRoutesByFullPath {
+          '/about': typeof AboutRoute
+        }
+        `,
+      );
+
+      const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
+
+      expect(routes).toContainEqual(
+        expect.objectContaining({ path: '/about', segments: ['about'] }),
+      );
+    });
+  });
+
+  describe('error handling', () => {
+    it('throws error when routeTree.gen.ts not found', async () => {
+      // No routeTree.gen.ts exists - should throw
+      await expect(
+        extractTanStackRoutes({ projectRoot: fixtureRoot }),
+      ).rejects.toThrow('Could not find routeTree.gen.ts');
+    });
+
+    it('provides helpful error message about generating the file', async () => {
+      await expect(
+        extractTanStackRoutes({ projectRoot: fixtureRoot }),
+      ).rejects.toThrow('pnpm tsr generate');
     });
   });
 });

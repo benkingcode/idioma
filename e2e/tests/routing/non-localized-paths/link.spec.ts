@@ -6,7 +6,8 @@ test.describe('Link Component - Non-Localized Paths', () => {
   });
 
   test('renders links with no prefix in default locale', async ({ page }) => {
-    // English (default) should have no prefix
+    // English (default) should have no prefix (prefixStrategy: 'as-needed')
+    // The localizeUrl rewrite function strips the /en prefix for display
     await expect(page.getByTestId('nav-home')).toHaveAttribute('href', '/');
     await expect(page.getByTestId('nav-about')).toHaveAttribute(
       'href',

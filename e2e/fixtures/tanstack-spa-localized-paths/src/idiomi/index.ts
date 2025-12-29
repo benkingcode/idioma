@@ -9,16 +9,11 @@ import {
   createUseT,
 } from '@idiomi/react';
 import type { IdiomiTypes, Locale } from './.generated/types';
-import { createLink, createLocaleHead } from '@idiomi/tanstack-react';
 import { routes, reverseRoutes } from './.generated/routes';
 import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';
+import { createLocaleHead } from '@idiomi/tanstack-react';
 import { redirect } from '@tanstack/react-router';
 
-export const Link = createLink({
-  routes,
-  defaultLocale,
-  prefixStrategy,
-});
 export const LocaleHead = createLocaleHead({
   metadataBase: "http://localhost:5177",
   locales: ["en","es"],
@@ -147,6 +142,7 @@ export function deLocalizeUrl(url: URL): URL {
 /**
  * Transform canonical URL to localized for link generation.
  * Use with TanStack Router's rewrite.output option.
+ * Handles prefix strategy: strips default locale prefix when 'as-needed'.
  */
 export function localizeUrl(url: URL): URL {
   const pathLocale = extractLocaleFromPath(url.pathname);
@@ -154,20 +150,28 @@ export function localizeUrl(url: URL): URL {
   // The router handles this by using the current locale context
   if (!pathLocale) return url;
 
-  const localeRoutes = routes[pathLocale];
-  if (!localeRoutes) return url;
-
-  // The canonical path from router (e.g., /about) needs to be localized
-  // But we receive URLs like /es/about from the router - need to extract the path
   const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';
-  const localizedPath = localeRoutes[pathWithoutLocale];
 
-  if (localizedPath && localizedPath !== pathWithoutLocale) {
-    const newUrl = new URL(url);
+  // Handle prefix strategy: strip prefix for default locale when 'as-needed'
+  const shouldStripPrefix = prefixStrategy === 'as-needed' && pathLocale === defaultLocale;
+
+  // Get localized path (path translation)
+  const localeRoutes = routes[pathLocale];
+  const localizedPath = localeRoutes?.[pathWithoutLocale] ?? pathWithoutLocale;
+
+  // Build final URL
+  const newUrl = new URL(url);
+  if (shouldStripPrefix) {
+    // No prefix for default locale with 'as-needed' strategy
+    newUrl.pathname = localizedPath;
+  } else if (localizedPath !== pathWithoutLocale) {
+    // Keep prefix, apply path translation
     newUrl.pathname = `/${pathLocale}${localizedPath}`;
-    return newUrl;
+  } else {
+    // No changes needed
+    return url;
   }
-  return url;
+  return newUrl;
 }
 export { getLocaleHead } from '@idiomi/react';
 

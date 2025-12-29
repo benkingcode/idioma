@@ -143,11 +143,13 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 **@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router/Start integration for React
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
-- `link.tsx` - `createLink()` factory for localized Link component, `resolveLocalizedHref()` for URL resolution with prefix strategy
+- `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
 - `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection (SSR only)
 
 **TanStack SPA vs SSR separation**: The compiler generates browser-safe code for SPAs (`localeLoader`, `detectClientLocale`) that doesn't import from `@tanstack/react-start` or other SSR-only packages. For TanStack Start SSR, users import middleware manually from `@idiomi/tanstack-react/middleware`.
+
+**TanStack Link strategy**: Unlike Next.js which uses Idiomi's custom `Link` wrapper, TanStack uses URL rewriting via `createRouter({ rewrite: { input, output } })`. Users write `<Link to="/{-$locale}/about" params={{}}>` with TanStack's native Link and the `localizeUrl` function handles path translation and prefix stripping for display.
 
 ### Configuration
 
@@ -603,14 +605,15 @@ When `routing` is configured in `idiomi.config.ts`, the compiler automatically g
 
 ```typescript
 // Auto-generated in idiomi/index.ts when routing.localizedPaths: true
-import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/pages, @idiomi/tanstack-react
-import { createMiddlewareFactory } from '@idiomi/next/middleware'; // or @idiomi/tanstack-react/middleware
 
+// Next.js only: Pre-configured Link and middleware
+import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/pages
+import { createMiddlewareFactory } from '@idiomi/next/middleware';
 import { defaultLocale, locales, prefixStrategy } from './.generated/config';
 import { reverseRoutes, routes } from './.generated/routes';
 
 // Pre-configured Link with routes, locale prefix strategy, and default locale
-// Both Next.js and TanStack use the same unified API
+// NOTE: TanStack uses native <Link> from @tanstack/react-router, not this
 export const Link = createLink({
   routes,
   defaultLocale,
@@ -648,12 +651,13 @@ export function detectClientLocale() {
 }
 
 // TanStack Router only: URL rewrite functions for localized paths
-// Use with createRouter({ rewrite: { input: deLocalizeUrl, output: localizeUrl } })
+// Use with createRouter({ rewrite: { input: ({ url }) => deLocalizeUrl(url), output: ({ url }) => localizeUrl(url) } })
 export function deLocalizeUrl(url: URL): URL {
   /* Transform /es/sobre → /es/about for route matching */
 }
 export function localizeUrl(url: URL): URL {
   /* Transform /es/about → /es/sobre for display */
+  /* Also strips /en prefix for default locale when prefixStrategy: 'as-needed' */
 }
 ```
 
@@ -665,7 +669,7 @@ The compiler detects the framework from `package.json` and directory structure:
 - `next-pages` - Next.js with Pages Router (has `pages/` but no `app/`)
 - `tanstack` - TanStack Router (has `@tanstack/react-router` dependency)
 
-This determines which package to import `createLink` from.
+This determines which packages to import from.
 
 ### Bundler Integration
 

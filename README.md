@@ -988,9 +988,9 @@ export const router = createRouter({
   routeTree,
   rewrite: {
     // Transform localized URL → canonical for route matching
-    input: (url) => deLocalizeUrl(url),
+    input: ({ url }) => deLocalizeUrl(url),
     // Transform canonical → localized for display
-    output: (url) => localizeUrl(url),
+    output: ({ url }) => localizeUrl(url),
   },
 });
 ```
@@ -1030,19 +1030,24 @@ import { detectClientLocale } from '@/idiomi';
 const locale = detectClientLocale();
 ```
 
-When routing is configured, the `Link` is auto-generated:
+**Navigation:** Use TanStack Router's native `<Link>` component directly. With optional locale params (`{-$locale}`), passing `params={{}}` inherits the current locale automatically:
 
 ```tsx
-import { Link } from '@/idiomi';
+import { useLocale } from '@/idiomi';
+import { Link } from '@tanstack/react-router';
 
 function Navigation() {
+  const locale = useLocale();
+
   return (
     <nav>
-      {/* Locale from IdiomiProvider context */}
-      <Link to="/about">About</Link>
+      {/* Inherits current locale from URL context */}
+      <Link to="/{-$locale}/about" params={{}}>
+        About
+      </Link>
 
       {/* Language switcher - explicit locale */}
-      <Link to="/about" locale="es">
+      <Link to="/{-$locale}/about" params={{ locale: 'es' }}>
         ES
       </Link>
     </nav>
@@ -1050,7 +1055,9 @@ function Navigation() {
 }
 ```
 
-For SEO hreflang tags, use the same `LocaleHead` component:
+This gives you full TanStack type safety on `to` and `params` props, including autocomplete for valid routes and compile-time validation.
+
+For SEO hreflang tags, use the `LocaleHead` component:
 
 ```tsx
 import { LocaleHead } from '@/idiomi';
@@ -1390,7 +1397,7 @@ TypeScript provides full type safety via generated types:
 - **@idiomi/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
 - **@idiomi/react** — Runtime components (~2-3KB gzipped with ICU), `getLocaleHead` for programmatic SEO
 - **@idiomi/next** — Next.js integration (middleware factory, LocaleHead component, localized Link)
-- **@idiomi/tanstack-react** — TanStack Router/Start integration for React (LocaleHead component, localized Link)
+- **@idiomi/tanstack-react** — TanStack Router/Start integration for React (LocaleHead component, URL rewriting utilities)
 
 ## License
 

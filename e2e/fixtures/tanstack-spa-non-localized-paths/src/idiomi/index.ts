@@ -9,14 +9,10 @@ import {
   createUseT,
 } from '@idiomi/react';
 import type { IdiomiTypes, Locale } from './.generated/types';
-import { createLink, createLocaleHead } from '@idiomi/tanstack-react';
 import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';
+import { createLocaleHead } from '@idiomi/tanstack-react';
 import { redirect } from '@tanstack/react-router';
 
-export const Link = createLink({
-  defaultLocale,
-  prefixStrategy,
-});
 export const LocaleHead = createLocaleHead({
   metadataBase: "http://localhost:5178",
   locales: ["en","es"],
@@ -106,6 +102,31 @@ function getCookie(name: string): string | undefined {
   if (typeof document === 'undefined') return undefined;
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match?.[1];
+}
+
+/**
+ * Transform URL for display: strips default locale prefix when 'as-needed'.
+ * Use with TanStack Router's rewrite.output option.
+ * @example
+ * const router = createRouter({
+ *   routeTree,
+ *   rewrite: {
+ *     output: ({ url }) => localizeUrl(url),
+ *   },
+ * });
+ */
+export function localizeUrl(url: URL): URL {
+  const pathLocale = extractLocaleFromPath(url.pathname);
+  if (!pathLocale) return url;
+
+  // Strip prefix for default locale when 'as-needed'
+  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {
+    const newUrl = new URL(url);
+    newUrl.pathname = url.pathname.slice(pathLocale.length + 1) || '/';
+    return newUrl;
+  }
+
+  return url;
 }
 export { getLocaleHead } from '@idiomi/react';
 
