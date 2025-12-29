@@ -4,6 +4,7 @@ import {
   IdiomiProvider,
   Link,
   LocaleHead,
+  localeLoader,
   useLocale,
 } from '../../idiomi';
 import type { Locale } from '../../idiomi';
@@ -13,6 +14,7 @@ import {
 } from '../../idiomi/.generated/routes';
 
 export const Route = createFileRoute('/{-$locale}')({
+  beforeLoad: localeLoader,
   component: LocaleLayout,
 });
 

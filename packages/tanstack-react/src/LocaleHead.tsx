@@ -20,6 +20,8 @@ export interface LocaleHeadConfig {
   defaultLocale: string;
   /** Route translations map (from compiled routes) */
   routes?: RoutesMap;
+  /** Reverse route translations map (localized → canonical) */
+  reverseRoutes?: RoutesMap;
   /** Prefix strategy: 'always' or 'as-needed' */
   prefixStrategy?: 'always' | 'as-needed';
 }
@@ -61,6 +63,7 @@ export function createLocaleHead(config: LocaleHeadConfig) {
     locales,
     defaultLocale,
     routes,
+    reverseRoutes,
     prefixStrategy = 'always',
   } = config;
 
@@ -83,8 +86,32 @@ export function createLocaleHead(config: LocaleHeadConfig) {
       );
     }
 
+    // TanStack Router returns the full localized URL (e.g., /es/sobre)
+    // We need to extract the canonical path for getLocaleHead
+    // 1. Strip locale prefix to get the localized path without prefix
+    // 2. Use reverseRoutes to convert localized → canonical
+    let canonicalPath = pathname;
+
+    // Check if pathname starts with a locale prefix
+    for (const loc of locales) {
+      const prefix = `/${loc}`;
+      if (pathname === prefix || pathname.startsWith(`${prefix}/`)) {
+        // Strip the locale prefix
+        const pathWithoutLocale =
+          pathname === prefix ? '/' : pathname.slice(prefix.length);
+
+        // Use reverseRoutes to get canonical path (if available)
+        if (reverseRoutes?.[loc]?.[pathWithoutLocale]) {
+          canonicalPath = reverseRoutes[loc][pathWithoutLocale];
+        } else {
+          canonicalPath = pathWithoutLocale;
+        }
+        break;
+      }
+    }
+
     const { links, canonical } = getLocaleHead({
-      pathname,
+      pathname: canonicalPath,
       locale,
       metadataBase,
       locales,

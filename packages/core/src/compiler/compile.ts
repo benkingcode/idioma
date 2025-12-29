@@ -851,6 +851,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     localeHeadConfig.push(`  locales: ${JSON.stringify(locales)},`);
     localeHeadConfig.push(`  defaultLocale: ${JSON.stringify(defaultLocale)},`);
     localeHeadConfig.push(`  routes,`);
+    localeHeadConfig.push(`  reverseRoutes,`);
     if (routing.prefixStrategy) {
       localeHeadConfig.push(
         `  prefixStrategy: ${JSON.stringify(routing.prefixStrategy)},`,
@@ -1037,7 +1038,7 @@ function generateTanStackSpaLoader(): string[] {
     `export function localeLoader({`,
     `  location,`,
     `}: {`,
-    `  location: { pathname: string; search: string; hash: string };`,
+    `  location: { pathname: string; searchStr: string; hash: string };`,
     `}) {`,
     `  const pathLocale = extractLocaleFromPath(location.pathname);`,
     ``,
@@ -1053,7 +1054,7 @@ function generateTanStackSpaLoader(): string[] {
     `    // Redirect if: always prefix OR detected is non-default`,
     `    if (prefixStrategy === 'always' || detected !== defaultLocale) {`,
     `      throw redirect({`,
-    `        to: \`/\${detected}\${location.pathname}\${location.search}\${location.hash}\`,`,
+    `        to: \`/\${detected}\${location.pathname}\${location.searchStr}\${location.hash}\`,`,
     `      });`,
     `    }`,
     ``,

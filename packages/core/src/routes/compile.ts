@@ -39,9 +39,14 @@ export function compileRoutes(
       // Extract segment name from context (e.g., "route:about" → "about")
       const segment = msg.context.slice(ROUTE_CONTEXT_PREFIX.length);
 
-      // Use translation if available, otherwise fall back to source
-      const translation = msg.translation || msg.source;
-      segments[locale][segment] = translation;
+      // Only use non-empty translations, don't overwrite existing with empty fallbacks
+      // This handles duplicate route entries where one has translation and one doesn't
+      if (msg.translation) {
+        segments[locale][segment] = msg.translation;
+      } else if (!segments[locale][segment]) {
+        // Fallback to segment name only if no translation yet
+        segments[locale][segment] = segment;
+      }
     }
   }
 

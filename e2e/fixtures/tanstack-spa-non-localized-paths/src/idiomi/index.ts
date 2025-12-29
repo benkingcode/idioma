@@ -31,7 +31,7 @@ export const LocaleHead = createLocaleHead({
 export function localeLoader({
   location,
 }: {
-  location: { pathname: string; search: string; hash: string };
+  location: { pathname: string; searchStr: string; hash: string };
 }) {
   const pathLocale = extractLocaleFromPath(location.pathname);
 
@@ -47,7 +47,7 @@ export function localeLoader({
     // Redirect if: always prefix OR detected is non-default
     if (prefixStrategy === 'always' || detected !== defaultLocale) {
       throw redirect({
-        to: `/${detected}${location.pathname}${location.search}${location.hash}`,
+        to: `/${detected}${location.pathname}${location.searchStr}${location.hash}`,
       });
     }
 
