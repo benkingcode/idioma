@@ -10,8 +10,11 @@ import {
   resolveLocalizedPath,
 } from './link.js';
 
-// Create a base Link for tests (equivalent to old default export)
-const Link = createLink();
+// Create a base Link for tests with default config
+const Link = createLink({
+  defaultLocale: 'en',
+  prefixStrategy: 'always',
+});
 
 // Mock next/link
 vi.mock('next/link', () => ({
@@ -35,28 +38,79 @@ vi.mock('@idiomi/react', () => ({
 }));
 
 describe('resolveLocalizedHref', () => {
-  it('adds locale prefix without routes', () => {
-    expect(resolveLocalizedHref('/about', 'en')).toBe('/en/about');
-    expect(resolveLocalizedHref('/about', 'es')).toBe('/es/about');
-  });
+  const routes = {
+    en: { '/about': '/about', '/blog': '/blog' },
+    es: { '/about': '/sobre', '/blog': '/articulos' },
+    fr: { '/about': '/a-propos', '/blog': '/articles' },
+  };
 
-  it('translates path with routes', () => {
-    const routes = {
-      en: { '/about': '/about' },
-      es: { '/about': '/sobre' },
+  describe('prefixStrategy: always', () => {
+    const config = {
+      routes,
+      defaultLocale: 'en',
+      prefixStrategy: 'always' as const,
     };
 
-    expect(resolveLocalizedHref('/about', 'en', routes)).toBe('/en/about');
-    expect(resolveLocalizedHref('/about', 'es', routes)).toBe('/es/sobre');
+    it('adds prefix for default locale', () => {
+      expect(resolveLocalizedHref('/about', 'en', config)).toBe('/en/about');
+    });
+
+    it('adds prefix for non-default locale', () => {
+      expect(resolveLocalizedHref('/about', 'es', config)).toBe('/es/sobre');
+    });
+
+    it('translates path segments', () => {
+      expect(resolveLocalizedHref('/blog', 'fr', config)).toBe('/fr/articles');
+    });
+  });
+
+  describe('prefixStrategy: as-needed', () => {
+    const config = {
+      routes,
+      defaultLocale: 'en',
+      prefixStrategy: 'as-needed' as const,
+    };
+
+    it('does NOT add prefix for default locale', () => {
+      expect(resolveLocalizedHref('/about', 'en', config)).toBe('/about');
+    });
+
+    it('adds prefix for non-default locale', () => {
+      expect(resolveLocalizedHref('/about', 'es', config)).toBe('/es/sobre');
+    });
+
+    it('still translates path for default locale', () => {
+      expect(resolveLocalizedHref('/blog', 'en', config)).toBe('/blog');
+    });
+  });
+
+  describe('prefixStrategy: never', () => {
+    const config = {
+      routes,
+      defaultLocale: 'en',
+      prefixStrategy: 'never' as const,
+    };
+
+    it('never adds prefix for default locale', () => {
+      expect(resolveLocalizedHref('/about', 'en', config)).toBe('/about');
+    });
+
+    it('never adds prefix for non-default locale', () => {
+      expect(resolveLocalizedHref('/about', 'es', config)).toBe('/sobre');
+    });
+
+    it('still translates path segments', () => {
+      expect(resolveLocalizedHref('/blog', 'fr', config)).toBe('/articles');
+    });
   });
 
   it('falls back to original path when no translation', () => {
-    const routes = {
-      en: { '/about': '/about' },
-      es: {},
+    const config = {
+      routes,
+      defaultLocale: 'en',
+      prefixStrategy: 'as-needed' as const,
     };
-
-    expect(resolveLocalizedHref('/contact', 'es', routes)).toBe('/es/contact');
+    expect(resolveLocalizedHref('/contact', 'es', config)).toBe('/es/contact');
   });
 });
 
@@ -179,24 +233,84 @@ describe('Link component', () => {
 });
 
 describe('createLink factory', () => {
-  it('creates Link with routes pre-configured', () => {
+  describe('with config object (new API)', () => {
     const routes = {
-      en: { '/about': '/about' },
-      es: { '/about': '/sobre' },
+      en: { '/about': '/about', '/blog': '/blog' },
+      es: { '/about': '/sobre', '/blog': '/articulos' },
+      fr: { '/about': '/a-propos', '/blog': '/articles' },
     };
 
-    const LocalizedLink = createLink(routes);
+    it('creates Link with prefix strategy: always', () => {
+      const LocalizedLink = createLink({
+        routes,
+        defaultLocale: 'en',
+        prefixStrategy: 'always',
+      });
 
-    render(
-      <LocalizedLink href="/about" locale="es">
-        About
-      </LocalizedLink>,
-    );
+      render(
+        <LocalizedLink href="/about" locale="en">
+          About
+        </LocalizedLink>,
+      );
 
-    const link = screen.getByRole('link', {
-      name: 'About',
-    }) as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/es/sobre');
+      const link = screen.getByRole('link', { name: 'About' });
+      // Strategy is 'always' -> /en/about (prefix for default)
+      expect(link.getAttribute('href')).toBe('/en/about');
+    });
+
+    it('creates Link with prefix strategy: as-needed (default locale)', () => {
+      const LocalizedLink = createLink({
+        routes,
+        defaultLocale: 'en',
+        prefixStrategy: 'as-needed',
+      });
+
+      render(
+        <LocalizedLink href="/about" locale="en">
+          About
+        </LocalizedLink>,
+      );
+
+      const link = screen.getByRole('link', { name: 'About' });
+      // Strategy is 'as-needed', locale is default -> /about (no prefix)
+      expect(link.getAttribute('href')).toBe('/about');
+    });
+
+    it('creates Link with prefix strategy: as-needed (non-default locale)', () => {
+      const LocalizedLink = createLink({
+        routes,
+        defaultLocale: 'en',
+        prefixStrategy: 'as-needed',
+      });
+
+      render(
+        <LocalizedLink href="/about" locale="es">
+          About
+        </LocalizedLink>,
+      );
+
+      const link = screen.getByRole('link', { name: 'About' });
+      // Strategy is 'as-needed', locale is non-default -> /es/sobre
+      expect(link.getAttribute('href')).toBe('/es/sobre');
+    });
+
+    it('creates Link with prefix strategy: never', () => {
+      const LocalizedLink = createLink({
+        routes,
+        defaultLocale: 'en',
+        prefixStrategy: 'never',
+      });
+
+      render(
+        <LocalizedLink href="/about" locale="es">
+          About
+        </LocalizedLink>,
+      );
+
+      const link = screen.getByRole('link', { name: 'About' });
+      // Strategy is 'never' -> /sobre (no prefix, just translation)
+      expect(link.getAttribute('href')).toBe('/sobre');
+    });
   });
 
   it('allows prop routes to override factory routes', () => {
@@ -208,7 +322,11 @@ describe('createLink factory', () => {
       es: { '/about': '/acerca' },
     };
 
-    const LocalizedLink = createLink(factoryRoutes);
+    const LocalizedLink = createLink({
+      routes: factoryRoutes,
+      defaultLocale: 'en',
+      prefixStrategy: 'always',
+    });
 
     render(
       <LocalizedLink href="/about" locale="es" routes={propRoutes}>
@@ -216,21 +334,8 @@ describe('createLink factory', () => {
       </LocalizedLink>,
     );
 
-    const link = screen.getByRole('link', {
-      name: 'About',
-    }) as HTMLAnchorElement;
+    const link = screen.getByRole('link', { name: 'About' });
     expect(link.getAttribute('href')).toBe('/es/acerca');
-  });
-
-  it('uses context locale when no prop provided', () => {
-    const LocalizedLink = createLink();
-
-    render(<LocalizedLink href="/about">About</LocalizedLink>);
-
-    const link = screen.getByRole('link', {
-      name: 'About',
-    }) as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('/en/about');
   });
 });
 

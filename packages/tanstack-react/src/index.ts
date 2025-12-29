@@ -26,11 +26,13 @@
 
 export {
   createLink,
+  resolveLocalizedHref,
   resolveLocalizedPath,
+  type LinkConfig,
   type LinkProps,
   type RoutesMap,
 } from './link.js';
-export { useLocale, useLocalizedPath } from './hooks.js';
+export { useLocale, useLocalizedHref, useLocalizedPath } from './hooks.js';
 export {
   createLocaleHead,
   type LocaleHeadProps,

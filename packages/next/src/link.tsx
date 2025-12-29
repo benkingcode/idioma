@@ -7,6 +7,13 @@ import { useContext, type ComponentProps } from 'react';
 /** Route translations map type */
 export type RoutesMap = Record<string, Record<string, string>>;
 
+/** Configuration for Link with locale prefix support */
+export interface LinkConfig {
+  routes?: RoutesMap;
+  defaultLocale: string;
+  prefixStrategy: 'always' | 'as-needed' | 'never';
+}
+
 export interface LinkProps extends Omit<
   ComponentProps<typeof NextLink>,
   'href'
@@ -42,21 +49,34 @@ export function resolveLocalizedPath(
 }
 
 /**
- * Resolves a canonical path to a localized href with locale prefix.
- * App Router-specific: adds locale prefix since App Router doesn't have built-in locale handling.
+ * Resolves a canonical path to a fully localized href with locale prefix.
+ * Handles prefix strategy to determine when locale prefix is added.
  *
  * @example
  * ```tsx
- * resolveLocalizedHref('/about', 'es', routes); // => '/es/sobre'
+ * // With prefixStrategy: 'as-needed' and defaultLocale: 'en'
+ * resolveLocalizedHref('/about', 'es', config); // => '/es/sobre'
+ * resolveLocalizedHref('/about', 'en', config); // => '/about' (no prefix for default)
+ *
+ * // With prefixStrategy: 'always'
+ * resolveLocalizedHref('/about', 'en', config); // => '/en/about'
  * ```
  */
 export function resolveLocalizedHref(
   href: string,
   locale: string,
-  routes?: RoutesMap,
+  config: LinkConfig,
 ): string {
+  const { routes, defaultLocale, prefixStrategy } = config;
   const localizedPath = resolveLocalizedPath(href, locale, routes);
-  return `/${locale}${localizedPath}`;
+
+  if (prefixStrategy === 'never') {
+    return localizedPath;
+  }
+
+  const needsPrefix = prefixStrategy === 'always' || locale !== defaultLocale;
+
+  return needsPrefix ? `/${locale}${localizedPath}` : localizedPath;
 }
 
 /**
@@ -70,22 +90,28 @@ export function resolveLocalizedHref(
  * import { createLink } from '@idiomi/next';
  * import { routes } from './.generated/routes';
  *
- * export const Link = createLink(routes);
+ * export const Link = createLink({
+ *   routes,
+ *   defaultLocale: 'en',
+ *   prefixStrategy: 'as-needed',
+ * });
  *
  * // Then in components:
  * import { Link } from './idiomi';
  *
  * // In Client Component with IdiomiProvider - no locale needed
- * <Link href="/about">About</Link>
+ * <Link href="/about">About</Link>  // => /es/sobre (if current locale is 'es')
  *
  * // Language switcher - explicit locale
- * <Link href="/about" locale="es">Español</Link>
+ * <Link href="/about" locale="es">Español</Link>  // => /es/sobre
  *
  * // When imported from Server Component - pass locale from params
  * <Link href="/about" locale={params.lang}>About</Link>
  * ```
  */
-export function createLink(routes?: RoutesMap) {
+export function createLink(config: LinkConfig) {
+  const { routes } = config;
+
   return function Link({
     href,
     locale: localeProp,
@@ -104,7 +130,11 @@ export function createLink(routes?: RoutesMap) {
     }
 
     const routesMap = routesProp ?? routes;
-    const finalHref = resolveLocalizedHref(href, locale, routesMap);
+    const finalHref = resolveLocalizedHref(href, locale, {
+      ...config,
+      routes: routesMap,
+    });
+
     return <NextLink href={finalHref} {...props} />;
   };
 }

@@ -135,15 +135,15 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 **@idiomi/next** (`packages/next/`) - Next.js integration
 
 - `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting
-- `link.tsx` - `createLink()` factory for localized Link component (App Router)
+- `link.tsx` - `createLink()` factory for localized Link component, `resolveLocalizedHref()` for URL resolution with prefix strategy (App Router)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (App Router)
 - `server/` - `setLocale()` for cookies
 - `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
 **@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router/Start integration for React
 
-- `hooks.ts` - `useLocale()`, `useLocalizedPath()`
-- `link.tsx` - `createLink()` factory for localized Link component
+- `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
+- `link.tsx` - `createLink()` factory for localized Link component, `resolveLocalizedHref()` for URL resolution with prefix strategy
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags
 - `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection
 
@@ -603,23 +603,30 @@ When `routing` is configured in `idiomi.config.ts`, the compiler automatically g
 // Auto-generated in idiomi/index.ts when routing.localizedPaths: true
 import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/pages, @idiomi/tanstack-react
 import { createMiddlewareFactory } from '@idiomi/next/middleware'; // or @idiomi/tanstack-react/middleware
+
+import { defaultLocale, locales, prefixStrategy } from './.generated/config';
 import { reverseRoutes, routes } from './.generated/routes';
 
-// Pre-configured with routes from compiled translations
-export const Link = createLink(routes);
+// Pre-configured Link with routes, locale prefix strategy, and default locale
+// Both Next.js and TanStack use the same unified API
+export const Link = createLink({
+  routes,
+  defaultLocale,
+  prefixStrategy,
+});
 
 // Pre-configured with locales, defaultLocale, routes, metadataBase, prefixStrategy
 export const LocaleHead = createLocaleHead({
   metadataBase: 'https://example.com',
-  locales: ['en', 'es', 'fr'],
-  defaultLocale: 'en',
+  locales,
+  defaultLocale,
   routes,
 });
 
 // Pre-configured middleware factory (Next.js and TanStack Start)
 export const createMiddleware = createMiddlewareFactory({
-  locales: ['en', 'es', 'fr'],
-  defaultLocale: 'en',
+  locales,
+  defaultLocale,
   routes,
   reverseRoutes,
 });

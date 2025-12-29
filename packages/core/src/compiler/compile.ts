@@ -813,6 +813,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     imports.push(
       `import { routes, reverseRoutes } from './.generated/routes';`,
     );
+    // Import config values for Link and middleware
+    imports.push(
+      `import { locales as configLocales, defaultLocale as configDefaultLocale, prefixStrategy, detection } from './.generated/config';`,
+    );
 
     // Add middleware factory import for Next.js
     if (isNextJs) {
@@ -826,15 +830,18 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       imports.push(
         `import { createMiddlewareFactory } from '@idiomi/tanstack-react/middleware';`,
       );
-      imports.push(
-        `import { locales as configLocales, defaultLocale as configDefaultLocale, prefixStrategy, detection } from './.generated/config';`,
-      );
       imports.push(`import { redirect } from '@tanstack/react-router';`);
       imports.push(`import { matchLocale } from '@idiomi/core/locale';`);
     }
 
     exports.push('');
-    exports.push('export const Link = createLink(routes);');
+
+    // Generate Link with config (consistent for all frameworks)
+    exports.push('export const Link = createLink({');
+    exports.push('  routes,');
+    exports.push('  defaultLocale: configDefaultLocale,');
+    exports.push('  prefixStrategy,');
+    exports.push('});');
 
     // Generate LocaleHead with config
     const localeHeadConfig: string[] = [];

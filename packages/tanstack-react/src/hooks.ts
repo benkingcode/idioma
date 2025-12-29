@@ -1,5 +1,9 @@
 import { IdiomiContext } from '@idiomi/react';
 import { useContext } from 'react';
+import {
+  resolveLocalizedHref as resolveHref,
+  type LinkConfig,
+} from './link.js';
 
 /**
  * Get the current locale from IdiomiContext.
@@ -60,4 +64,43 @@ export function useLocalizedPath(
   }
 
   return localeRoutes[path] ?? path;
+}
+
+/**
+ * Get a fully localized href with locale prefix from the config.
+ *
+ * Uses the current locale from context and the prefix strategy to build
+ * the correct href with locale prefix when needed.
+ *
+ * @example
+ * ```tsx
+ * import { useLocalizedHref } from '@idiomi/tanstack-react/hooks';
+ *
+ * // Config from generated code
+ * const config = {
+ *   routes,
+ *   defaultLocale: 'en',
+ *   prefixStrategy: 'as-needed',
+ * };
+ *
+ * function Navigation() {
+ *   const aboutHref = useLocalizedHref('/about', config);
+ *   // Returns '/es/sobre' when locale is 'es'
+ *   // Returns '/about' when locale is 'en' (default, no prefix)
+ * }
+ * ```
+ */
+export function useLocalizedHref(
+  path: string,
+  config?: LinkConfig,
+  localeOverride?: string,
+): string {
+  const context = useContext(IdiomiContext);
+  const locale = localeOverride ?? context?.locale;
+
+  if (!config || !locale) {
+    return path;
+  }
+
+  return resolveHref(path, locale, config);
 }
