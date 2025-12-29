@@ -20,8 +20,8 @@ export default defineConfig({
   external: [
     'react',
     'react-dom',
-    '@idioma/core',
-    '@idioma/react',
+    '@idiomi/core',
+    '@idiomi/react',
     '@tanstack/react-router',
   ],
 

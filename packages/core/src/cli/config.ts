@@ -69,19 +69,19 @@ const RoutingConfigSchema = z
   .optional();
 
 /**
- * Zod schema for Idioma configuration.
- * This is the single source of truth - IdiomaConfig type is derived from this.
+ * Zod schema for Idiomi configuration.
+ * This is the single source of truth - IdiomiConfig type is derived from this.
  */
-const IdiomaConfigSchema = z.object({
+const IdiomiConfigSchema = z.object({
   /**
-   * Base directory for Idioma files.
-   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
+   * Base directory for Idiomi files.
+   * Generated files go in {idiomiDir}/, PO files in {idiomiDir}/locales/ by default.
    */
-  idiomaDir: z.string().min(1, 'idiomaDir is required'),
+  idiomiDir: z.string().min(1, 'idiomiDir is required'),
   /**
    * Directory containing PO files.
    * Override this if you have existing PO files elsewhere.
-   * @default '{idiomaDir}/locales'
+   * @default '{idiomiDir}/locales'
    */
   localesDir: z.string().optional(),
   /** Default/source locale */
@@ -110,46 +110,46 @@ const IdiomaConfigSchema = z.object({
   ai: AiConfigSchema,
   /**
    * Routing configuration for localized paths and middleware.
-   * Used by @idioma/next and @idioma/tanstack-react packages.
+   * Used by @idiomi/next and @idiomi/tanstack-react packages.
    */
   routing: RoutingConfigSchema,
 });
 
-/** Idioma configuration type - derived from the Zod schema */
-export type IdiomaConfig = z.infer<typeof IdiomaConfigSchema>;
+/** Idiomi configuration type - derived from the Zod schema */
+export type IdiomiConfig = z.infer<typeof IdiomiConfigSchema>;
 
 const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'];
 
 /**
  * Type-safe config helper.
- * Use this in your idioma.config.ts for autocomplete.
+ * Use this in your idiomi.config.ts for autocomplete.
  */
-export function defineConfig(config: IdiomaConfig): IdiomaConfig {
+export function defineConfig(config: IdiomiConfig): IdiomiConfig {
   return config;
 }
 
 /**
  * Compute derived paths from config.
- * - localeDir: where PO files are stored (override or {idiomaDir}/locales)
- * - outputDir: where generated files go (same as idiomaDir)
+ * - localeDir: where PO files are stored (override or {idiomiDir}/locales)
+ * - outputDir: where generated files go (same as idiomiDir)
  */
-export function getIdiomaPaths(config: IdiomaConfig): {
+export function getIdiomiPaths(config: IdiomiConfig): {
   localeDir: string;
   outputDir: string;
 } {
   return {
-    localeDir: config.localesDir ?? join(config.idiomaDir, 'locales'),
-    outputDir: config.idiomaDir,
+    localeDir: config.localesDir ?? join(config.idiomiDir, 'locales'),
+    outputDir: config.idiomiDir,
   };
 }
 
 /**
- * Load Idioma configuration from a directory.
- * Looks for idioma.config.ts or idioma.config.js
+ * Load Idiomi configuration from a directory.
+ * Looks for idiomi.config.ts or idiomi.config.js
  */
-export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
-  const tsPath = join(cwd, 'idioma.config.ts');
-  const jsPath = join(cwd, 'idioma.config.js');
+export async function loadConfig(cwd: string): Promise<IdiomiConfig> {
+  const tsPath = join(cwd, 'idiomi.config.ts');
+  const jsPath = join(cwd, 'idiomi.config.js');
 
   let configPath: string | null = null;
 
@@ -169,8 +169,8 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
 
   if (!configPath) {
     throw new Error(
-      `No idioma config file found in ${cwd}. ` +
-        `Create idioma.config.ts or idioma.config.js`,
+      `No idiomi config file found in ${cwd}. ` +
+        `Create idiomi.config.ts or idiomi.config.js`,
     );
   }
 
@@ -178,12 +178,12 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
   const rawConfig = await loadConfigFile(configPath);
 
   // Validate config against schema
-  const result = IdiomaConfigSchema.safeParse(rawConfig);
+  const result = IdiomiConfigSchema.safeParse(rawConfig);
   if (!result.success) {
     const issues = result.error.issues
       .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
       .join('\n');
-    throw new Error(`Invalid idioma.config.ts:\n${issues}`);
+    throw new Error(`Invalid idiomi.config.ts:\n${issues}`);
   }
 
   const config = result.data;
@@ -191,7 +191,7 @@ export async function loadConfig(cwd: string): Promise<IdiomaConfig> {
   // Warn if defaultLocale is not in locales array (when locales specified)
   if (config.locales && !config.locales.includes(config.defaultLocale)) {
     console.warn(
-      `[idioma] Warning: defaultLocale "${config.defaultLocale}" ` +
+      `[idiomi] Warning: defaultLocale "${config.defaultLocale}" ` +
         `is not in locales array [${config.locales.join(', ')}]`,
     );
   }

@@ -13,9 +13,9 @@ vi.mock('@tanstack/react-router', () => ({
   useParams: () => ({ lang: 'es' }),
 }));
 
-// Mock IdiomaContext
-vi.mock('@idioma/react', () => ({
-  IdiomaContext: {},
+// Mock IdiomiContext
+vi.mock('@idiomi/react', () => ({
+  IdiomiContext: {},
 }));
 
 // Mock React's useContext

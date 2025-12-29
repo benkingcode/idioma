@@ -1,8 +1,8 @@
 'use client';
 
 import { useContext, type ReactNode } from 'react';
-import { IdiomaContext } from './context';
-import { type BaseIdiomaConfig } from './createUseT';
+import { IdiomiContext } from './context';
+import { type BaseIdiomiConfig } from './createUseT';
 import { type TransComponent } from './interpolate';
 
 /**
@@ -76,8 +76,8 @@ export type TransKeyOnlyModeProps<
  * Creates a typed Trans component that supports both inline and key-only modes.
  *
  * @example
- * // In generated idioma/index.ts:
- * export const Trans = createTrans<IdiomaTypes>()
+ * // In generated idiomi/index.ts:
+ * export const Trans = createTrans<IdiomiTypes>()
  *
  * // Inline mode (dev, Babel extracts):
  * <Trans>Hello {name}</Trans>
@@ -86,7 +86,7 @@ export type TransKeyOnlyModeProps<
  * <Trans id="welcome" values={{ name: "Ben" }} />
  * <Trans id="legal.links" components={[TermsLink, PrivacyLink]} />
  */
-export function createTrans<C extends BaseIdiomaConfig = BaseIdiomaConfig>() {
+export function createTrans<C extends BaseIdiomiConfig = BaseIdiomiConfig>() {
   // Extract types from config
   type TK = C['TranslationKey'];
   type MV = C['MessageValues'];
@@ -116,11 +116,11 @@ export function createTrans<C extends BaseIdiomaConfig = BaseIdiomaConfig>() {
           MC & Record<string, TransComponent[]>
         >,
   ): ReactNode {
-    const ctx = useContext(IdiomaContext);
+    const ctx = useContext(IdiomiContext);
     if (!ctx) {
       throw new Error(
-        '[idioma] Trans must be used within an IdiomaProvider. ' +
-          'Make sure to wrap your app with <IdiomaProvider>.',
+        '[idiomi] Trans must be used within an IdiomiProvider. ' +
+          'Make sure to wrap your app with <IdiomiProvider>.',
       );
     }
 
@@ -139,13 +139,13 @@ export function createTrans<C extends BaseIdiomaConfig = BaseIdiomaConfig>() {
     >;
     if (id) {
       console.warn(
-        `[idioma] Trans with id="${id}" was not transformed by Babel. ` +
-          'Make sure @idioma/core Babel plugin is configured.',
+        `[idiomi] Trans with id="${id}" was not transformed by Babel. ` +
+          'Make sure @idiomi/core Babel plugin is configured.',
       );
       return id;
     }
 
-    throw new Error('[idioma] Trans requires either children or id prop');
+    throw new Error('[idiomi] Trans requires either children or id prop');
   }
 
   return Trans;

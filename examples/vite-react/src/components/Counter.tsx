@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trans } from '../idioma';
+import { Trans } from '../idiomi';
 
 export function Counter() {
   const [count, setCount] = useState(1);

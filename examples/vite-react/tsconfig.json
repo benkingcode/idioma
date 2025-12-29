@@ -20,5 +20,5 @@
     "noUncheckedSideEffectImports": true
   },
   "include": ["src"],
-  "exclude": ["src/idioma/.generated"]
+  "exclude": ["src/idiomi/.generated"]
 }

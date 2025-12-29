@@ -14,16 +14,16 @@ import {
 import { shouldIgnorePath } from './ignore-patterns.js';
 import { extractAndMergeFile } from './incremental-extract.js';
 
-export interface IdiomaNextOptions {
+export interface IdiomiNextOptions {
   /**
-   * Base directory for Idioma files.
-   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
+   * Base directory for Idiomi files.
+   * Generated files go in {idiomiDir}/, PO files in {idiomiDir}/locales/ by default.
    */
-  idiomaDir: string;
+  idiomiDir: string;
   /**
    * Directory containing PO files.
    * Override this if you have existing PO files elsewhere.
-   * @default '{idiomaDir}/locales'
+   * @default '{idiomiDir}/locales'
    */
   localesDir?: string;
   /** Default/source locale */
@@ -44,7 +44,7 @@ export interface IdiomaNextOptions {
   ignorePatterns?: string[];
   /**
    * Enable routing integration for localized Link component.
-   * When true, generates a Link component in the idioma/index.ts output.
+   * When true, generates a Link component in the idiomi/index.ts output.
    */
   routing?: {
     /** Enable localized pathnames (e.g., /es/sobre instead of /es/about) */
@@ -61,8 +61,8 @@ interface WebpackContext {
   isServer: boolean;
 }
 
-interface IdiomaWebpackPluginOptions {
-  idiomaDir: string;
+interface IdiomiWebpackPluginOptions {
+  idiomiDir: string;
   localeDir: string;
   outputDir: string;
   defaultLocale: string;
@@ -78,12 +78,12 @@ interface IdiomaWebpackPluginOptions {
 /**
  * Webpack plugin that compiles translations and watches for file changes.
  */
-class IdiomaWebpackPlugin {
-  private options: IdiomaWebpackPluginOptions;
+class IdiomiWebpackPlugin {
+  private options: IdiomiWebpackPluginOptions;
   private hasCompiled = false;
   private debouncedExtractor: DebouncedExtractor | null = null;
 
-  constructor(options: IdiomaWebpackPluginOptions) {
+  constructor(options: IdiomiWebpackPluginOptions) {
     this.options = options;
 
     // Initialize debounced extractor for dev mode
@@ -94,7 +94,7 @@ class IdiomaWebpackPlugin {
             await extractAndMergeFile({
               filePath: file,
               projectRoot: options.projectRoot,
-              idiomaDir: options.idiomaDir,
+              idiomiDir: options.idiomiDir,
               localeDir: options.localeDir,
               defaultLocale: options.defaultLocale,
               locales: options.locales ?? [options.defaultLocale],
@@ -114,10 +114,10 @@ class IdiomaWebpackPlugin {
         {
           delay: 200,
           onComplete: ({ files }) => {
-            console.log(`[idioma] Extracted from ${files.length} file(s)`);
+            console.log(`[idiomi] Extracted from ${files.length} file(s)`);
           },
           onError: (error) => {
-            console.error('[idioma] Extraction error:', error);
+            console.error('[idiomi] Extraction error:', error);
           },
         },
       );
@@ -125,7 +125,7 @@ class IdiomaWebpackPlugin {
   }
 
   apply(compiler: Compiler) {
-    const pluginName = 'IdiomaWebpackPlugin';
+    const pluginName = 'IdiomiWebpackPlugin';
 
     // Compile before the build starts
     compiler.hooks.beforeCompile.tapAsync(
@@ -138,7 +138,7 @@ class IdiomaWebpackPlugin {
 
         try {
           // Ensure .gitignore exists (skip creating locales/ if custom path provided)
-          await ensureGitignore(this.options.idiomaDir, {
+          await ensureGitignore(this.options.idiomiDir, {
             skipLocalesDir: this.options.hasCustomLocalesDir,
           });
 
@@ -190,7 +190,7 @@ class IdiomaWebpackPlugin {
                 routing: this.options.routing,
               });
             } catch (error) {
-              console.error('[idioma] Recompilation error:', error);
+              console.error('[idiomi] Recompilation error:', error);
             }
           }
 
@@ -218,7 +218,7 @@ class IdiomaWebpackPlugin {
 }
 
 /**
- * Next.js plugin for Idioma i18n.
+ * Next.js plugin for Idiomi i18n.
  *
  * Features:
  * - Compiles PO files on build start
@@ -227,20 +227,20 @@ class IdiomaWebpackPlugin {
  *
  * @example
  * // next.config.mjs
- * import { withIdioma } from '@idioma/core/next';
+ * import { withIdiomi } from '@idiomi/core/next';
  *
- * export default withIdioma({
- *   idiomaDir: './src/idioma',
+ * export default withIdiomi({
+ *   idiomiDir: './src/idiomi',
  *   defaultLocale: 'en',
  * })({
  *   // your other Next.js config
  * });
  */
-export function withIdioma(
-  options: IdiomaNextOptions,
+export function withIdiomi(
+  options: IdiomiNextOptions,
 ): (nextConfig?: NextConfig) => NextConfig {
   const {
-    idiomaDir,
+    idiomiDir,
     localesDir,
     defaultLocale,
     locales,
@@ -250,8 +250,8 @@ export function withIdioma(
   } = options;
 
   // Compute derived paths
-  const localeDir = localesDir ?? join(idiomaDir, 'locales');
-  const outputDir = idiomaDir;
+  const localeDir = localesDir ?? join(idiomiDir, 'locales');
+  const outputDir = idiomiDir;
   const hasCustomLocalesDir = !!localesDir;
 
   let pluginAdded = false;
@@ -288,8 +288,8 @@ export function withIdioma(
 
           config.plugins = config.plugins ?? [];
           config.plugins.push(
-            new IdiomaWebpackPlugin({
-              idiomaDir,
+            new IdiomiWebpackPlugin({
+              idiomiDir,
               localeDir,
               outputDir,
               defaultLocale,

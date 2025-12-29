@@ -7,7 +7,7 @@ msgstr ""
 #. [AI Context]: Main page heading at the top of the application
 #, extracted
 msgid "000QnNwH"
-msgstr "Idioma Example"
+msgstr "Idiomi Example"
 
 #: src/App.tsx
 #. [AI Context]: Label for language selection dropdown in the header; appears before a select menu with English and Español options

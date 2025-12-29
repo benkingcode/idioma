@@ -42,7 +42,7 @@ export interface GetLocaleHeadOptions {
  *
  * @example
  * ```ts
- * import { getLocaleHead } from '@idioma/react';
+ * import { getLocaleHead } from '@idiomi/react';
  *
  * const { links, canonical } = getLocaleHead({
  *   pathname: '/about',

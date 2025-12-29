@@ -8,7 +8,7 @@ import {
   type Mock,
 } from 'vitest';
 import { compileTranslations } from '../compiler/compile';
-import { withIdioma, type IdiomaMetroOptions } from './metro';
+import { withIdiomi, type IdiomiMetroOptions } from './metro';
 
 // Mock compileTranslations
 vi.mock('../compiler/compile', () => ({
@@ -37,9 +37,9 @@ vi.mock('fs/promises', () => ({
 
 const mockCompileTranslations = compileTranslations as Mock;
 
-describe('withIdioma', () => {
-  const defaultOptions: IdiomaMetroOptions = {
-    idiomaDir: './src/idioma',
+describe('withIdiomi', () => {
+  const defaultOptions: IdiomiMetroOptions = {
+    idiomiDir: './src/idiomi',
     defaultLocale: 'en',
   };
 
@@ -49,23 +49,23 @@ describe('withIdioma', () => {
   });
 
   it('returns a function', () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     expect(typeof wrapper).toBe('function');
   });
 
   it('returned function returns a promise', () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     const result = wrapper({ projectRoot: '/test' });
     expect(result).toBeInstanceOf(Promise);
   });
 
   it('compiles translations on config creation', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
     expect(mockCompileTranslations).toHaveBeenCalledWith({
-      localeDir: '/test/src/idioma/locales',
-      outputDir: '/test/src/idioma',
+      localeDir: '/test/src/idiomi/locales',
+      outputDir: '/test/src/idiomi',
       defaultLocale: 'en',
       locales: undefined,
       useSuspense: undefined,
@@ -74,25 +74,25 @@ describe('withIdioma', () => {
   });
 
   it('adds outputDir to watchFolders', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     const config = await wrapper({ projectRoot: '/test' });
 
-    expect(config.watchFolders).toContain('/test/src/idioma');
+    expect(config.watchFolders).toContain('/test/src/idiomi');
   });
 
   it('preserves existing watchFolders', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     const config = await wrapper({
       projectRoot: '/test',
       watchFolders: ['/existing/folder'],
     });
 
     expect(config.watchFolders).toContain('/existing/folder');
-    expect(config.watchFolders).toContain('/test/src/idioma');
+    expect(config.watchFolders).toContain('/test/src/idiomi');
   });
 
   it('preserves other Metro config properties', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     const config = await wrapper({
       projectRoot: '/test',
       resetCache: true,
@@ -102,7 +102,7 @@ describe('withIdioma', () => {
   });
 
   it('uses process.cwd() when projectRoot is not provided', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({});
 
     expect(mockCompileTranslations).toHaveBeenCalledWith(
@@ -113,15 +113,15 @@ describe('withIdioma', () => {
   });
 
   it('accepts all configuration options', async () => {
-    const options: IdiomaMetroOptions = {
-      idiomaDir: './src/idioma',
+    const options: IdiomiMetroOptions = {
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
       locales: ['en', 'es', 'fr'],
       watch: false,
       useSuspense: true,
     };
 
-    const wrapper = withIdioma(options);
+    const wrapper = withIdiomi(options);
     await wrapper({ projectRoot: '/test' });
 
     expect(mockCompileTranslations).toHaveBeenCalledWith(
@@ -134,8 +134,8 @@ describe('withIdioma', () => {
 });
 
 describe('Metro watcher', () => {
-  const defaultOptions: IdiomaMetroOptions = {
-    idiomaDir: './src/idioma',
+  const defaultOptions: IdiomiMetroOptions = {
+    idiomiDir: './src/idiomi',
     defaultLocale: 'en',
   };
 
@@ -151,11 +151,11 @@ describe('Metro watcher', () => {
   it('sets up file watcher when watch is enabled (default)', async () => {
     const { watch } = await import('chokidar');
 
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
     expect(watch).toHaveBeenCalledWith(
-      '/test/src/idioma/locales/**/*.po',
+      '/test/src/idiomi/locales/**/*.po',
       expect.objectContaining({
         ignoreInitial: true,
       }),
@@ -166,14 +166,14 @@ describe('Metro watcher', () => {
     const { watch } = await import('chokidar');
     (watch as Mock).mockClear();
 
-    const wrapper = withIdioma({ ...defaultOptions, watch: false });
+    const wrapper = withIdiomi({ ...defaultOptions, watch: false });
     await wrapper({ projectRoot: '/test' });
 
     expect(watch).not.toHaveBeenCalled();
   });
 
   it('registers change and add event handlers', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
     const onCalls = mockWatcher.on.mock.calls.map(([event]) => event);
@@ -182,7 +182,7 @@ describe('Metro watcher', () => {
   });
 
   it('recompiles when PO files change', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
     // Get the 'change' handler
@@ -196,13 +196,13 @@ describe('Metro watcher', () => {
     mockCompileTranslations.mockClear();
 
     // Simulate file change
-    await changeHandler('/test/src/idioma/locales/es.po');
+    await changeHandler('/test/src/idiomi/locales/es.po');
 
     expect(mockCompileTranslations).toHaveBeenCalled();
   });
 
   it('recompiles when PO files are added', async () => {
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
     // Get the 'add' handler
@@ -216,7 +216,7 @@ describe('Metro watcher', () => {
     mockCompileTranslations.mockClear();
 
     // Simulate file add
-    await addHandler('/test/src/idioma/locales/fr.po');
+    await addHandler('/test/src/idiomi/locales/fr.po');
 
     expect(mockCompileTranslations).toHaveBeenCalled();
   });
@@ -224,7 +224,7 @@ describe('Metro watcher', () => {
   it('touches output file after recompilation to trigger Metro refresh', async () => {
     const { utimes } = await import('fs/promises');
 
-    const wrapper = withIdioma(defaultOptions);
+    const wrapper = withIdiomi(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
     // Get the 'change' handler and trigger it
@@ -233,10 +233,10 @@ describe('Metro watcher', () => {
     );
     const changeHandler = changeCall![1];
 
-    await changeHandler('/test/src/idioma/locales/es.po');
+    await changeHandler('/test/src/idiomi/locales/es.po');
 
     expect(utimes).toHaveBeenCalledWith(
-      '/test/src/idioma/index.ts',
+      '/test/src/idiomi/index.ts',
       expect.any(Date),
       expect.any(Date),
     );
@@ -253,15 +253,15 @@ describe('error handling', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockCompileTranslations.mockRejectedValueOnce(new Error('Compile failed'));
 
-    const wrapper = withIdioma({
-      idiomaDir: './src/idioma',
+    const wrapper = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
 
     await wrapper({ projectRoot: '/test' });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      '[idioma] Compilation error:',
+      '[idiomi] Compilation error:',
       expect.any(Error),
     );
 
@@ -272,8 +272,8 @@ describe('error handling', () => {
     const { utimes } = await import('fs/promises');
     (utimes as Mock).mockRejectedValueOnce(new Error('File not found'));
 
-    const wrapper = withIdioma({
-      idiomaDir: './src/idioma',
+    const wrapper = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
     await wrapper({ projectRoot: '/test' });
@@ -286,7 +286,7 @@ describe('error handling', () => {
 
     // Should not throw
     await expect(
-      changeHandler('/test/src/idioma/locales/es.po'),
+      changeHandler('/test/src/idiomi/locales/es.po'),
     ).resolves.not.toThrow();
   });
 });

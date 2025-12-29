@@ -1,13 +1,13 @@
 'use client';
 
-import { getLocaleHead, IdiomaContext, type RoutesMap } from '@idioma/react';
+import { getLocaleHead, IdiomiContext, type RoutesMap } from '@idiomi/react';
 import { usePathname } from 'next/navigation';
 import React, { useContext } from 'react';
 
 export interface LocaleHeadProps {
   /** Current pathname. Optional in client components (uses usePathname). */
   pathname?: string;
-  /** Current locale. Optional in client components (uses IdiomaContext). */
+  /** Current locale. Optional in client components (uses IdiomiContext). */
   locale?: string;
 }
 
@@ -27,12 +27,12 @@ export interface LocaleHeadConfig {
 /**
  * Creates a LocaleHead component with configuration pre-baked.
  *
- * Use this factory in your idioma/index.ts to create a configured LocaleHead.
+ * Use this factory in your idiomi/index.ts to create a configured LocaleHead.
  *
  * @example
  * ```tsx
- * // idioma/index.ts
- * import { createLocaleHead } from '@idioma/next';
+ * // idiomi/index.ts
+ * import { createLocaleHead } from '@idiomi/next';
  * import { routes } from './.generated/routes';
  *
  * export const LocaleHead = createLocaleHead({
@@ -44,14 +44,14 @@ export interface LocaleHeadConfig {
  *
  * // Client component - zero props needed!
  * 'use client';
- * import { LocaleHead } from '@/idioma';
+ * import { LocaleHead } from '@/idiomi';
  *
  * function MyComponent() {
  *   return <LocaleHead />;
  * }
  *
  * // Server component - both props required
- * import { LocaleHead } from '@/idioma';
+ * import { LocaleHead } from '@/idiomi';
  *
  * export default function Layout({ params }) {
  *   return (
@@ -76,15 +76,15 @@ export function createLocaleHead(config: LocaleHeadConfig) {
   return function LocaleHead(props: LocaleHeadProps): React.ReactElement {
     // Try props first, fall back to hooks
     const routerPathname = usePathname();
-    const context = useContext(IdiomaContext);
+    const context = useContext(IdiomiContext);
 
     const pathname = props.pathname ?? routerPathname;
     const locale = props.locale ?? context?.locale;
 
     if (!pathname || !locale) {
       throw new Error(
-        '[idioma] LocaleHead requires pathname and locale. Either:\n' +
-          '1. Use in a Client Component with IdiomaProvider (auto from context/router)\n' +
+        '[idiomi] LocaleHead requires pathname and locale. Either:\n' +
+          '1. Use in a Client Component with IdiomiProvider (auto from context/router)\n' +
           '2. Pass both props: <LocaleHead pathname="/about" locale={params.lang} />',
       );
     }

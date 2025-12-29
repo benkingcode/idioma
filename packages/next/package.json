@@ -1,7 +1,7 @@
 {
-  "name": "@idioma/next",
+  "name": "@idiomi/next",
   "version": "0.1.0",
-  "description": "Next.js integration for Idioma i18n - App Router and Pages Router support",
+  "description": "Next.js integration for Idiomi i18n - App Router and Pages Router support",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
@@ -42,8 +42,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@idioma/core": "workspace:*",
-    "@idioma/react": "workspace:*"
+    "@idiomi/core": "workspace:*",
+    "@idiomi/react": "workspace:*"
   },
   "peerDependencies": {
     "next": ">=13.0.0",
@@ -59,7 +59,7 @@
     "react-dom": "^19.0.0"
   },
   "keywords": [
-    "idioma",
+    "idiomi",
     "i18n",
     "next.js",
     "nextjs",

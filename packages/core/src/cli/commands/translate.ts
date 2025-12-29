@@ -19,7 +19,7 @@ import {
   type TranslationProvider,
 } from '../../ai/provider.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
+import { getIdiomiPaths, loadConfig } from '../config.js';
 import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
 import { colors } from '../ui/theme.js';
 import { ensureExtracted } from './ensure-extracted.js';
@@ -65,8 +65,8 @@ export interface TranslateOptions {
   contextProvider?: ContextProvider;
   /** Project root for resolving source file paths (required if autoContext is true) */
   projectRoot?: string;
-  /** Absolute path to idioma directory (required if autoContext is true) */
-  idiomaDir?: string;
+  /** Absolute path to idiomi directory (required if autoContext is true) */
+  idiomiDir?: string;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
   /** Called when we know how many messages need translation */
@@ -103,7 +103,7 @@ export async function runTranslate(
     autoContext = false,
     contextProvider,
     projectRoot,
-    idiomaDir,
+    idiomiDir,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -119,7 +119,7 @@ export async function runTranslate(
   // Build lookup: key -> source text from default locale's msgstr
   const sourceTextByKey = new Map<string, string>();
   for (const [key, message] of defaultCatalog.messages) {
-    // In Idioma's hash-based system, msgid is the hash and msgstr is the source text
+    // In Idiomi's hash-based system, msgid is the hash and msgstr is the source text
     sourceTextByKey.set(key, message.translation || message.source);
   }
 
@@ -129,10 +129,10 @@ export async function runTranslate(
 
   // Generate AI context for messages that need it
   // Context is stored in the default (source) locale so it's available for all target locales
-  if (autoContext && contextProvider && projectRoot && idiomaDir) {
+  if (autoContext && contextProvider && projectRoot && idiomiDir) {
     const contextResult = await generateContextForCatalog({
       projectRoot,
-      idiomaDir,
+      idiomiDir,
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
@@ -283,7 +283,7 @@ export async function runTranslateAll(
     autoContext,
     contextProvider,
     projectRoot,
-    idiomaDir,
+    idiomiDir,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -299,7 +299,7 @@ export async function runTranslateAll(
 
   // Generate AI context ONCE before translating any locales
   // Context is stored in the default (source) locale and shared across all target locales
-  if (autoContext && contextProvider && projectRoot && idiomaDir) {
+  if (autoContext && contextProvider && projectRoot && idiomiDir) {
     const defaultPoPath = join(localeDir, `${defaultLocale}.po`);
     const defaultCatalog = await loadPoFile(defaultPoPath, defaultLocale);
 
@@ -311,7 +311,7 @@ export async function runTranslateAll(
 
     const contextResult = await generateContextForCatalog({
       projectRoot,
-      idiomaDir,
+      idiomiDir,
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
@@ -427,7 +427,7 @@ export const translateCommand = defineCommand({
       // Require explicit model configuration
       if (!model) {
         console.error('Error: AI model not configured.\n');
-        console.error('Add to idioma.config.ts:');
+        console.error('Add to idiomi.config.ts:');
         console.error('');
         console.error('  import { anthropic } from "@ai-sdk/anthropic";');
         console.error('');
@@ -473,7 +473,7 @@ export const translateCommand = defineCommand({
       }
     }
 
-    const { localeDir } = getIdiomaPaths(config);
+    const { localeDir } = getIdiomiPaths(config);
 
     // Determine target locales
     const targetLocales = args.locale
@@ -483,7 +483,7 @@ export const translateCommand = defineCommand({
     if (targetLocales.length === 0) {
       console.error('Error: No target locales to translate');
       console.error(
-        'Either specify a locale or configure locales in idioma.config.ts',
+        'Either specify a locale or configure locales in idiomi.config.ts',
       );
       process.exitCode = 1;
       return;
@@ -500,7 +500,7 @@ export const translateCommand = defineCommand({
 
     const header = createAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext,
       provider: args['dry-run'] ? 'dry-run' : (modelInfo?.provider ?? 'ai-sdk'),
       model: modelInfo?.modelId,
@@ -541,7 +541,7 @@ export const translateCommand = defineCommand({
       autoContext: autoContext && !!contextProvider,
       contextProvider,
       projectRoot: cwd,
-      idiomaDir: resolve(cwd, config.idiomaDir),
+      idiomiDir: resolve(cwd, config.idiomiDir),
       onVerbose,
       onContextFileCountKnown: (count) => {
         if (count > 0) {

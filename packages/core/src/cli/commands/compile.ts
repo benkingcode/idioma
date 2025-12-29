@@ -5,7 +5,7 @@ import {
 } from '../../compiler/compile.js';
 import { detectFramework } from '../../framework.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
-import { getIdiomaPaths, loadConfig, type IdiomaConfig } from '../config.js';
+import { getIdiomiPaths, loadConfig, type IdiomiConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 import { ensureExtracted } from './ensure-extracted.js';
 
@@ -28,7 +28,7 @@ export interface CompileCommandOptions {
  * Build routing compile options from config.
  */
 async function buildRoutingOptions(
-  config: IdiomaConfig,
+  config: IdiomiConfig,
   projectRoot: string,
 ): Promise<RoutingCompileOptions | undefined> {
   if (!config.routing) return undefined;
@@ -95,10 +95,10 @@ export const compileCommand = defineCommand({
   async run() {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
-    const { localeDir, outputDir } = getIdiomaPaths(config);
+    const { localeDir, outputDir } = getIdiomiPaths(config);
 
-    // Ensure .gitignore exists in the idioma directory
-    await ensureGitignore(config.idiomaDir);
+    // Ensure .gitignore exists in the idiomi directory
+    await ensureGitignore(config.idiomiDir);
 
     const spinner = createSpinner();
 

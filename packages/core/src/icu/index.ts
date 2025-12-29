@@ -52,12 +52,12 @@ function getOrdinalRules(locale: string): Intl.PluralRules {
 }
 
 // Module-level locale sync for plural() function fallback
-// This is set by IdiomaProvider and used when no explicit locale is passed
+// This is set by IdiomiProvider and used when no explicit locale is passed
 let _syncedLocale = 'en';
 
 /**
  * Sync the current locale for the plural() function.
- * Called by IdiomaProvider to enable locale-aware pluralization
+ * Called by IdiomiProvider to enable locale-aware pluralization
  * without requiring an explicit locale parameter.
  *
  * @internal
@@ -99,7 +99,7 @@ function selectPluralForm(
  *
  * @param value - The numeric value to pluralize
  * @param forms - Object with plural forms (one, other, etc.)
- * @param locale - Optional locale (uses synced locale from IdiomaProvider if not provided)
+ * @param locale - Optional locale (uses synced locale from IdiomiProvider if not provided)
  *
  * @example
  * // In Trans component
@@ -145,7 +145,7 @@ function selectOrdinalForm(
  *
  * @param value - The numeric value to format as ordinal
  * @param forms - Object with ordinal forms (one, two, few, other, etc.)
- * @param locale - Optional locale (uses synced locale from IdiomaProvider if not provided)
+ * @param locale - Optional locale (uses synced locale from IdiomiProvider if not provided)
  *
  * @example
  * // English ordinals: 1st, 2nd, 3rd, 4th

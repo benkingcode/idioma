@@ -1,18 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { createIdiomaProvider } from './context';
+import { createIdiomiProvider } from './context';
 import { createTrans } from './createTrans';
 
-const IdiomaProvider = createIdiomaProvider();
+const IdiomiProvider = createIdiomiProvider();
 const Trans = createTrans();
 
 describe('createTrans', () => {
   describe('inline mode (with children)', () => {
     it('renders children directly', () => {
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <Trans>Hello World</Trans>
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByText('Hello World')).toBeDefined();
@@ -20,11 +20,11 @@ describe('createTrans', () => {
 
     it('renders JSX children', () => {
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <Trans>
             Hello <strong data-testid="bold">World</strong>
           </Trans>
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('bold').textContent).toBe('World');
@@ -36,9 +36,9 @@ describe('createTrans', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <Trans id="greeting" />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       // Returns the id as fallback
@@ -58,9 +58,9 @@ describe('createTrans', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <Trans id="some.complex.key" />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByText('some.complex.key')).toBeDefined();
@@ -73,7 +73,7 @@ describe('createTrans', () => {
     it('throws when used outside provider', () => {
       expect(() => {
         render(<Trans id="greeting" />);
-      }).toThrow('[idioma] Trans must be used within an IdiomaProvider');
+      }).toThrow('[idiomi] Trans must be used within an IdiomiProvider');
     });
   });
 });

@@ -12,7 +12,7 @@ const DEFAULT_COOKIE_NAME = 'IDIOMA_LOCALE';
  * @example
  * ```tsx
  * 'use server';
- * import { setLocale } from '@idioma/next/server';
+ * import { setLocale } from '@idiomi/next/server';
  *
  * export async function switchLocale(locale: string) {
  *   await setLocale(locale);

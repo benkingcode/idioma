@@ -9,7 +9,7 @@ describe('Check Command', () => {
   let localeDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-check-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-check-'));
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(localeDir, { recursive: true });
   });

@@ -1,14 +1,14 @@
 import { StrictMode, Suspense, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { IdiomaProvider } from './idioma';
+import { IdiomiProvider } from './idiomi';
 
 function Root() {
   const [locale, setLocale] = useState('en');
 
   return (
     <StrictMode>
-      <IdiomaProvider locale={locale}>
+      <IdiomiProvider locale={locale}>
         {/* Suspense boundary for lazy-loaded translations */}
         <Suspense
           fallback={
@@ -17,7 +17,7 @@ function Root() {
         >
           <App locale={locale} onLocaleChange={setLocale} />
         </Suspense>
-      </IdiomaProvider>
+      </IdiomiProvider>
     </StrictMode>
   );
 }

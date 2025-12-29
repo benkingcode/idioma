@@ -9,8 +9,8 @@ import { useRouter } from 'next/router';
  * @example
  * ```tsx
  * // In a Pages Router component
- * import { useLocalizedPath } from '@idioma/next/pages';
- * import { routes } from './idioma/.generated/routes';
+ * import { useLocalizedPath } from '@idiomi/next/pages';
+ * import { routes } from './idiomi/.generated/routes';
  *
  * function MyComponent() {
  *   const aboutPath = useLocalizedPath('/about', routes);

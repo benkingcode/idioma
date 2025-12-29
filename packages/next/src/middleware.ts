@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export interface IdiomaMiddlewareConfig {
+export interface IdiomiMiddlewareConfig {
   /** Default/source locale */
   defaultLocale: string;
   /** All supported locales */
@@ -33,7 +33,7 @@ const SKIP_PATTERNS = [
 ];
 
 /**
- * Create Next.js middleware for Idioma i18n.
+ * Create Next.js middleware for Idiomi i18n.
  *
  * Features:
  * - Locale detection from cookie, Accept-Language header, or path
@@ -42,9 +42,9 @@ const SKIP_PATTERNS = [
  *
  * @example
  * // middleware.ts
- * import { createIdiomaMiddleware } from '@idioma/next/middleware';
+ * import { createIdiomiMiddleware } from '@idiomi/next/middleware';
  *
- * export default createIdiomaMiddleware({
+ * export default createIdiomiMiddleware({
  *   defaultLocale: 'en',
  *   locales: ['en', 'es', 'fr'],
  *   prefixStrategy: 'as-needed',
@@ -52,7 +52,7 @@ const SKIP_PATTERNS = [
  *
  * export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
  */
-export function createIdiomaMiddleware(config: IdiomaMiddlewareConfig) {
+export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
   const {
     defaultLocale,
     locales,
@@ -109,7 +109,7 @@ export function createIdiomaMiddleware(config: IdiomaMiddlewareConfig) {
           const url = request.nextUrl.clone();
           url.pathname = `/${pathLocale}${canonicalPath}`;
           const response = NextResponse.rewrite(url);
-          response.headers.set('x-idioma-rewrite', 'true');
+          response.headers.set('x-idiomi-rewrite', 'true');
           return response;
         }
       }
@@ -235,12 +235,12 @@ export interface MiddlewareRuntimeConfig {
 /**
  * Factory to create a simplified middleware creator with config pre-baked.
  *
- * Use this in your generated idioma/index.ts to avoid passing routes.
+ * Use this in your generated idiomi/index.ts to avoid passing routes.
  *
  * @example
  * ```typescript
- * // Generated in idioma/index.ts
- * import { createMiddlewareFactory } from '@idioma/next/middleware';
+ * // Generated in idiomi/index.ts
+ * import { createMiddlewareFactory } from '@idiomi/next/middleware';
  * import { routes, reverseRoutes } from './.generated/routes';
  *
  * export const createMiddleware = createMiddlewareFactory({
@@ -251,7 +251,7 @@ export interface MiddlewareRuntimeConfig {
  * });
  *
  * // Then in middleware.ts
- * import { createMiddleware } from './src/idioma';
+ * import { createMiddleware } from './src/idiomi';
  *
  * export default createMiddleware(); // Uses all defaults!
  *
@@ -267,7 +267,7 @@ export function createMiddlewareFactory(
   const { locales, defaultLocale, routes, reverseRoutes } = factoryConfig;
 
   return function createMiddleware(runtimeConfig?: MiddlewareRuntimeConfig) {
-    return createIdiomaMiddleware({
+    return createIdiomiMiddleware({
       locales,
       defaultLocale,
       routes,

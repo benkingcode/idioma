@@ -4,16 +4,16 @@ import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   defineConfig,
-  getIdiomaPaths,
+  getIdiomiPaths,
   loadConfig,
-  type IdiomaConfig,
+  type IdiomiConfig,
 } from './config';
 
 describe('CLI Config', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-config-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-config-'));
   });
 
   afterEach(async () => {
@@ -22,8 +22,8 @@ describe('CLI Config', () => {
 
   describe('defineConfig', () => {
     it('returns the config object unchanged', () => {
-      const config: IdiomaConfig = {
-        idiomaDir: './src/idioma',
+      const config: IdiomiConfig = {
+        idiomiDir: './src/idiomi',
         defaultLocale: 'en',
         locales: ['en', 'es'],
       };
@@ -35,102 +35,102 @@ describe('CLI Config', () => {
 
     it('provides type safety helper', () => {
       const config = defineConfig({
-        idiomaDir: './src/idioma',
+        idiomiDir: './src/idiomi',
         defaultLocale: 'en',
       });
 
-      expect(config.idiomaDir).toBe('./src/idioma');
+      expect(config.idiomiDir).toBe('./src/idiomi');
     });
   });
 
-  describe('getIdiomaPaths', () => {
-    it('computes localeDir from idiomaDir by default', () => {
-      const config: IdiomaConfig = {
-        idiomaDir: './src/idioma',
+  describe('getIdiomiPaths', () => {
+    it('computes localeDir from idiomiDir by default', () => {
+      const config: IdiomiConfig = {
+        idiomiDir: './src/idiomi',
         defaultLocale: 'en',
       };
 
-      const paths = getIdiomaPaths(config);
+      const paths = getIdiomiPaths(config);
 
-      expect(paths.localeDir).toBe('src/idioma/locales');
-      expect(paths.outputDir).toBe('./src/idioma');
+      expect(paths.localeDir).toBe('src/idiomi/locales');
+      expect(paths.outputDir).toBe('./src/idiomi');
     });
 
     it('uses localesDir override when provided', () => {
-      const config: IdiomaConfig = {
-        idiomaDir: './src/idioma',
+      const config: IdiomiConfig = {
+        idiomiDir: './src/idiomi',
         localesDir: './locales',
         defaultLocale: 'en',
       };
 
-      const paths = getIdiomaPaths(config);
+      const paths = getIdiomiPaths(config);
 
       expect(paths.localeDir).toBe('./locales');
-      expect(paths.outputDir).toBe('./src/idioma');
+      expect(paths.outputDir).toBe('./src/idiomi');
     });
   });
 
   describe('loadConfig', () => {
-    it('loads idioma.config.ts from directory', async () => {
+    it('loads idiomi.config.ts from directory', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           defaultLocale: 'en',
           locales: ['en', 'es', 'fr'],
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
-      expect(config.idiomaDir).toBe('./src/idioma');
+      expect(config.idiomiDir).toBe('./src/idiomi');
       expect(config.defaultLocale).toBe('en');
       expect(config.locales).toEqual(['en', 'es', 'fr']);
     });
 
-    it('loads idioma.config.js from directory', async () => {
+    it('loads idiomi.config.js from directory', async () => {
       const configContent = `
         module.exports = {
-          idiomaDir: './generated',
+          idiomiDir: './generated',
           defaultLocale: 'en',
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.js'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.js'), configContent);
 
       const config = await loadConfig(tempDir);
 
-      expect(config.idiomaDir).toBe('./generated');
+      expect(config.idiomiDir).toBe('./generated');
     });
 
     it('prefers .ts over .js when both exist', async () => {
       await fs.writeFile(
-        join(tempDir, 'idioma.config.ts'),
-        `export default { idiomaDir: './from-ts', defaultLocale: 'en' }`,
+        join(tempDir, 'idiomi.config.ts'),
+        `export default { idiomiDir: './from-ts', defaultLocale: 'en' }`,
       );
       await fs.writeFile(
-        join(tempDir, 'idioma.config.js'),
-        `module.exports = { idiomaDir: './from-js', defaultLocale: 'en' }`,
+        join(tempDir, 'idiomi.config.js'),
+        `module.exports = { idiomiDir: './from-js', defaultLocale: 'en' }`,
       );
 
       const config = await loadConfig(tempDir);
 
-      expect(config.idiomaDir).toBe('./from-ts');
+      expect(config.idiomiDir).toBe('./from-ts');
     });
 
     it('throws when no config file found', async () => {
       await expect(loadConfig(tempDir)).rejects.toThrow(
-        'No idioma config file found',
+        'No idiomi config file found',
       );
     });
 
     it('merges with default values', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           defaultLocale: 'en',
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
@@ -142,12 +142,12 @@ describe('CLI Config', () => {
     it('allows overriding source patterns', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           defaultLocale: 'en',
           sourcePatterns: ['src/**/*.tsx'],
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
@@ -157,11 +157,11 @@ describe('CLI Config', () => {
     it('defaults useSuspense to false', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           defaultLocale: 'en',
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
@@ -171,12 +171,12 @@ describe('CLI Config', () => {
     it('accepts useSuspense: true', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           defaultLocale: 'en',
           useSuspense: true,
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
@@ -186,12 +186,12 @@ describe('CLI Config', () => {
     it('accepts localesDir override', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           localesDir: './locales',
           defaultLocale: 'en',
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
@@ -201,14 +201,14 @@ describe('CLI Config', () => {
     it('accepts ai.guidelines in config', async () => {
       const configContent = `
         export default {
-          idiomaDir: './src/idioma',
+          idiomiDir: './src/idiomi',
           defaultLocale: 'en',
           ai: {
             guidelines: 'This is a formal business app. Use professional language.',
           },
         }
       `;
-      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+      await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
       const config = await loadConfig(tempDir);
 
@@ -218,41 +218,41 @@ describe('CLI Config', () => {
     });
 
     describe('validation', () => {
-      it('throws on missing idiomaDir', async () => {
+      it('throws on missing idiomiDir', async () => {
         await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
+          join(tempDir, 'idiomi.config.ts'),
           `export default { defaultLocale: 'en' }`,
         );
 
-        await expect(loadConfig(tempDir)).rejects.toThrow('idiomaDir');
+        await expect(loadConfig(tempDir)).rejects.toThrow('idiomiDir');
       });
 
       it('throws on missing defaultLocale', async () => {
         await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
-          `export default { idiomaDir: './src/idioma' }`,
+          join(tempDir, 'idiomi.config.ts'),
+          `export default { idiomiDir: './src/idiomi' }`,
         );
 
         await expect(loadConfig(tempDir)).rejects.toThrow('defaultLocale');
       });
 
-      it('throws on wrong type for idiomaDir', async () => {
+      it('throws on wrong type for idiomiDir', async () => {
         await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
+          join(tempDir, 'idiomi.config.ts'),
           `export default {
-            idiomaDir: 123,
+            idiomiDir: 123,
             defaultLocale: 'en',
           }`,
         );
 
-        await expect(loadConfig(tempDir)).rejects.toThrow('idiomaDir');
+        await expect(loadConfig(tempDir)).rejects.toThrow('idiomiDir');
       });
 
       it('throws on wrong type for locales', async () => {
         await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
+          join(tempDir, 'idiomi.config.ts'),
           `export default {
-            idiomaDir: './src/idioma',
+            idiomiDir: './src/idiomi',
             defaultLocale: 'en',
             locales: 'en,es',
           }`,
@@ -265,9 +265,9 @@ describe('CLI Config', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
+          join(tempDir, 'idiomi.config.ts'),
           `export default {
-            idiomaDir: './src/idioma',
+            idiomiDir: './src/idiomi',
             defaultLocale: 'en',
             locales: ['es', 'fr'],
           }`,
@@ -286,9 +286,9 @@ describe('CLI Config', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         await fs.writeFile(
-          join(tempDir, 'idioma.config.ts'),
+          join(tempDir, 'idiomi.config.ts'),
           `export default {
-            idiomaDir: './src/idioma',
+            idiomiDir: './src/idiomi',
             defaultLocale: 'en',
             locales: ['en', 'es', 'fr'],
           }`,
@@ -306,14 +306,14 @@ describe('CLI Config', () => {
       it('accepts routing.metadataBase', async () => {
         const configContent = `
           export default {
-            idiomaDir: './src/idioma',
+            idiomiDir: './src/idiomi',
             defaultLocale: 'en',
             routing: {
               metadataBase: 'https://example.com',
             },
           }
         `;
-        await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+        await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
         const config = await loadConfig(tempDir);
 
@@ -323,14 +323,14 @@ describe('CLI Config', () => {
       it('allows routing.metadataBase to be omitted (defaults to undefined)', async () => {
         const configContent = `
           export default {
-            idiomaDir: './src/idioma',
+            idiomiDir: './src/idiomi',
             defaultLocale: 'en',
             routing: {
               localizedPaths: true,
             },
           }
         `;
-        await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+        await fs.writeFile(join(tempDir, 'idiomi.config.ts'), configContent);
 
         const config = await loadConfig(tempDir);
 

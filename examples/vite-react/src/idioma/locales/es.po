@@ -6,12 +6,12 @@ msgstr ""
 #: src/App.tsx
 #, extracted, ai-translated
 msgid "000QnNwH"
-msgstr "Ejemplo de Idioma"
+msgstr "Ejemplo de Idiomi"
 
 #: src/App.tsx
 #, extracted, ai-translated
 msgid "000esfJJ"
-msgstr "Idioma"
+msgstr "Idiomi"
 
 #: src/App.tsx
 #, extracted, ai-translated

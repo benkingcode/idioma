@@ -1,6 +1,6 @@
-import type { IdiomaPluginOptions } from './plugin.js';
+import type { IdiomiPluginOptions } from './plugin.js';
 
-export interface IdiomaBabelPresetOptions {
+export interface IdiomiBabelPresetOptions {
   /** Enable Suspense-based lazy loading */
   useSuspense?: boolean;
   /** List of supported locales */
@@ -10,22 +10,22 @@ export interface IdiomaBabelPresetOptions {
   /** Project root for computing chunk IDs */
   projectRoot?: string;
   /**
-   * Absolute path to idioma folder for robust import detection.
+   * Absolute path to idiomi folder for robust import detection.
    * This enables config-based detection which handles import aliasing.
    */
-  idiomaDir?: string;
+  idiomiDir?: string;
 }
 
-type PluginEntry = [string, Partial<IdiomaPluginOptions>];
+type PluginEntry = [string, Partial<IdiomiPluginOptions>];
 
 interface PresetResult {
   plugins: PluginEntry[];
 }
 
 /**
- * Babel preset for Idioma i18n.
+ * Babel preset for Idiomi i18n.
  *
- * Configures the Idioma Babel plugin with inlined or suspense mode.
+ * Configures the Idiomi Babel plugin with inlined or suspense mode.
  *
  * @example
  * // babel.config.js
@@ -34,24 +34,24 @@ interface PresetResult {
  * module.exports = {
  *   presets: [
  *     'next/babel',
- *     ['@idioma/core/babel-preset', {
+ *     ['@idiomi/core/babel-preset', {
  *       // Enable robust import detection (handles aliased imports)
- *       idiomaDir: path.resolve(__dirname, './src/idioma'),
+ *       idiomiDir: path.resolve(__dirname, './src/idiomi'),
  *       useSuspense: true,
  *       locales: ['en', 'es', 'fr'],
  *     }],
  *   ],
  * };
  */
-export default function idiomaBabelPreset(
+export default function idiomiBabelPreset(
   _api?: unknown,
-  options: IdiomaBabelPresetOptions = {},
+  options: IdiomiBabelPresetOptions = {},
 ): PresetResult {
   // Determine mode: 'suspense' for lazy loading, 'inlined' for baked-in translations
   const mode = options.useSuspense ? 'suspense' : 'inlined';
 
-  // Use @idioma/core/babel which resolves to the plugin
-  const pluginPath = '@idioma/core/babel';
+  // Use @idiomi/core/babel which resolves to the plugin
+  const pluginPath = '@idiomi/core/babel';
 
   return {
     plugins: [

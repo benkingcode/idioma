@@ -25,9 +25,9 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }));
 
-// Mock IdiomaContext with locale 'es'
-vi.mock('@idioma/react', () => ({
-  IdiomaContext: React.createContext({ locale: 'es' }),
+// Mock IdiomiContext with locale 'es'
+vi.mock('@idiomi/react', () => ({
+  IdiomiContext: React.createContext({ locale: 'es' }),
 }));
 
 describe('resolveLocalizedPath', () => {

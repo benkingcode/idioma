@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Suspense-based runtime for @idioma/react.
+ * Suspense-based runtime for @idiomi/react.
  *
  * This module provides React components that use dynamic imports
  * and the React 19 `use()` hook for Suspense-based lazy loading.
@@ -28,7 +28,7 @@ const majorVersion = parseInt(version.split('.')[0]!, 10);
 
 if (majorVersion < 19) {
   throw new Error(
-    `[idioma] useSuspense mode requires React 19+. ` +
+    `[idiomi] useSuspense mode requires React 19+. ` +
       `You're using React ${version}. ` +
       `Either upgrade React or set useSuspense: false.`,
   );
@@ -79,27 +79,27 @@ export function preloadTranslations(
 
 // ============ Context ============
 
-export interface IdiomaContextValue {
+export interface IdiomiContextValue {
   locale: string;
 }
 
-export const IdiomaContext = createContext<IdiomaContextValue | null>(null);
+export const IdiomiContext = createContext<IdiomiContextValue | null>(null);
 
-export interface IdiomaProviderProps {
+export interface IdiomiProviderProps {
   children: ReactNode;
   locale: string;
 }
 
 /**
- * Creates an IdiomaProvider for Suspense mode.
+ * Creates an IdiomiProvider for Suspense mode.
  * Same controlled API as the inlined runtime.
  */
-export function createIdiomaProvider() {
-  return function IdiomaProvider({ children, locale }: IdiomaProviderProps) {
+export function createIdiomiProvider() {
+  return function IdiomiProvider({ children, locale }: IdiomiProviderProps) {
     const value = useMemo(() => ({ locale }), [locale]);
 
     return (
-      <IdiomaContext.Provider value={value}>{children}</IdiomaContext.Provider>
+      <IdiomiContext.Provider value={value}>{children}</IdiomiContext.Provider>
     );
   };
 }
@@ -109,11 +109,11 @@ export function createIdiomaProvider() {
  */
 export function createUseLocale() {
   return function useLocale(): string {
-    const context = useContext(IdiomaContext);
+    const context = useContext(IdiomiContext);
     if (!context) {
       throw new Error(
-        '[idioma] useLocale must be used within an IdiomaProvider. ' +
-          'Make sure to wrap your app with <IdiomaProvider>.',
+        '[idiomi] useLocale must be used within an IdiomiProvider. ' +
+          'Make sure to wrap your app with <IdiomiProvider>.',
       );
     }
     return context.locale;
@@ -152,11 +152,11 @@ export function __TransSuspense({
   __c,
   __cn,
 }: TransSuspenseProps): ReactNode {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] Trans must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] Trans must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
 
@@ -204,9 +204,9 @@ export interface TransInlineModeProps {
 }
 
 /**
- * Base interface for project-specific Idioma types (for Trans).
+ * Base interface for project-specific Idiomi types (for Trans).
  */
-interface BaseIdiomaConfigForTrans {
+interface BaseIdiomiConfigForTrans {
   TranslationKey: string;
   MessageValues: Record<string, Record<string, unknown>>;
   MessageComponents: Record<string, TransComponent[]>;
@@ -219,7 +219,7 @@ interface BaseIdiomaConfigForTrans {
  * In production: Babel transforms to __TransSuspense
  */
 export function createTransSuspense<
-  C extends BaseIdiomaConfigForTrans = BaseIdiomaConfigForTrans,
+  C extends BaseIdiomiConfigForTrans = BaseIdiomiConfigForTrans,
 >(_config: SuspenseConfig) {
   type TK = C['TranslationKey'];
   type MV = C['MessageValues'];
@@ -256,7 +256,7 @@ export function createTransSuspense<
 
     // Fallback: no loader available (shouldn't happen in production)
     throw new Error(
-      '[idioma] Key-only Trans in Suspense mode requires Babel transform. ' +
+      '[idiomi] Key-only Trans in Suspense mode requires Babel transform. ' +
         'Make sure the Babel plugin is configured correctly.',
     );
   }
@@ -267,10 +267,10 @@ export function createTransSuspense<
 // ============ useT Hook ============
 
 /**
- * Base interface for project-specific Idioma types.
- * Same as BaseIdiomaConfig from createUseT.
+ * Base interface for project-specific Idiomi types.
+ * Same as BaseIdiomiConfig from createUseT.
  */
-interface BaseIdiomaConfig {
+interface BaseIdiomiConfig {
   TranslationKey: string;
   MessageValues: Record<string, Record<string, unknown>>;
   MessageComponents: Record<string, unknown[]>;
@@ -285,7 +285,7 @@ type StringOnlyKeys<TK extends string, MC extends Record<string, unknown[]>> = {
   [K in TK & keyof MC]: MC[K] extends [] ? K : never;
 }[TK & keyof MC];
 
-export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = <
+export type TFunction<C extends BaseIdiomiConfig = BaseIdiomiConfig> = <
   Key extends StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
     string,
 >(
@@ -303,11 +303,11 @@ export function __useTSuspense(
   _chunk: string,
   _loader: Loader,
 ): (key: string, values?: Record<string, unknown>) => string {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] useT must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] useT must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
 
@@ -321,7 +321,7 @@ export function __useTSuspense(
     // If we get here with source text, Babel didn't transform - graceful fallback
     if (process.env.NODE_ENV !== 'production') {
       console.error(
-        `Idioma: Missing translations for "${source}". ` +
+        `Idiomi: Missing translations for "${source}". ` +
           'Ensure the Babel plugin is configured.',
       );
     }
@@ -340,13 +340,13 @@ export function __useTSuspense(
  * chunk and loader information.
  */
 export function createUseTSuspense<
-  C extends BaseIdiomaConfig = BaseIdiomaConfig,
+  C extends BaseIdiomiConfig = BaseIdiomiConfig,
 >(_config: SuspenseConfig): () => TFunction<C> {
   // Return a hook that throws when called
   // In production with proper Babel setup, this would be transformed
   return function useT(): TFunction<C> {
     throw new Error(
-      '[idioma] useT in Suspense mode requires Babel transform. ' +
+      '[idiomi] useT in Suspense mode requires Babel transform. ' +
         'Make sure the Babel plugin is configured correctly.',
     );
   };

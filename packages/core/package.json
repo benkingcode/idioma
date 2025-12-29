@@ -1,5 +1,5 @@
 {
-  "name": "@idioma/core",
+  "name": "@idiomi/core",
   "version": "0.1.0",
   "description": "Compile-time React i18n - build tools and CLI",
   "type": "module",
@@ -45,7 +45,7 @@
     }
   },
   "bin": {
-    "idioma": "./bin/idioma.mjs"
+    "idiomi": "./bin/idiomi.mjs"
   },
   "files": [
     "dist",

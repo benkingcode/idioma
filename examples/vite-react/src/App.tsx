@@ -1,7 +1,7 @@
 import { Counter } from './components/Counter';
 import { Greeting } from './components/Greeting';
 import { Messages } from './components/Messages';
-import { Trans } from './idioma';
+import { Trans } from './idiomi';
 
 interface AppProps {
   locale: string;
@@ -13,7 +13,7 @@ export default function App({ locale, onLocaleChange }: AppProps) {
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
       <header style={{ marginBottom: '2rem' }}>
         <h1>
-          <Trans>Idioma Example</Trans>
+          <Trans>Idiomi Example</Trans>
         </h1>
         <label>
           <Trans>Language</Trans>:{' '}

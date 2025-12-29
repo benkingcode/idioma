@@ -8,17 +8,17 @@
     "build:fixture": "vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "extract": "idioma extract",
-    "compile": "idioma compile"
+    "extract": "idiomi extract",
+    "compile": "idiomi compile"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.0",
-    "@idioma/react": "workspace:*",
+    "@idiomi/react": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@idioma/core": "workspace:*",
+    "@idiomi/core": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",

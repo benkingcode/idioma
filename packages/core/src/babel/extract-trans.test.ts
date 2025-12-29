@@ -26,7 +26,7 @@ function extractFromCode(code: string): ExtractedMessage[] {
 describe('extractTransMessage', () => {
   it('extracts a simple Trans component', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans>Hello world</Trans>
     `);
 
@@ -37,7 +37,7 @@ describe('extractTransMessage', () => {
 
   it('extracts Trans with id prop as explicit key', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans id="greeting">Hello world</Trans>
     `);
 
@@ -48,7 +48,7 @@ describe('extractTransMessage', () => {
 
   it('extracts Trans with context prop', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans context="homepage">Welcome</Trans>
     `);
 
@@ -58,7 +58,7 @@ describe('extractTransMessage', () => {
 
   it('extracts Trans with interpolation', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans>Hello {name}</Trans>
     `);
 
@@ -69,7 +69,7 @@ describe('extractTransMessage', () => {
 
   it('extracts Trans with JSX components', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans>Click <Link>here</Link> to continue</Trans>
     `);
 
@@ -81,7 +81,7 @@ describe('extractTransMessage', () => {
 
   it('skips key-only Trans (no children)', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans id="greeting" />
     `);
 
@@ -90,7 +90,7 @@ describe('extractTransMessage', () => {
 
   it('includes file reference', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans>Hello</Trans>
     `);
 
@@ -107,7 +107,7 @@ describe('extractTransMessage', () => {
 
   it('extracts multiple Trans components', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = (
         <div>
           <Trans>First</Trans>
@@ -123,12 +123,12 @@ describe('extractTransMessage', () => {
 
   it('generates consistent keys for same message', () => {
     const messages1 = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans>Hello world</Trans>
     `);
 
     const messages2 = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const y = <Trans>Hello world</Trans>
     `);
 
@@ -137,7 +137,7 @@ describe('extractTransMessage', () => {
 
   it('generates different keys for different messages', () => {
     const messages = extractFromCode(`
-      import { Trans } from '@idioma/react'
+      import { Trans } from '@idiomi/react'
       const x = <Trans>Hello</Trans>
       const y = <Trans>Goodbye</Trans>
     `);
@@ -149,7 +149,7 @@ describe('extractTransMessage', () => {
   describe('with namespace', () => {
     it('extracts Trans with ns prop', () => {
       const messages = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const x = <Trans ns="auth">Login</Trans>
       `);
 
@@ -160,7 +160,7 @@ describe('extractTransMessage', () => {
 
     it('generates different keys for same message in different namespaces', () => {
       const messages = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const x = <Trans ns="auth">Submit</Trans>
         const y = <Trans ns="forms">Submit</Trans>
       `);
@@ -171,7 +171,7 @@ describe('extractTransMessage', () => {
 
     it('generates different keys with vs without namespace', () => {
       const messages = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const x = <Trans>Submit</Trans>
         const y = <Trans ns="auth">Submit</Trans>
       `);
@@ -184,7 +184,7 @@ describe('extractTransMessage', () => {
 
     it('extracts Trans with both ns and context', () => {
       const messages = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const x = <Trans ns="auth" context="button">Submit</Trans>
       `);
 
@@ -195,7 +195,7 @@ describe('extractTransMessage', () => {
 
     it('generates unique keys for namespace + context combinations', () => {
       const messages = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const a = <Trans ns="auth" context="button">Submit</Trans>
         const b = <Trans ns="auth" context="link">Submit</Trans>
         const c = <Trans ns="forms" context="button">Submit</Trans>
@@ -209,12 +209,12 @@ describe('extractTransMessage', () => {
 
     it('generates consistent keys for same namespace', () => {
       const messages1 = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const x = <Trans ns="auth">Login</Trans>
       `);
 
       const messages2 = extractFromCode(`
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const y = <Trans ns="auth">Login</Trans>
       `);
 

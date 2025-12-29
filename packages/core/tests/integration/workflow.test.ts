@@ -10,17 +10,17 @@ import { runStats } from '../../src/cli/commands/stats';
 describe('End-to-End Workflow', () => {
   let tempDir: string;
   let srcDir: string;
-  let idiomaDir: string;
+  let idiomiDir: string;
   let localeDir: string;
   let outputDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-e2e-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-e2e-'));
     srcDir = join(tempDir, 'src');
-    // New folder structure: idiomaDir contains locales/ and .generated/
-    idiomaDir = join(tempDir, 'idioma');
-    localeDir = join(idiomaDir, 'locales');
-    outputDir = idiomaDir;
+    // New folder structure: idiomiDir contains locales/ and .generated/
+    idiomiDir = join(tempDir, 'idiomi');
+    localeDir = join(idiomiDir, 'locales');
+    outputDir = idiomiDir;
     await fs.mkdir(srcDir, { recursive: true });
     await fs.mkdir(localeDir, { recursive: true });
   });
@@ -31,11 +31,11 @@ describe('End-to-End Workflow', () => {
 
   it('complete workflow: extract → compile → check', async () => {
     // Step 1: Create source files with Trans components
-    // Import from ../idioma since source files are in src/ and idioma is at root
+    // Import from ../idiomi since source files are in src/ and idiomi is at root
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '../idioma'
+      import { Trans } from '../idiomi'
 
       export function App() {
         return (
@@ -52,7 +52,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'components/Greeting.tsx'),
       `
-      import { Trans } from '../../idioma'
+      import { Trans } from '../../idiomi'
 
       export function Greeting({ name }) {
         return <Trans>Hello {name}!</Trans>
@@ -67,7 +67,7 @@ describe('End-to-End Workflow', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(extractResult.messages.length).toBe(3);
@@ -155,7 +155,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'Page.tsx'),
       `
-      import { Trans } from '../idioma'
+      import { Trans } from '../idiomi'
 
       export function Page() {
         return (
@@ -170,7 +170,7 @@ describe('End-to-End Workflow', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     // The explicit ID is used as the key
@@ -186,7 +186,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'Links.tsx'),
       `
-      import { Trans } from '../idioma'
+      import { Trans } from '../idiomi'
 
       export function Links() {
         return (
@@ -203,7 +203,7 @@ describe('End-to-End Workflow', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     // Named component tags are used for better translator readability
@@ -217,7 +217,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '../idioma'
+      import { Trans } from '../idiomi'
       export const App = () => <Trans>Hello</Trans>
       `,
     );
@@ -228,7 +228,7 @@ describe('End-to-End Workflow', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
-      idiomaDir,
+      idiomiDir,
     });
 
     const helloKey = firstExtract.messages[0].key;
@@ -245,7 +245,7 @@ describe('End-to-End Workflow', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '../idioma'
+      import { Trans } from '../idiomi'
       export const App = () => (
         <>
           <Trans>Hello</Trans>
@@ -261,7 +261,7 @@ describe('End-to-End Workflow', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
-      idiomaDir,
+      idiomiDir,
     });
 
     const worldKey = secondExtract.messages.find(
@@ -338,7 +338,7 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from '../idioma'
+      import { Trans } from '../idiomi'
       export const App = () => <Trans>New message</Trans>
       `,
     );
@@ -350,7 +350,7 @@ msgstr "Old message"
       localeDir,
       defaultLocale: 'en',
       clean: true,
-      idiomaDir,
+      idiomiDir,
     });
 
     const enPo = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');

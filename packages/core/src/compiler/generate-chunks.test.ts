@@ -10,7 +10,7 @@ describe('generateChunkModules', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-chunks-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-chunks-'));
   });
 
   afterEach(async () => {

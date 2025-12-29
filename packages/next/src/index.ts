@@ -1,5 +1,5 @@
 /**
- * @idioma/next - Next.js integration for Idioma i18n
+ * @idiomi/next - Next.js integration for Idiomi i18n
  *
  * Supports both App Router and Pages Router with:
  * - Locale detection (cookie, Accept-Language header)
@@ -10,9 +10,9 @@
  * @example App Router setup
  * ```tsx
  * // middleware.ts
- * import { createIdiomaMiddleware } from '@idioma/next/middleware';
+ * import { createIdiomiMiddleware } from '@idiomi/next/middleware';
  *
- * export default createIdiomaMiddleware({
+ * export default createIdiomiMiddleware({
  *   defaultLocale: 'en',
  *   locales: ['en', 'es', 'fr'],
  * });
@@ -26,9 +26,9 @@
  *   params: { lang: string };
  * }) {
  *   return (
- *     <IdiomaProvider locale={params.lang}>
+ *     <IdiomiProvider locale={params.lang}>
  *       {children}
- *     </IdiomaProvider>
+ *     </IdiomiProvider>
  *   );
  * }
  * ```
@@ -45,22 +45,22 @@
  *
  * // _app.tsx
  * import { useRouter } from 'next/router';
- * import { IdiomaProvider } from '@idioma/react';
+ * import { IdiomiProvider } from '@idiomi/react';
  *
  * export default function App({ Component, pageProps }) {
  *   const { locale } = useRouter();
  *   return (
- *     <IdiomaProvider locale={locale}>
+ *     <IdiomiProvider locale={locale}>
  *       <Component {...pageProps} />
- *     </IdiomaProvider>
+ *     </IdiomiProvider>
  *   );
  * }
  * ```
  */
 
 export {
-  createIdiomaMiddleware,
-  type IdiomaMiddlewareConfig,
+  createIdiomiMiddleware,
+  type IdiomiMiddlewareConfig,
 } from './middleware.js';
 
 export {

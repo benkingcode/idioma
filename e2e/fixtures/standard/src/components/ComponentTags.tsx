@@ -1,4 +1,4 @@
-import { Trans } from '../idioma';
+import { Trans } from '../idiomi';
 
 // Test components for interpolation
 function Link({ children }: { children?: React.ReactNode }) {

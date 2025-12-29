@@ -1,6 +1,6 @@
-// Main public exports for @idioma/react
+// Main public exports for @idiomi/react
 
-// Factory functions for generated idioma/ folder
+// Factory functions for generated idiomi/ folder
 export {
   createTrans,
   type TransInlineModeProps,
@@ -10,11 +10,11 @@ export { createUseT, type TFunction } from './createUseT';
 
 // Context and Provider factories
 export {
-  createIdiomaProvider,
+  createIdiomiProvider,
   createUseLocale,
-  IdiomaContext,
-  type IdiomaContextValue,
-  type IdiomaProviderProps,
+  IdiomiContext,
+  type IdiomiContextValue,
+  type IdiomiProviderProps,
 } from './context';
 
 // Runtime internals (used by Babel-compiled code)

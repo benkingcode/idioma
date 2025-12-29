@@ -1,4 +1,4 @@
-import { useT } from '../idioma';
+import { useT } from '../idiomi';
 
 export function UseT() {
   const t = useT();

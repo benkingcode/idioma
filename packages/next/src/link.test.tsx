@@ -29,9 +29,9 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-// Mock IdiomaContext
-vi.mock('@idioma/react', () => ({
-  IdiomaContext: React.createContext({ locale: 'en' }),
+// Mock IdiomiContext
+vi.mock('@idiomi/react', () => ({
+  IdiomiContext: React.createContext({ locale: 'en' }),
 }));
 
 describe('resolveLocalizedHref', () => {
@@ -85,7 +85,7 @@ describe('resolveLocalizedPath', () => {
     expect(resolveLocalizedPath('/contact', 'es', routes)).toBe('/contact');
   });
 
-  it('is consistent with @idioma/next/pages and @idioma/tanstack-react', () => {
+  it('is consistent with @idiomi/next/pages and @idiomi/tanstack-react', () => {
     const routes = {
       en: { '/about': '/about', '/blog': '/blog' },
       es: { '/about': '/sobre', '/blog': '/articulos' },
@@ -237,8 +237,8 @@ describe('createLink factory', () => {
 describe('error handling', () => {
   it('throws when no locale available', () => {
     // Override mock to return null context
-    vi.doMock('@idioma/react', () => ({
-      IdiomaContext: React.createContext(null),
+    vi.doMock('@idiomi/react', () => ({
+      IdiomiContext: React.createContext(null),
     }));
 
     // We need to test this differently since the mock is cached

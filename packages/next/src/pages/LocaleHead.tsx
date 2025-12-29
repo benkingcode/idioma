@@ -1,6 +1,6 @@
 'use client';
 
-import { getLocaleHead, type RoutesMap } from '@idioma/react';
+import { getLocaleHead, type RoutesMap } from '@idiomi/react';
 import { useRouter } from 'next/router';
 import React from 'react';
 
@@ -27,14 +27,14 @@ export interface LocaleHeadConfig {
 /**
  * Creates a LocaleHead component for Next.js Pages Router.
  *
- * Use this factory in your idioma/index.ts to create a configured LocaleHead.
+ * Use this factory in your idiomi/index.ts to create a configured LocaleHead.
  *
  * Note: Wrap with next/head's <Head> component to render in document head.
  *
  * @example
  * ```tsx
- * // idioma/index.ts
- * import { createLocaleHead } from '@idioma/next/pages';
+ * // idiomi/index.ts
+ * import { createLocaleHead } from '@idiomi/next/pages';
  * import { routes } from './.generated/routes';
  *
  * export const LocaleHead = createLocaleHead({
@@ -46,7 +46,7 @@ export interface LocaleHeadConfig {
  *
  * // In a page
  * import Head from 'next/head';
- * import { LocaleHead } from '@/idioma';
+ * import { LocaleHead } from '@/idiomi';
  *
  * function AboutPage() {
  *   return (
@@ -81,7 +81,7 @@ export function createLocaleHead(config: LocaleHeadConfig) {
 
     if (!pathname || !locale) {
       throw new Error(
-        '[idioma] LocaleHead requires pathname and locale. ' +
+        '[idiomi] LocaleHead requires pathname and locale. ' +
           'Ensure the component is used within a Pages Router context.',
       );
     }

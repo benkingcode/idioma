@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  createIdiomaMiddleware,
+  createIdiomiMiddleware,
   createMiddlewareFactory,
 } from './middleware.js';
 
@@ -32,7 +32,7 @@ const createMockRequest = (
   };
 };
 
-describe('createIdiomaMiddleware', () => {
+describe('createIdiomiMiddleware', () => {
   const baseConfig = {
     defaultLocale: 'en',
     locales: ['en', 'es', 'fr'],
@@ -41,7 +41,7 @@ describe('createIdiomaMiddleware', () => {
 
   describe('locale detection from path', () => {
     it('extracts locale from path when present', () => {
-      const middleware = createIdiomaMiddleware(baseConfig);
+      const middleware = createIdiomiMiddleware(baseConfig);
       const request = createMockRequest('/es/about');
 
       const result = middleware(request as never);
@@ -51,7 +51,7 @@ describe('createIdiomaMiddleware', () => {
     });
 
     it('redirects to default locale path when no locale in path (prefixStrategy: always)', () => {
-      const middleware = createIdiomaMiddleware({
+      const middleware = createIdiomiMiddleware({
         ...baseConfig,
         prefixStrategy: 'always',
       });
@@ -63,7 +63,7 @@ describe('createIdiomaMiddleware', () => {
     });
 
     it('does not redirect for default locale when prefixStrategy is as-needed', () => {
-      const middleware = createIdiomaMiddleware(baseConfig);
+      const middleware = createIdiomiMiddleware(baseConfig);
       const request = createMockRequest('/about');
 
       const result = middleware(request as never);
@@ -75,7 +75,7 @@ describe('createIdiomaMiddleware', () => {
 
   describe('locale detection from cookie', () => {
     it('uses cookie locale when available', () => {
-      const middleware = createIdiomaMiddleware({
+      const middleware = createIdiomiMiddleware({
         ...baseConfig,
         detection: { cookieName: 'IDIOMA_LOCALE', order: ['cookie', 'header'] },
       });
@@ -92,7 +92,7 @@ describe('createIdiomaMiddleware', () => {
 
   describe('locale detection from Accept-Language header', () => {
     it('uses Accept-Language when no cookie', () => {
-      const middleware = createIdiomaMiddleware({
+      const middleware = createIdiomiMiddleware({
         ...baseConfig,
         detection: { order: ['cookie', 'header'] },
       });
@@ -109,7 +109,7 @@ describe('createIdiomaMiddleware', () => {
 
   describe('localized paths rewriting', () => {
     it('rewrites localized path to canonical when routes provided', () => {
-      const middleware = createIdiomaMiddleware({
+      const middleware = createIdiomiMiddleware({
         ...baseConfig,
         routes: {
           en: { '/about': '/about' },
@@ -125,13 +125,13 @@ describe('createIdiomaMiddleware', () => {
       const result = middleware(request as never);
 
       // Should rewrite /es/sobre to /es/about internally
-      expect(result?.headers?.get('x-idioma-rewrite')).toBeDefined();
+      expect(result?.headers?.get('x-idiomi-rewrite')).toBeDefined();
     });
   });
 
   describe('static file handling', () => {
     it('skips static files', () => {
-      const middleware = createIdiomaMiddleware(baseConfig);
+      const middleware = createIdiomiMiddleware(baseConfig);
       const request = createMockRequest('/favicon.ico');
 
       const result = middleware(request as never);
@@ -140,7 +140,7 @@ describe('createIdiomaMiddleware', () => {
     });
 
     it('skips _next paths', () => {
-      const middleware = createIdiomaMiddleware(baseConfig);
+      const middleware = createIdiomiMiddleware(baseConfig);
       const request = createMockRequest('/_next/static/chunk.js');
 
       const result = middleware(request as never);
@@ -149,7 +149,7 @@ describe('createIdiomaMiddleware', () => {
     });
 
     it('skips api routes', () => {
-      const middleware = createIdiomaMiddleware(baseConfig);
+      const middleware = createIdiomiMiddleware(baseConfig);
       const request = createMockRequest('/api/users');
 
       const result = middleware(request as never);
@@ -194,7 +194,7 @@ describe('createMiddlewareFactory', () => {
     const result = middleware(request as never);
 
     // Should rewrite localized path
-    expect(result?.headers?.get('x-idioma-rewrite')).toBeDefined();
+    expect(result?.headers?.get('x-idiomi-rewrite')).toBeDefined();
   });
 
   it('allows runtime config overrides', () => {

@@ -5,7 +5,7 @@
  * ```tsx
  * // Server Action to switch locale
  * 'use server';
- * import { setLocale } from '@idioma/next/server';
+ * import { setLocale } from '@idiomi/next/server';
  *
  * export async function switchLocale(locale: string) {
  *   await setLocale(locale);

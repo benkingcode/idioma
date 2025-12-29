@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
-export const GITIGNORE_CONTENT = `# Idioma generated files - do not edit
+export const GITIGNORE_CONTENT = `# Idiomi generated files - do not edit
 .generated/
 `;
 
@@ -14,25 +14,25 @@ export interface EnsureGitignoreOptions {
 }
 
 /**
- * Ensure the idioma directory structure is set up correctly:
- * - Creates the idioma directory
+ * Ensure the idiomi directory structure is set up correctly:
+ * - Creates the idiomi directory
  * - Creates the locales/ subdirectory (unless skipLocalesDir is true)
  * - Creates/updates .gitignore
  */
 export async function ensureGitignore(
-  idiomaDir: string,
+  idiomiDir: string,
   options?: EnsureGitignoreOptions,
 ): Promise<void> {
-  // Ensure idioma directory exists
-  await fs.mkdir(idiomaDir, { recursive: true });
+  // Ensure idiomi directory exists
+  await fs.mkdir(idiomiDir, { recursive: true });
 
   // Create locales/ subdirectory unless using custom localesDir
   if (!options?.skipLocalesDir) {
-    await fs.mkdir(join(idiomaDir, 'locales'), { recursive: true });
+    await fs.mkdir(join(idiomiDir, 'locales'), { recursive: true });
   }
 
   // Ensure .gitignore exists and is up to date
-  const gitignorePath = join(idiomaDir, '.gitignore');
+  const gitignorePath = join(idiomiDir, '.gitignore');
 
   try {
     const existing = await fs.readFile(gitignorePath, 'utf-8');

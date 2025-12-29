@@ -15,8 +15,8 @@ describe('compileTranslations', () => {
   let poDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-compile-'));
-    outputDir = join(tempDir, 'idioma');
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-compile-'));
+    outputDir = join(tempDir, 'idiomi');
     poDir = join(tempDir, 'locales');
     await fs.mkdir(poDir, { recursive: true });
   });
@@ -426,7 +426,7 @@ msgstr "Hello"
         join(outputDir, 'index.ts'),
         'utf-8',
       );
-      expect(indexContent).toContain('@idioma/react/runtime-suspense');
+      expect(indexContent).toContain('@idiomi/react/runtime-suspense');
     });
   });
 
@@ -651,7 +651,7 @@ msgstr "sobre"
 
       // Should export LocaleHead
       expect(content).toContain('export const LocaleHead');
-      expect(content).toContain("from '@idioma/next'");
+      expect(content).toContain("from '@idiomi/next'");
       // Should include config values
       expect(content).toContain('metadataBase: "https://example.com"');
       expect(content).toContain('prefixStrategy: "as-needed"');
@@ -697,10 +697,10 @@ msgstr "about"
 
       // Should export createMiddleware factory
       expect(content).toContain('export const createMiddleware');
-      expect(content).toContain("from '@idioma/next/middleware'");
+      expect(content).toContain("from '@idiomi/next/middleware'");
     });
 
-    it('re-exports getLocaleHead from @idioma/react', async () => {
+    it('re-exports getLocaleHead from @idiomi/react', async () => {
       const appDir = join(tempDir, 'app');
       await fs.mkdir(appDir, { recursive: true });
       await fs.mkdir(join(appDir, 'about'), { recursive: true });
@@ -740,7 +740,7 @@ msgstr "about"
 
       // Should re-export getLocaleHead for programmatic use
       expect(content).toContain(
-        "export { getLocaleHead } from '@idioma/react'",
+        "export { getLocaleHead } from '@idiomi/react'",
       );
     });
 
@@ -774,7 +774,7 @@ msgstr "Hello"
       const content = await fs.readFile(indexPath, 'utf-8');
 
       // Should import from TanStack package
-      expect(content).toContain("from '@idioma/tanstack-react'");
+      expect(content).toContain("from '@idiomi/tanstack-react'");
     });
   });
 

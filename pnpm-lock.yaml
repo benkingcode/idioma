@@ -50,7 +50,7 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.0
         version: 3.0.1(zod@4.2.1)
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../../../packages/react
       react:
@@ -60,7 +60,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.3(react@19.2.3)
     devDependencies:
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../../../packages/core
       '@types/react':
@@ -84,10 +84,10 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.0
         version: 3.0.1(zod@4.2.1)
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../../../packages/core
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../../../packages/react
       react:
@@ -118,10 +118,10 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.0
         version: 3.0.1(zod@4.2.1)
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../../../packages/core
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../../../packages/react
       '@tanstack/react-router':
@@ -161,10 +161,10 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.0
         version: 3.0.1(zod@4.2.1)
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../../../packages/core
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../../../packages/react
       '@tanstack/react-router':
@@ -204,7 +204,7 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.0
         version: 3.0.1(zod@4.2.1)
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../../packages/react
       react:
@@ -214,7 +214,7 @@ importers:
         specifier: ^19.0.0
         version: 19.2.3(react@19.2.3)
     devDependencies:
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@types/react':
@@ -347,10 +347,10 @@ importers:
 
   packages/next:
     dependencies:
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../core
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:
@@ -378,7 +378,7 @@ importers:
 
   packages/react:
     dependencies:
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -412,10 +412,10 @@ importers:
 
   packages/tanstack:
     dependencies:
-      '@idioma/core':
+      '@idiomi/core':
         specifier: workspace:*
         version: link:../core
-      '@idioma/react':
+      '@idiomi/react':
         specifier: workspace:*
         version: link:../react
     devDependencies:

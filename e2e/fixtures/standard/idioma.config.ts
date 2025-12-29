@@ -1,8 +1,8 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { defineConfig } from '@idioma/core';
+import { defineConfig } from '@idiomi/core';
 
 export default defineConfig({
-  idiomaDir: './src/idioma',
+  idiomiDir: './src/idiomi',
   defaultLocale: 'en',
   locales: ['en', 'es', 'ar'],
   ai: {

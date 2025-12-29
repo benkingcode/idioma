@@ -6,7 +6,7 @@ import { colors } from './theme.js';
  * Configuration options for the animated header.
  */
 export interface AnimatedHeaderOptions {
-  /** Title to display (e.g., "idioma translate") */
+  /** Title to display (e.g., "idiomi translate") */
   title: string;
   /** Whether auto-context generation is enabled */
   autoContext: boolean;

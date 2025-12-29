@@ -1,12 +1,12 @@
-import { IdiomaContext } from '@idioma/react';
+import { IdiomiContext } from '@idiomi/react';
 import { useContext } from 'react';
 
 /**
- * Get the current locale from IdiomaContext.
+ * Get the current locale from IdiomiContext.
  *
  * @example
  * ```tsx
- * import { useLocale } from '@idioma/tanstack-react/hooks';
+ * import { useLocale } from '@idiomi/tanstack-react/hooks';
  *
  * function MyComponent() {
  *   const locale = useLocale();
@@ -15,11 +15,11 @@ import { useContext } from 'react';
  * ```
  */
 export function useLocale(): string {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] useLocale must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] useLocale must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
   return context.locale;
@@ -33,8 +33,8 @@ export function useLocale(): string {
  *
  * @example
  * ```tsx
- * import { useLocalizedPath } from '@idioma/tanstack-react/hooks';
- * import { routes } from './idioma/.generated/routes';
+ * import { useLocalizedPath } from '@idiomi/tanstack-react/hooks';
+ * import { routes } from './idiomi/.generated/routes';
  *
  * function Navigation() {
  *   const aboutPath = useLocalizedPath('/about', routes);
@@ -47,7 +47,7 @@ export function useLocalizedPath(
   routes?: Record<string, Record<string, string>>,
   localeOverride?: string,
 ): string {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   const locale = localeOverride ?? context?.locale;
 
   if (!routes || !locale) {

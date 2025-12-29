@@ -1,13 +1,13 @@
 'use client';
 
-import { getLocaleHead, IdiomaContext, type RoutesMap } from '@idioma/react';
+import { getLocaleHead, IdiomiContext, type RoutesMap } from '@idiomi/react';
 import { useLocation } from '@tanstack/react-router';
 import React, { useContext } from 'react';
 
 export interface LocaleHeadProps {
   /** Current pathname. Optional (uses useLocation). */
   pathname?: string;
-  /** Current locale. Optional (uses IdiomaContext). */
+  /** Current locale. Optional (uses IdiomiContext). */
   locale?: string;
 }
 
@@ -27,12 +27,12 @@ export interface LocaleHeadConfig {
 /**
  * Creates a LocaleHead component for TanStack Router.
  *
- * Use this factory in your idioma/index.ts to create a configured LocaleHead.
+ * Use this factory in your idiomi/index.ts to create a configured LocaleHead.
  *
  * @example
  * ```tsx
- * // idioma/index.ts
- * import { createLocaleHead } from '@idioma/tanstack-react';
+ * // idiomi/index.ts
+ * import { createLocaleHead } from '@idiomi/tanstack-react';
  * import { routes } from './.generated/routes';
  *
  * export const LocaleHead = createLocaleHead({
@@ -43,7 +43,7 @@ export interface LocaleHeadConfig {
  * });
  *
  * // In a component (React 19 hoists to <head>)
- * import { LocaleHead } from '@/idioma';
+ * import { LocaleHead } from '@/idiomi';
  *
  * function MyComponent() {
  *   return (
@@ -70,15 +70,15 @@ export function createLocaleHead(config: LocaleHeadConfig) {
     const routerPathname = location.pathname;
 
     // Get locale from context
-    const context = useContext(IdiomaContext);
+    const context = useContext(IdiomiContext);
 
     const pathname = props.pathname ?? routerPathname;
     const locale = props.locale ?? context?.locale;
 
     if (!pathname || !locale) {
       throw new Error(
-        '[idioma] LocaleHead requires pathname and locale. Either:\n' +
-          '1. Use within IdiomaProvider (locale from context, pathname from router)\n' +
+        '[idiomi] LocaleHead requires pathname and locale. Either:\n' +
+          '1. Use within IdiomiProvider (locale from context, pathname from router)\n' +
           '2. Pass both props: <LocaleHead pathname="/about" locale="es" />',
       );
     }

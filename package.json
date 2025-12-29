@@ -1,5 +1,5 @@
 {
-  "name": "idioma-monorepo",
+  "name": "idiomi-monorepo",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,8 +10,8 @@
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
     "format": "prettier --write .",
-    "test:e2e": "pnpm --filter idioma-e2e test",
-    "test:e2e:ui": "pnpm --filter idioma-e2e test:ui",
+    "test:e2e": "pnpm --filter idiomi-e2e test",
+    "test:e2e:ui": "pnpm --filter idiomi-e2e test:ui",
     "knip": "knip"
   },
   "devDependencies": {

@@ -61,11 +61,11 @@ export async function detectFramework(cwd: string): Promise<Framework> {
 export function getLinkPackage(framework: Framework): string | null {
   switch (framework) {
     case 'next-app':
-      return '@idioma/next';
+      return '@idiomi/next';
     case 'next-pages':
-      return '@idioma/next/pages';
+      return '@idiomi/next/pages';
     case 'tanstack':
-      return '@idioma/tanstack-react';
+      return '@idiomi/tanstack-react';
     default:
       return null;
   }

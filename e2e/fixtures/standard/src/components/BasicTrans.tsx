@@ -1,4 +1,4 @@
-import { Trans } from '../idioma';
+import { Trans } from '../idiomi';
 
 export function BasicTrans() {
   return (

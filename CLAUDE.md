@@ -82,7 +82,7 @@ pnpm test:e2e:ui         # Run with Playwright UI
 
 ## Developing the Library
 
-**When modifying `@idioma/core` or `@idioma/react`**, you must rebuild for changes to be visible to:
+**When modifying `@idiomi/core` or `@idiomi/react`**, you must rebuild for changes to be visible to:
 
 - E2E test fixtures (`e2e/fixtures/*`)
 - Example apps (`examples/*`)
@@ -104,11 +104,11 @@ The E2E fixtures and examples import from the compiled `dist/` directories, not 
 
 ## Architecture
 
-Idioma is a compile-time React i18n library. Translations are extracted, stored in PO files, and compiled to optimized JavaScript at build time.
+Idiomi is a compile-time React i18n library. Translations are extracted, stored in PO files, and compiled to optimized JavaScript at build time.
 
 ### Packages
 
-**@idioma/core** (`packages/core/`) - Build tools and CLI
+**@idiomi/core** (`packages/core/`) - Build tools and CLI
 
 - `babel/` - Babel plugin that transforms `<Trans>` components and extracts messages
 - `bundler/` - Vite, Next.js, and Metro plugins for build integration
@@ -121,25 +121,25 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `routes/` - Route extraction and compilation for localized paths
 - `framework.ts` - Framework detection utility (next-app, next-pages, tanstack)
 
-**@idioma/react** (`packages/react/`) - Runtime components
+**@idiomi/react** (`packages/react/`) - Runtime components
 
 - `Trans` component and `createTrans` factory (compiled output uses `__Trans`)
 - `useT` hook and `createUseT` factory (compiled output uses `__useT`)
-- `IdiomaContext` and `IdiomaProvider` for locale state
+- `IdiomiContext` and `IdiomiProvider` for locale state
 - `interpolate` for placeholder/tag substitution
 - `getLocaleHead` - Pure function for generating hreflang link data (no hooks)
 - `runtime-suspense/` - Suspense-based lazy loading (React 19+)
 - `server/` - Server-side rendering utilities
 
-**@idioma/next** (`packages/next/`) - Next.js integration
+**@idiomi/next** (`packages/next/`) - Next.js integration
 
-- `middleware.ts` - `createIdiomaMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting
+- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting
 - `link.tsx` - `createLink()` factory for localized Link component (App Router)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (App Router)
 - `server/` - `setLocale()` for cookies
 - `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
-**@idioma/tanstack-react** (`packages/tanstack/`) - TanStack Router integration for React
+**@idiomi/tanstack-react** (`packages/tanstack/`) - TanStack Router integration for React
 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`
 - `link.tsx` - `createLink()` factory for localized Link component
@@ -147,13 +147,13 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 
 ### Configuration
 
-Projects use `idioma.config.ts`:
+Projects use `idiomi.config.ts`:
 
 ```typescript
-import { defineConfig } from '@idioma/core';
+import { defineConfig } from '@idiomi/core';
 
 export default defineConfig({
-  idiomaDir: './src/idioma',
+  idiomiDir: './src/idiomi',
   // Optional: override PO file location if you have existing translations elsewhere
   // localesDir: './locales',
   defaultLocale: 'en',
@@ -169,10 +169,10 @@ export default defineConfig({
 
 ### Folder Structure
 
-The `idiomaDir` contains all Idioma files:
+The `idiomiDir` contains all Idiomi files:
 
 ```
-src/idioma/
+src/idiomi/
 ├── .gitignore           # Auto-generated (ignores .generated/)
 ├── locales/             # PO files (git tracked)
 │   ├── en.po
@@ -240,9 +240,9 @@ Uses dynamic imports with React 19's `use()` hook for lazy loading:
 
 ```tsx
 // Babel injects at file level:
-import { __TransSuspense } from '@idioma/react/runtime-suspense';
-const __$idiomaChunk = "src_components_Header";
-const __$idiomaLoad = {
+import { __TransSuspense } from '@idiomi/react/runtime-suspense';
+const __$idiomiChunk = "src_components_Header";
+const __$idiomiLoad = {
   en: () => import('./chunks/src_components_Header.en'),
   es: () => import('./chunks/src_components_Header.es')
 };
@@ -250,7 +250,7 @@ const __$idiomaLoad = {
 // Then transforms:
 <Trans>Hello</Trans>
 // becomes:
-<__TransSuspense __key="abc123" __chunk={__$idiomaChunk} __load={__$idiomaLoad} />
+<__TransSuspense __key="abc123" __chunk={__$idiomiChunk} __load={__$idiomiLoad} />
 ```
 
 #### Prop Meanings (for transformed code)
@@ -263,14 +263,14 @@ const __$idiomaLoad = {
 
 #### Import Detection
 
-The plugin uses `idiomaDir` config to detect imports from the user's idioma folder (not from `@idioma/react` directly). This allows Babel to distinguish user Trans components from other libraries.
+The plugin uses `idiomiDir` config to detect imports from the user's idiomi folder (not from `@idiomi/react` directly). This allows Babel to distinguish user Trans components from other libraries.
 
 #### Binding Tracking
 
 Tracks aliased imports and derived functions:
 
 ```tsx
-import { createT, Trans as T, useT } from './idioma';
+import { createT, Trans as T, useT } from './idiomi';
 
 const CustomTrans = Trans; // tracked
 const t = useT(); // tracked as 't' binding
@@ -368,7 +368,7 @@ Since bundlers always use inlined or suspense mode, here's what actually runs:
 **Inlined Mode** — `__Trans` component:
 
 - Receives pre-compiled translations via `__t` prop
-- Uses `IdiomaContext` to get current locale
+- Uses `IdiomiContext` to get current locale
 - Calls `renderMessage()` which handles:
   1. ICU functions (plurals/selects compiled to JS functions)
   2. Component tag interpolation (`<Link>text</Link>`)
@@ -467,7 +467,7 @@ This prevents auto-deletion of TMS-imported messages.
 
 #### Flag System
 
-- `extracted`: Idioma-created message (can be auto-deleted when orphaned)
+- `extracted`: Idiomi-created message (can be auto-deleted when orphaned)
 - No flag: Likely TMS-imported (preserved forever)
 
 ### AI Translation
@@ -519,14 +519,14 @@ Uses the [Vercel AI SDK](https://ai-sdk.dev/) for unified provider access. Users
 Use `--dry-run --verbose` to inspect AI prompts without making API calls:
 
 ```bash
-idioma translate --dry-run --verbose
+idiomi translate --dry-run --verbose
 ```
 
 This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for all translations. Useful for debugging guidelines and reviewing what context the AI receives.
 
 ### Route Extraction and Compilation
 
-When `routing.localizedPaths: true` is set in config, Idioma extracts and compiles route segments.
+When `routing.localizedPaths: true` is set in config, Idiomi extracts and compiles route segments.
 
 **Files**: `packages/core/src/routes/`
 
@@ -595,12 +595,12 @@ The compiler reconstructs full paths by:
 
 #### Auto-Generated Route-Aware Exports
 
-When `routing` is configured in `idioma.config.ts`, the compiler automatically generates pre-configured exports in `index.ts`:
+When `routing` is configured in `idiomi.config.ts`, the compiler automatically generates pre-configured exports in `index.ts`:
 
 ```typescript
-// Auto-generated in idioma/index.ts when routing.localizedPaths: true
-import { createLink, createLocaleHead } from '@idioma/next'; // or @idioma/next/pages, @idioma/tanstack-react
-import { createMiddlewareFactory } from '@idioma/next/middleware';
+// Auto-generated in idiomi/index.ts when routing.localizedPaths: true
+import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/pages, @idiomi/tanstack-react
+import { createMiddlewareFactory } from '@idiomi/next/middleware';
 import { reverseRoutes, routes } from './.generated/routes';
 
 // Pre-configured with routes from compiled translations
@@ -623,7 +623,7 @@ export const createMiddleware = createMiddlewareFactory({
 });
 
 // Re-export pure function for programmatic use
-export { getLocaleHead } from '@idioma/react';
+export { getLocaleHead } from '@idiomi/react';
 ```
 
 **Framework Detection** (`packages/core/src/framework.ts`):
@@ -644,7 +644,7 @@ This determines which package to import `createLink` from.
 
 **buildStart**:
 
-1. Load `idioma.config.ts`
+1. Load `idiomi.config.ts`
 2. Compile PO files to JS
 3. Load compiled translations for Babel plugin (non-Suspense)
 4. Set up incremental extraction (dev mode)
@@ -658,11 +658,11 @@ This determines which package to import `createLink` from.
 
 ```typescript
 babelConfig.plugins.push([
-  '@idioma/core/babel',
+  '@idiomi/core/babel',
   {
     mode: useSuspense ? 'suspense' : 'inlined',
     translations: loadedTranslations, // only for inlined mode
-    idiomaDir: '/abs/path/to/idioma',
+    idiomiDir: '/abs/path/to/idiomi',
   },
 ]);
 ```

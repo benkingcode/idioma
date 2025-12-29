@@ -1,17 +1,17 @@
 /**
- * TanStack Router integration for Idioma i18n.
+ * TanStack Router integration for Idiomi i18n.
  *
  * @example
  * ```tsx
- * // idioma/index.ts - configure once
- * import { createLink, createLocaleHead } from '@idioma/tanstack-react';
+ * // idiomi/index.ts - configure once
+ * import { createLink, createLocaleHead } from '@idiomi/tanstack-react';
  * import { routes } from './.generated/routes';
  *
  * export const Link = createLink(routes);
  * export const LocaleHead = createLocaleHead({ locales: ['en', 'es'], defaultLocale: 'en', routes });
  *
  * // components/Navigation.tsx - use configured components
- * import { Link } from '@/idioma';
+ * import { Link } from '@/idiomi';
  *
  * function Navigation() {
  *   return (

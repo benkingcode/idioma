@@ -13,8 +13,8 @@ export interface IncrementalExtractOptions {
   filePath: string;
   /** Project root directory */
   projectRoot: string;
-  /** Absolute path to idioma directory */
-  idiomaDir: string;
+  /** Absolute path to idiomi directory */
+  idiomiDir: string;
   /** Absolute path to locale directory containing PO files */
   localeDir: string;
   /** Default/source locale */
@@ -59,7 +59,7 @@ export async function extractAndMergeFile(
   const {
     filePath,
     projectRoot,
-    idiomaDir,
+    idiomiDir,
     localeDir,
     defaultLocale,
     locales,
@@ -74,7 +74,7 @@ export async function extractAndMergeFile(
     content = await fs.readFile(filePath, 'utf-8');
   } catch (error) {
     // File might have been deleted or is unreadable
-    console.warn(`[idioma] Could not read ${relativePath}:`, error);
+    console.warn(`[idiomi] Could not read ${relativePath}:`, error);
     content = ''; // Treat as empty file - will remove all references from this file
   }
 
@@ -83,7 +83,7 @@ export async function extractAndMergeFile(
     content,
     filePath,
     relativePath,
-    idiomaDir,
+    idiomiDir,
   );
 
   // Load all locale catalogs upfront (needed for translation checking)

@@ -3,14 +3,14 @@
  *
  * @example
  * ```tsx
- * // idioma/index.ts
- * import { createLink } from '@idioma/next/pages';
+ * // idiomi/index.ts
+ * import { createLink } from '@idiomi/next/pages';
  * import { routes } from './.generated/routes';
  *
  * export const Link = createLink(routes);
  *
  * // In a Pages Router component
- * import { Link } from './idioma';
+ * import { Link } from './idiomi';
  *
  * function Navigation() {
  *   return (

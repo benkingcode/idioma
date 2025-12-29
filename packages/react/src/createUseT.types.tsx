@@ -13,8 +13,8 @@ import { createUseT } from './createUseT';
 import type { TransComponent } from './interpolate';
 
 // Simulated generated types (what the compiler would produce)
-// All types bundled into a single IdiomaTypes interface for cleaner API
-interface IdiomaTypes {
+// All types bundled into a single IdiomiTypes interface for cleaner API
+interface IdiomiTypes {
   TranslationKey: 'greeting' | 'greeting.name' | 'items.count' | 'legal.links';
   MessageValues: {
     greeting: Record<string, never>;
@@ -30,9 +30,9 @@ interface IdiomaTypes {
   };
 }
 
-// Create typed useT (simulating what idioma/index.ts exports)
+// Create typed useT (simulating what idiomi/index.ts exports)
 // Single type parameter instead of 3!
-const useT = createUseT<IdiomaTypes>();
+const useT = createUseT<IdiomiTypes>();
 
 // Get the t function (in real usage this would be inside a component)
 declare const t: ReturnType<typeof useT>;
@@ -125,9 +125,9 @@ t('Hello {name}, goodbye {name}', { name: 'Ben' });
 // TRANS COMPONENT (createTrans)
 // =============================================================================
 
-// Create typed Trans (simulating what idioma/index.ts exports)
+// Create typed Trans (simulating what idiomi/index.ts exports)
 // Single type parameter instead of 3!
-const Trans = createTrans<IdiomaTypes>();
+const Trans = createTrans<IdiomiTypes>();
 
 // Mock components for testing
 declare const TermsLink: TransComponent;

@@ -81,7 +81,7 @@ export function analyzeChunksFromCatalogs(
  * Parse file path from reference string.
  * Supports both formats:
  * - "filepath:line" (traditional gettext format)
- * - "filepath" (Idioma incremental extraction, no line numbers)
+ * - "filepath" (Idiomi incremental extraction, no line numbers)
  */
 function parseFilePath(reference: string): string | null {
   // Check if reference has a line number (ends with :number)

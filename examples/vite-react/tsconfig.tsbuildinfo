@@ -1,1 +1,12 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/counter.tsx","./src/components/greeting.tsx","./src/components/messages.tsx","./src/idioma/index.ts","./src/idioma/plain.ts"],"version":"5.9.3"}
+{
+  "root": [
+    "./src/app.tsx",
+    "./src/main.tsx",
+    "./src/components/counter.tsx",
+    "./src/components/greeting.tsx",
+    "./src/components/messages.tsx",
+    "./src/idiomi/index.ts",
+    "./src/idiomi/plain.ts"
+  ],
+  "version": "5.9.3"
+}

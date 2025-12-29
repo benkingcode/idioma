@@ -17,7 +17,7 @@ import {
 } from '../../routes/index.js';
 import type { ExtractedRoute, Framework } from '../../routes/index.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
-import { getIdiomaPaths, loadConfig, type IdiomaConfig } from '../config.js';
+import { getIdiomiPaths, loadConfig, type IdiomiConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 
 export interface ExtractedMessage {
@@ -39,10 +39,10 @@ export interface ExtractOptions {
   defaultLocale: string;
   locales?: string[];
   clean?: boolean;
-  /** Absolute path to idioma folder for robust import detection */
-  idiomaDir?: string;
+  /** Absolute path to idiomi folder for robust import detection */
+  idiomiDir?: string;
   /** Routing configuration for extracting localized paths */
-  routing?: IdiomaConfig['routing'];
+  routing?: IdiomiConfig['routing'];
 }
 
 export interface ExtractResult {
@@ -65,7 +65,7 @@ export async function extractMessages(
     defaultLocale,
     locales,
     clean,
-    idiomaDir,
+    idiomiDir,
     routing,
   } = options;
 
@@ -87,7 +87,7 @@ export async function extractMessages(
       content,
       file,
       relativePath,
-      idiomaDir,
+      idiomiDir,
     );
     messages.push(...fileMessages);
   }
@@ -176,24 +176,24 @@ export async function extractMessages(
  * @param code - Source code content
  * @param absolutePath - Absolute file path (for resolving imports)
  * @param displayPath - Path to display in locations (relative)
- * @param idiomaDir - Optional absolute path to idioma folder for robust import detection
+ * @param idiomiDir - Optional absolute path to idiomi folder for robust import detection
  */
 export async function extractFromFile(
   code: string,
   absolutePath: string,
   displayPath: string,
-  idiomaDir?: string,
+  idiomiDir?: string,
 ): Promise<ExtractedMessage[]> {
   const messages: ExtractedMessage[] = [];
 
-  // Track bindings from idioma imports
+  // Track bindings from idiomi imports
   const translatableBindings = new Map<
     string,
     'Trans' | 'useT' | 't' | 'createT'
   >();
 
-  // idiomaDir is required for extraction
-  if (!idiomaDir) {
+  // idiomiDir is required for extraction
+  if (!idiomiDir) {
     return messages;
   }
 
@@ -211,15 +211,15 @@ export async function extractFromFile(
               ImportDeclaration(path) {
                 const source = path.node.source.value;
 
-                // Check if this import is from the idioma folder
-                let isIdiomaImport = false;
+                // Check if this import is from the idiomi folder
+                let isIdiomiImport = false;
                 if (source.startsWith('.')) {
                   const fileDir = dirname(absolutePath);
                   const resolvedImport = resolve(fileDir, source);
-                  isIdiomaImport = resolvedImport.startsWith(idiomaDir);
+                  isIdiomiImport = resolvedImport.startsWith(idiomiDir);
                 }
 
-                if (!isIdiomaImport) return;
+                if (!isIdiomiImport) return;
 
                 // Track translatable imports
                 for (const specifier of path.node.specifiers) {
@@ -417,7 +417,7 @@ export function messagesToCatalog(
       namespace: msg.namespace,
       // Convert comment prop to PO extracted comment
       comments: msg.comment ? [msg.comment] : undefined,
-      // Mark as extracted by idioma (used to distinguish from TMS-imported messages)
+      // Mark as extracted by idiomi (used to distinguish from TMS-imported messages)
       flags: ['extracted'],
     };
 
@@ -484,12 +484,12 @@ async function directoryExists(dir: string): Promise<boolean> {
  */
 async function extractRouteMessages(
   cwd: string,
-  routing: NonNullable<IdiomaConfig['routing']>,
+  routing: NonNullable<IdiomiConfig['routing']>,
 ): Promise<ExtractedMessage[]> {
   const framework = await detectFramework(cwd);
   if (!framework) {
     console.warn(
-      '[idioma] Could not detect framework for route extraction. ' +
+      '[idiomi] Could not detect framework for route extraction. ' +
         'Skipping route extraction.',
     );
     return [];
@@ -554,10 +554,10 @@ export const extractCommand = defineCommand({
   async run({ args }) {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
-    const { localeDir } = getIdiomaPaths(config);
+    const { localeDir } = getIdiomiPaths(config);
 
-    // Ensure .gitignore exists in the idioma directory
-    await ensureGitignore(config.idiomaDir);
+    // Ensure .gitignore exists in the idiomi directory
+    await ensureGitignore(config.idiomiDir);
 
     const spinner = createSpinner();
     spinner.start('Extracting messages...');
@@ -570,8 +570,8 @@ export const extractCommand = defineCommand({
         defaultLocale: config.defaultLocale,
         locales: config.locales,
         clean: args.clean,
-        // Pass absolute idiomaDir for robust import detection
-        idiomaDir: resolve(cwd, config.idiomaDir),
+        // Pass absolute idiomiDir for robust import detection
+        idiomiDir: resolve(cwd, config.idiomiDir),
         // Pass routing config for route extraction
         routing: config.routing,
       });

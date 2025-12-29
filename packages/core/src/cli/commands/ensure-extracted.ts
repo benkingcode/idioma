@@ -1,13 +1,13 @@
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import type { IdiomaConfig } from '../config.js';
+import type { IdiomiConfig } from '../config.js';
 import { extractMessages } from './extract.js';
 
 export interface EnsureExtractedOptions {
   localeDir: string;
   locales: string[];
   cwd: string;
-  config: IdiomaConfig;
+  config: IdiomiConfig;
   onExtractStart?: () => void;
   onExtractComplete?: (result: { messages: number; files: number }) => void;
 }
@@ -54,7 +54,7 @@ export async function ensureExtracted(
     localeDir,
     defaultLocale: config.defaultLocale,
     locales: config.locales,
-    idiomaDir: resolve(cwd, config.idiomaDir),
+    idiomiDir: resolve(cwd, config.idiomiDir),
   });
 
   onExtractComplete?.({
