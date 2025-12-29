@@ -942,7 +942,9 @@ function Navigation() {
 }
 ```
 
-### TanStack Router
+### TanStack Router and TanStack Start
+
+Works with both TanStack Router (SPA) and TanStack Start (full-stack SSR).
 
 Install the TanStack package:
 
@@ -1310,7 +1312,7 @@ TypeScript provides full type safety via generated types:
 - **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
 - **@idioma/react** — Runtime components (~2-3KB gzipped with ICU), `getLocaleHead` for programmatic SEO
 - **@idioma/next** — Next.js integration (middleware factory, LocaleHead component, localized Link)
-- **@idioma/tanstack** — TanStack Router integration (LocaleHead component, localized Link)
+- **@idioma/tanstack** — TanStack Router/Start integration (LocaleHead component, localized Link)
 
 ## License
 
