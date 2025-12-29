@@ -1240,12 +1240,10 @@ For apps where users stick to one language (most apps), the default mode is idea
 | AI translation            | Built-in      | No             | No         | No            | No         | No       |
 | Compile-time              | Yes           | Yes            | No         | Yes           | Optional   | No       |
 | Component-level splitting | Yes           | Experimental\* | No         | Yes           | No         | No       |
-| Lazy loading              | Opt-in        | Yes            | Yes        | No            | Yes        | Yes      |
 | Message format            | PO (ICU)      | PO (ICU)       | JSON (ICU) | JSON          | JSON (ICU) | JSON     |
 | Number/date formatting    | Use Intl      | Use Intl       | Built-in   | Use Intl      | Built-in   | Built-in |
 | SSR                       | Yes           | Yes            | Yes        | Yes           | Yes        | Yes      |
 | RSC                       | Yes           | Yes            | Yes        | Yes           | No         | Yes      |
-| Primary framework         | Any           | Any            | Next.js    | Any           | Any        | Any      |
 
 \* Lingui has [experimental dependency-tree crawling](https://lingui.dev/guides/message-extraction#dependency-tree-crawling) for per-page catalog extraction, but wiring up route-to-catalog loading requires custom integration.
 
