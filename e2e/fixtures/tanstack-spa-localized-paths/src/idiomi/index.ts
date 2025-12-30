@@ -8,18 +8,27 @@ import {
   createUseLocale,
   createUseT,
 } from '@idiomi/react';
+import {
+  createLocaleHead,
+  createLocaleLoader,
+  createUrlRewriter,
+} from '@idiomi/tanstack-react';
+import {
+  defaultLocale,
+  detection,
+  locales,
+  prefixStrategy,
+} from './.generated/config';
+import { reverseRoutes, routePatterns, routes } from './.generated/routes';
 import type { IdiomiTypes, Locale } from './.generated/types';
-import { routes, reverseRoutes, routePatterns } from './.generated/routes';
-import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';
-import { createLocaleHead, createLocaleLoader, createUrlRewriter } from '@idiomi/tanstack-react';
 
 export const LocaleHead = createLocaleHead({
-  metadataBase: "http://localhost:5177",
-  locales: ["en","es"],
-  defaultLocale: "en",
+  metadataBase: 'http://localhost:5177',
+  locales: ['en', 'es'],
+  defaultLocale: 'en',
   routes,
   reverseRoutes,
-  prefixStrategy: "as-needed",
+  prefixStrategy: 'as-needed',
 });
 
 export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
@@ -37,11 +46,15 @@ export const { deLocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   reverseRoutes,
   routePatterns,
 });
+
 export { getLocaleHead } from '@idiomi/react';
 
 export const Trans = createTrans<IdiomiTypes>();
+
 export const useT = createUseT<IdiomiTypes>();
+
 export const IdiomiProvider = createIdiomiProvider();
+
 export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };

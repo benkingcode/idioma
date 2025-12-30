@@ -8,15 +8,24 @@ import {
   createUseLocale,
   createUseT,
 } from '@idiomi/react';
+import {
+  createLocaleHead,
+  createLocaleLoader,
+  createPrefixOnlyRewriter,
+} from '@idiomi/tanstack-react';
+import {
+  defaultLocale,
+  detection,
+  locales,
+  prefixStrategy,
+} from './.generated/config';
 import type { IdiomiTypes, Locale } from './.generated/types';
-import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';
-import { createLocaleHead, createLocaleLoader, createPrefixOnlyRewriter } from '@idiomi/tanstack-react';
 
 export const LocaleHead = createLocaleHead({
-  metadataBase: "http://localhost:5178",
-  locales: ["en","es"],
-  defaultLocale: "en",
-  prefixStrategy: "as-needed",
+  metadataBase: 'http://localhost:5178',
+  locales: ['en', 'es'],
+  defaultLocale: 'en',
+  prefixStrategy: 'as-needed',
 });
 
 export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
@@ -31,11 +40,15 @@ export const { localizeUrl } = createPrefixOnlyRewriter<Locale>({
   defaultLocale,
   prefixStrategy,
 });
+
 export { getLocaleHead } from '@idiomi/react';
 
 export const Trans = createTrans<IdiomiTypes>();
+
 export const useT = createUseT<IdiomiTypes>();
+
 export const IdiomiProvider = createIdiomiProvider();
+
 export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };

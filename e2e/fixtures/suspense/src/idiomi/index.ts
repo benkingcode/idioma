@@ -10,12 +10,15 @@ import {
 import type { IdiomiTypes, Locale } from './.generated/types';
 
 const config = {
-  locales: ["en","es","ar"] as const,
+  locales: ['en', 'es', 'ar'] as const,
 };
 
 export const Trans = createTransSuspense<IdiomiTypes>(config);
+
 export const useT = createUseTSuspense<IdiomiTypes>(config);
+
 export const IdiomiProvider = createIdiomiProvider();
+
 export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };

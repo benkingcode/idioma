@@ -651,9 +651,9 @@ msgstr "sobre"
       // Should export LocaleHead
       expect(content).toContain('export const LocaleHead');
       expect(content).toContain("from '@idiomi/next'");
-      // Should include config values
-      expect(content).toContain('metadataBase: "https://example.com"');
-      expect(content).toContain('prefixStrategy: "as-needed"');
+      // Should include config values (single quotes due to Prettier formatting)
+      expect(content).toContain("metadataBase: 'https://example.com'");
+      expect(content).toContain("prefixStrategy: 'as-needed'");
     });
 
     it('generates createMiddleware export when routing is enabled', async () => {

@@ -846,6 +846,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push('  defaultLocale,');
       exports.push('  prefixStrategy,');
       exports.push('});');
+      exports.push('');
     }
 
     // Generate LocaleHead with config
@@ -868,6 +869,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(`export const LocaleHead = createLocaleHead({`);
     exports.push(...localeHeadConfig);
     exports.push(`});`);
+    exports.push('');
 
     // Generate createMiddleware factory for Next.js
     if (isNextJs) {
@@ -877,13 +879,13 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push(`  routes,`);
       exports.push(`  reverseRoutes,`);
       exports.push(`});`);
+      exports.push('');
     }
 
     // Generate TanStack SPA functions using factories (browser-safe, no SSR deps)
     // Note: createMiddleware is NOT generated here to avoid @tanstack/react-start deps
     // For TanStack Start SSR, users should create middleware manually
     if (isTanStack) {
-      exports.push('');
       exports.push(
         `export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({`,
       );
@@ -903,6 +905,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push(`  reverseRoutes,`);
       exports.push(`  routePatterns,`);
       exports.push(`});`);
+      exports.push('');
     }
 
     // Re-export getLocaleHead for programmatic use
@@ -932,6 +935,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push('  defaultLocale,');
       exports.push('  prefixStrategy,');
       exports.push('});');
+      exports.push('');
     }
 
     // Generate LocaleHead with config but without routes
@@ -952,10 +956,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(`export const LocaleHead = createLocaleHead({`);
     exports.push(...localeHeadConfig);
     exports.push(`});`);
+    exports.push('');
 
     // Generate TanStack SPA functions using factories
     if (isTanStack) {
-      exports.push('');
       exports.push(
         `export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({`,
       );
@@ -972,13 +976,33 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push(`  defaultLocale,`);
       exports.push(`  prefixStrategy,`);
       exports.push(`});`);
+      exports.push('');
     }
 
     // Re-export getLocaleHead for programmatic use
     exports.push(`export { getLocaleHead } from '@idiomi/react';`);
   }
 
-  return [...imports, ...exports].join('\n');
+  // Join imports with blank lines between each, then exports
+  return [...imports.join('\n\n').split('\n'), ...exports].join('\n');
+}
+
+/**
+ * Format TypeScript code using Prettier.
+ * Uses the user's Prettier config if found, otherwise falls back to {singleQuote: true}.
+ */
+async function formatWithPrettier(
+  code: string,
+  filePath: string,
+): Promise<string> {
+  const prettier = await import('prettier');
+  const config = await prettier.resolveConfig(filePath);
+  return prettier.format(code, {
+    // Spread user config if found, otherwise use our fallback
+    ...(config ?? { singleQuote: true }),
+    parser: 'typescript',
+    filepath: filePath,
+  });
 }
 
 interface GenerateIndexOptions {
@@ -1008,17 +1032,23 @@ import {
   createUseLocale,
   createUseT,
 } from '@idiomi/react';
+
 import type { IdiomiTypes, Locale } from './.generated/types';
-${routeAwareCode ? routeAwareCode + '\n' : ''}
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
 export const Trans = createTrans<IdiomiTypes>();
+
 export const useT = createUseT<IdiomiTypes>();
+
 export const IdiomiProvider = createIdiomiProvider();
+
 export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };
 `;
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
+  const filePath = join(outputDir, 'index.ts');
+  const formatted = await formatWithPrettier(content, filePath);
+  await fs.writeFile(filePath, formatted, 'utf-8');
 }
 
 async function generateIndexTsSuspense(
@@ -1039,26 +1069,34 @@ import {
   createUseLocale,
   createUseTSuspense,
 } from '@idiomi/react/runtime-suspense';
+
 import type { IdiomiTypes, Locale } from './.generated/types';
-${routeAwareCode ? routeAwareCode + '\n' : ''}
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
 const config = {
   locales: ${JSON.stringify(locales)} as const,
 };
 
 export const Trans = createTransSuspense<IdiomiTypes>(config);
+
 export const useT = createUseTSuspense<IdiomiTypes>(config);
+
 export const IdiomiProvider = createIdiomiProvider();
+
 export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };
 `;
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
+  const filePath = join(outputDir, 'index.ts');
+  const formatted = await formatWithPrettier(content, filePath);
+  await fs.writeFile(filePath, formatted, 'utf-8');
 }
 
 async function generatePlainTs(outputDir: string): Promise<void> {
   const content = `// Auto-generated by @idiomi/core
+
 import { _createTFactory } from '@idiomi/core/runtime';
+
 import type { Locale, TranslationKey, MessageValues } from './.generated/types';
 
 export const createT = (locale: Locale) =>
@@ -1067,5 +1105,7 @@ export const createT = (locale: Locale) =>
 export type { Locale, TranslationKey, MessageValues };
 `;
 
-  await fs.writeFile(join(outputDir, 'plain.ts'), content, 'utf-8');
+  const filePath = join(outputDir, 'plain.ts');
+  const formatted = await formatWithPrettier(content, filePath);
+  await fs.writeFile(filePath, formatted, 'utf-8');
 }
