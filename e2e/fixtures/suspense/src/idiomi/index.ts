@@ -9,6 +9,8 @@ import {
 } from '@idiomi/react/runtime-suspense';
 import type { IdiomiTypes, Locale } from './.generated/types';
 
+export { locales, defaultLocale } from './.generated/config';
+
 const config = {
   locales: ['en', 'es', 'ar'] as const,
 };

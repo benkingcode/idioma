@@ -22,6 +22,8 @@ import {
 import { reverseRoutes, routePatterns, routes } from './.generated/routes';
 import type { IdiomiTypes, Locale } from './.generated/types';
 
+export { locales, defaultLocale } from './.generated/config';
+
 export const LocaleHead = createLocaleHead({
   metadataBase: 'http://localhost:5177',
   locales: ['en', 'es'],

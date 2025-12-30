@@ -677,6 +677,7 @@ AI-powered translation (requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`):
 
 ```bash
 idiomi translate                    # Translate missing messages
+idiomi translate --locale es        # Translate only Spanish
 idiomi translate --force            # Retranslate all messages
 idiomi translate --dry-run          # Run without API calls or saving
 idiomi translate --verbose          # Show AI prompts and responses
@@ -800,6 +801,12 @@ export default defineConfig({
 | `'never'`     | `/about`           | `/about`        | No prefixes, locale from detect |
 | `'as-needed'` | `/about`           | `/es/about`     | Prefix only non-default         |
 | `'always'`    | `/en/about`        | `/es/about`     | Always prefix                   |
+
+**When to use each:**
+
+- **`'as-needed'`** (default) — Best for most apps. Clean URLs for your primary audience, explicit prefixes for others. Good SEO with proper hreflang tags.
+- **`'always'`** — Use when all locales should be equally prominent, or when you need consistent URL structure for analytics/caching.
+- **`'never'`** — Use for single-region apps where locale is user preference (like date format), not content language. Locale is stored in a cookie and detected from browser settings. Not recommended if you have translated content—search engines can't index different language versions.
 
 When `localizedPaths: true`, `idiomi extract` automatically scans your route structure and adds route segments to PO files:
 
@@ -959,47 +966,13 @@ function Navigation() {
 
 Works with both TanStack Router (SPA) and TanStack Start (full-stack SSR).
 
-Install the TanStack package:
-
 ```bash
 npm install @idiomi/tanstack-react
 ```
 
-**For TanStack Start (SSR):** Set up middleware for locale detection:
+#### TanStack Router (SPA)
 
-```ts
-// src/start.ts
-import { createMiddleware } from '@/idiomi';
-import { createStart } from '@tanstack/react-start';
-
-export const startInstance = createStart(() => ({
-  requestMiddleware: [createMiddleware()],
-}));
-```
-
-**For localized paths:** Use the generated `deLocalizeUrl` and `localizeUrl` functions with TanStack Router's `rewrite` option to handle path translation (e.g., `/es/sobre` ↔ `/es/about`):
-
-```ts
-// app/router.tsx
-import { deLocalizeUrl, localizeUrl } from '@/idiomi';
-import { createRouter } from '@tanstack/react-router';
-
-export const router = createRouter({
-  routeTree,
-  rewrite: {
-    // Transform localized path → canonical for route matching
-    // e.g., /es/sobre → /es/about
-    input: ({ url }) => deLocalizeUrl(url),
-    // Transform canonical → localized for link generation
-    // e.g., /es/about → /es/sobre (also strips /en prefix when as-needed)
-    output: ({ url }) => localizeUrl(url),
-  },
-});
-```
-
-> **Note:** URL rewriting handles **path translation** only (e.g., "sobre" ↔ "about"). It does NOT change the browser URL. For URL prefix redirects based on locale detection, use `localeLoader` in `beforeLoad`.
-
-**For TanStack Router (SPA):** Use the generated `localeLoader` in your locale layout route. With TanStack's optional `{-$locale}` parameter pattern, place it on the layout route that handles the locale segment:
+For client-side SPAs, set up locale detection and the provider in your locale layout route:
 
 ```tsx
 // routes/{-$locale}/route.tsx
@@ -1025,26 +998,61 @@ function LocaleLayout() {
 }
 ```
 
-The `localeLoader` handles all redirect logic based on your `prefixStrategy` config:
+The `localeLoader` handles redirect logic based on your `prefixStrategy`:
 
-- **No prefix in URL** + detected non-default locale → redirects to add prefix (`/` → `/es/`)
-- **No prefix in URL** + detected is default locale → stays at unprefixed URL
-- **Default locale prefix** + `as-needed` strategy → redirects to strip prefix (`/en/about` → `/about`)
-- **Non-default locale prefix** → uses it directly
+- **No prefix + non-default locale detected** → redirects to add prefix (`/` → `/es/`)
+- **No prefix + default locale detected** → stays unprefixed
+- **Default prefix + `as-needed`** → strips prefix (`/en/about` → `/about`)
 
-For manual locale detection (e.g., outside routes), use `detectClientLocale()`:
+For manual detection outside routes:
 
 ```tsx
 import { detectClientLocale } from '@/idiomi';
 
-// Returns locale from cookie (IDIOMI_LOCALE) or navigator.languages
-// Detection order is configurable via routing.detection.order
-const locale = detectClientLocale();
+const locale = detectClientLocale(); // From cookie or navigator.languages
 ```
 
-Locale detection follows the configured order (default: `['cookie', 'header']`). On the client, `'header'` reads from `navigator.languages`. The cookie is set automatically when users switch locales via your UI.
+#### TanStack Start (SSR)
 
-**Navigation:** Use TanStack Router's native `<Link>` component directly. With optional locale params (`{-$locale}`), passing `params={{}}` inherits the current locale automatically:
+For full-stack apps with SSR, add server middleware for locale detection:
+
+```ts
+// src/start.ts
+import { createMiddleware } from '@/idiomi';
+import { createStart } from '@tanstack/react-start';
+
+export const startInstance = createStart(() => ({
+  requestMiddleware: [createMiddleware()],
+}));
+```
+
+The middleware handles `Accept-Language` header parsing and cookie-based locale persistence on the server. You still need the `localeLoader` in your routes (as shown above) for client-side navigation.
+
+#### Localized Paths (Both SPA and SSR)
+
+If using `localizedPaths: true`, add URL rewriting to your router:
+
+```ts
+// app/router.tsx
+import { deLocalizeUrl, localizeUrl } from '@/idiomi';
+import { createRouter } from '@tanstack/react-router';
+
+export const router = createRouter({
+  routeTree,
+  rewrite: {
+    // /es/sobre → /es/about (for route matching)
+    input: ({ url }) => deLocalizeUrl(url),
+    // /es/about → /es/sobre (for link display)
+    output: ({ url }) => localizeUrl(url),
+  },
+});
+```
+
+> **Note:** URL rewriting handles path translation only. It does NOT change the browser URL—that's handled by `localeLoader` redirects.
+
+#### Navigation
+
+Use TanStack Router's native `<Link>` component. With optional locale params (`{-$locale}`), passing `params={{}}` inherits the current locale:
 
 ```tsx
 import { useLocale } from '@/idiomi';
@@ -1092,6 +1100,80 @@ function ServerHead({
   return <LocaleHead pathname={pathname} locale={locale} />;
 }
 ```
+
+### Building a Locale Switcher
+
+To persist locale preferences across sessions, set a cookie when users switch languages.
+
+**Next.js (App Router):**
+
+```tsx
+// components/LocaleSwitcher.tsx
+'use client';
+
+import { Link, locales, useLocale } from '@/idiomi';
+import type { Locale } from '@/idiomi';
+
+export function LocaleSwitcher() {
+  const currentLocale = useLocale();
+
+  const setLocaleCookie = (locale: Locale) => {
+    document.cookie = `IDIOMI_LOCALE=${locale}; path=/; max-age=31536000`;
+  };
+
+  return (
+    <div>
+      {locales.map((locale) => (
+        <Link
+          key={locale}
+          href="/" // Or usePathname() for current page
+          locale={locale}
+          onClick={() => setLocaleCookie(locale)}
+          aria-current={locale === currentLocale ? 'page' : undefined}
+        >
+          {locale.toUpperCase()}
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+**TanStack Router (SPA):**
+
+```tsx
+// components/LocaleSwitcher.tsx
+import { locales, useLocale } from '@/idiomi';
+import type { Locale } from '@/idiomi';
+import { Link, useLocation } from '@tanstack/react-router';
+
+export function LocaleSwitcher() {
+  const currentLocale = useLocale();
+  const { pathname } = useLocation();
+
+  const setLocaleCookie = (locale: Locale) => {
+    document.cookie = `IDIOMI_LOCALE=${locale}; path=/; max-age=31536000`;
+  };
+
+  return (
+    <div>
+      {locales.map((locale) => (
+        <Link
+          key={locale}
+          to={pathname}
+          params={{ locale }}
+          onClick={() => setLocaleCookie(locale)}
+          aria-current={locale === currentLocale ? 'page' : undefined}
+        >
+          {locale.toUpperCase()}
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+Setting the cookie ensures the user's preference is remembered on their next visit, even if they navigate directly to `/` without a locale prefix.
 
 ### How Route Compilation Works
 

@@ -10,6 +10,8 @@ import {
 } from '@idiomi/react';
 import type { IdiomiTypes, Locale } from './.generated/types';
 
+export { locales, defaultLocale } from './.generated/config';
+
 export const Trans = createTrans<IdiomiTypes>();
 
 export const useT = createUseT<IdiomiTypes>();

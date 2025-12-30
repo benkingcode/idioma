@@ -21,6 +21,8 @@ import {
 } from './.generated/config';
 import type { IdiomiTypes, Locale } from './.generated/types';
 
+export { locales, defaultLocale } from './.generated/config';
+
 export const LocaleHead = createLocaleHead({
   metadataBase: 'http://localhost:5178',
   locales: ['en', 'es'],

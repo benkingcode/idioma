@@ -1034,6 +1034,8 @@ import {
 } from '@idiomi/react';
 
 import type { IdiomiTypes, Locale } from './.generated/types';
+
+export { locales, defaultLocale } from './.generated/config';
 ${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
 export const Trans = createTrans<IdiomiTypes>();
 
@@ -1071,6 +1073,8 @@ import {
 } from '@idiomi/react/runtime-suspense';
 
 import type { IdiomiTypes, Locale } from './.generated/types';
+
+export { locales, defaultLocale } from './.generated/config';
 ${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
 const config = {
   locales: ${JSON.stringify(locales)} as const,
