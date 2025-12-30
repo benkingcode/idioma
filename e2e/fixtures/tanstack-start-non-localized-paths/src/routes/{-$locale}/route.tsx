@@ -1,0 +1,121 @@
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+} from '@tanstack/react-router';
+import {
+  detectClientLocale,
+  IdiomiProvider,
+  LocaleHead,
+  localeLoader,
+  useLocale,
+} from '../../idiomi';
+import type { Locale } from '../../idiomi';
+
+export const Route = createFileRoute('/{-$locale}')({
+  beforeLoad: localeLoader,
+  component: LocaleLayout,
+});
+
+/** Set locale cookie with 1 year expiry */
+function setLocaleCookie(locale: string) {
+  document.cookie = `IDIOMI_LOCALE=${locale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+}
+
+function LocaleLayout() {
+  const { locale: urlLocale } = Route.useParams();
+
+  // Use URL locale if valid, otherwise detect from cookie/browser
+  const locale = (urlLocale as Locale) ?? detectClientLocale();
+
+  return (
+    <IdiomiProvider locale={locale}>
+      <LocaleHead />
+      <Navigation />
+      <main data-testid="main-content">
+        <Outlet />
+      </main>
+    </IdiomiProvider>
+  );
+}
+
+function Navigation() {
+  const locale = useLocale();
+  const location = useLocation();
+
+  // Calculate locale switch URLs using router location (no path translation needed)
+  const currentPath = location.pathname;
+  const pathWithoutLocale = currentPath.replace(/^\/(en|es)/, '') || '/';
+  const searchParams = location.searchStr || '';
+  const hash = location.hash || '';
+
+  const getLocaleUrl = (newLocale: Locale) => {
+    const newPath =
+      newLocale === 'en'
+        ? pathWithoutLocale
+        : `/${newLocale}${pathWithoutLocale}`;
+    return `${newPath}${searchParams}${hash}`;
+  };
+
+  const handleLocaleClick = (
+    _e: React.MouseEvent<HTMLAnchorElement>,
+    newLocale: Locale,
+  ) => {
+    // Set cookie before the natural anchor navigation
+    setLocaleCookie(newLocale);
+  };
+
+  return (
+    <nav
+      data-testid="navigation"
+      style={{
+        marginBottom: '20px',
+        display: 'flex',
+        gap: '16px',
+        alignItems: 'center',
+      }}
+    >
+      <Link to="/{-$locale}" params={{ locale }} data-testid="nav-home">
+        Home
+      </Link>
+      <Link to="/{-$locale}/about" params={{ locale }} data-testid="nav-about">
+        About
+      </Link>
+      <Link to="/{-$locale}/blog" params={{ locale }} data-testid="nav-blog">
+        Blog
+      </Link>
+      <Link
+        to="/{-$locale}/contact"
+        params={{ locale }}
+        data-testid="nav-contact"
+      >
+        Contact
+      </Link>
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+        <a
+          href={getLocaleUrl('en')}
+          data-testid="locale-en"
+          onClick={(e) => handleLocaleClick(e, 'en')}
+          style={{
+            fontWeight: locale === 'en' ? 'bold' : 'normal',
+            cursor: 'pointer',
+          }}
+        >
+          English
+        </a>
+        <a
+          href={getLocaleUrl('es')}
+          data-testid="locale-es"
+          onClick={(e) => handleLocaleClick(e, 'es')}
+          style={{
+            fontWeight: locale === 'es' ? 'bold' : 'normal',
+            cursor: 'pointer',
+          }}
+        >
+          Espanol
+        </a>
+      </div>
+    </nav>
+  );
+}

@@ -75,7 +75,7 @@ export default defineConfig({
         baseURL: 'http://localhost:5178',
       },
     },
-    // Shared routing tests - run on localized paths fixture
+    // Shared routing tests - run on SPA localized paths fixture
     {
       name: 'tanstack-spa-localized-paths-shared',
       testMatch: /routing\/shared\/.*\.spec\.ts$/,
@@ -84,13 +84,67 @@ export default defineConfig({
         baseURL: 'http://localhost:5177',
       },
     },
-    // Shared routing tests - run on non-localized paths fixture
+    // Shared routing tests - run on SPA non-localized paths fixture
     {
       name: 'tanstack-spa-non-localized-paths-shared',
       testMatch: /routing\/shared\/.*\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:5178',
+      },
+    },
+    // TanStack Start SSR - Localized paths (route translation)
+    {
+      name: 'tanstack-start-localized-paths',
+      testMatch: /routing\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5179',
+      },
+    },
+    // TanStack Start SSR - Non-localized paths (prefix only)
+    {
+      name: 'tanstack-start-non-localized-paths',
+      testMatch: /routing\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5180',
+      },
+    },
+    // Shared routing tests - run on SSR localized paths fixture
+    {
+      name: 'tanstack-start-localized-paths-shared',
+      testMatch: /routing\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5179',
+      },
+    },
+    // Shared routing tests - run on SSR non-localized paths fixture
+    {
+      name: 'tanstack-start-non-localized-paths-shared',
+      testMatch: /routing\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5180',
+      },
+    },
+    // SSR-specific tests - Accept-Language header detection (localized paths)
+    {
+      name: 'tanstack-start-localized-paths-ssr',
+      testMatch: /routing\/ssr\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5179',
+      },
+    },
+    // SSR-specific tests - Accept-Language header detection (non-localized paths)
+    {
+      name: 'tanstack-start-non-localized-paths-ssr',
+      testMatch: /routing\/ssr\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5180',
       },
     },
   ],
@@ -126,15 +180,30 @@ export default defineConfig({
     // TanStack Router SPA fixtures
     {
       command:
-        'pnpm --filter e2e-fixture-tanstack-spa-localized-paths dev:fixture --port 5177',
+        'pnpm --filter e2e-fixture-tanstack-spa-localized-paths dev:fixture --port 5177 --strictPort',
       url: 'http://localhost:5177',
       reuseExistingServer: !CI,
       timeout: 120000,
     },
     {
       command:
-        'pnpm --filter e2e-fixture-tanstack-spa-non-localized-paths dev:fixture --port 5178',
+        'pnpm --filter e2e-fixture-tanstack-spa-non-localized-paths dev:fixture --port 5178 --strictPort',
       url: 'http://localhost:5178',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // TanStack Start SSR fixtures
+    {
+      command:
+        'pnpm --filter e2e-fixture-tanstack-start-localized-paths dev:fixture --port 5179 --strictPort',
+      url: 'http://localhost:5179',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    {
+      command:
+        'pnpm --filter e2e-fixture-tanstack-start-non-localized-paths dev:fixture --port 5180 --strictPort',
+      url: 'http://localhost:5180',
       reuseExistingServer: !CI,
       timeout: 120000,
     },

@@ -1014,19 +1014,41 @@ const locale = detectClientLocale(); // From cookie or navigator.languages
 
 #### TanStack Start (SSR)
 
-For full-stack apps with SSR, add server middleware for locale detection:
+For full-stack apps with SSR, the compiler automatically imports `createLocaleLoader` from `@idiomi/tanstack-react/start` (SSR-aware) instead of `@idiomi/tanstack-react` (SPA-only). The generated `localeLoader` handles `Accept-Language` header detection on the server:
 
-```ts
-// src/start.ts
-import { createMiddleware } from '@/idiomi';
-import { createStart } from '@tanstack/react-start';
+```tsx
+// routes/{-$locale}/route.tsx
+import {
+  detectClientLocale,
+  IdiomiProvider,
+  localeLoader, // SSR-aware, auto-generated from @idiomi/tanstack-react/start
+} from '@/idiomi';
+import type { Locale } from '@/idiomi';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 
-export const startInstance = createStart(() => ({
-  requestMiddleware: [createMiddleware()],
-}));
+export const Route = createFileRoute('/{-$locale}')({
+  beforeLoad: localeLoader, // Handles SSR headers automatically
+  component: LocaleLayout,
+});
+
+function LocaleLayout() {
+  const { locale: urlLocale } = Route.useParams();
+  const locale = (urlLocale as Locale) ?? detectClientLocale();
+
+  return (
+    <IdiomiProvider locale={locale}>
+      <Outlet />
+    </IdiomiProvider>
+  );
+}
 ```
 
-The middleware handles `Accept-Language` header parsing and cookie-based locale persistence on the server. You still need the `localeLoader` in your routes (as shown above) for client-side navigation.
+The SSR-aware `localeLoader` automatically:
+
+- Uses `getRequestHeaders` from `@tanstack/react-start/server` (Vite tree-shakes from client bundle)
+- Parses `Accept-Language` header during SSR
+- Falls back to `document.cookie` and `navigator.languages` on the client
+- Uses BCP 47-compliant locale matching via `@idiomi/core/locale`
 
 #### Localized Paths (Both SPA and SSR)
 

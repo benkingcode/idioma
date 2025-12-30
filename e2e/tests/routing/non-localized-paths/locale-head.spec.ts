@@ -1,58 +1,49 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('LocaleHead SEO - Non-Localized Paths', () => {
-  test('renders canonical link on home page', async ({ page }) => {
+  test('renders canonical link on home page', async ({ page, baseURL }) => {
     await page.goto('/');
 
     const canonical = page.locator('link[rel="canonical"]');
-    await expect(canonical).toHaveAttribute('href', 'http://localhost:5178/');
+    await expect(canonical).toHaveAttribute('href', `${baseURL}/`);
   });
 
-  test('renders hreflang with untranslated paths', async ({ page }) => {
+  test('renders hreflang with untranslated paths', async ({
+    page,
+    baseURL,
+  }) => {
     await page.goto('/');
 
     // Check for English hreflang
     const enHreflang = page.locator('link[hreflang="en"]');
-    await expect(enHreflang).toHaveAttribute('href', 'http://localhost:5178/');
+    await expect(enHreflang).toHaveAttribute('href', `${baseURL}/`);
 
     // Check for Spanish hreflang - should NOT be translated
     const esHreflang = page.locator('link[hreflang="es"]');
-    await expect(esHreflang).toHaveAttribute(
-      'href',
-      'http://localhost:5178/es',
-    );
+    await expect(esHreflang).toHaveAttribute('href', `${baseURL}/es`);
   });
 
-  test('hreflang uses untranslated paths on about page', async ({ page }) => {
+  test('hreflang uses untranslated paths on about page', async ({
+    page,
+    baseURL,
+  }) => {
     await page.goto('/about');
 
     // English hreflang should use /about
     const enHreflang = page.locator('link[hreflang="en"]');
-    await expect(enHreflang).toHaveAttribute(
-      'href',
-      'http://localhost:5178/about',
-    );
+    await expect(enHreflang).toHaveAttribute('href', `${baseURL}/about`);
 
     // Spanish hreflang should use /es/about (NOT /es/sobre)
     const esHreflang = page.locator('link[hreflang="es"]');
-    await expect(esHreflang).toHaveAttribute(
-      'href',
-      'http://localhost:5178/es/about',
-    );
-    await expect(esHreflang).not.toHaveAttribute(
-      'href',
-      'http://localhost:5178/es/sobre',
-    );
+    await expect(esHreflang).toHaveAttribute('href', `${baseURL}/es/about`);
+    await expect(esHreflang).not.toHaveAttribute('href', `${baseURL}/es/sobre`);
   });
 
-  test('canonical updates for Spanish locale', async ({ page }) => {
+  test('canonical updates for Spanish locale', async ({ page, baseURL }) => {
     await page.goto('/es/about');
 
     // Canonical should point to current page
     const canonical = page.locator('link[rel="canonical"]');
-    await expect(canonical).toHaveAttribute(
-      'href',
-      'http://localhost:5178/es/about',
-    );
+    await expect(canonical).toHaveAttribute('href', `${baseURL}/es/about`);
   });
 });

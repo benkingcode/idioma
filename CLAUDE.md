@@ -80,6 +80,30 @@ pnpm test:e2e            # Run all e2e tests
 pnpm test:e2e:ui         # Run with Playwright UI
 ```
 
+## E2E Test Fixtures
+
+The `e2e/fixtures/` directory contains test apps for different framework configurations:
+
+| Fixture                              | Port | Framework           | Features                      |
+| ------------------------------------ | ---- | ------------------- | ----------------------------- |
+| `tanstack-localized-paths`           | 5175 | TanStack Router SPA | Localized paths (`/es/sobre`) |
+| `tanstack-non-localized-paths`       | 5176 | TanStack Router SPA | Prefix-only (`/es/about`)     |
+| `tanstack-start-localized-paths`     | 5179 | TanStack Start SSR  | Localized paths + SSR         |
+| `tanstack-start-non-localized-paths` | 5180 | TanStack Start SSR  | Prefix-only + SSR             |
+
+**TanStack Start SSR fixtures** test server-side `Accept-Language` header detection, cookie persistence across full-page navigation, and SSR hydration. Key differences from SPA fixtures:
+
+- Use `tanstackStart()` Vite plugin instead of standard Vite React
+- Root route (`__root.tsx`) renders full HTML document (`<html>`, `<head>`, `<body>`)
+- Compiler auto-generates `localeLoader` from `@idiomi/tanstack-react/start` (SSR-aware)
+- Navigation uses anchor tags with `href` (not TanStack's `navigate()`) for full-page reloads
+
+**Running specific fixtures:**
+
+```bash
+cd e2e && npx playwright test --project=tanstack-start-localized-paths-shared
+```
+
 ## Developing the Library
 
 **When modifying `@idiomi/core` or `@idiomi/react`**, you must rebuild for changes to be visible to:
@@ -120,7 +144,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `ai/` - AI translation: context generation from source code, unified provider via Vercel AI SDK
 - `locale/` - Locale matching utilities using `@formatjs/intl-localematcher` for BCP 47-compliant matching
 - `routes/` - Route extraction and compilation for localized paths
-- `framework.ts` - Framework detection utility (next-app, next-pages, tanstack)
+- `framework.ts` - Framework detection utility (next-app, next-pages, tanstack, tanstack-start)
 
 **@idiomi/react** (`packages/react/`) - Runtime components
 
@@ -146,12 +170,22 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
   - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectClientLocale()` for manual detection
   - `createUrlRewriter()` - Creates `deLocalizeUrl` and `localizeUrl` for localized path translation
   - `createPrefixOnlyRewriter()` - Creates `localizeUrl` for prefix-only strategy (no path translation)
+- `start.ts` - SSR-aware `createLocaleLoader()` with `Accept-Language` header support (exported via `/start` subpath)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
-- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection (SSR only)
 
-**TanStack SPA vs SSR separation**: The compiler generates browser-safe code for SPAs by calling factory functions from `@idiomi/tanstack-react` (`createLocaleLoader`, `createUrlRewriter`, `createPrefixOnlyRewriter`). These factories produce `localeLoader`, `detectClientLocale`, `deLocalizeUrl`, and `localizeUrl` functions without importing from `@tanstack/react-start` or other SSR-only packages. For TanStack Start SSR, users import middleware manually from `@idiomi/tanstack-react/middleware`.
+**TanStack SPA vs SSR separation**: The compiler automatically detects whether a project uses TanStack Start (SSR) or TanStack Router (SPA) based on `@tanstack/react-start` in dependencies:
+
+- **TanStack Router (SPA)**: Imports `createLocaleLoader` from `@idiomi/tanstack-react` - browser-only, synchronous
+- **TanStack Start (SSR)**: Imports `createLocaleLoader` from `@idiomi/tanstack-react/start` - SSR-aware with header access
+
+**TanStack Start SSR**: The `/start` subpath exports an SSR-aware `createLocaleLoader()` that:
+
+1. Uses static import of `getRequestHeaders` from `@tanstack/react-start/server` (Vite tree-shakes from client bundle)
+2. Accesses `Accept-Language` and `Cookie` headers on the server
+3. Falls back to `document.cookie` and `navigator.languages` on the client
+4. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
 
 **TanStack Link strategy**: Unlike Next.js which uses Idiomi's custom `Link` wrapper, TanStack uses URL rewriting via `createRouter({ rewrite: { input, output } })`. Users write `<Link to="/{-$locale}/about" params={{}}>` with TanStack's native Link and the `localizeUrl` function handles path translation and prefix stripping for display.
 

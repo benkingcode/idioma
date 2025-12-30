@@ -5,10 +5,16 @@ import { join } from 'path';
  * Detected framework type for routing integration.
  * - 'next-app': Next.js with App Router (has app/ directory)
  * - 'next-pages': Next.js with Pages Router (has pages/ but no app/)
- * - 'tanstack': TanStack Router
+ * - 'tanstack': TanStack Router SPA (client-side only)
+ * - 'tanstack-start': TanStack Start SSR (full-stack with server rendering)
  * - null: No framework detected
  */
-export type Framework = 'next-app' | 'next-pages' | 'tanstack' | null;
+export type Framework =
+  | 'next-app'
+  | 'next-pages'
+  | 'tanstack'
+  | 'tanstack-start'
+  | null;
 
 /**
  * Detect the framework being used based on package.json dependencies
@@ -25,8 +31,12 @@ export async function detectFramework(cwd: string): Promise<Framework> {
 
     const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-    // Check for TanStack Router first (more specific)
+    // Check for TanStack (more specific before Next.js)
     if (allDeps['@tanstack/react-router'] || allDeps['@tanstack/router']) {
+      // Distinguish between TanStack Start (SSR) and TanStack Router (SPA)
+      if (allDeps['@tanstack/react-start']) {
+        return 'tanstack-start';
+      }
       return 'tanstack';
     }
 
@@ -56,9 +66,9 @@ export async function detectFramework(cwd: string): Promise<Framework> {
 }
 
 /**
- * Get the package import path for the detected framework's Link component.
+ * Get the package import path for the detected framework's locale loader.
  */
-export function getLinkPackage(framework: Framework): string | null {
+export function getLocaleLoaderPackage(framework: Framework): string | null {
   switch (framework) {
     case 'next-app':
       return '@idiomi/next';
@@ -66,7 +76,18 @@ export function getLinkPackage(framework: Framework): string | null {
       return '@idiomi/next/pages';
     case 'tanstack':
       return '@idiomi/tanstack-react';
+    case 'tanstack-start':
+      return '@idiomi/tanstack-react/start';
     default:
       return null;
   }
+}
+
+/**
+ * Check if framework is a TanStack variant (SPA or Start)
+ */
+export function isTanStackFramework(
+  framework: Framework,
+): framework is 'tanstack' | 'tanstack-start' {
+  return framework === 'tanstack' || framework === 'tanstack-start';
 }

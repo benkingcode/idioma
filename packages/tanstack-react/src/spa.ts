@@ -62,8 +62,10 @@ export interface LocaleLoaderResult<L extends string> {
 }
 
 export interface LocaleLoaderApi<L extends string> {
-  /** TanStack Router beforeLoad function for locale detection */
-  localeLoader: (args: { location: LocationInfo }) => LocaleLoaderResult<L>;
+  /** TanStack Router beforeLoad function for locale detection (sync or async) */
+  localeLoader: (args: {
+    location: LocationInfo;
+  }) => LocaleLoaderResult<L> | Promise<LocaleLoaderResult<L>>;
   /** Low-level detection for manual use cases */
   detectClientLocale: () => L;
 }

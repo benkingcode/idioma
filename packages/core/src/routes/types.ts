@@ -34,7 +34,11 @@ export interface RouteSegment {
 }
 
 /** Framework type for route extraction */
-export type Framework = 'next-app' | 'next-pages' | 'tanstack';
+export type Framework =
+  | 'next-app'
+  | 'next-pages'
+  | 'tanstack'
+  | 'tanstack-start';
 
 /** Options for route extraction */
 export interface ExtractRoutesOptions {
@@ -115,7 +119,7 @@ export function isDynamicSegment(
   segment: string,
   framework: Framework,
 ): boolean {
-  if (framework === 'tanstack') {
+  if (framework === 'tanstack' || framework === 'tanstack-start') {
     return isTanStackDynamicSegment(segment);
   }
   return isNextJsDynamicSegment(segment);

@@ -509,7 +509,7 @@ async function extractRouteMessages(
   let routes: ExtractedRoute[];
   const exclude = routing.exclude ?? ['api/**', '_next/**'];
 
-  if (framework === 'tanstack') {
+  if (framework === 'tanstack' || framework === 'tanstack-start') {
     routes = await extractTanStackRoutes({ projectRoot: cwd, exclude });
   } else {
     routes = await extractNextjsRoutes({ projectRoot: cwd, exclude });

@@ -10,6 +10,7 @@ import {
   type SelectElement,
 } from '@formatjs/icu-messageformat-parser';
 import type { Framework } from '../framework.js';
+import { isTanStackFramework } from '../framework.js';
 import { analyzeIcuMessage, type IcuAnalysis } from '../icu/compiler.js';
 import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
@@ -775,7 +776,8 @@ function quoteIfNeeded(name: string): string {
 }
 
 /**
- * Get the package import path for Link based on framework.
+ * Get the package import path for Link/LocaleHead based on framework.
+ * Note: TanStack uses native Link, but we still need this for LocaleHead.
  */
 function getLinkPackage(framework: Framework): string | null {
   switch (framework) {
@@ -784,7 +786,23 @@ function getLinkPackage(framework: Framework): string | null {
     case 'next-pages':
       return '@idiomi/next/pages';
     case 'tanstack':
+    case 'tanstack-start':
       return '@idiomi/tanstack-react';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get the package import path for createLocaleLoader based on framework.
+ * TanStack Start uses SSR-aware version from /start subpath.
+ */
+function getLocaleLoaderPackage(framework: Framework): string | null {
+  switch (framework) {
+    case 'tanstack':
+      return '@idiomi/tanstack-react';
+    case 'tanstack-start':
+      return '@idiomi/tanstack-react/start';
     default:
       return null;
   }
@@ -809,7 +827,8 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
   const exports: string[] = [];
   const isNextJs =
     routing.framework === 'next-app' || routing.framework === 'next-pages';
-  const isTanStack = routing.framework === 'tanstack';
+  const isTanStack = isTanStackFramework(routing.framework);
+  const localeLoaderPkg = getLocaleLoaderPackage(routing.framework);
 
   if (routing.localizedPaths) {
     // Import routes for LocaleHead and URL rewriting
@@ -838,13 +857,14 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       imports.push(
         `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
       );
-    } else if (isTanStack) {
+    } else if (isTanStack && localeLoaderPkg) {
       // TanStack uses factories for locale detection and URL rewriting
+      // createLocaleHead and createUrlRewriter always come from the base package
       imports.push(
-        `import { createLocaleHead, createLocaleLoader, createUrlRewriter } from '${pkg}';`,
+        `import { createLocaleHead, createUrlRewriter } from '${pkg}';`,
       );
-      // Note: createMiddlewareFactory is NOT imported here to avoid @tanstack/react-start deps
-      // For TanStack Start SSR, users should import it manually from @idiomi/tanstack-react/middleware
+      // createLocaleLoader comes from /start for TanStack Start (SSR-aware)
+      imports.push(`import { createLocaleLoader } from '${localeLoaderPkg}';`);
     }
 
     exports.push('');
@@ -933,11 +953,14 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Next.js: Still uses createLink for backward compatibility
     if (isNextJs) {
       imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
-    } else if (isTanStack) {
+    } else if (isTanStack && localeLoaderPkg) {
       // TanStack uses factories for locale detection and URL rewriting
+      // createLocaleHead and createPrefixOnlyRewriter always come from the base package
       imports.push(
-        `import { createLocaleHead, createLocaleLoader, createPrefixOnlyRewriter } from '${pkg}';`,
+        `import { createLocaleHead, createPrefixOnlyRewriter } from '${pkg}';`,
       );
+      // createLocaleLoader comes from /start for TanStack Start (SSR-aware)
+      imports.push(`import { createLocaleLoader } from '${localeLoaderPkg}';`);
     }
 
     exports.push('');

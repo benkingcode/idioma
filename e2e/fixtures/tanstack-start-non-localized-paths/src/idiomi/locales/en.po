@@ -1,0 +1,144 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/routes/index.tsx
+#, extracted
+msgid "004WjXeB"
+msgstr "This is the home page with prefix-only routing"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Learn more about what we do"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "002nB7Kd"
+msgstr "Our Blog"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "003X9pLm"
+msgstr "Read our latest articles and updates"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr "Get in touch with us"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr "Send us a message and we will respond"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "00403S5Z"
+msgstr "Read our latest articles and updates"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "003bBaea"
+msgstr "This is the home page with non-localized paths routing"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "003LYDLw"
+msgstr "This is a blog post about {topic}"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000SuTYU"
+msgstr "Hello World"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000bv8XP"
+msgstr "Getting Started"
+
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "001Qpsb7"
+msgstr "API Reference"
+
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "0049xyvP"
+msgstr "Complete API documentation"
+
+#: src/routes/{-$locale}/products.featured.tsx
+#, extracted
+msgid "0017Xuw4"
+msgstr "Featured Products"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "003xcdAn"
+msgstr "Product Details"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "001nvw0c"
+msgstr "Product {productId} in category {category}"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "000rooat"
+msgstr "Post Detail"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "002v3Cim"
+msgstr "Post {postId} by {userId}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "004HGxPa"
+msgstr "User Posts"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0012esD3"
+msgstr "Posts by {user}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "001kLT4X"
+msgstr "First Post"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0026pTpY"
+msgstr "Second Post"
+
+#: src/routes/{-$locale}/users.$userId.index.tsx
+#, extracted
+msgid "0042IuEu"
+msgstr "User Profile"
+
+#: src/routes/{-$locale}/users.$userId.index.tsx
+#, extracted
+msgid "0040JPXJ"
+msgstr "Viewing profile for {user}"

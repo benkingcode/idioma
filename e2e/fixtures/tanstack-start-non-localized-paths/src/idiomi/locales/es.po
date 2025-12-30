@@ -1,0 +1,144 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/routes/index.tsx
+#, extracted
+msgid "004WjXeB"
+msgstr "Esta es la pagina de inicio con rutas de prefijo"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Conoce mas sobre lo que hacemos"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "002nB7Kd"
+msgstr "Nuestro Blog"
+
+#: src/routes/blog.tsx
+#, extracted
+msgid "003X9pLm"
+msgstr "Lee nuestros ultimos articulos y actualizaciones"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "0034rp6e"
+msgstr "Contactanos"
+
+#: src/routes/{-$locale}/contact.tsx
+#, extracted
+msgid "002p8oRq"
+msgstr "Envianos un mensaje y te responderemos"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "0039uF2j"
+msgstr "Nuestro Blog"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "00403S5Z"
+msgstr "Lee nuestros ultimos articulos y actualizaciones"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "003bBaea"
+msgstr "Esta es la pagina de inicio con rutas de prefijo"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "002mrR1N"
+msgstr "Articulo del Blog"
+
+#: src/routes/{-$locale}/blog.$slug.tsx
+#, extracted
+msgid "003LYDLw"
+msgstr "Este es un articulo sobre {topic}"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000SuTYU"
+msgstr "Hola Mundo"
+
+#: src/routes/{-$locale}/blog.tsx
+#, extracted
+msgid "000bv8XP"
+msgstr "Primeros Pasos"
+
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "001Qpsb7"
+msgstr "Referencia de API"
+
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "0049xyvP"
+msgstr "Documentacion completa de la API"
+
+#: src/routes/{-$locale}/products.featured.tsx
+#, extracted
+msgid "0017Xuw4"
+msgstr "Productos Destacados"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "003xcdAn"
+msgstr "Detalles del Producto"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "001nvw0c"
+msgstr "Producto {productId} en categoria {category}"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "000rooat"
+msgstr "Detalle de Publicacion"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "002v3Cim"
+msgstr "Publicacion {postId} de {userId}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "004HGxPa"
+msgstr "Publicaciones del Usuario"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0012esD3"
+msgstr "Publicaciones de {user}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "001kLT4X"
+msgstr "Primera Publicacion"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0026pTpY"
+msgstr "Segunda Publicacion"
+
+#: src/routes/{-$locale}/users.$userId.index.tsx
+#, extracted
+msgid "0042IuEu"
+msgstr "Perfil de Usuario"
+
+#: src/routes/{-$locale}/users.$userId.index.tsx
+#, extracted
+msgid "0040JPXJ"
+msgstr "Viendo perfil de {user}"
