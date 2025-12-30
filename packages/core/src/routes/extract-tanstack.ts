@@ -93,15 +93,67 @@ function extractIdAndPath(obj: ObjectExpression): {
   return { id, path };
 }
 
+interface RouteInfo {
+  variableName: string;
+  path: string;
+  parentVariableName?: string;
+}
+
+/**
+ * Extract parent variable name from getParentRoute arrow function.
+ * Pattern: getParentRoute: () => SomeRouteVariable
+ */
+function extractParentRoute(obj: ObjectExpression): string | undefined {
+  for (const prop of obj.properties) {
+    if (prop.type !== 'ObjectProperty') continue;
+    if (prop.key.type !== 'Identifier') continue;
+    if (prop.key.name !== 'getParentRoute') continue;
+
+    // Arrow function: () => SomeRoute
+    if (prop.value.type === 'ArrowFunctionExpression') {
+      const body = prop.value.body;
+      if (body.type === 'Identifier') {
+        return body.name;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Build full path by walking up the parent chain.
+ */
+function buildFullPath(
+  routeInfo: RouteInfo,
+  routeMap: Map<string, RouteInfo>,
+): string[] {
+  const segments: string[] = [];
+
+  let current: RouteInfo | undefined = routeInfo;
+  while (current) {
+    // Add this route's segments (skip locale routes)
+    if (!isLocaleRoute(current.path) && current.path !== '/') {
+      const routeSegments = pathToSegments(current.path);
+      segments.unshift(...routeSegments);
+    }
+
+    // Walk up to parent
+    if (current.parentVariableName) {
+      current = routeMap.get(current.parentVariableName);
+    } else {
+      break;
+    }
+  }
+
+  return segments;
+}
+
 /**
  * Extract routes from TanStack Router's generated routeTree.gen.ts.
  *
  * Uses AST parsing to find .update({ id, path, getParentRoute }) definitions.
- * TanStack's route tree structure already separates locale from content routes:
- * - Parent route has the locale param: { path: '/{-$locale}' }
- * - Child routes have clean paths: { path: '/about' }
- *
- * This means we don't need to strip locale prefixes - child route paths are already clean.
+ * TanStack's route tree structure uses nested routes where child routes have
+ * relative paths. We build full paths by walking up the parent chain.
  */
 async function extractFromRouteTree(
   routeTreePath: string,
@@ -114,52 +166,76 @@ async function extractFromRouteTree(
     plugins: ['typescript'],
   });
 
-  const routes: ExtractedRoute[] = [];
+  // First pass: collect all route info with parent relationships
+  const routeMap = new Map<string, RouteInfo>();
 
   walk(ast, (node) => {
-    // Find .update() call expressions
-    if (node.type !== 'CallExpression') return;
+    // Find variable declarations: const SomeRoute = SomeRouteImport.update({ ... })
+    if (node.type !== 'VariableDeclaration') return;
 
-    // Check if it's a .update() call: SomeRoute.update({ ... })
-    if (node.callee.type !== 'MemberExpression') return;
-    if (node.callee.property.type !== 'Identifier') return;
-    if (node.callee.property.name !== 'update') return;
+    for (const declarator of node.declarations) {
+      if (declarator.type !== 'VariableDeclarator') continue;
+      if (declarator.id.type !== 'Identifier') continue;
 
-    // Get the first argument (should be an object expression)
-    // Handle TypeScript `as any` casts by unwrapping TSAsExpression
-    let arg = node.arguments[0];
-    if (!arg) return;
+      const init = declarator.init;
+      if (!init || init.type !== 'CallExpression') continue;
 
-    // Unwrap TSAsExpression (e.g., `{ id: '...' } as any`)
-    if (arg.type === 'TSAsExpression') {
-      arg = arg.expression;
+      // Check if it's a .update() call
+      if (init.callee.type !== 'MemberExpression') continue;
+      if (init.callee.property.type !== 'Identifier') continue;
+      if (init.callee.property.name !== 'update') continue;
+
+      // The assigned variable name (e.g., Char123LocaleChar125BlogRoute)
+      const variableName = declarator.id.name;
+
+      // Get the first argument (should be an object expression)
+      // Handle TypeScript `as any` casts by unwrapping TSAsExpression
+      let arg = init.arguments[0];
+      if (!arg) continue;
+
+      // Unwrap TSAsExpression (e.g., `{ id: '...' } as any`)
+      if (arg.type === 'TSAsExpression') {
+        arg = arg.expression;
+      }
+      if (arg.type !== 'ObjectExpression') continue;
+
+      // Extract id, path, and parent from the object
+      const { path } = extractIdAndPath(arg);
+      if (!path) continue;
+
+      const parentVariableName = extractParentRoute(arg);
+
+      routeMap.set(variableName, {
+        variableName,
+        path,
+        parentVariableName,
+      });
     }
-    if (arg.type !== 'ObjectExpression') return;
+  });
 
-    // Extract id and path from the object
-    const { path } = extractIdAndPath(arg);
-    if (!path) return;
+  // Second pass: build full paths from route hierarchy
+  const routes: ExtractedRoute[] = [];
 
+  for (const routeInfo of routeMap.values()) {
     // Skip routes that are just locale params (these are parent layout routes)
-    // Examples: /{-$locale}, /{$locale}, /$locale, /$lang
-    if (isLocaleRoute(path)) {
-      return;
+    if (isLocaleRoute(routeInfo.path)) {
+      continue;
     }
 
     // Skip root route (just /)
-    if (path === '/') {
-      return;
+    if (routeInfo.path === '/') {
+      continue;
     }
 
-    // Parse segments from the path
-    const segments = pathToSegments(path);
+    // Build full path by walking up parent chain
+    const segments = buildFullPath(routeInfo, routeMap);
 
     // Filter out route groups (they don't appear in URLs)
     const filteredSegments = segments.filter((seg) => !isRouteGroup(seg));
 
     // Skip if no translatable segments remain
     if (filteredSegments.length === 0) {
-      return;
+      continue;
     }
 
     // Build the canonical path from filtered segments
@@ -171,7 +247,7 @@ async function extractFromRouteTree(
       type: 'page',
       segments: filteredSegments,
     });
-  });
+  }
 
   return deduplicateRoutes(routes);
 }
@@ -180,31 +256,28 @@ async function extractFromRouteTree(
  * Check if a route path is a locale parameter route.
  *
  * These are parent layout routes that handle locale switching, not content routes.
- * Examples:
+ * Only matches TanStack Router's special locale param syntax:
  * - /{-$locale} - optional locale param
  * - /{$locale} - required locale param
- * - /$locale - simple locale param
- * - /$lang - alternative naming
+ *
+ * Simple dynamic segments like /$slug are NOT locale routes - they're regular
+ * dynamic route parameters in the URL.
  */
 function isLocaleRoute(path: string): boolean {
-  // Match paths that are ONLY a locale param (not /about, /blog, etc.)
-  // Pattern: starts with / followed by any param syntax
   const normalized = path.trim();
 
-  // /{-$...} - optional param with special chars
+  // /{-$...} - optional param with special chars (TanStack locale convention)
   if (/^\/\{-\$\w+\}$/.test(normalized)) {
     return true;
   }
 
-  // /{$...} - required param with special chars
+  // /{$...} - required param with special chars (TanStack locale convention)
   if (/^\/\{\$\w+\}$/.test(normalized)) {
     return true;
   }
 
-  // /$... - simple param (only if it's just the param, nothing else)
-  if (/^\/\$\w+$/.test(normalized)) {
-    return true;
-  }
+  // NOTE: We intentionally don't match /$param here because simple dynamic
+  // segments like /$slug are regular route parameters, not locale routes.
 
   return false;
 }

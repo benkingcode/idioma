@@ -1,5 +1,10 @@
 import type { Message } from '../po/types.js';
-import type { CompiledRoutes, ExtractedRoute, Framework } from './types.js';
+import type {
+  CompiledRoutes,
+  ExtractedRoute,
+  Framework,
+  RoutePattern,
+} from './types.js';
 import { isDynamicSegment } from './types.js';
 
 /** Route context prefix in PO files */
@@ -89,9 +94,27 @@ export function compileRoutes(
     }
   }
 
+  // Step 3: Build patterns array for segment-level matching
+  // Patterns allow matching concrete URLs against parameterized routes
+  // by tracking which segments are dynamic vs static
+  const patterns: RoutePattern[] = routes.map((route) => ({
+    canonical: route.segments,
+    localized: Object.fromEntries(
+      locales.map((locale) => [
+        locale,
+        route.segments.map((seg) =>
+          isDynamicSegment(seg, framework)
+            ? seg
+            : (segments[locale]?.[seg] ?? seg),
+        ),
+      ]),
+    ),
+  }));
+
   return {
     routes: routeMaps,
     reverseRoutes: reverseMaps,
+    patterns,
   };
 }
 
@@ -112,14 +135,85 @@ export function generateRoutesModule(compiled: CompiledRoutes): string {
     '/** Localized path → Canonical path by locale (for URL matching) */',
     `export const reverseRoutes = ${JSON.stringify(compiled.reverseRoutes, null, 2)};`,
     '',
-    '/** Get localized path for a canonical path */',
-    'export function getLocalizedPath(canonicalPath, locale) {',
-    '  return routes[locale]?.[canonicalPath] ?? canonicalPath;',
+    '/** Route patterns for segment-level matching with dynamic params */',
+    `export const routePatterns = ${JSON.stringify(compiled.patterns, null, 2)};`,
+    '',
+    '/**',
+    ' * Match a URL path against route patterns.',
+    ' * Returns captured dynamic param values and the matching pattern, or null if no match.',
+    ' */',
+    'function matchRoutePattern(segments, useLocalized, locale) {',
+    '  for (const pattern of routePatterns) {',
+    '    const patternSegs = useLocalized ? pattern.localized[locale] : pattern.canonical;',
+    '    if (!patternSegs || patternSegs.length !== segments.length) continue;',
+    '',
+    '    const captured = {};',
+    '    let matches = true;',
+    '',
+    '    for (let i = 0; i < patternSegs.length; i++) {',
+    '      const patternSeg = patternSegs[i];',
+    '      const urlSeg = segments[i];',
+    '',
+    "      if (patternSeg.startsWith('$')) {",
+    '        captured[patternSeg] = urlSeg;',
+    '      } else if (patternSeg !== urlSeg) {',
+    '        matches = false;',
+    '        break;',
+    '      }',
+    '    }',
+    '',
+    '    if (matches) {',
+    '      return { pattern, captured };',
+    '    }',
+    '  }',
+    '  return null;',
     '}',
     '',
-    '/** Get canonical path from a localized path */',
+    '/** Get localized path for a canonical path (supports dynamic params) */',
+    'export function getLocalizedPath(canonicalPath, locale) {',
+    '  // Try direct lookup first (fastest for static routes)',
+    '  const direct = routes[locale]?.[canonicalPath];',
+    '  if (direct) return direct;',
+    '',
+    '  // Handle root path',
+    "  if (canonicalPath === '/') return '/';",
+    '',
+    '  // Parse path into segments and try pattern matching',
+    "  const segments = canonicalPath.split('/').filter(Boolean);",
+    '  const match = matchRoutePattern(segments, false, locale);',
+    '',
+    '  if (match) {',
+    '    const localizedSegs = match.pattern.localized[locale];',
+    '    if (localizedSegs) {',
+    "      return '/' + localizedSegs.map(seg =>",
+    "        seg.startsWith('$') ? match.captured[seg] : seg",
+    "      ).join('/');",
+    '    }',
+    '  }',
+    '',
+    '  return canonicalPath;',
+    '}',
+    '',
+    '/** Get canonical path from a localized path (supports dynamic params) */',
     'export function getCanonicalPath(localizedPath, locale) {',
-    '  return reverseRoutes[locale]?.[localizedPath] ?? localizedPath;',
+    '  // Try direct lookup first (fastest for static routes)',
+    '  const direct = reverseRoutes[locale]?.[localizedPath];',
+    '  if (direct) return direct;',
+    '',
+    '  // Handle root path',
+    "  if (localizedPath === '/') return '/';",
+    '',
+    '  // Parse path into segments and try pattern matching',
+    "  const segments = localizedPath.split('/').filter(Boolean);",
+    '  const match = matchRoutePattern(segments, true, locale);',
+    '',
+    '  if (match) {',
+    "    return '/' + match.pattern.canonical.map(seg =>",
+    "      seg.startsWith('$') ? match.captured[seg] : seg",
+    "    ).join('/');",
+    '  }',
+    '',
+    '  return localizedPath;',
     '}',
     '',
   ];

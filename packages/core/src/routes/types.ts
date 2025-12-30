@@ -44,12 +44,40 @@ export interface ExtractRoutesOptions {
   exclude?: string[];
 }
 
+/**
+ * Route pattern for segment-level URL matching.
+ *
+ * Unlike the path-based routes map (which uses full paths as keys),
+ * patterns allow matching concrete URLs against parameterized routes.
+ *
+ * Dynamic segments (prefixed with $) are preserved during matching
+ * and their concrete values are captured for URL reconstruction.
+ *
+ * @example
+ * // Pattern for /users/$userId route
+ * {
+ *   canonical: ['users', '$userId'],
+ *   localized: {
+ *     en: ['users', '$userId'],
+ *     es: ['usuarios', '$userId']
+ *   }
+ * }
+ */
+export interface RoutePattern {
+  /** Canonical path segments (e.g., ['users', '$userId']) */
+  canonical: string[];
+  /** Localized segments per locale */
+  localized: Record<string, string[]>;
+}
+
 /** Compiled route maps for runtime use */
 export interface CompiledRoutes {
   /** Full path maps: { en: { '/about': '/about' }, es: { '/about': '/sobre' } } */
   routes: Record<string, Record<string, string>>;
   /** Reverse maps for URL matching: { es: { '/sobre': '/about' } } */
   reverseRoutes: Record<string, Record<string, string>>;
+  /** Route patterns for segment-level matching with dynamic params */
+  patterns: RoutePattern[];
 }
 
 /**

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Trans, useT } from '../../idiomi';
 
-export const Route = createFileRoute('/{-$locale}/users/$userId')({
+export const Route = createFileRoute('/{-$locale}/users/$userId/')({
   component: UserProfile,
 });
 

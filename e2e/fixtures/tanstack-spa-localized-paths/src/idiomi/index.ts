@@ -9,7 +9,7 @@ import {
   createUseT,
 } from '@idiomi/react';
 import type { IdiomiTypes, Locale } from './.generated/types';
-import { routes, reverseRoutes } from './.generated/routes';
+import { routes, reverseRoutes, routePatterns } from './.generated/routes';
 import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';
 import { createLocaleHead } from '@idiomi/tanstack-react';
 import { redirect } from '@tanstack/react-router';
@@ -116,6 +116,44 @@ function getCookie(name: string): string | undefined {
 }
 
 /**
+ * Match a URL path against route patterns to find the matching route.
+ * Returns captured dynamic param values and the matching pattern, or null if no match.
+ */
+function matchRoutePattern(
+  segments: string[],
+  patterns: typeof routePatterns,
+  locale: string,
+  useLocalized: boolean
+): { pattern: typeof routePatterns[0]; captured: Record<string, string> } | null {
+  for (const pattern of patterns) {
+    const patternSegs = useLocalized ? pattern.localized[locale] : pattern.canonical;
+    if (!patternSegs || patternSegs.length !== segments.length) continue;
+
+    const captured: Record<string, string> = {};
+    let matches = true;
+
+    for (let i = 0; i < patternSegs.length; i++) {
+      const patternSeg = patternSegs[i];
+      const urlSeg = segments[i];
+
+      if (patternSeg.startsWith('$')) {
+        // Dynamic segment - capture the actual value
+        captured[patternSeg] = urlSeg;
+      } else if (patternSeg !== urlSeg) {
+        // Static segment must match exactly
+        matches = false;
+        break;
+      }
+    }
+
+    if (matches) {
+      return { pattern, captured };
+    }
+  }
+  return null;
+}
+
+/**
  * Transform localized URL to canonical for route matching.
  * Use with TanStack Router's rewrite.input option.
  * @example
@@ -134,36 +172,31 @@ export function deLocalizeUrl(url: URL): URL {
   // The {-$locale} optional segment will match unprefixed paths
   if (!pathLocale) return url;
 
-  const localeReverse = reverseRoutes[pathLocale];
-  if (!localeReverse) return url;
-
   const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';
 
-  // Try exact match first
-  let canonicalPath = localeReverse[pathWithoutLocale];
+  // Handle root path
+  if (pathWithoutLocale === '/') return url;
 
-  // If no exact match, try matching base path for dynamic routes
-  // e.g., /articulos/my-post -> match /articulos, translate to /blog, result: /blog/my-post
-  if (!canonicalPath && pathWithoutLocale !== '/') {
-    const segments = pathWithoutLocale.split('/').filter(Boolean);
-    for (let i = segments.length - 1; i > 0; i--) {
-      const basePath = '/' + segments.slice(0, i).join('/');
-      const baseCanonical = localeReverse[basePath];
-      if (baseCanonical) {
-        const trailing = '/' + segments.slice(i).join('/');
-        canonicalPath = baseCanonical + trailing;
-        break;
-      }
+  const segments = pathWithoutLocale.split('/').filter(Boolean);
+
+  // Match against localized patterns to find the route
+  const match = matchRoutePattern(segments, routePatterns, pathLocale, true);
+
+  if (match) {
+    // Build canonical path using pattern's canonical segments
+    const canonicalPath = '/' + match.pattern.canonical.map(seg =>
+      seg.startsWith('$') ? match.captured[seg] : seg
+    ).join('/');
+
+    if (canonicalPath !== pathWithoutLocale) {
+      const newUrl = new URL(url);
+      // Keep locale prefix, translate the path segment
+      // TanStack Router's {-$locale} param handles locale extraction
+      newUrl.pathname = `/${pathLocale}${canonicalPath}`;
+      return newUrl;
     }
   }
 
-  if (canonicalPath && canonicalPath !== pathWithoutLocale) {
-    const newUrl = new URL(url);
-    // Keep locale prefix, translate the path segment
-    // TanStack Router's {-$locale} param handles locale extraction
-    newUrl.pathname = `/${pathLocale}${canonicalPath}`;
-    return newUrl;
-  }
   return url;
 }
 
@@ -183,22 +216,30 @@ export function localizeUrl(url: URL): URL {
   // Handle prefix strategy: strip prefix for default locale when 'as-needed'
   const shouldStripPrefix = prefixStrategy === 'as-needed' && pathLocale === defaultLocale;
 
-  // Get localized path (path translation)
-  const localeRoutes = routes[pathLocale];
-  let localizedPath = localeRoutes?.[pathWithoutLocale];
+  // Handle root path
+  if (pathWithoutLocale === '/') {
+    if (shouldStripPrefix) {
+      const newUrl = new URL(url);
+      newUrl.pathname = '/';
+      return newUrl;
+    }
+    return url;
+  }
 
-  // If no exact match, try matching base path for dynamic routes
-  // e.g., /blog/my-post -> match /blog, translate to /articulos, result: /articulos/my-post
-  if (!localizedPath && pathWithoutLocale !== '/') {
-    const segments = pathWithoutLocale.split('/').filter(Boolean);
-    for (let i = segments.length - 1; i > 0; i--) {
-      const basePath = '/' + segments.slice(0, i).join('/');
-      const baseLocalized = localeRoutes?.[basePath];
-      if (baseLocalized) {
-        const trailing = '/' + segments.slice(i).join('/');
-        localizedPath = baseLocalized + trailing;
-        break;
-      }
+  const segments = pathWithoutLocale.split('/').filter(Boolean);
+
+  // Match against canonical patterns to find the route
+  const match = matchRoutePattern(segments, routePatterns, pathLocale, false);
+
+  let localizedPath: string | undefined;
+
+  if (match) {
+    const localizedSegs = match.pattern.localized[pathLocale];
+    if (localizedSegs) {
+      // Build localized path, substituting captured dynamic values
+      localizedPath = '/' + localizedSegs.map(seg =>
+        seg.startsWith('$') ? match.captured[seg] : seg
+      ).join('/');
     }
   }
 

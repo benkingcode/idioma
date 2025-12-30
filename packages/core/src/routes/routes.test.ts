@@ -301,6 +301,231 @@ describe('compileRoutes', () => {
     expect(compiled.routes.en['/blog/$slug']).toBe('/blog/$slug');
     expect(compiled.routes.es['/blog/$slug']).toBe('/articulos/$slug');
   });
+
+  describe('pattern generation', () => {
+    it('generates patterns for static routes', () => {
+      const routes: ExtractedRoute[] = [
+        {
+          path: '/about',
+          source: 'app/about/page.tsx',
+          type: 'page',
+          segments: ['about'],
+        },
+      ];
+
+      const messages: Record<string, Message[]> = {
+        en: [
+          {
+            key: 'abc',
+            source: 'about',
+            translation: 'about',
+            context: 'route:about',
+          },
+        ],
+        es: [
+          {
+            key: 'abc',
+            source: 'about',
+            translation: 'sobre',
+            context: 'route:about',
+          },
+        ],
+      };
+
+      const compiled = compileRoutes(
+        routes,
+        messages,
+        ['en', 'es'],
+        'next-app',
+      );
+
+      expect(compiled.patterns).toHaveLength(1);
+      expect(compiled.patterns[0]).toEqual({
+        canonical: ['about'],
+        localized: {
+          en: ['about'],
+          es: ['sobre'],
+        },
+      });
+    });
+
+    it('generates patterns preserving dynamic segments for TanStack', () => {
+      const routes: ExtractedRoute[] = [
+        {
+          path: '/users/$userId',
+          source: 'src/routes/users.$userId.tsx',
+          type: 'page',
+          segments: ['users', '$userId'],
+        },
+        {
+          path: '/users/$userId/posts',
+          source: 'src/routes/users.$userId.posts.tsx',
+          type: 'page',
+          segments: ['users', '$userId', 'posts'],
+        },
+      ];
+
+      const messages: Record<string, Message[]> = {
+        en: [
+          {
+            key: 'a',
+            source: 'users',
+            translation: 'users',
+            context: 'route:users',
+          },
+          {
+            key: 'b',
+            source: 'posts',
+            translation: 'posts',
+            context: 'route:posts',
+          },
+        ],
+        es: [
+          {
+            key: 'a',
+            source: 'users',
+            translation: 'usuarios',
+            context: 'route:users',
+          },
+          {
+            key: 'b',
+            source: 'posts',
+            translation: 'publicaciones',
+            context: 'route:posts',
+          },
+        ],
+      };
+
+      const compiled = compileRoutes(
+        routes,
+        messages,
+        ['en', 'es'],
+        'tanstack',
+      );
+
+      expect(compiled.patterns).toHaveLength(2);
+
+      // Pattern for /users/$userId
+      expect(compiled.patterns[0]).toEqual({
+        canonical: ['users', '$userId'],
+        localized: {
+          en: ['users', '$userId'],
+          es: ['usuarios', '$userId'],
+        },
+      });
+
+      // Pattern for /users/$userId/posts
+      expect(compiled.patterns[1]).toEqual({
+        canonical: ['users', '$userId', 'posts'],
+        localized: {
+          en: ['users', '$userId', 'posts'],
+          es: ['usuarios', '$userId', 'publicaciones'],
+        },
+      });
+    });
+
+    it('generates patterns with consecutive dynamic segments', () => {
+      const routes: ExtractedRoute[] = [
+        {
+          path: '/shop/$category/$productId',
+          source: 'src/routes/shop.$category.$productId.tsx',
+          type: 'page',
+          segments: ['shop', '$category', '$productId'],
+        },
+      ];
+
+      const messages: Record<string, Message[]> = {
+        en: [
+          {
+            key: 'a',
+            source: 'shop',
+            translation: 'shop',
+            context: 'route:shop',
+          },
+        ],
+        es: [
+          {
+            key: 'a',
+            source: 'shop',
+            translation: 'tienda',
+            context: 'route:shop',
+          },
+        ],
+      };
+
+      const compiled = compileRoutes(
+        routes,
+        messages,
+        ['en', 'es'],
+        'tanstack',
+      );
+
+      expect(compiled.patterns[0]).toEqual({
+        canonical: ['shop', '$category', '$productId'],
+        localized: {
+          en: ['shop', '$category', '$productId'],
+          es: ['tienda', '$category', '$productId'],
+        },
+      });
+    });
+
+    it('generates patterns for deeply nested static routes', () => {
+      const routes: ExtractedRoute[] = [
+        {
+          path: '/docs/api/v2/reference',
+          source: 'src/routes/docs.api.v2.reference.tsx',
+          type: 'page',
+          segments: ['docs', 'api', 'v2', 'reference'],
+        },
+      ];
+
+      const messages: Record<string, Message[]> = {
+        en: [
+          {
+            key: 'a',
+            source: 'docs',
+            translation: 'docs',
+            context: 'route:docs',
+          },
+          {
+            key: 'b',
+            source: 'reference',
+            translation: 'reference',
+            context: 'route:reference',
+          },
+        ],
+        es: [
+          {
+            key: 'a',
+            source: 'docs',
+            translation: 'documentos',
+            context: 'route:docs',
+          },
+          {
+            key: 'b',
+            source: 'reference',
+            translation: 'referencia',
+            context: 'route:reference',
+          },
+        ],
+      };
+
+      const compiled = compileRoutes(
+        routes,
+        messages,
+        ['en', 'es'],
+        'tanstack',
+      );
+
+      expect(compiled.patterns[0]).toEqual({
+        canonical: ['docs', 'api', 'v2', 'reference'],
+        localized: {
+          en: ['docs', 'api', 'v2', 'reference'],
+          es: ['documentos', 'api', 'v2', 'referencia'],
+        },
+      });
+    });
+  });
 });
 
 describe('generateRoutesModule', () => {
@@ -308,17 +533,48 @@ describe('generateRoutesModule', () => {
     const compiled = {
       routes: { en: { '/about': '/about' }, es: { '/about': '/sobre' } },
       reverseRoutes: { en: { '/about': '/about' }, es: { '/sobre': '/about' } },
+      patterns: [
+        {
+          canonical: ['about'],
+          localized: { en: ['about'], es: ['sobre'] },
+        },
+      ],
     };
 
     const code = generateRoutesModule(compiled);
 
     expect(code).toContain('export const routes =');
     expect(code).toContain('export const reverseRoutes =');
+    expect(code).toContain('export const routePatterns =');
     expect(code).toContain('export function getLocalizedPath');
     expect(code).toContain('export function getCanonicalPath');
     expect(code).toContain('Auto-generated by @idiomi/core');
     // segments should NOT be exported
     expect(code).not.toContain('export const segments');
+  });
+
+  it('exports routePatterns with correct structure', () => {
+    const compiled = {
+      routes: { en: { '/users/$userId': '/users/$userId' } },
+      reverseRoutes: { en: { '/users/$userId': '/users/$userId' } },
+      patterns: [
+        {
+          canonical: ['users', '$userId'],
+          localized: {
+            en: ['users', '$userId'],
+            es: ['usuarios', '$userId'],
+          },
+        },
+      ],
+    };
+
+    const code = generateRoutesModule(compiled);
+
+    expect(code).toContain('"canonical": [');
+    expect(code).toContain('"users"');
+    expect(code).toContain('"$userId"');
+    expect(code).toContain('"localized": {');
+    expect(code).toContain('"usuarios"');
   });
 });
 

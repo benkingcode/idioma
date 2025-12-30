@@ -16,9 +16,9 @@ import { Route as Char123LocaleChar125StressTestRouteImport } from './routes/{-$
 import { Route as Char123LocaleChar125ContactRouteImport } from './routes/{-$locale}/contact'
 import { Route as Char123LocaleChar125BlogRouteImport } from './routes/{-$locale}/blog'
 import { Route as Char123LocaleChar125AboutRouteImport } from './routes/{-$locale}/about'
-import { Route as Char123LocaleChar125UsersUserIdRouteImport } from './routes/{-$locale}/users.$userId'
 import { Route as Char123LocaleChar125ProductsFeaturedRouteImport } from './routes/{-$locale}/products.featured'
 import { Route as Char123LocaleChar125BlogSlugRouteImport } from './routes/{-$locale}/blog.$slug'
+import { Route as Char123LocaleChar125UsersUserIdIndexRouteImport } from './routes/{-$locale}/users.$userId.index'
 import { Route as Char123LocaleChar125UsersUserIdPostsRouteImport } from './routes/{-$locale}/users.$userId.posts'
 import { Route as Char123LocaleChar125ShopCategoryProductIdRouteImport } from './routes/{-$locale}/shop.$category.$productId'
 import { Route as Char123LocaleChar125UsersUserIdPostsPostIdRouteImport } from './routes/{-$locale}/users.$userId.posts.$postId'
@@ -66,12 +66,6 @@ const Char123LocaleChar125AboutRoute =
     path: '/about',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
-const Char123LocaleChar125UsersUserIdRoute =
-  Char123LocaleChar125UsersUserIdRouteImport.update({
-    id: '/users/$userId',
-    path: '/users/$userId',
-    getParentRoute: () => Char123LocaleChar125RouteRoute,
-  } as any)
 const Char123LocaleChar125ProductsFeaturedRoute =
   Char123LocaleChar125ProductsFeaturedRouteImport.update({
     id: '/products/featured',
@@ -84,11 +78,17 @@ const Char123LocaleChar125BlogSlugRoute =
     path: '/$slug',
     getParentRoute: () => Char123LocaleChar125BlogRoute,
   } as any)
+const Char123LocaleChar125UsersUserIdIndexRoute =
+  Char123LocaleChar125UsersUserIdIndexRouteImport.update({
+    id: '/users/$userId/',
+    path: '/users/$userId/',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125UsersUserIdPostsRoute =
   Char123LocaleChar125UsersUserIdPostsRouteImport.update({
-    id: '/posts',
-    path: '/posts',
-    getParentRoute: () => Char123LocaleChar125UsersUserIdRoute,
+    id: '/users/$userId/posts',
+    path: '/users/$userId/posts',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 const Char123LocaleChar125ShopCategoryProductIdRoute =
   Char123LocaleChar125ShopCategoryProductIdRouteImport.update({
@@ -119,9 +119,9 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
   '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
-  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdRouteWithChildren
   '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
   '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdIndexRoute
   '/{-$locale}/docs/api/v2/reference': typeof Char123LocaleChar125DocsApiV2ReferenceRoute
   '/{-$locale}/users/$userId/posts/$postId': typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
 }
@@ -134,9 +134,9 @@ export interface FileRoutesByTo {
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
   '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
-  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdRouteWithChildren
   '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
   '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdIndexRoute
   '/{-$locale}/docs/api/v2/reference': typeof Char123LocaleChar125DocsApiV2ReferenceRoute
   '/{-$locale}/users/$userId/posts/$postId': typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
 }
@@ -151,9 +151,9 @@ export interface FileRoutesById {
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
   '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
-  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdRouteWithChildren
   '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
   '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  '/{-$locale}/users/$userId/': typeof Char123LocaleChar125UsersUserIdIndexRoute
   '/{-$locale}/docs/api/v2/reference': typeof Char123LocaleChar125DocsApiV2ReferenceRoute
   '/{-$locale}/users/$userId/posts/$postId': typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
 }
@@ -169,9 +169,9 @@ export interface FileRouteTypes {
     | '/{-$locale}/'
     | '/{-$locale}/blog/$slug'
     | '/{-$locale}/products/featured'
-    | '/{-$locale}/users/$userId'
     | '/{-$locale}/shop/$category/$productId'
     | '/{-$locale}/users/$userId/posts'
+    | '/{-$locale}/users/$userId'
     | '/{-$locale}/docs/api/v2/reference'
     | '/{-$locale}/users/$userId/posts/$postId'
   fileRoutesByTo: FileRoutesByTo
@@ -184,9 +184,9 @@ export interface FileRouteTypes {
     | '/{-$locale}'
     | '/{-$locale}/blog/$slug'
     | '/{-$locale}/products/featured'
-    | '/{-$locale}/users/$userId'
     | '/{-$locale}/shop/$category/$productId'
     | '/{-$locale}/users/$userId/posts'
+    | '/{-$locale}/users/$userId'
     | '/{-$locale}/docs/api/v2/reference'
     | '/{-$locale}/users/$userId/posts/$postId'
   id:
@@ -200,9 +200,9 @@ export interface FileRouteTypes {
     | '/{-$locale}/'
     | '/{-$locale}/blog/$slug'
     | '/{-$locale}/products/featured'
-    | '/{-$locale}/users/$userId'
     | '/{-$locale}/shop/$category/$productId'
     | '/{-$locale}/users/$userId/posts'
+    | '/{-$locale}/users/$userId/'
     | '/{-$locale}/docs/api/v2/reference'
     | '/{-$locale}/users/$userId/posts/$postId'
   fileRoutesById: FileRoutesById
@@ -262,13 +262,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125AboutRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
-    '/{-$locale}/users/$userId': {
-      id: '/{-$locale}/users/$userId'
-      path: '/users/$userId'
-      fullPath: '/{-$locale}/users/$userId'
-      preLoaderRoute: typeof Char123LocaleChar125UsersUserIdRouteImport
-      parentRoute: typeof Char123LocaleChar125RouteRoute
-    }
     '/{-$locale}/products/featured': {
       id: '/{-$locale}/products/featured'
       path: '/products/featured'
@@ -283,12 +276,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125BlogSlugRouteImport
       parentRoute: typeof Char123LocaleChar125BlogRoute
     }
+    '/{-$locale}/users/$userId/': {
+      id: '/{-$locale}/users/$userId/'
+      path: '/users/$userId'
+      fullPath: '/{-$locale}/users/$userId'
+      preLoaderRoute: typeof Char123LocaleChar125UsersUserIdIndexRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/users/$userId/posts': {
       id: '/{-$locale}/users/$userId/posts'
-      path: '/posts'
+      path: '/users/$userId/posts'
       fullPath: '/{-$locale}/users/$userId/posts'
       preLoaderRoute: typeof Char123LocaleChar125UsersUserIdPostsRouteImport
-      parentRoute: typeof Char123LocaleChar125UsersUserIdRoute
+      parentRoute: typeof Char123LocaleChar125RouteRoute
     }
     '/{-$locale}/shop/$category/$productId': {
       id: '/{-$locale}/shop/$category/$productId'
@@ -343,21 +343,6 @@ const Char123LocaleChar125UsersUserIdPostsRouteWithChildren =
     Char123LocaleChar125UsersUserIdPostsRouteChildren,
   )
 
-interface Char123LocaleChar125UsersUserIdRouteChildren {
-  Char123LocaleChar125UsersUserIdPostsRoute: typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
-}
-
-const Char123LocaleChar125UsersUserIdRouteChildren: Char123LocaleChar125UsersUserIdRouteChildren =
-  {
-    Char123LocaleChar125UsersUserIdPostsRoute:
-      Char123LocaleChar125UsersUserIdPostsRouteWithChildren,
-  }
-
-const Char123LocaleChar125UsersUserIdRouteWithChildren =
-  Char123LocaleChar125UsersUserIdRoute._addFileChildren(
-    Char123LocaleChar125UsersUserIdRouteChildren,
-  )
-
 interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125AboutRoute: typeof Char123LocaleChar125AboutRoute
   Char123LocaleChar125BlogRoute: typeof Char123LocaleChar125BlogRouteWithChildren
@@ -366,8 +351,9 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125TestsRoute: typeof Char123LocaleChar125TestsRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
   Char123LocaleChar125ProductsFeaturedRoute: typeof Char123LocaleChar125ProductsFeaturedRoute
-  Char123LocaleChar125UsersUserIdRoute: typeof Char123LocaleChar125UsersUserIdRouteWithChildren
   Char123LocaleChar125ShopCategoryProductIdRoute: typeof Char123LocaleChar125ShopCategoryProductIdRoute
+  Char123LocaleChar125UsersUserIdPostsRoute: typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  Char123LocaleChar125UsersUserIdIndexRoute: typeof Char123LocaleChar125UsersUserIdIndexRoute
   Char123LocaleChar125DocsApiV2ReferenceRoute: typeof Char123LocaleChar125DocsApiV2ReferenceRoute
 }
 
@@ -381,10 +367,12 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
     Char123LocaleChar125ProductsFeaturedRoute:
       Char123LocaleChar125ProductsFeaturedRoute,
-    Char123LocaleChar125UsersUserIdRoute:
-      Char123LocaleChar125UsersUserIdRouteWithChildren,
     Char123LocaleChar125ShopCategoryProductIdRoute:
       Char123LocaleChar125ShopCategoryProductIdRoute,
+    Char123LocaleChar125UsersUserIdPostsRoute:
+      Char123LocaleChar125UsersUserIdPostsRouteWithChildren,
+    Char123LocaleChar125UsersUserIdIndexRoute:
+      Char123LocaleChar125UsersUserIdIndexRoute,
     Char123LocaleChar125DocsApiV2ReferenceRoute:
       Char123LocaleChar125DocsApiV2ReferenceRoute,
   }
