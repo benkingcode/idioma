@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { generateKey } from '../../keys/generator.js';
 import { extractMessages } from './extract';
 
 describe('Extract Command', () => {
@@ -466,5 +467,54 @@ msgstr "Old message"
     const poPath = join(localeDir, 'en.po');
     const content = await fs.readFile(poPath, 'utf-8');
     expect(content).toContain('#. Primary action button for form submission');
+  });
+
+  it('preserves translations for messages with context', async () => {
+    // Generate the key for a message with context (same as extraction does)
+    const context = 'route:about';
+    const source = 'about';
+    const key = generateKey(source, context);
+
+    // Create source file with Trans using context prop
+    await fs.writeFile(
+      join(srcDir, 'Routes.tsx'),
+      `
+      import { Trans } from './idiomi'
+      export function Routes() {
+        return <Trans context="${context}">${source}</Trans>
+      }
+      `,
+    );
+
+    // Create existing PO with Spanish translation for this contexted message
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `msgid ""
+msgstr ""
+"Language: es\\n"
+
+#, extracted
+msgctxt "${context}"
+msgid "${key}"
+msgstr "sobre"
+`,
+    );
+
+    // Run extraction
+    await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      locales: ['en', 'es'],
+      idiomiDir,
+    });
+
+    // Verify Spanish translation is preserved (not overwritten with empty string)
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('msgstr "sobre"');
+    // Should NOT have an empty msgstr for this message
+    // Note: header always has msgstr "", so we check the contexted message specifically
+    expect(esContent).toMatch(/msgctxt "route:about"[\s\S]*msgstr "sobre"/);
   });
 });

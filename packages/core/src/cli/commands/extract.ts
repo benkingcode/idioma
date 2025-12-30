@@ -391,6 +391,10 @@ function parseTransElement(element: t.JSXElement): {
   return { id, context, comment, namespace, source };
 }
 
+// Context separator used in PO files (ASCII end-of-transmission)
+// Must match the separator used in parser.ts for key consistency
+const CONTEXT_SEPARATOR = '\u0004';
+
 export function messagesToCatalog(
   messages: ExtractedMessage[],
   locale: string,
@@ -421,15 +425,21 @@ export function messagesToCatalog(
       flags: ['extracted'],
     };
 
+    // Use context-aware map key to match parser.ts format
+    // This ensures extracted messages match existing messages during merge
+    const mapKey = msg.context
+      ? `${msg.context}${CONTEXT_SEPARATOR}${msg.key}`
+      : msg.key;
+
     // If message with same key exists, merge references (deduplicated)
-    const existing = catalog.messages.get(msg.key);
+    const existing = catalog.messages.get(mapKey);
     if (existing) {
       // Only add if not already present (same file)
       if (!existing.references?.includes(msg.location)) {
         existing.references = [...(existing.references ?? []), msg.location];
       }
     } else {
-      catalog.messages.set(msg.key, message);
+      catalog.messages.set(mapKey, message);
     }
   }
 
