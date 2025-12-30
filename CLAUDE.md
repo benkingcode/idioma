@@ -95,7 +95,9 @@ The `e2e/fixtures/` directory contains test apps for different framework configu
 
 - Use `tanstackStart()` Vite plugin instead of standard Vite React
 - Root route (`__root.tsx`) renders full HTML document (`<html>`, `<head>`, `<body>`)
-- Compiler auto-generates `localeLoader` from `@idiomi/tanstack-react/start` (SSR-aware)
+- Server entry (`src/server.ts`) uses `handleLocaleRequest` for locale detection before routing
+- Compiler auto-generates `handleLocaleRequest` from `@idiomi/tanstack-react/start`
+- No `localeLoader` in `beforeLoad` — server entry handles locale detection
 - Navigation uses anchor tags with `href` (not TanStack's `navigate()`) for full-page reloads
 
 **Running specific fixtures:**
@@ -170,22 +172,52 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
   - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectClientLocale()` for manual detection
   - `createUrlRewriter()` - Creates `deLocalizeUrl` and `localizeUrl` for localized path translation
   - `createPrefixOnlyRewriter()` - Creates `localizeUrl` for prefix-only strategy (no path translation)
-- `start.ts` - SSR-aware `createLocaleLoader()` with `Accept-Language` header support (exported via `/start` subpath)
+- `server-entry.ts` - Server entry helpers for TanStack Start SSR:
+  - `handleLocaleRequest()` - Detect locale, determine redirects/rewrites from a Request
+  - `createLocaleHandler()` - Factory that returns `handleLocaleRequest` with config baked in
+- `start.ts` - Re-exports from `server-entry.ts` plus SSR-aware `createLocaleLoader()` (exported via `/start` subpath)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
 
 **TanStack SPA vs SSR separation**: The compiler automatically detects whether a project uses TanStack Start (SSR) or TanStack Router (SPA) based on `@tanstack/react-start` in dependencies:
 
-- **TanStack Router (SPA)**: Imports `createLocaleLoader` from `@idiomi/tanstack-react` - browser-only, synchronous
-- **TanStack Start (SSR)**: Imports `createLocaleLoader` from `@idiomi/tanstack-react/start` - SSR-aware with header access
+- **TanStack Router (SPA)**: Uses `localeLoader` in `beforeLoad` for client-side locale detection and redirects
+- **TanStack Start (SSR)**: Uses `handleLocaleRequest` in `src/server.ts` for server-level locale handling
 
-**TanStack Start SSR**: The `/start` subpath exports an SSR-aware `createLocaleLoader()` that:
+**TanStack Start SSR**: The `/start` subpath exports server entry helpers:
 
-1. Uses static import of `getRequestHeaders` from `@tanstack/react-start/server` (Vite tree-shakes from client bundle)
-2. Accesses `Accept-Language` and `Cookie` headers on the server
-3. Falls back to `document.cookie` and `navigator.languages` on the client
-4. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
+1. `handleLocaleRequest(request, config)` - Detects locale from headers/cookies, returns redirect/rewrite URLs
+2. `createLocaleHandler(config)` - Factory that bakes config into a handler function
+3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
+4. Supports `ignorePaths` config (glob array or regex string) to skip locale handling for certain paths
+
+**Server entry pattern** (`src/server.ts`):
+
+```typescript
+import {
+  createStartHandler,
+  defaultStreamHandler,
+  defineHandlerCallback,
+} from '@tanstack/react-start/server';
+import { createServerEntry } from '@tanstack/react-start/server-entry';
+import { handleLocaleRequest } from './idiomi';
+
+const customHandler = defineHandlerCallback(async (ctx) => {
+  const { redirectUrl, rewrittenUrl, setCookie } = handleLocaleRequest(
+    ctx.request,
+  );
+  if (redirectUrl) return Response.redirect(redirectUrl, 302);
+  const request = rewrittenUrl
+    ? new Request(rewrittenUrl, ctx.request)
+    : ctx.request;
+  const response = await defaultStreamHandler({ ...ctx, request });
+  if (setCookie) response.headers.append('Set-Cookie', setCookie);
+  return response;
+});
+
+export default createServerEntry({ fetch: createStartHandler(customHandler) });
+```
 
 **TanStack Link strategy**: Unlike Next.js which uses Idiomi's custom `Link` wrapper, TanStack uses URL rewriting via `createRouter({ rewrite: { input, output } })`. Users write `<Link to="/{-$locale}/about" params={{}}>` with TanStack's native Link and the `localizeUrl` function handles path translation and prefix stripping for display.
 

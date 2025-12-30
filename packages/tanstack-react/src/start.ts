@@ -19,9 +19,8 @@
 import { matchLocale } from '@idiomi/core/locale';
 import { redirect } from '@tanstack/react-router';
 import { getRequestHeaders } from '@tanstack/react-start/server';
-// Import types for internal use
+// Import types used internally
 import type {
-  DetectionConfig,
   LocaleLoaderApi,
   LocaleLoaderConfig,
   LocaleLoaderResult,
@@ -36,6 +35,14 @@ export type {
   LocaleLoaderResult,
   LocationInfo,
 } from './spa.js';
+
+// Re-export server entry helpers for TanStack Start SSR
+export {
+  createLocaleHandler,
+  handleLocaleRequest,
+  type LocaleResult,
+  type LocaleServerEntryConfig,
+} from './server-entry.js';
 
 // ============================================================
 // createLocaleLoader Factory (SSR-aware)

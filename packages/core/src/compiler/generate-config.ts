@@ -8,7 +8,11 @@
 export interface DetectionOptions {
   /** Cookie name for storing locale preference */
   cookieName?: string;
-  /** Detection priority order */
+  /**
+   * Fallback detection priority order (after path).
+   * Path detection always happens first — this controls the order of fallbacks
+   * when no locale is found in the URL path.
+   */
   order?: Array<'cookie' | 'header'>;
   /**
    * Locale matching algorithm for Accept-Language header.
@@ -33,6 +37,11 @@ export interface ConfigGeneratorOptions {
   detection?: DetectionOptions;
   /** Base URL for absolute hreflang links */
   metadataBase?: string;
+  /**
+   * Paths to skip locale handling in middleware.
+   * Supports glob array or regex string.
+   */
+  ignorePaths?: string[] | string;
 }
 
 /**
@@ -57,6 +66,7 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
     prefixStrategy = 'as-needed',
     detection = {},
     metadataBase,
+    ignorePaths,
   } = options;
 
   const {
@@ -77,6 +87,10 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
 
   if (metadataBase) {
     lines.push(`export const metadataBase = ${JSON.stringify(metadataBase)};`);
+  }
+
+  if (ignorePaths) {
+    lines.push(`export const ignorePaths = ${JSON.stringify(ignorePaths)};`);
   }
 
   lines.push('');
@@ -108,6 +122,7 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     prefixStrategy = 'as-needed',
     detection = {},
     metadataBase,
+    ignorePaths,
   } = options;
 
   const {
@@ -137,6 +152,18 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     lines.push(
       `export declare const metadataBase: ${JSON.stringify(metadataBase)};`,
     );
+  }
+
+  if (ignorePaths) {
+    // Type depends on whether it's an array or string
+    if (Array.isArray(ignorePaths)) {
+      const pathsTuple = ignorePaths.map((p) => JSON.stringify(p)).join(', ');
+      lines.push(`export declare const ignorePaths: readonly [${pathsTuple}];`);
+    } else {
+      lines.push(
+        `export declare const ignorePaths: ${JSON.stringify(ignorePaths)};`,
+      );
+    }
   }
 
   lines.push('');

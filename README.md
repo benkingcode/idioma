@@ -1014,26 +1014,66 @@ const locale = detectClientLocale(); // From cookie or navigator.languages
 
 #### TanStack Start (SSR)
 
-For full-stack apps with SSR, the compiler automatically imports `createLocaleLoader` from `@idiomi/tanstack-react/start` (SSR-aware) instead of `@idiomi/tanstack-react` (SPA-only). The generated `localeLoader` handles `Accept-Language` header detection on the server:
+For full-stack apps with SSR, locale handling moves to the server entry point (`src/server.ts`). This runs **before** TanStack Router processes the request, enabling URL rewriting and redirects at the server level.
+
+The compiler generates `handleLocaleRequest` for use in your server entry:
+
+```ts
+// src/server.ts
+import {
+  createStartHandler,
+  defaultStreamHandler,
+  defineHandlerCallback,
+} from '@tanstack/react-start/server';
+import { createServerEntry } from '@tanstack/react-start/server-entry';
+import { handleLocaleRequest } from './idiomi';
+
+const customHandler = defineHandlerCallback(async (ctx) => {
+  const { redirectUrl, rewrittenUrl, setCookie } = handleLocaleRequest(
+    ctx.request,
+  );
+
+  // Handle redirects (e.g., /en/about → /about for as-needed strategy)
+  if (redirectUrl) {
+    const headers = new Headers();
+    headers.set('Location', redirectUrl);
+    if (setCookie) headers.set('Set-Cookie', setCookie);
+    return new Response(null, { status: 302, headers });
+  }
+
+  // Handle URL rewrites (e.g., /about → /es/about for prefixStrategy: 'never')
+  const effectiveRequest = rewrittenUrl
+    ? new Request(rewrittenUrl, ctx.request)
+    : ctx.request;
+
+  const response = await defaultStreamHandler({
+    ...ctx,
+    request: effectiveRequest,
+  });
+
+  if (setCookie) response.headers.append('Set-Cookie', setCookie);
+  return response;
+});
+
+export default createServerEntry({ fetch: createStartHandler(customHandler) });
+```
+
+The route layout is simpler since locale detection happens at the server level:
 
 ```tsx
 // routes/{-$locale}/route.tsx
-import {
-  detectClientLocale,
-  IdiomiProvider,
-  localeLoader, // SSR-aware, auto-generated from @idiomi/tanstack-react/start
-} from '@/idiomi';
+import { defaultLocale, IdiomiProvider } from '@/idiomi';
 import type { Locale } from '@/idiomi';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/{-$locale}')({
-  beforeLoad: localeLoader, // Handles SSR headers automatically
   component: LocaleLayout,
 });
 
 function LocaleLayout() {
   const { locale: urlLocale } = Route.useParams();
-  const locale = (urlLocale as Locale) ?? detectClientLocale();
+  // Server handles detection; unprefixed URLs are always default locale
+  const locale = (urlLocale ?? defaultLocale) as Locale;
 
   return (
     <IdiomiProvider locale={locale}>
@@ -1043,12 +1083,12 @@ function LocaleLayout() {
 }
 ```
 
-The SSR-aware `localeLoader` automatically:
+**`handleLocaleRequest` handles:**
 
-- Uses `getRequestHeaders` from `@tanstack/react-start/server` (Vite tree-shakes from client bundle)
-- Parses `Accept-Language` header during SSR
-- Falls back to `document.cookie` and `navigator.languages` on the client
-- Uses BCP 47-compliant locale matching via `@idiomi/core/locale`
+- **Locale detection** from `Accept-Language` headers and cookies (BCP 47-compliant matching)
+- **Redirects** based on `prefixStrategy` (e.g., strip default locale prefix with `as-needed`)
+- **URL rewriting** for `prefixStrategy: 'never'` (internal rewrite without changing browser URL)
+- **Cookie sync** to persist detected locale for subsequent requests
 
 #### Localized Paths (Both SPA and SSR)
 

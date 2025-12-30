@@ -27,10 +27,12 @@ const AiConfigSchema = z
 const DetectionConfigSchema = z.object({
   /** Cookie name for storing locale preference */
   cookieName: z.string().default('IDIOMI_LOCALE'),
-  /** Detection priority order */
-  order: z
-    .array(z.enum(['cookie', 'header', 'path']))
-    .default(['cookie', 'header']),
+  /**
+   * Fallback detection priority order (after path).
+   * Path detection always happens first — this controls the order of fallbacks
+   * when no locale is found in the URL path.
+   */
+  order: z.array(z.enum(['cookie', 'header'])).default(['cookie', 'header']),
   /**
    * Locale matching algorithm for Accept-Language header.
    * - 'best fit': Uses language distance (e.g., en-GB matches en-US)
@@ -75,6 +77,15 @@ const RoutingConfigSchema = z
      * Locale detection settings for middleware.
      */
     detection: DetectionConfigSchema.optional(),
+    /**
+     * Paths to skip locale handling in middleware.
+     * Supports two formats:
+     * - Glob array: ['/api/*', '/dashboard/**', '/_*']
+     * - Regex string: '^/(api|_|dashboard)'
+     *
+     * Static files (.js, .css, .ico, etc.) are always skipped automatically.
+     */
+    ignorePaths: z.union([z.array(z.string()), z.string()]).optional(),
   })
   .optional();
 
