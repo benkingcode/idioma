@@ -129,22 +129,32 @@ describe('extractTanStackRoutes', () => {
       );
     });
 
-    it('skips locale parent routes with $locale path', async () => {
+    it('includes bare $param routes as regular dynamic segments', async () => {
+      // Bare $param syntax is a regular dynamic segment, NOT a locale route.
+      // Only {-$locale} and {$locale} (with braces) are treated as locale routes.
       await fs.writeFile(
         join(fixtureRoot, 'src', 'routeTree.gen.ts'),
         generateRouteTree([
-          { id: '/$locale', path: '/$locale' },
-          { id: '/about', path: '/about', parent: '/$locale' },
+          { id: '/$category', path: '/$category' },
+          { id: '/products', path: '/products', parent: '/$category' },
         ]),
       );
 
       const routes = await extractTanStackRoutes({ projectRoot: fixtureRoot });
 
-      expect(routes).not.toContainEqual(
-        expect.objectContaining({ path: '/$locale' }),
-      );
+      // Bare $param IS included - it's a regular dynamic segment
       expect(routes).toContainEqual(
-        expect.objectContaining({ path: '/about', segments: ['about'] }),
+        expect.objectContaining({
+          path: '/$category',
+          segments: ['$category'],
+        }),
+      );
+      // Child routes include parent segments
+      expect(routes).toContainEqual(
+        expect.objectContaining({
+          path: '/$category/products',
+          segments: ['$category', 'products'],
+        }),
       );
     });
 
