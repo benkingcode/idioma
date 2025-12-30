@@ -15,13 +15,13 @@ export interface LocaleHeadConfig {
   /** Base URL for absolute URLs (e.g., 'https://example.com'). Empty string for relative URLs. */
   metadataBase?: string;
   /** All supported locales */
-  locales: string[];
+  locales: readonly string[];
   /** Default locale */
   defaultLocale: string;
   /** Route translations map (from compiled routes) */
   routes?: RoutesMap;
-  /** Prefix strategy: 'always' or 'as-needed' */
-  prefixStrategy?: 'always' | 'as-needed';
+  /** Prefix strategy for locale URLs */
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
 }
 
 /**

@@ -323,14 +323,15 @@ export async function compileTranslations(
     );
   }
 
-  // Generate config files when routing is enabled (for middleware/locale detection)
-  if (routing?.enabled) {
+  // Always generate config files (locales/defaultLocale are always re-exported from index.ts)
+  {
     const allLocales = locales ?? [...detectedLocales];
     const configOptions = {
       locales: allLocales,
       defaultLocale,
-      prefixStrategy: routing.prefixStrategy,
-      detection: routing.detection,
+      prefixStrategy: routing?.prefixStrategy,
+      detection: routing?.detection,
+      metadataBase: routing?.metadataBase,
     };
 
     await fs.writeFile(
@@ -817,8 +818,17 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
     );
     // Import config values for middleware
+    const configImports = [
+      'locales',
+      'defaultLocale',
+      'prefixStrategy',
+      'detection',
+    ];
+    if (routing.metadataBase) {
+      configImports.push('metadataBase');
+    }
     imports.push(
-      `import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';`,
+      `import { ${configImports.join(', ')} } from './.generated/config';`,
     );
 
     // TanStack: Users use TanStack's native Link with URL rewriting - no createLink
@@ -849,33 +859,27 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push('');
     }
 
-    // Generate LocaleHead with config
+    // Generate LocaleHead with config (uses imported variables from .generated/config)
     const localeHeadConfig: string[] = [];
     if (routing.metadataBase) {
-      localeHeadConfig.push(
-        `  metadataBase: ${JSON.stringify(routing.metadataBase)},`,
-      );
+      localeHeadConfig.push(`  metadataBase,`);
     }
-    localeHeadConfig.push(`  locales: ${JSON.stringify(locales)},`);
-    localeHeadConfig.push(`  defaultLocale: ${JSON.stringify(defaultLocale)},`);
+    localeHeadConfig.push(`  locales,`);
+    localeHeadConfig.push(`  defaultLocale,`);
     localeHeadConfig.push(`  routes,`);
     localeHeadConfig.push(`  reverseRoutes,`);
-    if (routing.prefixStrategy) {
-      localeHeadConfig.push(
-        `  prefixStrategy: ${JSON.stringify(routing.prefixStrategy)},`,
-      );
-    }
+    localeHeadConfig.push(`  prefixStrategy,`);
 
     exports.push(`export const LocaleHead = createLocaleHead({`);
     exports.push(...localeHeadConfig);
     exports.push(`});`);
     exports.push('');
 
-    // Generate createMiddleware factory for Next.js
+    // Generate createMiddleware factory for Next.js (uses imported variables from .generated/config)
     if (isNextJs) {
       exports.push(`export const createMiddleware = createMiddlewareFactory({`);
-      exports.push(`  locales: ${JSON.stringify(locales)},`);
-      exports.push(`  defaultLocale: ${JSON.stringify(defaultLocale)},`);
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
       exports.push(`  routes,`);
       exports.push(`  reverseRoutes,`);
       exports.push(`});`);
@@ -912,8 +916,17 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(`export { getLocaleHead } from '@idiomi/react';`);
   } else {
     // Routing enabled but no path translation - still need locale prefix support
+    const configImports = [
+      'locales',
+      'defaultLocale',
+      'prefixStrategy',
+      'detection',
+    ];
+    if (routing.metadataBase) {
+      configImports.push('metadataBase');
+    }
     imports.push(
-      `import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';`,
+      `import { ${configImports.join(', ')} } from './.generated/config';`,
     );
 
     // TanStack: Users use TanStack's native Link - no createLink
@@ -938,20 +951,14 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push('');
     }
 
-    // Generate LocaleHead with config but without routes
+    // Generate LocaleHead with config but without routes (uses imported variables from .generated/config)
     const localeHeadConfig: string[] = [];
     if (routing.metadataBase) {
-      localeHeadConfig.push(
-        `  metadataBase: ${JSON.stringify(routing.metadataBase)},`,
-      );
+      localeHeadConfig.push(`  metadataBase,`);
     }
-    localeHeadConfig.push(`  locales: ${JSON.stringify(locales)},`);
-    localeHeadConfig.push(`  defaultLocale: ${JSON.stringify(defaultLocale)},`);
-    if (routing.prefixStrategy) {
-      localeHeadConfig.push(
-        `  prefixStrategy: ${JSON.stringify(routing.prefixStrategy)},`,
-      );
-    }
+    localeHeadConfig.push(`  locales,`);
+    localeHeadConfig.push(`  defaultLocale,`);
+    localeHeadConfig.push(`  prefixStrategy,`);
 
     exports.push(`export const LocaleHead = createLocaleHead({`);
     exports.push(...localeHeadConfig);

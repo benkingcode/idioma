@@ -17,6 +17,7 @@ import {
   defaultLocale,
   detection,
   locales,
+  metadataBase,
   prefixStrategy,
 } from './.generated/config';
 import { reverseRoutes, routePatterns, routes } from './.generated/routes';
@@ -25,12 +26,12 @@ import type { IdiomiTypes, Locale } from './.generated/types';
 export { locales, defaultLocale } from './.generated/config';
 
 export const LocaleHead = createLocaleHead({
-  metadataBase: 'http://localhost:5177',
-  locales: ['en', 'es'],
-  defaultLocale: 'en',
+  metadataBase,
+  locales,
+  defaultLocale,
   routes,
   reverseRoutes,
-  prefixStrategy: 'as-needed',
+  prefixStrategy,
 });
 
 export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({

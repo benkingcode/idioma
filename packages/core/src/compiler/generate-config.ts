@@ -31,6 +31,8 @@ export interface ConfigGeneratorOptions {
   prefixStrategy?: 'always' | 'as-needed' | 'never';
   /** Detection settings */
   detection?: DetectionOptions;
+  /** Base URL for absolute hreflang links */
+  metadataBase?: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
     defaultLocale,
     prefixStrategy = 'as-needed',
     detection = {},
+    metadataBase,
   } = options;
 
   const {
@@ -70,8 +73,13 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
     `export const defaultLocale = ${JSON.stringify(defaultLocale)};`,
     `export const prefixStrategy = ${JSON.stringify(prefixStrategy)};`,
     `export const detection = ${JSON.stringify({ order, cookieName, algorithm })};`,
-    '',
   ];
+
+  if (metadataBase) {
+    lines.push(`export const metadataBase = ${JSON.stringify(metadataBase)};`);
+  }
+
+  lines.push('');
 
   return lines.join('\n');
 }
@@ -92,7 +100,7 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
  * ```
  */
 export function generateConfigTypes(options: ConfigGeneratorOptions): string {
-  const { locales, defaultLocale } = options;
+  const { locales, defaultLocale, metadataBase } = options;
 
   const localesTuple = locales.map((l) => JSON.stringify(l)).join(', ');
 
@@ -108,8 +116,15 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     `  readonly cookieName: string;`,
     `  readonly algorithm: "lookup" | "best fit";`,
     `};`,
-    '',
   ];
+
+  if (metadataBase) {
+    lines.push(
+      `export declare const metadataBase: ${JSON.stringify(metadataBase)};`,
+    );
+  }
+
+  lines.push('');
 
   return lines.join('\n');
 }
