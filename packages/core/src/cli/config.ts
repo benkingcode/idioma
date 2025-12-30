@@ -125,8 +125,11 @@ const IdiomiConfigSchema = z.object({
   routing: RoutingConfigSchema,
 });
 
-/** Idiomi configuration type - derived from the Zod schema */
+/** Idiomi configuration type - derived from the Zod schema (output type, after defaults applied) */
 export type IdiomiConfig = z.infer<typeof IdiomiConfigSchema>;
+
+/** Idiomi configuration input type - what users pass to defineConfig (before defaults applied) */
+export type IdiomiConfigInput = z.input<typeof IdiomiConfigSchema>;
 
 const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'];
 
@@ -134,7 +137,7 @@ const DEFAULT_SOURCE_PATTERNS = ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'];
  * Type-safe config helper.
  * Use this in your idiomi.config.ts for autocomplete.
  */
-export function defineConfig(config: IdiomiConfig): IdiomiConfig {
+export function defineConfig(config: IdiomiConfigInput): IdiomiConfigInput {
   return config;
 }
 

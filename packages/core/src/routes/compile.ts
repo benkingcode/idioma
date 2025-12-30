@@ -231,8 +231,14 @@ export function generateRoutesTypes(locales: string[]): string {
 
 export type Locale = ${localeUnion};
 
+export interface RoutePattern {
+  canonical: string[];
+  localized: Record<Locale, string[]>;
+}
+
 export declare const routes: Record<Locale, Record<string, string>>;
 export declare const reverseRoutes: Record<Locale, Record<string, string>>;
+export declare const routePatterns: RoutePattern[];
 
 export declare function getLocalizedPath(canonicalPath: string, locale: Locale): string;
 export declare function getCanonicalPath(localizedPath: string, locale: Locale): string;
