@@ -14,7 +14,6 @@ import {
 } from '@idiomi/tanstack-react';
 import {
   createHandleLocale,
-  createLocaleHandler,
   createLocaleLoader,
 } from '@idiomi/tanstack-react/start';
 import {
@@ -35,14 +34,12 @@ export const LocaleHead = createLocaleHead({
   prefixStrategy,
 });
 
-export const handleLocaleRequest = createLocaleHandler<Locale>({
+export const handleLocale = createHandleLocale<Locale>({
   locales,
   defaultLocale,
   prefixStrategy,
   detection,
 });
-
-export const handleLocale = createHandleLocale(handleLocaleRequest);
 
 export const { detectClientLocale } = createLocaleLoader<Locale>({
   locales,

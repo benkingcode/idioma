@@ -874,7 +874,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       if (isTanStackStart) {
         // TanStack Start uses server entry handler + client-side detectClientLocale
         imports.push(
-          `import { createHandleLocale, createLocaleHandler, createLocaleLoader } from '${localeLoaderPkg}';`,
+          `import { createHandleLocale, createLocaleLoader } from '${localeLoaderPkg}';`,
         );
       } else {
         // TanStack SPA uses localeLoader for beforeLoad
@@ -926,9 +926,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Generate TanStack functions using factories
     if (isTanStack) {
       if (isTanStackStart) {
-        // TanStack Start: Generate handleLocaleRequest for use in createServerEntry
+        // TanStack Start: Generate handleLocale for use in server entry
         exports.push(
-          `export const handleLocaleRequest = createLocaleHandler<Locale>({`,
+          `export const handleLocale = createHandleLocale<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -938,11 +938,6 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
           exports.push(`  ignorePaths,`);
         }
         exports.push(`});`);
-        exports.push('');
-        // Generate handleLocale - simplified handler API for server entry
-        exports.push(
-          `export const handleLocale = createHandleLocale(handleLocaleRequest);`,
-        );
         exports.push('');
         // Also export detectClientLocale as a client-side fallback
         // Uses the SSR-aware version that works on both server and client
@@ -1014,7 +1009,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       if (isTanStackStart) {
         // TanStack Start uses server entry handler + client-side detectClientLocale
         imports.push(
-          `import { createHandleLocale, createLocaleHandler, createLocaleLoader } from '${localeLoaderPkg}';`,
+          `import { createHandleLocale, createLocaleLoader } from '${localeLoaderPkg}';`,
         );
       } else {
         // TanStack SPA uses localeLoader for beforeLoad
@@ -1052,9 +1047,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Generate TanStack functions using factories
     if (isTanStack) {
       if (isTanStackStart) {
-        // TanStack Start: Generate handleLocaleRequest for use in createServerEntry
+        // TanStack Start: Generate handleLocale for use in server entry
         exports.push(
-          `export const handleLocaleRequest = createLocaleHandler<Locale>({`,
+          `export const handleLocale = createHandleLocale<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -1064,11 +1059,6 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
           exports.push(`  ignorePaths,`);
         }
         exports.push(`});`);
-        exports.push('');
-        // Generate handleLocale - simplified handler API for server entry
-        exports.push(
-          `export const handleLocale = createHandleLocale(handleLocaleRequest);`,
-        );
         exports.push('');
         // Also export detectClientLocale as a client-side fallback
         exports.push(

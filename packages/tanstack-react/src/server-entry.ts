@@ -291,29 +291,6 @@ export function handleLocaleRequest<L extends string>(
   return { locale: pathLocale, setCookie };
 }
 
-/**
- * Create a locale handler with configuration baked in.
- *
- * This factory returns a function that can be used directly in server entry.
- *
- * @example
- * ```typescript
- * // idiomi/index.ts (auto-generated)
- * export const handleLocaleRequest = createLocaleHandler({
- *   locales, defaultLocale, prefixStrategy, detection, ignorePaths,
- * });
- *
- * // src/server.ts
- * import { handleLocaleRequest } from './idiomi';
- * // ... use in defineHandlerCallback as shown above
- * ```
- */
-export function createLocaleHandler<L extends string>(
-  config: LocaleServerEntryConfig<L>,
-): (request: Request) => LocaleResult<L> {
-  return (request: Request) => handleLocaleRequest(request, config);
-}
-
 // ============================================================
 // Simplified Handler API
 // ============================================================
@@ -338,15 +315,18 @@ export interface HandleLocaleResult<
 }
 
 /**
- * Create a simplified locale handler for use in server entry.
+ * Create a locale handler for use in server entry.
  *
- * This factory returns a function that takes the TanStack handler context
- * and returns a `HandleLocaleResult` with destructurable properties.
+ * This factory takes locale configuration and returns a function that
+ * processes the TanStack handler context, returning a `HandleLocaleResult`
+ * with destructurable properties.
  *
  * @example
  * ```typescript
  * // idiomi/index.ts (auto-generated)
- * export const handleLocale = createHandleLocale(handleLocaleRequest);
+ * export const handleLocale = createHandleLocale<Locale>({
+ *   locales, defaultLocale, prefixStrategy, detection, ignorePaths,
+ * });
  *
  * // src/server.ts
  * import { handleLocale } from './idiomi';
@@ -360,13 +340,13 @@ export interface HandleLocaleResult<
  * ```
  */
 export function createHandleLocale<L extends string>(
-  handleLocaleRequest: (request: Request) => LocaleResult<L>,
+  config: LocaleServerEntryConfig<L>,
 ): <Ctx extends { request: Request; responseHeaders: Headers }>(
   ctx: Ctx,
 ) => HandleLocaleResult<Ctx, L> {
   return (ctx) => {
     const { locale, redirectUrl, rewrittenUrl, setCookie } =
-      handleLocaleRequest(ctx.request);
+      handleLocaleRequest(ctx.request, config);
 
     // Handle redirect case
     if (redirectUrl) {
