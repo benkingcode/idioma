@@ -63,7 +63,7 @@ test.describe('Locale Switching', () => {
 
     // Check that cookie was set
     const cookies = await context.cookies();
-    const localeCookie = cookies.find((c) => c.name === 'IDIOMA_LOCALE');
+    const localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
     expect(localeCookie).toBeDefined();
     expect(localeCookie?.value).toBe('es');
   });

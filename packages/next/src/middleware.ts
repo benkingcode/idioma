@@ -82,7 +82,7 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
   } = config;
 
   const {
-    cookieName = 'IDIOMA_LOCALE',
+    cookieName = 'IDIOMI_LOCALE',
     order = ['cookie', 'header'],
     algorithm = 'best fit',
   } = detection;

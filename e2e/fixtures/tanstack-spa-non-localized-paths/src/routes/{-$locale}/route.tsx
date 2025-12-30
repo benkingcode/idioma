@@ -20,7 +20,7 @@ export const Route = createFileRoute('/{-$locale}')({
 
 /** Set locale cookie with 1 year expiry */
 function setLocaleCookie(locale: string) {
-  document.cookie = `IDIOMA_LOCALE=${locale};path=/;max-age=${60 * 60 * 24 * 365}`;
+  document.cookie = `IDIOMI_LOCALE=${locale};path=/;max-age=${60 * 60 * 24 * 365}`;
 }
 
 function LocaleLayout() {

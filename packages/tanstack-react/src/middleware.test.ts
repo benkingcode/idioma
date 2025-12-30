@@ -137,7 +137,7 @@ describe('createIdiomiMiddleware', () => {
         detection: { order: ['cookie', 'header'] },
       });
       const request = createMockRequest('/about', {
-        cookie: 'IDIOMA_LOCALE=fr',
+        cookie: 'IDIOMI_LOCALE=fr',
         'accept-language': 'es-ES,es;q=0.9',
       });
 

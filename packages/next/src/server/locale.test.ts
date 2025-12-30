@@ -16,7 +16,7 @@ describe('setLocale', () => {
     it('sets locale cookie with default name', async () => {
       await setLocale('es');
 
-      expect(mockSet).toHaveBeenCalledWith('IDIOMA_LOCALE', 'es', {
+      expect(mockSet).toHaveBeenCalledWith('IDIOMI_LOCALE', 'es', {
         path: '/',
         maxAge: 31536000, // 1 year
         sameSite: 'lax',
@@ -66,19 +66,19 @@ describe('setLocale', () => {
       expect(mockSet).toHaveBeenCalledTimes(3);
       expect(mockSet).toHaveBeenNthCalledWith(
         1,
-        'IDIOMA_LOCALE',
+        'IDIOMI_LOCALE',
         'en',
         expect.any(Object),
       );
       expect(mockSet).toHaveBeenNthCalledWith(
         2,
-        'IDIOMA_LOCALE',
+        'IDIOMI_LOCALE',
         'es',
         expect.any(Object),
       );
       expect(mockSet).toHaveBeenNthCalledWith(
         3,
-        'IDIOMA_LOCALE',
+        'IDIOMI_LOCALE',
         'fr',
         expect.any(Object),
       );
@@ -90,7 +90,7 @@ describe('setLocale', () => {
       await setLocale('');
 
       expect(mockSet).toHaveBeenCalledWith(
-        'IDIOMA_LOCALE',
+        'IDIOMI_LOCALE',
         '',
         expect.any(Object),
       );
@@ -100,7 +100,7 @@ describe('setLocale', () => {
       await setLocale('en-US');
 
       expect(mockSet).toHaveBeenCalledWith(
-        'IDIOMA_LOCALE',
+        'IDIOMI_LOCALE',
         'en-US',
         expect.any(Object),
       );

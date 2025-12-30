@@ -5,7 +5,7 @@ test.describe('Locale Detection', () => {
     // Set Spanish locale cookie before navigation
     await context.addCookies([
       {
-        name: 'IDIOMA_LOCALE',
+        name: 'IDIOMI_LOCALE',
         value: 'es',
         domain: 'localhost',
         path: '/',
@@ -40,7 +40,7 @@ test.describe('Locale Detection', () => {
     // Set English locale cookie
     await context.addCookies([
       {
-        name: 'IDIOMA_LOCALE',
+        name: 'IDIOMI_LOCALE',
         value: 'en',
         domain: 'localhost',
         path: '/',

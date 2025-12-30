@@ -77,10 +77,10 @@ describe('createIdiomiMiddleware', () => {
     it('uses cookie locale when available', () => {
       const middleware = createIdiomiMiddleware({
         ...baseConfig,
-        detection: { cookieName: 'IDIOMA_LOCALE', order: ['cookie', 'header'] },
+        detection: { cookieName: 'IDIOMI_LOCALE', order: ['cookie', 'header'] },
       });
       const request = createMockRequest('/about', {
-        'cookie:IDIOMA_LOCALE': 'es',
+        'cookie:IDIOMI_LOCALE': 'es',
       });
 
       const result = middleware(request as never);

@@ -26,7 +26,7 @@ const AiConfigSchema = z
 /** Locale detection configuration */
 const DetectionConfigSchema = z.object({
   /** Cookie name for storing locale preference */
-  cookieName: z.string().default('IDIOMA_LOCALE'),
+  cookieName: z.string().default('IDIOMI_LOCALE'),
   /** Detection priority order */
   order: z
     .array(z.enum(['cookie', 'header', 'path']))

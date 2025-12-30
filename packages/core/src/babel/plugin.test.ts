@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import idiomiPlugin, { type IdiomiPluginOptions } from './plugin';
 
 // Default test configuration for idiomiDir-based detection
-const TEST_IDIOMA_DIR = '/project/src/idiomi';
+const TEST_IDIOMI_DIR = '/project/src/idiomi';
 const TEST_FILENAME = '/project/src/App.tsx';
 
 function transform(
@@ -60,7 +60,7 @@ describe('Idiomi Babel Plugin', () => {
 
         const result = transform(code, {
           mode: 'inlined',
-          idiomiDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           translations: {},
         });
 
@@ -79,7 +79,7 @@ describe('Idiomi Babel Plugin', () => {
 
         const result = transform(code, {
           mode: 'inlined',
-          idiomiDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           translations: {},
         });
 
@@ -96,7 +96,7 @@ describe('Idiomi Babel Plugin', () => {
 
         const result = transform(code, {
           mode: 'suspense',
-          idiomiDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           locales: ['en', 'es'],
           outputDir: './idiomi',
           projectRoot: '/project',
@@ -115,7 +115,7 @@ describe('Idiomi Babel Plugin', () => {
 
         const result = transform(code, {
           mode: 'inlined',
-          idiomiDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           translations: {},
         });
 
@@ -133,7 +133,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '00000000': {
             // key for "Hello world"
@@ -155,7 +155,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {},
       });
 
@@ -171,7 +171,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {},
       });
 
@@ -187,7 +187,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           greeting: {
             en: 'Hello',
@@ -209,7 +209,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {},
       });
 
@@ -225,7 +225,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '00000000': {
             en: 'Hello world',
@@ -263,7 +263,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -286,7 +286,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -297,7 +297,7 @@ describe('Idiomi Babel Plugin', () => {
   describe('suspense mode', () => {
     const suspenseOptions = {
       mode: 'suspense' as const,
-      idiomiDir: TEST_IDIOMA_DIR,
+      idiomiDir: TEST_IDIOMI_DIR,
       locales: ['en', 'es'],
       outputDir: './idiomi',
       projectRoot: '/project',
@@ -410,7 +410,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
       });
 
       expect(result).toContain("t('Hello world')");
@@ -427,7 +427,7 @@ describe('Idiomi Babel Plugin', () => {
       // Key for 'Hello world' is '003B4Ntk'
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '003B4Ntk': {
             en: 'Hello world',
@@ -449,7 +449,7 @@ describe('Idiomi Babel Plugin', () => {
       // Key for 'Hello {name}' is '000VsT4w'
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '000VsT4w': {
             en: 'Hello {name}',
@@ -474,7 +474,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '00000000': {
             en: 'Hello world',
@@ -498,7 +498,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -516,7 +516,7 @@ describe('Idiomi Babel Plugin', () => {
       // For now, context support in t() is limited - the call still uses the plain key
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '000os6FO': {
             en: 'Submit',
@@ -538,7 +538,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         outputDir: './idiomi',
       });
 
@@ -556,7 +556,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         outputDir: './idiomi',
         translations: {
           '003B4Ntk': { en: 'Hello world', es: 'Hola mundo' },
@@ -578,7 +578,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         outputDir: './idiomi',
         translations: {
           '003B4Ntk': { en: 'Hello world', es: 'Hola mundo' },
@@ -606,7 +606,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -627,7 +627,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -652,7 +652,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -674,7 +674,7 @@ describe('Idiomi Babel Plugin', () => {
       `;
       transform(transCode, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => transExtracted.push(msg),
       });
 
@@ -686,7 +686,7 @@ describe('Idiomi Babel Plugin', () => {
       `;
       transform(tCode, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => tExtracted.push(msg),
       });
 
@@ -708,7 +708,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -891,7 +891,7 @@ describe('Idiomi Babel Plugin', () => {
   describe('useT suspense mode', () => {
     const suspenseOptions = {
       mode: 'suspense' as const,
-      idiomiDir: TEST_IDIOMA_DIR,
+      idiomiDir: TEST_IDIOMI_DIR,
       locales: ['en', 'es'],
       outputDir: './idiomi',
       projectRoot: '/project',
@@ -1032,7 +1032,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
       });
 
       expect(result).toContain('useT()');
@@ -1072,7 +1072,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -1090,7 +1090,7 @@ describe('Idiomi Babel Plugin', () => {
       // Key for 'Hello world' is '003B4Ntk'
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '003B4Ntk': {
             en: 'Hello world',
@@ -1114,7 +1114,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -1135,7 +1135,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -1154,7 +1154,7 @@ describe('Idiomi Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
       });
 
       // Dynamic calls are left as-is
@@ -1172,7 +1172,7 @@ describe('Idiomi Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomiDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 

@@ -43,7 +43,7 @@ export interface ConfigGeneratorOptions {
  * export const prefixStrategy = "as-needed";
  * export const detection = {
  *   "order": ["cookie","header"],
- *   "cookieName": "IDIOMA_LOCALE",
+ *   "cookieName": "IDIOMI_LOCALE",
  *   "algorithm": "best fit"
  * };
  * ```
@@ -58,7 +58,7 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
 
   const {
     order = ['cookie', 'header'],
-    cookieName = 'IDIOMA_LOCALE',
+    cookieName = 'IDIOMI_LOCALE',
     algorithm = 'best fit',
   } = detection;
 

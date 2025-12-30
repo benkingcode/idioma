@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 
 /** Default cookie name for locale storage */
-const DEFAULT_COOKIE_NAME = 'IDIOMA_LOCALE';
+const DEFAULT_COOKIE_NAME = 'IDIOMI_LOCALE';
 
 /**
  * Set the user's locale preference cookie.

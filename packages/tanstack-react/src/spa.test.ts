@@ -24,7 +24,7 @@ describe('createLocaleLoader', () => {
     prefixStrategy: 'as-needed' as const,
     detection: {
       order: ['cookie', 'header'] as const,
-      cookieName: 'IDIOMA_LOCALE',
+      cookieName: 'IDIOMI_LOCALE',
     },
   };
 
@@ -48,7 +48,7 @@ describe('createLocaleLoader', () => {
     });
 
     it('detects locale from cookie when no path locale', () => {
-      document.cookie = 'IDIOMA_LOCALE=es';
+      document.cookie = 'IDIOMI_LOCALE=es';
       const { localeLoader } = createLocaleLoader(baseConfig);
 
       // With as-needed strategy, non-default locale should redirect
@@ -60,7 +60,7 @@ describe('createLocaleLoader', () => {
     });
 
     it('returns default locale when no path locale and cookie matches default', () => {
-      document.cookie = 'IDIOMA_LOCALE=en';
+      document.cookie = 'IDIOMI_LOCALE=en';
       const { localeLoader } = createLocaleLoader(baseConfig);
 
       const result = localeLoader({
@@ -126,7 +126,7 @@ describe('createLocaleLoader', () => {
     });
 
     it('detects and returns locale with never strategy (no redirect)', () => {
-      document.cookie = 'IDIOMA_LOCALE=es';
+      document.cookie = 'IDIOMI_LOCALE=es';
       const { localeLoader } = createLocaleLoader({
         ...baseConfig,
         prefixStrategy: 'never',
@@ -140,7 +140,7 @@ describe('createLocaleLoader', () => {
     });
 
     it('redirects with always strategy when no locale in path', () => {
-      document.cookie = 'IDIOMA_LOCALE=en';
+      document.cookie = 'IDIOMI_LOCALE=en';
       const { localeLoader } = createLocaleLoader({
         ...baseConfig,
         prefixStrategy: 'always',
@@ -164,13 +164,13 @@ describe('createLocaleLoader', () => {
     });
 
     it('returns locale from cookie', () => {
-      document.cookie = 'IDIOMA_LOCALE=es';
+      document.cookie = 'IDIOMI_LOCALE=es';
       const { detectClientLocale } = createLocaleLoader(baseConfig);
       expect(detectClientLocale()).toBe('es');
     });
 
     it('ignores invalid locale in cookie', () => {
-      document.cookie = 'IDIOMA_LOCALE=fr';
+      document.cookie = 'IDIOMI_LOCALE=fr';
       const { detectClientLocale } = createLocaleLoader(baseConfig);
       expect(detectClientLocale()).toBe('en');
     });

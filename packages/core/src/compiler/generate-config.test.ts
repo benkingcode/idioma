@@ -38,7 +38,7 @@ describe('generateConfigModule', () => {
 
     expect(result).toContain('export const detection = {');
     expect(result).toContain('"order":["cookie","header"]');
-    expect(result).toContain('"cookieName":"IDIOMA_LOCALE"');
+    expect(result).toContain('"cookieName":"IDIOMI_LOCALE"');
     expect(result).toContain('"algorithm":"best fit"');
   });
 
