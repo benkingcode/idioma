@@ -145,12 +145,12 @@ msgstr "First Post"
 msgid "0026pTpY"
 msgstr "Second Post"
 
-#: src/routes/{-$locale}/users.$userId.tsx
+#: src/routes/{-$locale}/users.$userId.index.tsx
 #, extracted
 msgid "0042IuEu"
 msgstr "User Profile"
 
-#: src/routes/{-$locale}/users.$userId.tsx
+#: src/routes/{-$locale}/users.$userId.index.tsx
 #, extracted
 msgid "0040JPXJ"
 msgstr "Viewing profile for {user}"

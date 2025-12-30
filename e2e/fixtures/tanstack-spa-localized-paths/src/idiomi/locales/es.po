@@ -133,12 +133,12 @@ msgstr "Primera Publicacion"
 msgid "0026pTpY"
 msgstr "Segunda Publicacion"
 
-#: src/routes/{-$locale}/users.$userId.tsx
+#: src/routes/{-$locale}/users.$userId.index.tsx
 #, extracted
 msgid "0042IuEu"
 msgstr "Perfil de Usuario"
 
-#: src/routes/{-$locale}/users.$userId.tsx
+#: src/routes/{-$locale}/users.$userId.index.tsx
 #, extracted
 msgid "0040JPXJ"
 msgstr "Viendo perfil de {user}"
