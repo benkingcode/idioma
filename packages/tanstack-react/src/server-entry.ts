@@ -16,26 +16,13 @@
  *   defineHandlerCallback,
  * } from '@tanstack/react-start/server';
  * import { createServerEntry } from '@tanstack/react-start/server-entry';
- * import { handleLocaleRequest } from './idiomi';
+ * import { handleLocale } from './idiomi';
  *
  * const customHandler = defineHandlerCallback(async (ctx) => {
- *   const { redirectUrl, rewrittenUrl, setCookie } = handleLocaleRequest(ctx.request);
- *
- *   if (redirectUrl) {
- *     const headers = new Headers();
- *     headers.set('Location', redirectUrl);
- *     if (setCookie) headers.set('Set-Cookie', setCookie);
- *     return new Response(null, { status: 302, headers });
- *   }
- *
- *   const effectiveRequest = rewrittenUrl
- *     ? new Request(rewrittenUrl, ctx.request)
- *     : ctx.request;
- *
- *   const response = await defaultStreamHandler({ ...ctx, request: effectiveRequest });
- *
- *   if (setCookie) response.headers.append('Set-Cookie', setCookie);
- *   return response;
+ *   const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);
+ *   if (redirectResponse) return redirectResponse;
+ *   // Custom logic here with locale
+ *   return defaultStreamHandler(localizedCtx);
  * });
  *
  * export default createServerEntry({ fetch: createStartHandler(customHandler) });
@@ -325,4 +312,84 @@ export function createLocaleHandler<L extends string>(
   config: LocaleServerEntryConfig<L>,
 ): (request: Request) => LocaleResult<L> {
   return (request: Request) => handleLocaleRequest(request, config);
+}
+
+// ============================================================
+// Simplified Handler API
+// ============================================================
+
+/**
+ * Result of the handleLocale function.
+ *
+ * This type represents the output of processing locale detection in the
+ * server entry handler. It provides a cleaner API than the raw `LocaleResult`
+ * by returning ready-to-use values.
+ */
+export interface HandleLocaleResult<
+  Ctx extends { request: Request; responseHeaders: Headers },
+  L extends string = string,
+> {
+  /** Detected locale */
+  locale: L;
+  /** Redirect response (302). Return early if set. */
+  redirectResponse?: Response;
+  /** Modified context (request rewritten, cookie on responseHeaders) */
+  localizedCtx: Ctx;
+}
+
+/**
+ * Create a simplified locale handler for use in server entry.
+ *
+ * This factory returns a function that takes the TanStack handler context
+ * and returns a `HandleLocaleResult` with destructurable properties.
+ *
+ * @example
+ * ```typescript
+ * // idiomi/index.ts (auto-generated)
+ * export const handleLocale = createHandleLocale(handleLocaleRequest);
+ *
+ * // src/server.ts
+ * import { handleLocale } from './idiomi';
+ *
+ * const customHandler = defineHandlerCallback(async (ctx) => {
+ *   const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);
+ *   if (redirectResponse) return redirectResponse;
+ *   // Custom logic here with locale
+ *   return defaultStreamHandler(localizedCtx);
+ * });
+ * ```
+ */
+export function createHandleLocale<L extends string>(
+  handleLocaleRequest: (request: Request) => LocaleResult<L>,
+): <Ctx extends { request: Request; responseHeaders: Headers }>(
+  ctx: Ctx,
+) => HandleLocaleResult<Ctx, L> {
+  return (ctx) => {
+    const { locale, redirectUrl, rewrittenUrl, setCookie } =
+      handleLocaleRequest(ctx.request);
+
+    // Handle redirect case
+    if (redirectUrl) {
+      const headers = new Headers();
+      headers.set('Location', redirectUrl);
+      if (setCookie) headers.set('Set-Cookie', setCookie);
+      return {
+        locale,
+        redirectResponse: new Response(null, { status: 302, headers }),
+        localizedCtx: ctx,
+      };
+    }
+
+    // Set cookie on responseHeaders (for next request, not current)
+    if (setCookie) {
+      ctx.responseHeaders.append('Set-Cookie', setCookie);
+    }
+
+    // Handle rewrite case
+    const localizedCtx = rewrittenUrl
+      ? { ...ctx, request: new Request(rewrittenUrl, ctx.request) }
+      : ctx;
+
+    return { locale, localizedCtx };
+  };
 }

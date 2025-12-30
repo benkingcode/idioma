@@ -38,8 +38,10 @@ export type {
 
 // Re-export server entry helpers for TanStack Start SSR
 export {
+  createHandleLocale,
   createLocaleHandler,
   handleLocaleRequest,
+  type HandleLocaleResult,
   type LocaleResult,
   type LocaleServerEntryConfig,
 } from './server-entry.js';

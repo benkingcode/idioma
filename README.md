@@ -1016,7 +1016,7 @@ const locale = detectClientLocale(); // From cookie or navigator.languages
 
 For full-stack apps with SSR, locale handling moves to the server entry point (`src/server.ts`). This runs **before** TanStack Router processes the request, enabling URL rewriting and redirects at the server level.
 
-The compiler generates `handleLocaleRequest` for use in your server entry:
+The compiler generates `handleLocale` for use in your server entry:
 
 ```ts
 // src/server.ts
@@ -1026,33 +1026,13 @@ import {
   defineHandlerCallback,
 } from '@tanstack/react-start/server';
 import { createServerEntry } from '@tanstack/react-start/server-entry';
-import { handleLocaleRequest } from './idiomi';
+import { handleLocale } from './idiomi';
 
 const customHandler = defineHandlerCallback(async (ctx) => {
-  const { redirectUrl, rewrittenUrl, setCookie } = handleLocaleRequest(
-    ctx.request,
-  );
-
-  // Handle redirects (e.g., /en/about → /about for as-needed strategy)
-  if (redirectUrl) {
-    const headers = new Headers();
-    headers.set('Location', redirectUrl);
-    if (setCookie) headers.set('Set-Cookie', setCookie);
-    return new Response(null, { status: 302, headers });
-  }
-
-  // Handle URL rewrites (e.g., /about → /es/about for prefixStrategy: 'never')
-  const effectiveRequest = rewrittenUrl
-    ? new Request(rewrittenUrl, ctx.request)
-    : ctx.request;
-
-  const response = await defaultStreamHandler({
-    ...ctx,
-    request: effectiveRequest,
-  });
-
-  if (setCookie) response.headers.append('Set-Cookie', setCookie);
-  return response;
+  const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);
+  if (redirectResponse) return redirectResponse;
+  // Custom logic with locale if needed
+  return defaultStreamHandler(localizedCtx);
 });
 
 export default createServerEntry({ fetch: createStartHandler(customHandler) });
@@ -1083,7 +1063,13 @@ function LocaleLayout() {
 }
 ```
 
-**`handleLocaleRequest` handles:**
+**`handleLocale` provides:**
+
+- `locale` - The detected locale
+- `redirectResponse` - A 302 redirect response (return early if set)
+- `localizedCtx` - Modified context with rewritten request URL and cookies
+
+**It handles:**
 
 - **Locale detection** from `Accept-Language` headers and cookies (BCP 47-compliant matching)
 - **Redirects** based on `prefixStrategy` (e.g., strip default locale prefix with `as-needed`)

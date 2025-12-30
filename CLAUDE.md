@@ -187,10 +187,12 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 **TanStack Start SSR**: The `/start` subpath exports server entry helpers:
 
-1. `handleLocaleRequest(request, config)` - Detects locale from headers/cookies, returns redirect/rewrite URLs
-2. `createLocaleHandler(config)` - Factory that bakes config into a handler function
-3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
-4. Supports `ignorePaths` config (glob array or regex string) to skip locale handling for certain paths
+1. `handleLocale(ctx)` - Simplified API that returns `{ locale, redirectResponse?, localizedCtx }`
+2. `handleLocaleRequest(request)` - Low-level API returning `{ locale, redirectUrl?, rewrittenUrl?, setCookie? }`
+3. `createHandleLocale(handleLocaleRequest)` - Factory that creates the simplified handler
+4. `createLocaleHandler(config)` - Factory that bakes config into `handleLocaleRequest`
+5. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
+6. Supports `ignorePaths` config (glob array or regex string) to skip locale handling for certain paths
 
 **Server entry pattern** (`src/server.ts`):
 
@@ -201,19 +203,13 @@ import {
   defineHandlerCallback,
 } from '@tanstack/react-start/server';
 import { createServerEntry } from '@tanstack/react-start/server-entry';
-import { handleLocaleRequest } from './idiomi';
+import { handleLocale } from './idiomi';
 
 const customHandler = defineHandlerCallback(async (ctx) => {
-  const { redirectUrl, rewrittenUrl, setCookie } = handleLocaleRequest(
-    ctx.request,
-  );
-  if (redirectUrl) return Response.redirect(redirectUrl, 302);
-  const request = rewrittenUrl
-    ? new Request(rewrittenUrl, ctx.request)
-    : ctx.request;
-  const response = await defaultStreamHandler({ ...ctx, request });
-  if (setCookie) response.headers.append('Set-Cookie', setCookie);
-  return response;
+  const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);
+  if (redirectResponse) return redirectResponse;
+  // Custom logic here with locale
+  return defaultStreamHandler(localizedCtx);
 });
 
 export default createServerEntry({ fetch: createStartHandler(customHandler) });

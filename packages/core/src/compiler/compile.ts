@@ -874,7 +874,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       if (isTanStackStart) {
         // TanStack Start uses server entry handler + client-side detectClientLocale
         imports.push(
-          `import { createLocaleHandler, createLocaleLoader } from '${localeLoaderPkg}';`,
+          `import { createHandleLocale, createLocaleHandler, createLocaleLoader } from '${localeLoaderPkg}';`,
         );
       } else {
         // TanStack SPA uses localeLoader for beforeLoad
@@ -938,6 +938,11 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
           exports.push(`  ignorePaths,`);
         }
         exports.push(`});`);
+        exports.push('');
+        // Generate handleLocale - simplified handler API for server entry
+        exports.push(
+          `export const handleLocale = createHandleLocale(handleLocaleRequest);`,
+        );
         exports.push('');
         // Also export detectClientLocale as a client-side fallback
         // Uses the SSR-aware version that works on both server and client
@@ -1009,7 +1014,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       if (isTanStackStart) {
         // TanStack Start uses server entry handler + client-side detectClientLocale
         imports.push(
-          `import { createLocaleHandler, createLocaleLoader } from '${localeLoaderPkg}';`,
+          `import { createHandleLocale, createLocaleHandler, createLocaleLoader } from '${localeLoaderPkg}';`,
         );
       } else {
         // TanStack SPA uses localeLoader for beforeLoad
@@ -1059,6 +1064,11 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
           exports.push(`  ignorePaths,`);
         }
         exports.push(`});`);
+        exports.push('');
+        // Generate handleLocale - simplified handler API for server entry
+        exports.push(
+          `export const handleLocale = createHandleLocale(handleLocaleRequest);`,
+        );
         exports.push('');
         // Also export detectClientLocale as a client-side fallback
         exports.push(
