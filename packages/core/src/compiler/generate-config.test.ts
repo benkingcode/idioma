@@ -87,22 +87,44 @@ describe('generateConfigTypes', () => {
     expect(result).toContain('export declare const defaultLocale: "en"');
   });
 
-  it('generates prefixStrategy with union type', () => {
+  it('generates prefixStrategy as literal type (default)', () => {
     const result = generateConfigTypes(baseOptions);
 
     expect(result).toContain(
-      'export declare const prefixStrategy: "always" | "as-needed" | "never"',
+      'export declare const prefixStrategy: "as-needed"',
     );
   });
 
-  it('generates detection type', () => {
+  it('generates prefixStrategy as literal type (custom)', () => {
+    const result = generateConfigTypes({
+      ...baseOptions,
+      prefixStrategy: 'always',
+    });
+
+    expect(result).toContain('export declare const prefixStrategy: "always"');
+  });
+
+  it('generates detection with narrowed literal types (defaults)', () => {
     const result = generateConfigTypes(baseOptions);
 
     expect(result).toContain('export declare const detection: {');
-    expect(result).toContain(
-      'readonly order: readonly ("cookie" | "header")[]',
-    );
-    expect(result).toContain('readonly cookieName: string');
-    expect(result).toContain('readonly algorithm: "lookup" | "best fit"');
+    expect(result).toContain('readonly order: readonly ["cookie", "header"]');
+    expect(result).toContain('readonly cookieName: "IDIOMI_LOCALE"');
+    expect(result).toContain('readonly algorithm: "best fit"');
+  });
+
+  it('generates detection with narrowed literal types (custom)', () => {
+    const result = generateConfigTypes({
+      ...baseOptions,
+      detection: {
+        order: ['header'],
+        cookieName: 'MY_LOCALE',
+        algorithm: 'lookup',
+      },
+    });
+
+    expect(result).toContain('readonly order: readonly ["header"]');
+    expect(result).toContain('readonly cookieName: "MY_LOCALE"');
+    expect(result).toContain('readonly algorithm: "lookup"');
   });
 });
