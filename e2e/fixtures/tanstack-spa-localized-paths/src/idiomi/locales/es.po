@@ -78,6 +78,71 @@ msgstr "Hola Mundo"
 msgid "000bv8XP"
 msgstr "Primeros Pasos"
 
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "001Qpsb7"
+msgstr "Referencia de API"
+
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "0049xyvP"
+msgstr "Documentacion completa de la API"
+
+#: src/routes/{-$locale}/products.featured.tsx
+#, extracted
+msgid "0017Xuw4"
+msgstr "Productos Destacados"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "003xcdAn"
+msgstr "Detalles del Producto"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "001nvw0c"
+msgstr "Producto {productId} en categoria {category}"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "000rooat"
+msgstr "Detalle de Publicacion"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "002v3Cim"
+msgstr "Publicacion {postId} de {userId}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "004HGxPa"
+msgstr "Publicaciones del Usuario"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0012esD3"
+msgstr "Publicaciones de {user}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "001kLT4X"
+msgstr "Primera Publicacion"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0026pTpY"
+msgstr "Segunda Publicacion"
+
+#: src/routes/{-$locale}/users.$userId.tsx
+#, extracted
+msgid "0042IuEu"
+msgstr "Perfil de Usuario"
+
+#: src/routes/{-$locale}/users.$userId.tsx
+#, extracted
+msgid "0040JPXJ"
+msgstr "Viendo perfil de {user}"
+
 #: src/routes/about.tsx
 #, extracted
 msgctxt "route:about"
@@ -125,3 +190,63 @@ msgstr "route"
 msgctxt "route:tests"
 msgid "000x7Jli"
 msgstr "tests"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:stress-test"
+msgid "001ZbfTe"
+msgstr "test-estres"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:users"
+msgid "001eImfX"
+msgstr "usuarios"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:products"
+msgid "004Y8mrc"
+msgstr "productos"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:featured"
+msgid "002qOwrn"
+msgstr "destacados"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:posts"
+msgid "004fsxH3"
+msgstr "publicaciones"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:shop"
+msgid "001ECqlR"
+msgstr "tienda"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:docs"
+msgid "001eY9Px"
+msgstr "documentos"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:api"
+msgid "000fvGb4"
+msgstr "api"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:v2"
+msgid "001YLZUp"
+msgstr "v2"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:reference"
+msgid "002YacJM"
+msgstr "referencia"

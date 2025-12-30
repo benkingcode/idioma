@@ -90,6 +90,71 @@ msgstr "Hello World"
 msgid "000bv8XP"
 msgstr "Getting Started"
 
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "001Qpsb7"
+msgstr "API Reference"
+
+#: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#, extracted
+msgid "0049xyvP"
+msgstr "Complete API documentation"
+
+#: src/routes/{-$locale}/products.featured.tsx
+#, extracted
+msgid "0017Xuw4"
+msgstr "Featured Products"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "003xcdAn"
+msgstr "Product Details"
+
+#: src/routes/{-$locale}/shop.$category.$productId.tsx
+#, extracted
+msgid "001nvw0c"
+msgstr "Product {productId} in category {category}"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "000rooat"
+msgstr "Post Detail"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#, extracted
+msgid "002v3Cim"
+msgstr "Post {postId} by {userId}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "004HGxPa"
+msgstr "User Posts"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0012esD3"
+msgstr "Posts by {user}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "001kLT4X"
+msgstr "First Post"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#, extracted
+msgid "0026pTpY"
+msgstr "Second Post"
+
+#: src/routes/{-$locale}/users.$userId.tsx
+#, extracted
+msgid "0042IuEu"
+msgstr "User Profile"
+
+#: src/routes/{-$locale}/users.$userId.tsx
+#, extracted
+msgid "0040JPXJ"
+msgstr "Viewing profile for {user}"
+
 #: src/routes/about.tsx
 #, extracted
 msgctxt "route:about"
@@ -137,3 +202,63 @@ msgstr "route"
 msgctxt "route:tests"
 msgid "000x7Jli"
 msgstr "tests"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:stress-test"
+msgid "001ZbfTe"
+msgstr "stress-test"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:users"
+msgid "001eImfX"
+msgstr "users"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:products"
+msgid "004Y8mrc"
+msgstr "products"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:featured"
+msgid "002qOwrn"
+msgstr "featured"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:posts"
+msgid "004fsxH3"
+msgstr "posts"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:shop"
+msgid "001ECqlR"
+msgstr "shop"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:docs"
+msgid "001eY9Px"
+msgstr "docs"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:api"
+msgid "000fvGb4"
+msgstr "api"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:v2"
+msgid "001YLZUp"
+msgstr "v2"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:reference"
+msgid "002YacJM"
+msgstr "reference"

@@ -12,10 +12,17 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char123LocaleChar125RouteRouteImport } from './routes/{-$locale}/route'
 import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
 import { Route as Char123LocaleChar125TestsRouteImport } from './routes/{-$locale}/tests'
+import { Route as Char123LocaleChar125StressTestRouteImport } from './routes/{-$locale}/stress-test'
 import { Route as Char123LocaleChar125ContactRouteImport } from './routes/{-$locale}/contact'
 import { Route as Char123LocaleChar125BlogRouteImport } from './routes/{-$locale}/blog'
 import { Route as Char123LocaleChar125AboutRouteImport } from './routes/{-$locale}/about'
+import { Route as Char123LocaleChar125UsersUserIdRouteImport } from './routes/{-$locale}/users.$userId'
+import { Route as Char123LocaleChar125ProductsFeaturedRouteImport } from './routes/{-$locale}/products.featured'
 import { Route as Char123LocaleChar125BlogSlugRouteImport } from './routes/{-$locale}/blog.$slug'
+import { Route as Char123LocaleChar125UsersUserIdPostsRouteImport } from './routes/{-$locale}/users.$userId.posts'
+import { Route as Char123LocaleChar125ShopCategoryProductIdRouteImport } from './routes/{-$locale}/shop.$category.$productId'
+import { Route as Char123LocaleChar125UsersUserIdPostsPostIdRouteImport } from './routes/{-$locale}/users.$userId.posts.$postId'
+import { Route as Char123LocaleChar125DocsApiV2ReferenceRouteImport } from './routes/{-$locale}/docs.api.v2.reference'
 
 const Char123LocaleChar125RouteRoute =
   Char123LocaleChar125RouteRouteImport.update({
@@ -33,6 +40,12 @@ const Char123LocaleChar125TestsRoute =
   Char123LocaleChar125TestsRouteImport.update({
     id: '/tests',
     path: '/tests',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125StressTestRoute =
+  Char123LocaleChar125StressTestRouteImport.update({
+    id: '/stress-test',
+    path: '/stress-test',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 const Char123LocaleChar125ContactRoute =
@@ -53,11 +66,47 @@ const Char123LocaleChar125AboutRoute =
     path: '/about',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125UsersUserIdRoute =
+  Char123LocaleChar125UsersUserIdRouteImport.update({
+    id: '/users/$userId',
+    path: '/users/$userId',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125ProductsFeaturedRoute =
+  Char123LocaleChar125ProductsFeaturedRouteImport.update({
+    id: '/products/featured',
+    path: '/products/featured',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125BlogSlugRoute =
   Char123LocaleChar125BlogSlugRouteImport.update({
     id: '/$slug',
     path: '/$slug',
     getParentRoute: () => Char123LocaleChar125BlogRoute,
+  } as any)
+const Char123LocaleChar125UsersUserIdPostsRoute =
+  Char123LocaleChar125UsersUserIdPostsRouteImport.update({
+    id: '/posts',
+    path: '/posts',
+    getParentRoute: () => Char123LocaleChar125UsersUserIdRoute,
+  } as any)
+const Char123LocaleChar125ShopCategoryProductIdRoute =
+  Char123LocaleChar125ShopCategoryProductIdRouteImport.update({
+    id: '/shop/$category/$productId',
+    path: '/shop/$category/$productId',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
+const Char123LocaleChar125UsersUserIdPostsPostIdRoute =
+  Char123LocaleChar125UsersUserIdPostsPostIdRouteImport.update({
+    id: '/$postId',
+    path: '/$postId',
+    getParentRoute: () => Char123LocaleChar125UsersUserIdPostsRoute,
+  } as any)
+const Char123LocaleChar125DocsApiV2ReferenceRoute =
+  Char123LocaleChar125DocsApiV2ReferenceRouteImport.update({
+    id: '/docs/api/v2/reference',
+    path: '/docs/api/v2/reference',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -65,17 +114,31 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/blog': typeof Char123LocaleChar125BlogRouteWithChildren
   '/{-$locale}/contact': typeof Char123LocaleChar125ContactRoute
+  '/{-$locale}/stress-test': typeof Char123LocaleChar125StressTestRoute
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
+  '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
+  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdRouteWithChildren
+  '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
+  '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  '/{-$locale}/docs/api/v2/reference': typeof Char123LocaleChar125DocsApiV2ReferenceRoute
+  '/{-$locale}/users/$userId/posts/$postId': typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
 }
 export interface FileRoutesByTo {
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/blog': typeof Char123LocaleChar125BlogRouteWithChildren
   '/{-$locale}/contact': typeof Char123LocaleChar125ContactRoute
+  '/{-$locale}/stress-test': typeof Char123LocaleChar125StressTestRoute
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
+  '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
+  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdRouteWithChildren
+  '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
+  '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  '/{-$locale}/docs/api/v2/reference': typeof Char123LocaleChar125DocsApiV2ReferenceRoute
+  '/{-$locale}/users/$userId/posts/$postId': typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,9 +146,16 @@ export interface FileRoutesById {
   '/{-$locale}/about': typeof Char123LocaleChar125AboutRoute
   '/{-$locale}/blog': typeof Char123LocaleChar125BlogRouteWithChildren
   '/{-$locale}/contact': typeof Char123LocaleChar125ContactRoute
+  '/{-$locale}/stress-test': typeof Char123LocaleChar125StressTestRoute
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
+  '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
+  '/{-$locale}/users/$userId': typeof Char123LocaleChar125UsersUserIdRouteWithChildren
+  '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
+  '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+  '/{-$locale}/docs/api/v2/reference': typeof Char123LocaleChar125DocsApiV2ReferenceRoute
+  '/{-$locale}/users/$userId/posts/$postId': typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -94,26 +164,47 @@ export interface FileRouteTypes {
     | '/{-$locale}/about'
     | '/{-$locale}/blog'
     | '/{-$locale}/contact'
+    | '/{-$locale}/stress-test'
     | '/{-$locale}/tests'
     | '/{-$locale}/'
     | '/{-$locale}/blog/$slug'
+    | '/{-$locale}/products/featured'
+    | '/{-$locale}/users/$userId'
+    | '/{-$locale}/shop/$category/$productId'
+    | '/{-$locale}/users/$userId/posts'
+    | '/{-$locale}/docs/api/v2/reference'
+    | '/{-$locale}/users/$userId/posts/$postId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/{-$locale}/about'
     | '/{-$locale}/blog'
     | '/{-$locale}/contact'
+    | '/{-$locale}/stress-test'
     | '/{-$locale}/tests'
     | '/{-$locale}'
     | '/{-$locale}/blog/$slug'
+    | '/{-$locale}/products/featured'
+    | '/{-$locale}/users/$userId'
+    | '/{-$locale}/shop/$category/$productId'
+    | '/{-$locale}/users/$userId/posts'
+    | '/{-$locale}/docs/api/v2/reference'
+    | '/{-$locale}/users/$userId/posts/$postId'
   id:
     | '__root__'
     | '/{-$locale}'
     | '/{-$locale}/about'
     | '/{-$locale}/blog'
     | '/{-$locale}/contact'
+    | '/{-$locale}/stress-test'
     | '/{-$locale}/tests'
     | '/{-$locale}/'
     | '/{-$locale}/blog/$slug'
+    | '/{-$locale}/products/featured'
+    | '/{-$locale}/users/$userId'
+    | '/{-$locale}/shop/$category/$productId'
+    | '/{-$locale}/users/$userId/posts'
+    | '/{-$locale}/docs/api/v2/reference'
+    | '/{-$locale}/users/$userId/posts/$postId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -143,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125TestsRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/stress-test': {
+      id: '/{-$locale}/stress-test'
+      path: '/stress-test'
+      fullPath: '/{-$locale}/stress-test'
+      preLoaderRoute: typeof Char123LocaleChar125StressTestRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/contact': {
       id: '/{-$locale}/contact'
       path: '/contact'
@@ -164,12 +262,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LocaleChar125AboutRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
+    '/{-$locale}/users/$userId': {
+      id: '/{-$locale}/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/{-$locale}/users/$userId'
+      preLoaderRoute: typeof Char123LocaleChar125UsersUserIdRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/products/featured': {
+      id: '/{-$locale}/products/featured'
+      path: '/products/featured'
+      fullPath: '/{-$locale}/products/featured'
+      preLoaderRoute: typeof Char123LocaleChar125ProductsFeaturedRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
     '/{-$locale}/blog/$slug': {
       id: '/{-$locale}/blog/$slug'
       path: '/$slug'
       fullPath: '/{-$locale}/blog/$slug'
       preLoaderRoute: typeof Char123LocaleChar125BlogSlugRouteImport
       parentRoute: typeof Char123LocaleChar125BlogRoute
+    }
+    '/{-$locale}/users/$userId/posts': {
+      id: '/{-$locale}/users/$userId/posts'
+      path: '/posts'
+      fullPath: '/{-$locale}/users/$userId/posts'
+      preLoaderRoute: typeof Char123LocaleChar125UsersUserIdPostsRouteImport
+      parentRoute: typeof Char123LocaleChar125UsersUserIdRoute
+    }
+    '/{-$locale}/shop/$category/$productId': {
+      id: '/{-$locale}/shop/$category/$productId'
+      path: '/shop/$category/$productId'
+      fullPath: '/{-$locale}/shop/$category/$productId'
+      preLoaderRoute: typeof Char123LocaleChar125ShopCategoryProductIdRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/users/$userId/posts/$postId': {
+      id: '/{-$locale}/users/$userId/posts/$postId'
+      path: '/$postId'
+      fullPath: '/{-$locale}/users/$userId/posts/$postId'
+      preLoaderRoute: typeof Char123LocaleChar125UsersUserIdPostsPostIdRouteImport
+      parentRoute: typeof Char123LocaleChar125UsersUserIdPostsRoute
+    }
+    '/{-$locale}/docs/api/v2/reference': {
+      id: '/{-$locale}/docs/api/v2/reference'
+      path: '/docs/api/v2/reference'
+      fullPath: '/{-$locale}/docs/api/v2/reference'
+      preLoaderRoute: typeof Char123LocaleChar125DocsApiV2ReferenceRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
     }
   }
 }
@@ -188,12 +328,47 @@ const Char123LocaleChar125BlogRouteWithChildren =
     Char123LocaleChar125BlogRouteChildren,
   )
 
+interface Char123LocaleChar125UsersUserIdPostsRouteChildren {
+  Char123LocaleChar125UsersUserIdPostsPostIdRoute: typeof Char123LocaleChar125UsersUserIdPostsPostIdRoute
+}
+
+const Char123LocaleChar125UsersUserIdPostsRouteChildren: Char123LocaleChar125UsersUserIdPostsRouteChildren =
+  {
+    Char123LocaleChar125UsersUserIdPostsPostIdRoute:
+      Char123LocaleChar125UsersUserIdPostsPostIdRoute,
+  }
+
+const Char123LocaleChar125UsersUserIdPostsRouteWithChildren =
+  Char123LocaleChar125UsersUserIdPostsRoute._addFileChildren(
+    Char123LocaleChar125UsersUserIdPostsRouteChildren,
+  )
+
+interface Char123LocaleChar125UsersUserIdRouteChildren {
+  Char123LocaleChar125UsersUserIdPostsRoute: typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
+}
+
+const Char123LocaleChar125UsersUserIdRouteChildren: Char123LocaleChar125UsersUserIdRouteChildren =
+  {
+    Char123LocaleChar125UsersUserIdPostsRoute:
+      Char123LocaleChar125UsersUserIdPostsRouteWithChildren,
+  }
+
+const Char123LocaleChar125UsersUserIdRouteWithChildren =
+  Char123LocaleChar125UsersUserIdRoute._addFileChildren(
+    Char123LocaleChar125UsersUserIdRouteChildren,
+  )
+
 interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125AboutRoute: typeof Char123LocaleChar125AboutRoute
   Char123LocaleChar125BlogRoute: typeof Char123LocaleChar125BlogRouteWithChildren
   Char123LocaleChar125ContactRoute: typeof Char123LocaleChar125ContactRoute
+  Char123LocaleChar125StressTestRoute: typeof Char123LocaleChar125StressTestRoute
   Char123LocaleChar125TestsRoute: typeof Char123LocaleChar125TestsRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
+  Char123LocaleChar125ProductsFeaturedRoute: typeof Char123LocaleChar125ProductsFeaturedRoute
+  Char123LocaleChar125UsersUserIdRoute: typeof Char123LocaleChar125UsersUserIdRouteWithChildren
+  Char123LocaleChar125ShopCategoryProductIdRoute: typeof Char123LocaleChar125ShopCategoryProductIdRoute
+  Char123LocaleChar125DocsApiV2ReferenceRoute: typeof Char123LocaleChar125DocsApiV2ReferenceRoute
 }
 
 const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChildren =
@@ -201,8 +376,17 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125AboutRoute: Char123LocaleChar125AboutRoute,
     Char123LocaleChar125BlogRoute: Char123LocaleChar125BlogRouteWithChildren,
     Char123LocaleChar125ContactRoute: Char123LocaleChar125ContactRoute,
+    Char123LocaleChar125StressTestRoute: Char123LocaleChar125StressTestRoute,
     Char123LocaleChar125TestsRoute: Char123LocaleChar125TestsRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
+    Char123LocaleChar125ProductsFeaturedRoute:
+      Char123LocaleChar125ProductsFeaturedRoute,
+    Char123LocaleChar125UsersUserIdRoute:
+      Char123LocaleChar125UsersUserIdRouteWithChildren,
+    Char123LocaleChar125ShopCategoryProductIdRoute:
+      Char123LocaleChar125ShopCategoryProductIdRoute,
+    Char123LocaleChar125DocsApiV2ReferenceRoute:
+      Char123LocaleChar125DocsApiV2ReferenceRoute,
   }
 
 const Char123LocaleChar125RouteRouteWithChildren =
