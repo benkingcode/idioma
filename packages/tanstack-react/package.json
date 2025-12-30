@@ -22,10 +22,6 @@
     "./hooks": {
       "types": "./dist/hooks.d.ts",
       "import": "./dist/hooks.js"
-    },
-    "./middleware": {
-      "types": "./dist/middleware.d.ts",
-      "import": "./dist/middleware.js"
     }
   },
   "files": [
