@@ -45,3 +45,17 @@ export {
   type LocaleHeadProps,
   type LocaleHeadConfig,
 } from './LocaleHead.js';
+export {
+  createLocaleLoader,
+  createUrlRewriter,
+  createPrefixOnlyRewriter,
+  type LocaleLoaderConfig,
+  type LocaleLoaderApi,
+  type UrlRewriterConfig,
+  type UrlRewriterApi,
+  type PrefixOnlyRewriterConfig,
+  type PrefixOnlyRewriterApi,
+  type DetectionConfig,
+  type RoutePattern,
+  type LocationInfo,
+} from './spa.js';

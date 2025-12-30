@@ -1412,7 +1412,7 @@ TypeScript provides full type safety via generated types:
 - **@idiomi/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
 - **@idiomi/react** — Runtime components (~2-3KB gzipped with ICU), `getLocaleHead` for programmatic SEO
 - **@idiomi/next** — Next.js integration (middleware factory, LocaleHead component, localized Link)
-- **@idiomi/tanstack-react** — TanStack Router/Start integration for React (LocaleHead component, URL rewriting utilities)
+- **@idiomi/tanstack-react** — TanStack Router/Start integration for React (LocaleHead component, SPA locale detection factories, URL rewriting utilities)
 
 ## License
 

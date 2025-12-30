@@ -10,8 +10,7 @@ import {
 } from '@idiomi/react';
 import type { IdiomiTypes, Locale } from './.generated/types';
 import { locales, defaultLocale, prefixStrategy, detection } from './.generated/config';
-import { createLocaleHead } from '@idiomi/tanstack-react';
-import { redirect } from '@tanstack/react-router';
+import { createLocaleHead, createLocaleLoader, createPrefixOnlyRewriter } from '@idiomi/tanstack-react';
 
 export const LocaleHead = createLocaleHead({
   metadataBase: "http://localhost:5178",
@@ -20,122 +19,18 @@ export const LocaleHead = createLocaleHead({
   prefixStrategy: "as-needed",
 });
 
-/**
- * TanStack Router beforeLoad function for locale detection.
- * Handles URL prefix strategy and redirects.
- */
-export function localeLoader({
-  location,
-}: {
-  location: { pathname: string; searchStr: string; hash: string };
-}) {
-  const pathLocale = extractLocaleFromPath(location.pathname);
+export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+  detection,
+});
 
-  // Strategy: 'never' - no URL prefixes, just detect
-  if (prefixStrategy === 'never') {
-    return { locale: pathLocale ?? detectClientLocale() };
-  }
-
-  // No locale in path - check if we need to redirect
-  if (!pathLocale) {
-    const detected = detectClientLocale();
-
-    // Redirect if: always prefix OR detected is non-default
-    if (prefixStrategy === 'always' || detected !== defaultLocale) {
-      throw redirect({
-        to: `/${detected}${location.pathname}${location.searchStr}${location.hash}`,
-      });
-    }
-
-    return { locale: detected };
-  }
-
-  // Default locale in path with 'as-needed' - redirect to strip prefix
-  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {
-    const pathWithoutLocale = location.pathname.slice(pathLocale.length + 1) || '/';
-    throw redirect({
-      to: `${pathWithoutLocale}${location.searchStr}${location.hash}`,
-    });
-  }
-
-  // Non-default locale in path - use it
-  return { locale: pathLocale };
-}
-
-/** Low-level detection (exported for manual use cases) */
-export function detectClientLocale(): Locale {
-  for (const source of detection.order) {
-    if (source === 'cookie') {
-      const cookie = getCookie(detection.cookieName);
-      if (cookie && (locales as readonly string[]).includes(cookie)) return cookie as Locale;
-    }
-    if (source === 'header') {
-      // 'header' = navigator.languages on client (skip during SSR)
-      if (typeof navigator !== 'undefined' && navigator.languages?.length) {
-        const matched = matchBrowserLocale(navigator.languages);
-        if (matched) return matched;
-      }
-    }
-  }
-  return defaultLocale;
-}
-
-/** Simple browser-compatible locale matching (no Node.js deps) */
-function matchBrowserLocale(browserLocales: readonly string[]): Locale | undefined {
-  for (const browserLang of browserLocales) {
-    const normalized = browserLang.toLowerCase();
-    // Exact match
-    for (const locale of locales) {
-      if (locale.toLowerCase() === normalized) return locale;
-    }
-    // Prefix match (e.g., 'en-US' matches 'en')
-    const prefix = normalized.split('-')[0];
-    for (const locale of locales) {
-      if (locale.toLowerCase() === prefix) return locale;
-      if (locale.toLowerCase().startsWith(prefix + '-')) return locale;
-    }
-  }
-  return undefined;
-}
-
-function extractLocaleFromPath(pathname: string): Locale | undefined {
-  const segment = pathname.split('/')[1];
-  if (segment && (locales as readonly string[]).includes(segment)) {
-    return segment as Locale;
-  }
-  return undefined;
-}
-
-function getCookie(name: string): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match?.[1];
-}
-
-/**
- * Transform URL for display: strips default locale prefix when 'as-needed'.
- * Use with TanStack Router's rewrite.output option.
- * @example
- * const router = createRouter({
- *   routeTree,
- *   rewrite: {
- *     output: ({ url }) => localizeUrl(url),
- *   },
- * });
- */
-export function localizeUrl(url: URL): URL {
-  const pathLocale = extractLocaleFromPath(url.pathname);
-  if (!pathLocale) return url;
-
-  // Strip prefix for default locale when 'as-needed'
-  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {
-    const newUrl = new URL(url);
-    newUrl.pathname = url.pathname.slice(pathLocale.length + 1) || '/';
-    return newUrl;
-  }
-
-  return url;
-}
+export const { localizeUrl } = createPrefixOnlyRewriter<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+});
 export { getLocaleHead } from '@idiomi/react';
 
 export const Trans = createTrans<IdiomiTypes>();

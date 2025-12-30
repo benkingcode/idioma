@@ -142,12 +142,16 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 **@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router/Start integration for React
 
+- `spa.ts` - Factory functions for SPA locale handling (browser-safe, no SSR dependencies):
+  - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectClientLocale()` for manual detection
+  - `createUrlRewriter()` - Creates `deLocalizeUrl` and `localizeUrl` for localized path translation
+  - `createPrefixOnlyRewriter()` - Creates `localizeUrl` for prefix-only strategy (no path translation)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
 - `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for TanStack Start locale detection (SSR only)
 
-**TanStack SPA vs SSR separation**: The compiler generates browser-safe code for SPAs (`localeLoader`, `detectClientLocale`, `deLocalizeUrl`, `localizeUrl`) that doesn't import from `@tanstack/react-start` or other SSR-only packages. For TanStack Start SSR, users import middleware manually from `@idiomi/tanstack-react/middleware`.
+**TanStack SPA vs SSR separation**: The compiler generates browser-safe code for SPAs by calling factory functions from `@idiomi/tanstack-react` (`createLocaleLoader`, `createUrlRewriter`, `createPrefixOnlyRewriter`). These factories produce `localeLoader`, `detectClientLocale`, `deLocalizeUrl`, and `localizeUrl` functions without importing from `@tanstack/react-start` or other SSR-only packages. For TanStack Start SSR, users import middleware manually from `@idiomi/tanstack-react/middleware`.
 
 **TanStack Link strategy**: Unlike Next.js which uses Idiomi's custom `Link` wrapper, TanStack uses URL rewriting via `createRouter({ rewrite: { input, output } })`. Users write `<Link to="/{-$locale}/about" params={{}}>` with TanStack's native Link and the `localizeUrl` function handles path translation and prefix stripping for display.
 
@@ -631,6 +635,13 @@ When `routing` is configured in `idiomi.config.ts`, the compiler automatically g
 // Next.js only: Pre-configured Link and middleware
 import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/pages
 import { createMiddlewareFactory } from '@idiomi/next/middleware';
+// TanStack Router SPA only: locale detection and URL rewriting via factories
+// Factories encapsulate all helper logic - generated code is ~45 lines vs 270+ before
+import {
+  createLocaleLoader,
+  createPrefixOnlyRewriter,
+  createUrlRewriter,
+} from '@idiomi/tanstack-react';
 import { defaultLocale, locales, prefixStrategy } from './.generated/config';
 import { reverseRoutes, routes } from './.generated/routes';
 
@@ -663,37 +674,38 @@ export const createMiddleware = createMiddlewareFactory({
 // Re-export pure function for programmatic use
 export { getLocaleHead } from '@idiomi/react';
 
-// TanStack Router SPA only: locale detection for beforeLoad (generated inline)
-// IMPORTANT: Uses location.searchStr (raw string like "?foo=bar"), NOT location.search (parsed object)
-export function localeLoader({ location }) {
-  /* Handles locale detection and redirects based on prefixStrategy:
-   * - No locale in path + detected non-default → redirect to add prefix (/ → /es/)
-   * - No locale in path + detected is default → stay, return default locale
-   * - Default locale in path + as-needed → redirect to strip prefix (/en/about → /about)
-   * - Non-default locale in path → use it
-   */
-}
-export function detectClientLocale() {
-  /* Returns locale from cookie (IDIOMI_LOCALE) or navigator.languages
-   * Detection order configured via routing.detection.order in config
-   */
-}
+// TanStack Router SPA only: locale detection for beforeLoad
+// localeLoader handles redirects based on prefixStrategy:
+// - No locale in path + detected non-default → redirect to add prefix (/ → /es/)
+// - No locale in path + detected is default → stay, return default locale
+// - Default locale in path + as-needed → redirect to strip prefix (/en/about → /about)
+// IMPORTANT: Uses location.searchStr (raw string like "?foo=bar"), NOT location.search
+export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+  detection,
+});
 
-// TanStack Router only: URL rewrite functions for localized paths
-// Use with createRouter({ rewrite: { input: ({ url }) => deLocalizeUrl(url), output: ({ url }) => localizeUrl(url) } })
-export function deLocalizeUrl(url: URL): URL {
-  /* Transform localized path to canonical for route matching:
-   * - /es/sobre → /es/about (path translation)
-   * - / → / (unchanged - localeLoader handles redirect)
-   * NOTE: Does NOT add locale prefix - that's localeLoader's job via redirect
-   */
-}
-export function localizeUrl(url: URL): URL {
-  /* Transform canonical to localized for display:
-   * - /es/about → /es/sobre (path translation)
-   * - /en/about → /about (strips default locale prefix when as-needed)
-   */
-}
+// For localized paths: URL rewrite functions
+// deLocalizeUrl: Transform localized path to canonical for route matching (/es/sobre → /es/about)
+// localizeUrl: Transform canonical to localized for display (/es/about → /es/sobre)
+// Use with createRouter({ rewrite: { input: deLocalizeUrl, output: localizeUrl } })
+export const { deLocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+  routes,
+  reverseRoutes,
+  routePatterns,
+});
+
+// For non-localized paths (prefix-only): Only handles prefix stripping
+export const { localizeUrl } = createPrefixOnlyRewriter<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+});
 ```
 
 **Framework Detection** (`packages/core/src/framework.ts`):

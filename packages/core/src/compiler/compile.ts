@@ -829,9 +829,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
       );
     } else if (isTanStack) {
-      // TanStack only needs createLocaleHead (Link is native TanStack Link)
-      imports.push(`import { createLocaleHead } from '${pkg}';`);
-      imports.push(`import { redirect } from '@tanstack/react-router';`);
+      // TanStack uses factories for locale detection and URL rewriting
+      imports.push(
+        `import { createLocaleHead, createLocaleLoader, createUrlRewriter } from '${pkg}';`,
+      );
       // Note: createMiddlewareFactory is NOT imported here to avoid @tanstack/react-start deps
       // For TanStack Start SSR, users should import it manually from @idiomi/tanstack-react/middleware
     }
@@ -878,14 +879,30 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       exports.push(`});`);
     }
 
-    // Generate TanStack SPA loader (browser-safe, no SSR deps)
+    // Generate TanStack SPA functions using factories (browser-safe, no SSR deps)
     // Note: createMiddleware is NOT generated here to avoid @tanstack/react-start deps
     // For TanStack Start SSR, users should create middleware manually
     if (isTanStack) {
       exports.push('');
-      exports.push(...generateTanStackSpaLoader());
-      // Add rewrite functions for TanStack Router's rewrite option
-      exports.push(...generateTanStackRewriteFunctions());
+      exports.push(
+        `export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({`,
+      );
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
+      exports.push(`  prefixStrategy,`);
+      exports.push(`  detection,`);
+      exports.push(`});`);
+      exports.push('');
+      exports.push(
+        `export const { deLocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({`,
+      );
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
+      exports.push(`  prefixStrategy,`);
+      exports.push(`  routes,`);
+      exports.push(`  reverseRoutes,`);
+      exports.push(`  routePatterns,`);
+      exports.push(`});`);
     }
 
     // Re-export getLocaleHead for programmatic use
@@ -901,9 +918,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     if (isNextJs) {
       imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
     } else if (isTanStack) {
-      // TanStack only needs createLocaleHead (Link is native TanStack Link)
-      imports.push(`import { createLocaleHead } from '${pkg}';`);
-      imports.push(`import { redirect } from '@tanstack/react-router';`);
+      // TanStack uses factories for locale detection and URL rewriting
+      imports.push(
+        `import { createLocaleHead, createLocaleLoader, createPrefixOnlyRewriter } from '${pkg}';`,
+      );
     }
 
     exports.push('');
@@ -935,12 +953,25 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(...localeHeadConfig);
     exports.push(`});`);
 
-    // Generate TanStack SPA loader for locale detection
+    // Generate TanStack SPA functions using factories
     if (isTanStack) {
       exports.push('');
-      exports.push(...generateTanStackSpaLoader());
-      // Add simple rewrite function for prefix stripping (no path translation)
-      exports.push(...generateTanStackPrefixOnlyRewrite());
+      exports.push(
+        `export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({`,
+      );
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
+      exports.push(`  prefixStrategy,`);
+      exports.push(`  detection,`);
+      exports.push(`});`);
+      exports.push('');
+      exports.push(
+        `export const { localizeUrl } = createPrefixOnlyRewriter<Locale>({`,
+      );
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
+      exports.push(`  prefixStrategy,`);
+      exports.push(`});`);
     }
 
     // Re-export getLocaleHead for programmatic use
@@ -1037,293 +1068,4 @@ export type { Locale, TranslationKey, MessageValues };
 `;
 
   await fs.writeFile(join(outputDir, 'plain.ts'), content, 'utf-8');
-}
-
-/**
- * Generate TanStack Router SPA locale loader code.
- * This provides localeLoader (for beforeLoad) and detectClientLocale for SPAs.
- */
-function generateTanStackSpaLoader(): string[] {
-  return [
-    `/**`,
-    ` * TanStack Router beforeLoad function for locale detection.`,
-    ` * Handles URL prefix strategy and redirects.`,
-    ` */`,
-    `export function localeLoader({`,
-    `  location,`,
-    `}: {`,
-    `  location: { pathname: string; searchStr: string; hash: string };`,
-    `}) {`,
-    `  const pathLocale = extractLocaleFromPath(location.pathname);`,
-    ``,
-    `  // Strategy: 'never' - no URL prefixes, just detect`,
-    `  if (prefixStrategy === 'never') {`,
-    `    return { locale: pathLocale ?? detectClientLocale() };`,
-    `  }`,
-    ``,
-    `  // No locale in path - check if we need to redirect`,
-    `  if (!pathLocale) {`,
-    `    const detected = detectClientLocale();`,
-    ``,
-    `    // Redirect if: always prefix OR detected is non-default`,
-    `    if (prefixStrategy === 'always' || detected !== defaultLocale) {`,
-    `      throw redirect({`,
-    `        to: \`/\${detected}\${location.pathname}\${location.searchStr}\${location.hash}\`,`,
-    `      });`,
-    `    }`,
-    ``,
-    `    return { locale: detected };`,
-    `  }`,
-    ``,
-    `  // Default locale in path with 'as-needed' - redirect to strip prefix`,
-    `  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {`,
-    `    const pathWithoutLocale = location.pathname.slice(pathLocale.length + 1) || '/';`,
-    `    throw redirect({`,
-    `      to: \`\${pathWithoutLocale}\${location.searchStr}\${location.hash}\`,`,
-    `    });`,
-    `  }`,
-    ``,
-    `  // Non-default locale in path - use it`,
-    `  return { locale: pathLocale };`,
-    `}`,
-    ``,
-    `/** Low-level detection (exported for manual use cases) */`,
-    `export function detectClientLocale(): Locale {`,
-    `  for (const source of detection.order) {`,
-    `    if (source === 'cookie') {`,
-    `      const cookie = getCookie(detection.cookieName);`,
-    `      if (cookie && (locales as readonly string[]).includes(cookie)) return cookie as Locale;`,
-    `    }`,
-    `    if (source === 'header') {`,
-    `      // 'header' = navigator.languages on client (skip during SSR)`,
-    `      if (typeof navigator !== 'undefined' && navigator.languages?.length) {`,
-    `        const matched = matchBrowserLocale(navigator.languages);`,
-    `        if (matched) return matched;`,
-    `      }`,
-    `    }`,
-    `  }`,
-    `  return defaultLocale;`,
-    `}`,
-    ``,
-    `/** Simple browser-compatible locale matching (no Node.js deps) */`,
-    `function matchBrowserLocale(browserLocales: readonly string[]): Locale | undefined {`,
-    `  for (const browserLang of browserLocales) {`,
-    `    const normalized = browserLang.toLowerCase();`,
-    `    // Exact match`,
-    `    for (const locale of locales) {`,
-    `      if (locale.toLowerCase() === normalized) return locale;`,
-    `    }`,
-    `    // Prefix match (e.g., 'en-US' matches 'en')`,
-    `    const prefix = normalized.split('-')[0];`,
-    `    for (const locale of locales) {`,
-    `      if (locale.toLowerCase() === prefix) return locale;`,
-    `      if (locale.toLowerCase().startsWith(prefix + '-')) return locale;`,
-    `    }`,
-    `  }`,
-    `  return undefined;`,
-    `}`,
-    ``,
-    `function extractLocaleFromPath(pathname: string): Locale | undefined {`,
-    `  const segment = pathname.split('/')[1];`,
-    `  if (segment && (locales as readonly string[]).includes(segment)) {`,
-    `    return segment as Locale;`,
-    `  }`,
-    `  return undefined;`,
-    `}`,
-    ``,
-    `function getCookie(name: string): string | undefined {`,
-    `  if (typeof document === 'undefined') return undefined;`,
-    `  const match = document.cookie.match(new RegExp(\`(?:^|;\\\\s*)\${name}=([^;]*)\`));`,
-    `  return match?.[1];`,
-    `}`,
-  ];
-}
-
-/**
- * Generate TanStack Router rewrite functions for localized paths.
- * These work with createRouter({ rewrite: { input, output } }).
- */
-function generateTanStackRewriteFunctions(): string[] {
-  return [
-    ``,
-    `/**`,
-    ` * Match a URL path against route patterns to find the matching route.`,
-    ` * Returns captured dynamic param values and the matching pattern, or null if no match.`,
-    ` */`,
-    `function matchRoutePattern(`,
-    `  segments: string[],`,
-    `  patterns: typeof routePatterns,`,
-    `  locale: string,`,
-    `  useLocalized: boolean`,
-    `): { pattern: typeof routePatterns[0]; captured: Record<string, string> } | null {`,
-    `  for (const pattern of patterns) {`,
-    `    const patternSegs = useLocalized ? pattern.localized[locale] : pattern.canonical;`,
-    `    if (!patternSegs || patternSegs.length !== segments.length) continue;`,
-    ``,
-    `    const captured: Record<string, string> = {};`,
-    `    let matches = true;`,
-    ``,
-    `    for (let i = 0; i < patternSegs.length; i++) {`,
-    `      const patternSeg = patternSegs[i];`,
-    `      const urlSeg = segments[i];`,
-    ``,
-    `      if (patternSeg.startsWith('$')) {`,
-    `        // Dynamic segment - capture the actual value`,
-    `        captured[patternSeg] = urlSeg;`,
-    `      } else if (patternSeg !== urlSeg) {`,
-    `        // Static segment must match exactly`,
-    `        matches = false;`,
-    `        break;`,
-    `      }`,
-    `    }`,
-    ``,
-    `    if (matches) {`,
-    `      return { pattern, captured };`,
-    `    }`,
-    `  }`,
-    `  return null;`,
-    `}`,
-    ``,
-    `/**`,
-    ` * Transform localized URL to canonical for route matching.`,
-    ` * Use with TanStack Router's rewrite.input option.`,
-    ` * @example`,
-    ` * const router = createRouter({`,
-    ` *   routeTree,`,
-    ` *   rewrite: {`,
-    ` *     input: ({ url }) => deLocalizeUrl(url),`,
-    ` *     output: ({ url }) => localizeUrl(url),`,
-    ` *   },`,
-    ` * });`,
-    ` */`,
-    `export function deLocalizeUrl(url: URL): URL {`,
-    `  const pathLocale = extractLocaleFromPath(url.pathname);`,
-    ``,
-    `  // No locale in URL - return unchanged, let localeLoader handle redirect`,
-    `  // The {-$locale} optional segment will match unprefixed paths`,
-    `  if (!pathLocale) return url;`,
-    ``,
-    `  const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';`,
-    ``,
-    `  // Handle root path`,
-    `  if (pathWithoutLocale === '/') return url;`,
-    ``,
-    `  const segments = pathWithoutLocale.split('/').filter(Boolean);`,
-    ``,
-    `  // Match against localized patterns to find the route`,
-    `  const match = matchRoutePattern(segments, routePatterns, pathLocale, true);`,
-    ``,
-    `  if (match) {`,
-    `    // Build canonical path using pattern's canonical segments`,
-    `    const canonicalPath = '/' + match.pattern.canonical.map(seg =>`,
-    `      seg.startsWith('$') ? match.captured[seg] : seg`,
-    `    ).join('/');`,
-    ``,
-    `    if (canonicalPath !== pathWithoutLocale) {`,
-    `      const newUrl = new URL(url);`,
-    `      // Keep locale prefix, translate the path segment`,
-    `      // TanStack Router's {-$locale} param handles locale extraction`,
-    `      newUrl.pathname = \`/\${pathLocale}\${canonicalPath}\`;`,
-    `      return newUrl;`,
-    `    }`,
-    `  }`,
-    ``,
-    `  return url;`,
-    `}`,
-    ``,
-    `/**`,
-    ` * Transform canonical URL to localized for link generation.`,
-    ` * Use with TanStack Router's rewrite.output option.`,
-    ` * Handles prefix strategy: strips default locale prefix when 'as-needed'.`,
-    ` */`,
-    `export function localizeUrl(url: URL): URL {`,
-    `  const pathLocale = extractLocaleFromPath(url.pathname);`,
-    `  // If no locale in URL (canonical route like /about), we can't localize`,
-    `  // The router handles this by using the current locale context`,
-    `  if (!pathLocale) return url;`,
-    ``,
-    `  const pathWithoutLocale = url.pathname.slice(pathLocale.length + 1) || '/';`,
-    ``,
-    `  // Handle prefix strategy: strip prefix for default locale when 'as-needed'`,
-    `  const shouldStripPrefix = prefixStrategy === 'as-needed' && pathLocale === defaultLocale;`,
-    ``,
-    `  // Handle root path`,
-    `  if (pathWithoutLocale === '/') {`,
-    `    if (shouldStripPrefix) {`,
-    `      const newUrl = new URL(url);`,
-    `      newUrl.pathname = '/';`,
-    `      return newUrl;`,
-    `    }`,
-    `    return url;`,
-    `  }`,
-    ``,
-    `  const segments = pathWithoutLocale.split('/').filter(Boolean);`,
-    ``,
-    `  // Match against canonical patterns to find the route`,
-    `  const match = matchRoutePattern(segments, routePatterns, pathLocale, false);`,
-    ``,
-    `  let localizedPath: string | undefined;`,
-    ``,
-    `  if (match) {`,
-    `    const localizedSegs = match.pattern.localized[pathLocale];`,
-    `    if (localizedSegs) {`,
-    `      // Build localized path, substituting captured dynamic values`,
-    `      localizedPath = '/' + localizedSegs.map(seg =>`,
-    `        seg.startsWith('$') ? match.captured[seg] : seg`,
-    `      ).join('/');`,
-    `    }`,
-    `  }`,
-    ``,
-    `  // Default to original path if no translation found`,
-    `  if (!localizedPath) localizedPath = pathWithoutLocale;`,
-    ``,
-    `  // Build final URL`,
-    `  const newUrl = new URL(url);`,
-    `  if (shouldStripPrefix) {`,
-    `    // No prefix for default locale with 'as-needed' strategy`,
-    `    newUrl.pathname = localizedPath;`,
-    `  } else if (localizedPath !== pathWithoutLocale) {`,
-    `    // Keep prefix, apply path translation`,
-    `    newUrl.pathname = \`/\${pathLocale}\${localizedPath}\`;`,
-    `  } else {`,
-    `    // No changes needed`,
-    `    return url;`,
-    `  }`,
-    `  return newUrl;`,
-    `}`,
-  ];
-}
-
-/**
- * Generate simpler TanStack Router rewrite function for prefix-only handling.
- * Used when localizedPaths is false - no path translation, just prefix stripping.
- */
-function generateTanStackPrefixOnlyRewrite(): string[] {
-  return [
-    ``,
-    `/**`,
-    ` * Transform URL for display: strips default locale prefix when 'as-needed'.`,
-    ` * Use with TanStack Router's rewrite.output option.`,
-    ` * @example`,
-    ` * const router = createRouter({`,
-    ` *   routeTree,`,
-    ` *   rewrite: {`,
-    ` *     output: ({ url }) => localizeUrl(url),`,
-    ` *   },`,
-    ` * });`,
-    ` */`,
-    `export function localizeUrl(url: URL): URL {`,
-    `  const pathLocale = extractLocaleFromPath(url.pathname);`,
-    `  if (!pathLocale) return url;`,
-    ``,
-    `  // Strip prefix for default locale when 'as-needed'`,
-    `  if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {`,
-    `    const newUrl = new URL(url);`,
-    `    newUrl.pathname = url.pathname.slice(pathLocale.length + 1) || '/';`,
-    `    return newUrl;`,
-    `  }`,
-    ``,
-    `  return url;`,
-    `}`,
-  ];
 }

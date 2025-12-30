@@ -838,10 +838,10 @@ msgstr "sobre"
       const indexPath = join(outputDir, 'index.ts');
       const content = await fs.readFile(indexPath, 'utf-8');
 
-      // Should export deLocalizeUrl for router rewrite.input
-      expect(content).toContain('export function deLocalizeUrl');
-      // Should export localizeUrl for router rewrite.output
-      expect(content).toContain('export function localizeUrl');
+      // Should export deLocalizeUrl and localizeUrl via factory
+      expect(content).toContain('createUrlRewriter');
+      expect(content).toContain('deLocalizeUrl');
+      expect(content).toContain('localizeUrl');
       // Should import routes, reverseRoutes, and routePatterns
       expect(content).toContain('reverseRoutes');
       expect(content).toContain('routes');
@@ -920,13 +920,11 @@ msgstr "publicaciones"
       // Should import routePatterns for segment-level matching
       expect(content).toContain('routePatterns');
 
-      // Should use pattern matching with segment comparison
-      // The pattern matching code should reference pattern.canonical
-      expect(content).toContain('pattern.canonical');
-      expect(content).toContain('pattern.localized');
-
-      // Should check for dynamic segments with $ prefix
-      expect(content).toMatch(/startsWith\s*\(\s*['"]\$['"]\s*\)/);
+      // Should use createUrlRewriter factory with routePatterns
+      // Pattern matching logic is now inside the factory
+      expect(content).toContain('createUrlRewriter');
+      expect(content).toContain('deLocalizeUrl');
+      expect(content).toContain('localizeUrl');
     });
   });
 
