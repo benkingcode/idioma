@@ -29,7 +29,8 @@ function setLocaleCookie(locale: string) {
 }
 
 function LocaleLayout() {
-  const { locale: urlLocale } = Route.useParams();
+  const params = Route.useParams();
+  const urlLocale = params?.locale;
 
   // Use URL locale if valid, otherwise detect from cookie/browser
   const locale = (urlLocale as Locale) ?? detectLocale();

@@ -7,12 +7,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import {
-  defaultLocale,
-  detectLocale,
-  IdiomiProvider,
-  locales,
-} from '../idiomi';
+import { detectLocale, IdiomiProvider, locales } from '../idiomi';
 import type { Locale } from '../idiomi';
 
 export const Route = createRootRoute({
