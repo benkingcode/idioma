@@ -41,6 +41,7 @@ export async function extractRoutes(
     case 'next-pages':
       return extractNextjsRoutes(options);
     case 'tanstack':
+    case 'tanstack-start':
       return extractTanStackRoutes(options);
     default:
       return [];

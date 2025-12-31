@@ -261,16 +261,27 @@ export function handleLocaleRequest<L extends string>(
 
   // No locale in path
   if (!pathLocale) {
+    // For 'as-needed' with existing cookie: unprefixed URL is explicit intent
+    // for default locale. Accept the request and sync cookie.
+    // This handles the SSR race condition where cookie might be stale.
+    if (prefixStrategy === 'as-needed' && existingCookie) {
+      const needsCookieSync = existingCookie !== defaultLocale;
+      const setCookie = needsCookieSync
+        ? createCookieHeader(cookieName, defaultLocale)
+        : undefined;
+      return { locale: defaultLocale, setCookie };
+    }
+
+    // No cookie (first visit) or 'always' strategy: use detected locale
     const locale = detectedLocale;
 
-    // For 'always': redirect to add prefix
-    // For 'as-needed': redirect if non-default locale
+    // Redirect if non-default locale or 'always' strategy
     if (prefixStrategy === 'always' || locale !== defaultLocale) {
       const redirectUrl = `${url.origin}/${locale}${pathname}${search}${hash}`;
       return { locale, redirectUrl };
     }
 
-    // 'as-needed' with default locale - no redirect needed
+    // 'as-needed' with default locale detected (first visit) - no redirect
     return { locale };
   }
 
