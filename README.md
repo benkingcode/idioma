@@ -62,6 +62,7 @@ Idiomi reads your source code to understand context ("checkout button", "error m
 - [CLI Commands](#cli-commands)
 - [Configuration](#configuration)
 - [Routing](#routing)
+- [CDN Caching](#cdn-caching-with-locale-detection)
 - [API Reference](#api-reference)
 - [How It Works](#how-it-works)
 - [Why Idiomi?](#why-idiomi)
@@ -1244,6 +1245,283 @@ export const routes = {
 ```
 
 Dynamic segments are preserved using each framework's native syntax—only static segments are translated.
+
+## CDN Caching with Locale Detection
+
+When using `detection.order: ['cookie', 'header']` with CDN caching (ISR, edge caching), be aware of caching implications.
+
+### Why `Vary: Accept-Language` Doesn't Work
+
+You might expect to use the `Vary: Accept-Language` header, but this approach has problems:
+
+1. **Cloudflare ignores it** — Cloudflare doesn't respect `Vary` headers for cache keys (except `Accept-Encoding`)
+2. **Cache fragmentation** — Creates separate cache entries for `en-US`, `en-GB`, `en-AU`, etc., even if your site only supports `en`. This drastically reduces cache hit rates.
+
+### The Solution: Edge Middleware with URL-Based Caching
+
+For CDN-cached sites, detect and normalize the locale at the edge, then include it in the URL (which becomes the cache key).
+
+**Important:** Edge middleware handles **cache keying only**. Your origin's `handleLocale` (or `localeLoader`) still runs and sets cookies for subsequent requests. These work together:
+
+- **Edge middleware:** Normalizes locale → adds to URL → creates unique cache key
+- **Origin `handleLocale`:** Detects locale → sets cookie → handles routing
+
+**⚠️ Matching consistency:** For cache correctness, edge and origin must agree on locale detection. The examples below prioritize **cookie detection** (always consistent) over Accept-Language (which requires careful matching). See the notes below each example.
+
+```
+User request with Accept-Language: en-US
+    ↓
+Edge Middleware (Vercel Middleware / Cloudflare Workers)
+    ↓
+detectLocale() → normalizes to 'en' (your supported locale)
+    ↓
+Redirect to /en/about (or rewrite URL)
+    ↓
+CDN caches /en/about separately from /es/about ✅
+```
+
+**Benefits:**
+
+- `en-US`, `en-GB`, `en-AU` all normalize to `en` → same cache entry, better hit rate
+- Works on ALL CDNs (URL-based caching is universal)
+- No `Vary` header complexity
+
+### Vercel Middleware Example
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { defaultLocale, locales, prefixStrategy } from './src/idiomi';
+
+// Cookie name (must match idiomi config)
+const COOKIE_NAME = 'IDIOMI_LOCALE';
+
+function detectLocale(request: NextRequest): string {
+  // 1. Check cookie first
+  const cookieLocale = request.cookies.get(COOKIE_NAME)?.value;
+  if (cookieLocale && locales.includes(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // 2. Parse Accept-Language header
+  const acceptLang = request.headers.get('accept-language') || '';
+  for (const part of acceptLang.split(',')) {
+    const lang = part.split(';')[0].trim().split('-')[0].toLowerCase();
+    if (locales.includes(lang)) {
+      return lang;
+    }
+  }
+
+  return defaultLocale;
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  // Skip if already has locale prefix
+  const hasLocalePrefix = locales.some(
+    (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
+  );
+  if (hasLocalePrefix) {
+    return NextResponse.next();
+  }
+
+  // Detect locale from cookie/Accept-Language
+  const locale = detectLocale(request);
+
+  // Handle based on prefix strategy
+  if (prefixStrategy === 'never') {
+    // Rewrite URL internally to add locale query param for cache keying
+    // User sees /about, CDN caches /about?_locale=es
+    const url = request.nextUrl.clone();
+    url.searchParams.set('_locale', locale);
+    return NextResponse.rewrite(url);
+  }
+
+  // 'always' or 'as-needed': redirect to add prefix
+  const needsRedirect =
+    prefixStrategy === 'always' ||
+    (prefixStrategy === 'as-needed' && locale !== defaultLocale);
+
+  if (needsRedirect) {
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname}${search}`, request.url),
+    );
+  }
+
+  return NextResponse.next();
+}
+
+export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
+```
+
+**Note on Accept-Language matching:** The example above uses a simplified parser that takes the first language preference. For production, consider:
+
+1. **Cookie-only for 'never' strategy** — Safest option. Remove Accept-Language fallback; let origin handle first-time visitors, which sets the cookie for subsequent requests.
+2. **Use `matchLocale` for consistency** — Import `matchLocale` from `@idiomi/core/locale` to match exactly how your origin detects locale (handles quality factors like `es;q=0.5, en;q=0.9`).
+
+For `'always'` and `'as-needed'` strategies, the redirect URL becomes authoritative, so minor detection differences are less critical.
+
+### Cloudflare Workers Example
+
+```typescript
+// worker.ts
+// For use as a separate Worker in front of your origin,
+// or integrated into your TanStack Start Worker
+
+const LOCALES = ['en', 'es', 'fr']; // Copy from idiomi config
+const DEFAULT_LOCALE = 'en';
+const PREFIX_STRATEGY = 'as-needed'; // 'always', 'as-needed', or 'never'
+const COOKIE_NAME = 'IDIOMI_LOCALE';
+
+function detectLocale(request: Request): string {
+  // 1. Check cookie first
+  const cookie = request.headers.get('cookie') || '';
+  const cookieMatch = cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+  const cookieLocale = cookieMatch?.[1];
+  if (cookieLocale && LOCALES.includes(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // 2. Parse Accept-Language header
+  const acceptLang = request.headers.get('accept-language') || '';
+  for (const part of acceptLang.split(',')) {
+    const lang = part.split(';')[0].trim().split('-')[0].toLowerCase();
+    if (LOCALES.includes(lang)) {
+      return lang;
+    }
+  }
+
+  return DEFAULT_LOCALE;
+}
+
+export default {
+  async fetch(request: Request, env: unknown): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Skip if already has locale prefix
+    const hasLocalePrefix = LOCALES.some(
+      (l) => url.pathname.startsWith(`/${l}/`) || url.pathname === `/${l}`,
+    );
+    if (hasLocalePrefix) {
+      return fetch(request);
+    }
+
+    const locale = detectLocale(request);
+
+    // Handle based on prefix strategy
+    if (PREFIX_STRATEGY === 'never') {
+      // Add query param for cache keying (user doesn't see this)
+      url.searchParams.set('_locale', locale);
+      return fetch(url.toString(), request);
+    }
+
+    // 'always' or 'as-needed': redirect to add prefix
+    const needsRedirect =
+      PREFIX_STRATEGY === 'always' ||
+      (PREFIX_STRATEGY === 'as-needed' && locale !== DEFAULT_LOCALE);
+
+    if (needsRedirect) {
+      url.pathname = `/${locale}${url.pathname}`;
+      return Response.redirect(url.toString(), 302);
+    }
+
+    return fetch(request);
+  },
+};
+```
+
+**Same note applies:** For `'never'` strategy, consider cookie-only detection or importing `matchLocale` from `@idiomi/core/locale` for consistent matching with your origin.
+
+### Cloudflare: Cache Key Options
+
+Cloudflare ignores `Vary` headers (except `Accept-Encoding`), so you need alternative approaches for locale-based caching. See [Cloudflare's guide to serving tailored content](https://developers.cloudflare.com/cache/advanced-configuration/serve-tailored-content/).
+
+| Method                | Plan       | Best For                                     |
+| --------------------- | ---------- | -------------------------------------------- |
+| **Transform Rules**   | Free+      | Language/cookie detection (exact match only) |
+| **Snippets**          | Pro+       | Full BCP 47 normalization (`es-MX` → `es`)   |
+| **Custom Cache Keys** | Enterprise | No-code, include `lang` user field           |
+
+#### Snippets (Recommended for Pro+)
+
+[Snippets](https://developers.cloudflare.com/rules/snippets/) run JavaScript at the edge **before cache lookup**, letting you normalize Accept-Language to your supported locales and create proper cache keys:
+
+```javascript
+// Cloudflare Snippet - Locale Cache Key
+// Attach to routes: example.com/*
+
+// Your supported locales (copy from idiomi config)
+const LOCALES = ['en', 'es', 'fr'];
+const DEFAULT_LOCALE = 'en';
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    // Skip if locale already in cache key
+    if (url.searchParams.has('_locale')) {
+      return fetch(request);
+    }
+
+    // Detect locale from cookie first, then Accept-Language
+    const cookie = request.headers.get('cookie') || '';
+    const cookieMatch = cookie.match(/IDIOMI_LOCALE=([^;]+)/);
+    let locale = cookieMatch?.[1];
+
+    if (!locale || !LOCALES.includes(locale)) {
+      // Parse Accept-Language and find best match
+      const acceptLang = request.headers.get('accept-language') || '';
+      const preferred = acceptLang.split(',')[0]?.split('-')[0]?.toLowerCase();
+      locale = LOCALES.includes(preferred) ? preferred : DEFAULT_LOCALE;
+    }
+
+    // Add locale to URL for cache keying (user never sees this)
+    url.searchParams.set('_locale', locale);
+
+    // Fetch with modified URL - this becomes the cache key
+    return fetch(url.toString(), request);
+  },
+};
+```
+
+This normalizes `en-US`, `en-GB`, `en-AU` → `en` for better cache hit rates.
+
+#### Transform Rules (Free)
+
+Transform Rules can access [`http.request.accepted_languages`](https://developers.cloudflare.com/ruleset-engine/rules-language/fields/reference/http.request.accepted_languages/) - an array of language tags from Accept-Language. No code required:
+
+1. Go to **Rules → Transform Rules → URL Rewrite**
+2. Create a rule for each locale:
+   - **Condition:** `(http.request.accepted_languages[0] eq "es")`
+   - **Rewrite query string:** `_locale=es`
+3. Create a fallback rule (no condition) that sets `_locale=en`
+
+You can also combine with cookie detection using `http.cookie`:
+
+```
+(http.cookie contains "IDIOMI_LOCALE=es") or
+(not http.cookie contains "IDIOMI_LOCALE" and http.request.accepted_languages[0] eq "es")
+```
+
+**Limitation:** Transform Rules check exact matches. `http.request.accepted_languages[0] eq "es"` won't match `es-MX`. For full BCP 47 normalization (`es-MX` → `es`), use Snippets.
+
+### Prefix Strategy Compatibility
+
+| Strategy      | CDN Caching | Notes                                                                   |
+| ------------- | ----------- | ----------------------------------------------------------------------- |
+| `'always'`    | ✅ Works    | URL includes locale → naturally unique cache keys                       |
+| `'as-needed'` | ✅ Works    | Non-default locales get prefix → unique cache keys                      |
+| `'never'`     | ⚠️ Risky    | Requires edge middleware with **exact** locale matching to avoid issues |
+
+**Recommendation:** For CDN-cached sites, prefer `'always'` or `'as-needed'`. These strategies put the locale in the URL, which becomes the authoritative cache key. Edge detection errors are corrected by the final URL.
+
+For `prefixStrategy: 'never'` with CDN caching:
+
+- Edge and origin **must agree** on locale detection, or you risk serving cached content for the wrong locale
+- **Safest approach:** Cookie-only detection at edge (let origin handle first-time visitors)
+- **Alternative:** Import `matchLocale` from `@idiomi/core/locale` in your edge middleware
 
 ## Locale Fallbacks
 
