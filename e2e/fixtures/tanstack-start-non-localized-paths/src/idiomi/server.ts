@@ -3,9 +3,11 @@
 // Server-only exports for TanStack Start
 
 import { createRequestHandler } from '@idiomi/tanstack-react/server';
+import { getRouter } from '../router';
 import {
   defaultLocale,
   detection,
+  localeParamName,
   locales,
   prefixStrategy,
 } from './.generated/config';
@@ -16,4 +18,6 @@ export const handleLocale = createRequestHandler<Locale>({
   defaultLocale,
   prefixStrategy,
   detection,
+  localeParamName,
+  getRouter,
 });

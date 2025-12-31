@@ -1,0 +1,49 @@
+msgid ""
+msgstr "Content-Type: text/plain\n"
+
+#: src/routes/dashboard.tsx
+#, extracted
+msgid "003zr0xA"
+msgstr "Dashboard"
+
+#: src/routes/dashboard.tsx
+#, extracted
+msgid "004adTk4"
+msgstr "This is a non-localized route that uses cookie detection."
+
+#: src/routes/dashboard.tsx
+#, extracted
+msgid "003lEGzQ"
+msgstr "Current locale: {locale}"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted
+msgid "004U2qa8"
+msgstr "Learn more about what we do"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted
+msgid "004RNHTH"
+msgstr "This is the home page with localized paths routing"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:dashboard"
+msgid "0028mxXJ"
+msgstr "dashboard"
+
+#: src/routeTree.gen.ts
+#, extracted
+msgctxt "route:about"
+msgid "003R6yRq"
+msgstr "about"

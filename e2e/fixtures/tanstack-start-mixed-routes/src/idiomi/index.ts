@@ -8,11 +8,8 @@ import {
   createUseLocale,
   createUseT,
 } from '@idiomi/react';
-import {
-  createLocaleHead,
-  createLocaleLoader,
-  createUrlHandler,
-} from '@idiomi/tanstack-react';
+import { createLocaleHead, createUrlHandler } from '@idiomi/tanstack-react';
+import { createIsomorphicLocaleDetector } from '@idiomi/tanstack-react/server';
 import {
   defaultLocale,
   detection,
@@ -35,12 +32,10 @@ export const LocaleHead = createLocaleHead({
   prefixStrategy,
 });
 
-export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({
+export const detectLocale = createIsomorphicLocaleDetector<Locale>({
   locales,
   defaultLocale,
-  prefixStrategy,
   detection,
-  localeParamName,
 });
 
 export const { delocalizeUrl, localizeUrl } = createUrlHandler<Locale>({

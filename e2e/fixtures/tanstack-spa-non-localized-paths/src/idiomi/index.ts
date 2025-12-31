@@ -37,6 +37,7 @@ export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({
   defaultLocale,
   prefixStrategy,
   detection,
+  localeParamName,
 });
 
 export const { localizeUrl } = createUrlHandler<Locale>({

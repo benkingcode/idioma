@@ -54,6 +54,11 @@ export interface LocaleLoaderConfig<L extends string = string> {
   readonly defaultLocale: L;
   readonly prefixStrategy: 'always' | 'as-needed' | 'never';
   readonly detection: DetectionConfig;
+  /**
+   * Name of the locale param in localized routes (e.g., 'locale' for `{-$locale}`).
+   * When provided, routes without this param in their matched params will skip redirects.
+   */
+  readonly localeParamName?: string;
 }
 
 export interface LocaleLoaderResult<L extends string> {
@@ -64,6 +69,8 @@ export interface LocaleLoaderApi<L extends string> {
   /** TanStack Router beforeLoad function for locale detection */
   localeLoader: (args: {
     location: LocationInfo;
+    /** Route params from TanStack Router. Used to detect non-localized routes. */
+    params?: Record<string, string>;
   }) => LocaleLoaderResult<L> | Promise<LocaleLoaderResult<L>>;
   /** Standalone locale detection for non-localized routes or components */
   detectLocale: () => L;
@@ -95,7 +102,8 @@ export interface LocaleLoaderApi<L extends string> {
 export function createLocaleLoader<L extends string>(
   config: LocaleLoaderConfig<L>,
 ): LocaleLoaderApi<L> {
-  const { locales, defaultLocale, prefixStrategy, detection } = config;
+  const { locales, defaultLocale, prefixStrategy, detection, localeParamName } =
+    config;
 
   function detectLocale(): L {
     for (const source of detection.order) {
@@ -119,12 +127,37 @@ export function createLocaleLoader<L extends string>(
     return defaultLocale;
   }
 
+  /**
+   * Check if this is a localized route (has locale param).
+   * Non-localized routes skip redirects.
+   *
+   * Note: For SPA, if localeLoader runs, we're on a localized route by definition
+   * (user added beforeLoad: localeLoader). The param check is mainly for detecting
+   * when the optional {-$locale} segment is present vs absent. When params is empty,
+   * TanStack Router matched an optional segment route like /{-$locale} from URL /,
+   * which IS localized - just without the prefix.
+   */
+  function isLocalizedRoute(params?: Record<string, string>): boolean {
+    if (!localeParamName) return true; // Backward compatible
+    if (!params) return true; // No params = assume localized
+    // Empty params means optional segment route matched - still localized
+    if (Object.keys(params).length === 0) return true;
+    return localeParamName in params;
+  }
+
   function localeLoader({
     location,
+    params,
   }: {
     location: LocationInfo;
+    params?: Record<string, string>;
   }): LocaleLoaderResult<L> {
     const pathLocale = extractLocaleFromPath(location.pathname, locales);
+
+    // Non-localized routes: just detect locale, no redirects
+    if (!isLocalizedRoute(params)) {
+      return { locale: pathLocale ?? detectLocale() };
+    }
 
     // Strategy: 'never' - no URL prefixes, just detect
     if (prefixStrategy === 'never') {

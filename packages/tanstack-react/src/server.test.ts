@@ -25,10 +25,23 @@ const createMockContext = (
 });
 
 describe('createRequestHandler', () => {
+  // Mock router with all routes as localized (for tests that expect redirects)
+  const allLocalizedRouter = {
+    matchRoute: () => ({}),
+    routesByPath: {
+      // All routes are localized (have locale param)
+      '/{-$locale}': {},
+      '/{-$locale}/about': {},
+      '/{-$locale}/settings': {},
+    },
+  };
+
   const baseConfig: RequestHandlerConfig<'en' | 'es' | 'fr'> = {
     defaultLocale: 'en',
     locales: ['en', 'es', 'fr'],
     prefixStrategy: 'as-needed',
+    localeParamName: 'locale',
+    getRouter: () => allLocalizedRouter as any,
   };
 
   describe('locale detection from path', () => {
@@ -383,6 +396,8 @@ describe('createRequestHandler', () => {
         defaultLocale: 'de',
         locales: ['en-US', 'es', 'de'],
         prefixStrategy: 'always',
+        localeParamName: 'locale',
+        getRouter: () => allLocalizedRouter as any,
       });
       const ctx = createMockContext('/about', {
         'accept-language': 'en-GB',
@@ -399,6 +414,8 @@ describe('createRequestHandler', () => {
         defaultLocale: 'en',
         locales: ['en', 'zh-Hans', 'zh-Hant'],
         prefixStrategy: 'always',
+        localeParamName: 'locale',
+        getRouter: () => allLocalizedRouter as any,
       });
       const ctx = createMockContext('/about', {
         'accept-language': 'zh-TW',
@@ -415,6 +432,8 @@ describe('createRequestHandler', () => {
         defaultLocale: 'de',
         locales: ['en-US', 'de'],
         prefixStrategy: 'always',
+        localeParamName: 'locale',
+        getRouter: () => allLocalizedRouter as any,
         detection: { algorithm: 'lookup' },
       });
       const ctx = createMockContext('/about', {
@@ -426,6 +445,328 @@ describe('createRequestHandler', () => {
       expect(result.redirectResponse?.headers.get('Location')).toContain(
         '/de/',
       );
+    });
+  });
+});
+
+describe('route-based skipping with getRouter', () => {
+  /**
+   * Mock router that simulates TanStack Router's structure.
+   *
+   * Routes should use TanStack path syntax:
+   * - `/{-$locale}/about` for localized routes (optional locale segment)
+   * - `/dashboard` for non-localized routes
+   *
+   * The mock provides `routesByPath` which is used by `isLocalizedRoute`.
+   */
+  const createMockRouter = (
+    routesByPath: Record<string, Record<string, unknown>>,
+  ) => ({
+    matchRoute: (opts: { to: string }) => {
+      // Simplified matcher - not used by current implementation
+      return routesByPath[opts.to] ?? false;
+    },
+    routesByPath,
+  });
+
+  const baseConfig: RequestHandlerConfig<'en' | 'es' | 'fr'> = {
+    defaultLocale: 'en',
+    locales: ['en', 'es', 'fr'],
+    prefixStrategy: 'as-needed',
+  };
+
+  it('skips prefix redirect for non-localized routes', () => {
+    const router = createMockRouter({
+      '/dashboard': {}, // No locale param - non-localized route
+      '/{-$locale}/about': { id: 'about' }, // Has locale param - localized route
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+      detection: { order: ['cookie', 'header'] },
+    });
+
+    // Non-localized /dashboard with Spanish cookie should NOT redirect
+    const ctx = createMockContext('/dashboard', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+    const result = handleLocale(ctx);
+
+    expect(result.locale).toBe('es'); // Detected from cookie
+    expect(result.redirectResponse).toBeUndefined(); // No redirect!
+  });
+
+  it('applies prefix redirect for localized routes', () => {
+    const router = createMockRouter({
+      '/dashboard': {}, // No locale param - non-localized route
+      '/{-$locale}/about': { id: 'about' }, // Has locale param - localized route
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      prefixStrategy: 'as-needed',
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+      detection: { order: ['cookie'] },
+    });
+
+    // Localized /about with Spanish cookie SHOULD redirect to /es/about
+    const ctx = createMockContext('/about', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+    const result = handleLocale(ctx);
+
+    expect(result.locale).toBe('es');
+    expect(result.redirectResponse?.headers.get('Location')).toBe(
+      'https://example.com/es/about',
+    );
+  });
+
+  it('uses Accept-Language for non-localized routes without cookie', () => {
+    const router = createMockRouter({
+      '/dashboard': {}, // No locale param
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+      detection: { order: ['cookie', 'header'] },
+    });
+
+    const ctx = createMockContext('/dashboard', {
+      'accept-language': 'es-ES,es;q=0.9',
+    });
+    const result = handleLocale(ctx);
+
+    expect(result.locale).toBe('es');
+    expect(result.redirectResponse).toBeUndefined(); // No redirect for non-localized
+  });
+
+  it('falls back to defaultLocale for non-localized routes when no detection source matches', () => {
+    const router = createMockRouter({
+      '/dashboard': {}, // No locale param
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+    });
+
+    const ctx = createMockContext('/dashboard');
+    const result = handleLocale(ctx);
+
+    expect(result.locale).toBe('en'); // Falls back to default
+    expect(result.redirectResponse).toBeUndefined();
+  });
+
+  it('skips redirects without getRouter (safer fallback)', () => {
+    // No getRouter provided - fall back to non-localized (no redirects)
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      prefixStrategy: 'as-needed',
+      detection: { order: ['cookie'] },
+    });
+
+    const ctx = createMockContext('/dashboard', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+    const result = handleLocale(ctx);
+
+    // Without router, treat all routes as non-localized (no redirect)
+    // Still detect locale from cookie for translations
+    expect(result.locale).toBe('es');
+    expect(result.redirectResponse).toBeUndefined();
+  });
+
+  it('skips redirect when route is not found by router (likely API or static)', () => {
+    const router = createMockRouter({
+      // /api/users is not in the router's routes (e.g., handled by server functions)
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      prefixStrategy: 'as-needed',
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+      detection: { order: ['cookie'] },
+    });
+
+    const ctx = createMockContext('/api/users', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+    const result = handleLocale(ctx);
+
+    // Route not found in router - likely API route, skip redirect
+    expect(result.locale).toBe('es'); // Still detect locale
+    expect(result.redirectResponse).toBeUndefined(); // But no redirect
+  });
+
+  it('handles prefixStrategy: always correctly with non-localized routes', () => {
+    const router = createMockRouter({
+      '/api/users': {}, // API routes typically non-localized
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      prefixStrategy: 'always',
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+    });
+
+    const ctx = createMockContext('/api/users');
+    const result = handleLocale(ctx);
+
+    // Non-localized route should still skip redirect even with 'always' strategy
+    expect(result.locale).toBe('en');
+    expect(result.redirectResponse).toBeUndefined();
+  });
+
+  it('handles prefixStrategy: never correctly with non-localized routes', () => {
+    const router = createMockRouter({
+      '/dashboard': {}, // Non-localized
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      prefixStrategy: 'never',
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+      detection: { order: ['cookie'] },
+    });
+
+    const ctx = createMockContext('/dashboard', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+    const result = handleLocale(ctx);
+
+    // Non-localized route: detect locale, no rewrite needed
+    expect(result.locale).toBe('es');
+    expect(result.redirectResponse).toBeUndefined();
+    // With 'never' strategy, non-localized routes don't need URL rewriting
+    expect(result.localizedCtx.request.url).toBe(
+      'https://example.com/dashboard',
+    );
+  });
+
+  it('still rewrites localized routes with prefixStrategy: never', () => {
+    const router = createMockRouter({
+      '/{-$locale}/about': { id: 'about' }, // Localized route (has locale param)
+    });
+
+    const handleLocale = createRequestHandler({
+      ...baseConfig,
+      prefixStrategy: 'never',
+      localeParamName: 'locale',
+      getRouter: () => router as any,
+      detection: { order: ['cookie'] },
+    });
+
+    const ctx = createMockContext('/about', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+    const result = handleLocale(ctx);
+
+    // Localized route with 'never' strategy: detect locale and rewrite URL
+    expect(result.locale).toBe('es');
+    expect(result.redirectResponse).toBeUndefined();
+    expect(result.localizedCtx.request.url).toBe(
+      'https://example.com/es/about',
+    );
+  });
+
+  describe('dynamic segment support', () => {
+    it('matches localized routes with bare $slug params', () => {
+      const router = createMockRouter({
+        '/{-$locale}/blog/$slug': { id: 'blog-post' },
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        localeParamName: 'locale',
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      // Without locale prefix but with Spanish cookie → should redirect
+      const ctx = createMockContext('/blog/my-first-post', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse?.headers.get('Location')).toBe(
+        'https://example.com/es/blog/my-first-post',
+      );
+    });
+
+    it('matches localized routes with {$id} required segment params', () => {
+      const router = createMockRouter({
+        '/{-$locale}/posts/{$id}': { id: 'post' },
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        localeParamName: 'locale',
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      // Without locale prefix but with Spanish cookie → should redirect
+      const ctx = createMockContext('/posts/12345', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse?.headers.get('Location')).toBe(
+        'https://example.com/es/posts/12345',
+      );
+    });
+
+    it('correctly identifies non-localized routes with dynamic params', () => {
+      const router = createMockRouter({
+        '/users/$userId': { id: 'user-profile' }, // No locale param
+        '/{-$locale}/blog/$slug': { id: 'blog-post' }, // Has locale param
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        localeParamName: 'locale',
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      // Non-localized route with dynamic param → NO redirect
+      const ctx = createMockContext('/users/abc123', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es'); // Detected from cookie
+      expect(result.redirectResponse).toBeUndefined(); // No redirect!
+    });
+
+    it('handles localized routes with locale prefix and dynamic params', () => {
+      const router = createMockRouter({
+        '/{-$locale}/blog/$slug': { id: 'blog-post' },
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        localeParamName: 'locale',
+        getRouter: () => router as any,
+      });
+
+      // With locale prefix → no redirect needed
+      const ctx = createMockContext('/es/blog/hello-world');
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse).toBeUndefined();
     });
   });
 });

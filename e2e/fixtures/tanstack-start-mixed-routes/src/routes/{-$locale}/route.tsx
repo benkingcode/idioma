@@ -88,15 +88,8 @@ function Navigation() {
       <Link to="/{-$locale}/about" params={{ locale }} data-testid="nav-about">
         About
       </Link>
-      <Link to="/{-$locale}/blog" params={{ locale }} data-testid="nav-blog">
-        Blog
-      </Link>
-      <Link
-        to="/{-$locale}/contact"
-        params={{ locale }}
-        data-testid="nav-contact"
-      >
-        Contact
+      <Link to="/dashboard" data-testid="nav-dashboard">
+        Dashboard
       </Link>
       <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
         <a

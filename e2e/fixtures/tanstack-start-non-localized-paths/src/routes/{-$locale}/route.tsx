@@ -5,12 +5,7 @@ import {
   useLocation,
 } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import {
-  defaultLocale,
-  IdiomiProvider,
-  LocaleHead,
-  useLocale,
-} from '../../idiomi';
+import { LocaleHead, useLocale } from '../../idiomi';
 import type { Locale } from '../../idiomi';
 
 export const Route = createFileRoute('/{-$locale}')({
@@ -23,19 +18,15 @@ function setLocaleCookie(locale: string) {
 }
 
 function LocaleLayout() {
-  const { locale: urlLocale } = Route.useParams();
-
-  // Server handles detection; unprefixed URLs are always default locale
-  const locale = (urlLocale ?? defaultLocale) as Locale;
-
+  // IdiomiProvider is now at __root.tsx - locale comes from context
   return (
-    <IdiomiProvider locale={locale}>
+    <>
       <LocaleHead />
       <Navigation />
       <main data-testid="main-content">
         <Outlet />
       </main>
-    </IdiomiProvider>
+    </>
   );
 }
 

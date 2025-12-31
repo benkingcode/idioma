@@ -4,8 +4,16 @@ import {
   HeadContent,
   Outlet,
   Scripts,
+  useRouterState,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import {
+  defaultLocale,
+  detectLocale,
+  IdiomiProvider,
+  locales,
+} from '../idiomi';
+import type { Locale } from '../idiomi';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,12 +27,22 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Extract locale from URL path, fall back to detection (cookie/header)
+  const urlLocale = (locales as readonly string[]).find(
+    (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
+  ) as Locale | undefined;
+  const locale = urlLocale ?? detectLocale();
+
   return (
-    <RootDocument>
-      <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
-        <Outlet />
-      </div>
-    </RootDocument>
+    <IdiomiProvider locale={locale}>
+      <RootDocument>
+        <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
+          <Outlet />
+        </div>
+      </RootDocument>
+    </IdiomiProvider>
   );
 }
 

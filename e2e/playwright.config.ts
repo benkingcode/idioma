@@ -147,6 +147,15 @@ export default defineConfig({
         baseURL: 'http://localhost:5180',
       },
     },
+    // TanStack Start SSR - Mixed routes (localized + non-localized)
+    {
+      name: 'tanstack-start-mixed-routes',
+      testMatch: /routing\/mixed-routes\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5181',
+      },
+    },
   ],
 
   webServer: [
@@ -204,6 +213,14 @@ export default defineConfig({
       command:
         'pnpm --filter e2e-fixture-tanstack-start-non-localized-paths dev:fixture --port 5180 --strictPort',
       url: 'http://localhost:5180',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // TanStack Start SSR - Mixed routes fixture
+    {
+      command:
+        'pnpm --filter e2e-fixture-tanstack-start-mixed-routes dev:fixture --port 5181 --strictPort',
+      url: 'http://localhost:5181',
       reuseExistingServer: !CI,
       timeout: 120000,
     },

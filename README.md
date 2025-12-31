@@ -1075,7 +1075,58 @@ function LocaleLayout() {
 - **Locale detection** from `Accept-Language` headers and cookies (BCP 47-compliant matching)
 - **Redirects** based on `prefixStrategy` (e.g., strip default locale prefix with `as-needed`)
 - **URL rewriting** for `prefixStrategy: 'never'` (internal rewrite without changing browser URL)
-- **Cookie sync** to persist detected locale for subsequent requests
+
+#### Mixed Routes (Localized + Non-Localized)
+
+Some routes need locale prefixes (marketing pages, blog), while others shouldn't redirect (dashboards, API routes). The compiler auto-generates `handleLocale` with `getRouter` config to detect which routes are localized:
+
+```
+routes/
+  __root.tsx                    # IdiomiProvider at root
+  {-$locale}/                   # Localized routes (have locale param)
+    about.tsx                   # /about → /es/about ✓
+    blog/$slug.tsx              # /blog/hello → /es/blog/hello ✓
+  dashboard/                    # Non-localized routes (no locale param)
+    index.tsx                   # /dashboard stays /dashboard
+    settings.tsx                # /dashboard/settings (no redirect)
+```
+
+**How it works:**
+
+1. `handleLocale` inspects the router's route tree (`router.routesByPath`)
+2. Routes containing `{-$locale}` are treated as localized
+3. Routes without locale param skip redirect logic—locale is still detected from cookie/header, but no prefix redirects occur
+
+**Generated `idiomi/server.ts`:**
+
+```typescript
+// Auto-generated with getRouter for route detection
+import { createRequestHandler } from '@idiomi/tanstack-react/server';
+import { getRouter } from '../router';
+
+export const handleLocale = createRequestHandler<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+  detection,
+  localeParamName,
+  getRouter, // Enables auto-detection of localized vs non-localized routes
+});
+```
+
+**Behavior by route type:**
+
+| Route Type    | Example      | With Spanish Cookie         |
+| ------------- | ------------ | --------------------------- |
+| Localized     | `/about`     | Redirects to `/es/about`    |
+| Localized     | `/es/about`  | Serves Spanish content      |
+| Non-localized | `/dashboard` | No redirect, serves Spanish |
+| Non-localized | `/dashboard` | (no cookie) Serves default  |
+
+**Limitations:**
+
+- **Splat routes** (`$` without name): Treated as single-segment match. Routes like `/{-$locale}/docs/$` won't correctly match `/docs/a/b/c`.
+- **Overlapping patterns**: If a non-localized route's path (e.g., `/admin`) could match a localized pattern (e.g., `/{-$locale}/$category`), keep paths distinct to avoid conflicts.
 
 #### Localized Paths (Both SPA and SSR)
 

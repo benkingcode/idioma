@@ -171,6 +171,87 @@ describe('createLocaleLoader', () => {
       expect(detectLocale()).toBe('en');
     });
   });
+
+  describe('route-based skipping with localeParamName', () => {
+    const configWithParamName = {
+      ...baseConfig,
+      localeParamName: 'locale',
+    };
+
+    // NOTE: In SPA, users control which routes have `beforeLoad: localeLoader`.
+    // Non-localized routes simply don't use localeLoader.
+    // When localeLoader runs with empty params, it means an optional {-$locale}
+    // segment matched - which IS localized. See client.ts isLocalizedRoute comment.
+
+    it('treats empty params as localized (optional segment matched without prefix)', () => {
+      document.cookie = 'IDIOMI_LOCALE=es';
+      const { localeLoader } = createLocaleLoader(configWithParamName);
+
+      // Empty params from TanStack Router means optional {-$locale} matched /
+      // This IS localized, so should redirect to /es
+      expect(() =>
+        localeLoader({
+          location: { pathname: '/', searchStr: '', hash: '' },
+          params: {}, // Empty = optional segment route matched
+        }),
+      ).toThrow('REDIRECT');
+    });
+
+    it('applies redirect for localized routes (has locale param)', () => {
+      document.cookie = 'IDIOMI_LOCALE=es';
+      const { localeLoader } = createLocaleLoader(configWithParamName);
+
+      // Localized route without prefix should redirect
+      expect(() =>
+        localeLoader({
+          location: { pathname: '/about', searchStr: '', hash: '' },
+          params: { locale: 'en' }, // Has locale param
+        }),
+      ).toThrow('REDIRECT');
+    });
+
+    it('works without localeParamName (backward compatible)', () => {
+      document.cookie = 'IDIOMI_LOCALE=es';
+      const { localeLoader } = createLocaleLoader(baseConfig); // No localeParamName
+
+      // Should still redirect (backward compatible behavior)
+      expect(() =>
+        localeLoader({
+          location: { pathname: '/dashboard', searchStr: '', hash: '' },
+          params: {},
+        }),
+      ).toThrow('REDIRECT');
+    });
+
+    it('skips redirect for non-localized routes (has other params)', () => {
+      const { localeLoader } = createLocaleLoader(configWithParamName);
+
+      // Route with params but no locale key = non-localized route
+      const result = localeLoader({
+        location: { pathname: '/users/123', searchStr: '', hash: '' },
+        params: { userId: '123' }, // Has params but no locale
+      });
+
+      expect(result.locale).toBe('en');
+      // No redirect!
+    });
+
+    it('handles prefixStrategy: never (no redirects regardless of params)', () => {
+      document.cookie = 'IDIOMI_LOCALE=es';
+      const { localeLoader } = createLocaleLoader({
+        ...configWithParamName,
+        prefixStrategy: 'never',
+      });
+
+      // With 'never' strategy, no redirects happen - just detect locale
+      const result = localeLoader({
+        location: { pathname: '/dashboard', searchStr: '', hash: '' },
+        params: {},
+      });
+
+      expect(result.locale).toBe('es'); // Detected from cookie
+    });
+  });
 });
 
 describe('createUrlHandler', () => {

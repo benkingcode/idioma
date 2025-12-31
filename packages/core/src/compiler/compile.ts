@@ -942,6 +942,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         exports.push(`  defaultLocale,`);
         exports.push(`  prefixStrategy,`);
         exports.push(`  detection,`);
+        exports.push(`  localeParamName,`);
         exports.push(`});`);
         exports.push('');
       }
@@ -1049,6 +1050,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         exports.push(`  defaultLocale,`);
         exports.push(`  prefixStrategy,`);
         exports.push(`  detection,`);
+        exports.push(`  localeParamName,`);
         exports.push(`});`);
         exports.push('');
       }
@@ -1094,6 +1096,7 @@ function generateServerCode(options: RouteAwareCodeOptions): string {
     'defaultLocale',
     'prefixStrategy',
     'detection',
+    'localeParamName',
   ];
   imports.push(
     `import { ${configImports.join(', ')} } from './.generated/config';`,
@@ -1102,14 +1105,18 @@ function generateServerCode(options: RouteAwareCodeOptions): string {
   imports.push(
     `import { createRequestHandler } from '@idiomi/tanstack-react/server';`,
   );
+  // Import getRouter from user's router file for route matching
+  imports.push(`import { getRouter } from '../router';`);
 
-  // Generate handleLocale
+  // Generate handleLocale with route-matching support
   exports.push('');
   exports.push(`export const handleLocale = createRequestHandler<Locale>({`);
   exports.push(`  locales,`);
   exports.push(`  defaultLocale,`);
   exports.push(`  prefixStrategy,`);
   exports.push(`  detection,`);
+  exports.push(`  localeParamName,`);
+  exports.push(`  getRouter,`);
   exports.push(`});`);
 
   return [...imports, ...exports].join('\n');

@@ -62,11 +62,35 @@ export interface LocaleDetectorConfig<L extends string = string> {
   readonly detection?: DetectionConfig;
 }
 
+/**
+ * Minimal router interface for route matching.
+ * We use a loose type because TanStack Router's internal structure
+ * varies across versions.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RouterLike = {
+  matchRoute: (...args: any[]) => any;
+  // Use 'object' to accept TanStack's strict FileRoutesByFullPath type
+  // which doesn't have an index signature for strings
+  routesByPath?: object;
+};
+
 export interface RequestHandlerConfig<L extends string = string> {
   readonly locales: readonly L[];
   readonly defaultLocale: L;
   readonly prefixStrategy: 'always' | 'as-needed' | 'never';
   readonly detection?: DetectionConfig;
+  /**
+   * Name of the locale param in localized routes (e.g., 'locale' for `{-$locale}`).
+   * Used with `getRouter` to auto-detect which routes need locale handling.
+   */
+  readonly localeParamName?: string;
+  /**
+   * Factory function that returns a TanStack Router instance.
+   * Used to check if routes have the locale param via `matchRoute()`.
+   * When provided with `localeParamName`, non-localized routes will skip redirects.
+   */
+  readonly getRouter?: () => RouterLike;
 }
 
 export interface HandleLocaleResult<
@@ -233,7 +257,120 @@ export function createRequestHandler<L extends string>(
 ): <Ctx extends { request: Request; responseHeaders: Headers }>(
   ctx: Ctx,
 ) => HandleLocaleResult<Ctx, L> {
-  const { locales, defaultLocale, prefixStrategy } = config;
+  const { locales, defaultLocale, prefixStrategy, localeParamName, getRouter } =
+    config;
+
+  // Cache router lazily - TanStack Router isn't fully initialized until first request
+  let router: RouterLike | undefined;
+  function getRouterLazy(): RouterLike | undefined {
+    if (!getRouter) return undefined;
+    if (!router) {
+      try {
+        router = getRouter();
+      } catch {
+        // Router not initialized yet (first request during server startup)
+        return undefined;
+      }
+    }
+    return router;
+  }
+
+  // Cache compiled regex patterns for localized routes (built lazily on first use)
+  type LocalizedRoutePattern =
+    | { type: 'root' } // Special case: /{-$locale} only
+    | { type: 'regex'; regex: RegExp };
+  let localizedRoutePatterns: LocalizedRoutePattern[] | undefined;
+
+  /**
+   * Build and cache regex patterns for all localized routes.
+   * Called once on first request, then cached for subsequent requests.
+   */
+  function buildLocalizedRoutePatterns(): LocalizedRoutePattern[] | undefined {
+    const currentRouter = getRouterLazy();
+    if (!currentRouter || !localeParamName) return undefined;
+
+    try {
+      const routesByPath = currentRouter.routesByPath as Record<
+        string,
+        { id?: string; path?: string }
+      >;
+      if (!routesByPath || typeof routesByPath !== 'object') {
+        return undefined;
+      }
+
+      const patterns: LocalizedRoutePattern[] = [];
+
+      // Locale param patterns to identify localized routes
+      const localeParamPatterns = [
+        `$${localeParamName}`,
+        `{-$${localeParamName}}`,
+        `{$${localeParamName}}`,
+      ];
+
+      for (const routePath of Object.keys(routesByPath)) {
+        const hasLocaleParam = localeParamPatterns.some((p) =>
+          routePath.includes(p),
+        );
+        if (!hasLocaleParam) continue;
+        if (routePath === '__root__') continue;
+
+        // Special case: locale-only root route /{-$locale}
+        if (routePath === `/{-$${localeParamName}}`) {
+          patterns.push({ type: 'root' });
+          continue;
+        }
+
+        // Convert route path to regex pattern
+        // IMPORTANT: Replace brace patterns FIRST (with preceding /) before bare $param
+        const pattern = routePath
+          .replace(/\/\{-\$[^}]+\}/g, '(?:/[^/]+)?') // Optional segments with preceding /
+          .replace(/\{\$[^}]+\}/g, '[^/]+') // Required segments (e.g., {$id})
+          .replace(/\$[^/]*/g, '[^/]+'); // Bare params (e.g., $slug)
+
+        patterns.push({ type: 'regex', regex: new RegExp(`^${pattern}$`) });
+      }
+
+      return patterns;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Check if a route is localized (has locale param in its definition).
+   * Returns true if pathname matches a route with locale param.
+   * Returns false if no localized route matches (treat as non-localized).
+   */
+  function isLocalizedRoute(pathname: string): boolean {
+    // Build cache on first use
+    if (localizedRoutePatterns === undefined) {
+      localizedRoutePatterns = buildLocalizedRoutePatterns() ?? [];
+    }
+
+    // No patterns means we can't determine - fall back to non-localized
+    if (localizedRoutePatterns.length === 0) return false;
+
+    for (const pattern of localizedRoutePatterns) {
+      if (pattern.type === 'root') {
+        // Root / matches locale-only route
+        if (pathname === '/') return true;
+        // Single segment that is a known locale (e.g., /es, /en)
+        if (/^\/[^/]+$/.test(pathname)) {
+          const segment = pathname.slice(1);
+          if ((locales as readonly string[]).includes(segment)) {
+            return true;
+          }
+        }
+        continue;
+      }
+
+      if (pattern.regex.test(pathname)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   return (ctx) => {
     const url = new URL(ctx.request.url);
@@ -252,6 +389,15 @@ export function createRequestHandler<L extends string>(
 
     // Detect locale from headers (cookie/Accept-Language)
     const detectedLocale = detectLocaleFromRequest(ctx.request, config);
+
+    // ============================================================
+    // Non-localized routes: skip redirects, just detect locale
+    // ============================================================
+    if (!isLocalizedRoute(pathname)) {
+      // Priority: path > query param (from edge) > cookie/header
+      const locale = pathLocale ?? queryLocale ?? detectedLocale;
+      return { locale, localizedCtx: ctx };
+    }
 
     // ============================================================
     // Strategy: 'never' - never show prefix, always rewrite
