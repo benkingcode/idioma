@@ -43,11 +43,6 @@ export interface ConfigGeneratorOptions {
    * @default 'locale'
    */
   localeParamName?: string;
-  /**
-   * Paths to skip locale handling in middleware.
-   * Supports glob array or regex string.
-   */
-  ignorePaths?: string[] | string;
 }
 
 /**
@@ -73,7 +68,6 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
     detection = {},
     metadataBase,
     localeParamName = 'locale',
-    ignorePaths,
   } = options;
 
   const {
@@ -95,10 +89,6 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
 
   if (metadataBase) {
     lines.push(`export const metadataBase = ${JSON.stringify(metadataBase)};`);
-  }
-
-  if (ignorePaths) {
-    lines.push(`export const ignorePaths = ${JSON.stringify(ignorePaths)};`);
   }
 
   lines.push('');
@@ -131,7 +121,6 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     detection = {},
     metadataBase,
     localeParamName = 'locale',
-    ignorePaths,
   } = options;
 
   const {
@@ -162,18 +151,6 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     lines.push(
       `export declare const metadataBase: ${JSON.stringify(metadataBase)};`,
     );
-  }
-
-  if (ignorePaths) {
-    // Type depends on whether it's an array or string
-    if (Array.isArray(ignorePaths)) {
-      const pathsTuple = ignorePaths.map((p) => JSON.stringify(p)).join(', ');
-      lines.push(`export declare const ignorePaths: readonly [${pathsTuple}];`);
-    } else {
-      lines.push(
-        `export declare const ignorePaths: ${JSON.stringify(ignorePaths)};`,
-      );
-    }
   }
 
   lines.push('');

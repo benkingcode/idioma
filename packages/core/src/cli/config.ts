@@ -86,15 +86,6 @@ const RoutingConfigSchema = z
      * Locale detection settings for middleware.
      */
     detection: DetectionConfigSchema.optional(),
-    /**
-     * Paths to skip locale handling in middleware.
-     * Supports two formats:
-     * - Glob array: ['/api/*', '/dashboard/**', '/_*']
-     * - Regex string: '^/(api|_|dashboard)'
-     *
-     * Static files (.js, .css, .ico, etc.) are always skipped automatically.
-     */
-    ignorePaths: z.union([z.array(z.string()), z.string()]).optional(),
   })
   .optional();
 

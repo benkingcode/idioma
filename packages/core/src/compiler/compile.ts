@@ -84,11 +84,6 @@ export interface RoutingCompileOptions {
    * @default 'locale'
    */
   localeParamName?: string;
-  /**
-   * Paths to skip locale handling in middleware.
-   * Supports glob array or regex string.
-   */
-  ignorePaths?: string[] | string;
 }
 
 export interface CompileOptions {
@@ -345,7 +340,6 @@ export async function compileTranslations(
       detection: routing?.detection,
       metadataBase: routing?.metadataBase,
       localeParamName: routing?.localeParamName,
-      ignorePaths: routing?.ignorePaths,
     };
 
     await fs.writeFile(

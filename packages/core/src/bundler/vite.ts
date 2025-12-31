@@ -117,7 +117,6 @@ export default function idiomiVitePlugin(
         metadataBase: config.routing.metadataBase,
         prefixStrategy: config.routing.prefixStrategy,
         detection: config.routing.detection,
-        ignorePaths: config.routing.ignorePaths,
       };
     }
   }
