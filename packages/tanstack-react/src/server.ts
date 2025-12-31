@@ -29,6 +29,7 @@
 
 import { matchLocale } from '@idiomi/core/locale';
 import { createIsomorphicFn } from '@tanstack/react-start';
+import { getRequestHeaders } from '@tanstack/react-start/server';
 import {
   detectLocaleFromBrowser,
   detectLocaleFromHeaders,
@@ -127,8 +128,6 @@ export function createIsomorphicLocaleDetector<L extends string>(
 
   return createIsomorphicFn()
     .server(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { getRequestHeaders } = require('@tanstack/react-start/server');
       const headers = getRequestHeaders();
       return detectLocaleFromHeaders<L>(
         headers.get('cookie'),
