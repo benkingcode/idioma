@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  createLocaleHandler,
+  createHandleLocale,
   handleLocaleRequest,
   type LocaleServerEntryConfig,
 } from './server-entry.js';
@@ -279,35 +279,47 @@ describe('locale negotiation with language distance', () => {
   });
 });
 
-describe('createLocaleHandler', () => {
+describe('createHandleLocale', () => {
   const factoryConfig: LocaleServerEntryConfig<'en' | 'es' | 'fr'> = {
     locales: ['en', 'es', 'fr'],
     defaultLocale: 'en',
     prefixStrategy: 'as-needed',
   };
 
-  it('returns a handler function', () => {
-    const handler = createLocaleHandler(factoryConfig);
+  // Helper to create a mock TanStack Start context
+  const createMockContext = (
+    url: string,
+    headers: Record<string, string> = {},
+  ) => ({
+    request: createMockRequest(url, headers),
+    responseHeaders: new Headers(),
+  });
 
-    expect(typeof handler).toBe('function');
+  it('returns a handler function', () => {
+    const handleLocale = createHandleLocale(factoryConfig);
+
+    expect(typeof handleLocale).toBe('function');
   });
 
   it('handler works correctly', () => {
-    const handler = createLocaleHandler(factoryConfig);
-    const request = createMockRequest('/es/about');
-    const result = handler(request);
+    const handleLocale = createHandleLocale(factoryConfig);
+    const ctx = createMockContext('/es/about');
+    const result = handleLocale(ctx);
 
     expect(result.locale).toBe('es');
   });
 
   it('bakes config into handler', () => {
-    const handler = createLocaleHandler({
+    const handleLocale = createHandleLocale({
       ...factoryConfig,
       prefixStrategy: 'always',
     });
-    const request = createMockRequest('/about');
-    const result = handler(request);
+    const ctx = createMockContext('/about');
+    const result = handleLocale(ctx);
 
-    expect(result.redirectUrl).toBe('https://example.com/en/about');
+    expect(result.redirectResponse).toBeDefined();
+    expect(result.redirectResponse?.headers.get('Location')).toBe(
+      'https://example.com/en/about',
+    );
   });
 });
