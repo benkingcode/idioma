@@ -48,7 +48,7 @@ export interface LocaleServerEntryConfig<L extends string = string> {
     /** Cookie name for storing locale preference */
     cookieName?: string;
     /** Order of detection sources */
-    order?: Array<'cookie' | 'header'>;
+    order?: readonly ('cookie' | 'header')[];
     /** Matching algorithm for Accept-Language */
     algorithm?: 'lookup' | 'best fit';
   };
