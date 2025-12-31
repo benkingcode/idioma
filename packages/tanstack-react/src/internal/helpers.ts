@@ -14,7 +14,6 @@ export const DEFAULT_DETECTION_ORDER: readonly ('cookie' | 'header')[] = [
   'cookie',
   'header',
 ];
-export const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 /** Pattern to detect static files by extension */
 export const STATIC_FILE_PATTERN = /\.[a-z0-9]+$/i;
@@ -85,17 +84,6 @@ export function parseCookie(
   if (!cookieHeader) return undefined;
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match?.[1];
-}
-
-/**
- * Create a Set-Cookie header value for locale persistence.
- *
- * @example
- * createCookieHeader('IDIOMI_LOCALE', 'es')
- * // => 'IDIOMI_LOCALE=es;Path=/;Max-Age=31536000;SameSite=Lax'
- */
-export function createCookieHeader(name: string, value: string): string {
-  return `${name}=${value};Path=/;Max-Age=${COOKIE_MAX_AGE};SameSite=Lax`;
 }
 
 // ============================================================
