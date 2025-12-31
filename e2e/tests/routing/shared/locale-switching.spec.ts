@@ -28,6 +28,9 @@ test.describe('Locale Switching', () => {
       'Bienvenido a nuestro sitio web',
     );
 
+    // Wait for hydration (SSR sends HTML first, then JS hydrates)
+    await page.waitForLoadState('networkidle');
+
     // Switch to English
     await page.getByTestId('locale-en').click();
     await page.waitForURL(/^http:\/\/localhost:\d+\/$/);

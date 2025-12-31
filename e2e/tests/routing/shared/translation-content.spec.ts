@@ -104,6 +104,9 @@ test.describe('Translation Content', () => {
       // Verify Spanish
       await expect(page.getByTestId('home-title')).toContainText('Bienvenido');
 
+      // Wait for hydration (SSR sends HTML first, then JS hydrates)
+      await page.waitForLoadState('networkidle');
+
       // Switch to English
       await page.getByTestId('locale-en').click();
       await page.waitForURL(/^http:\/\/localhost:\d+\/$/);

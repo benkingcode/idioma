@@ -1,16 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Locale Detection', () => {
-  test('detects locale from cookie', async ({ page, context, baseURL }) => {
-    // Skip for SSR fixtures - unprefixed URL navigation is treated as explicit intent
-    // for default locale to handle SSR cookie race conditions during locale switching.
-    // SPA fixtures don't have this issue because locale detection runs in beforeLoad.
-    const isSSR = baseURL?.includes('5179') || baseURL?.includes('5180');
-    test.skip(
-      isSSR === true,
-      'SSR treats unprefixed URL as explicit default locale intent',
-    );
-
+  test('detects locale from cookie', async ({ page, context }) => {
     // Set Spanish locale cookie before navigation
     await context.addCookies([
       {

@@ -57,11 +57,15 @@ function Navigation() {
   };
 
   const handleLocaleClick = (
-    _e: React.MouseEvent<HTMLAnchorElement>,
+    e: React.MouseEvent<HTMLAnchorElement>,
     newLocale: Locale,
   ) => {
-    // Set cookie before the natural anchor navigation
+    // Prevent default to avoid race condition where HTTP request
+    // might be sent before the cookie is updated in the browser
+    e.preventDefault();
     setLocaleCookie(newLocale);
+    // Navigate programmatically after cookie is guaranteed to be set
+    window.location.href = getLocaleUrl(newLocale);
   };
 
   return (
