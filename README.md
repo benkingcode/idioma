@@ -1068,7 +1068,7 @@ function LocaleLayout() {
 
 - `locale` - The detected locale
 - `redirectResponse` - A 302 redirect response (return early if set)
-- `localizedCtx` - Modified context with rewritten request URL and cookies
+- `localizedCtx` - Modified context (request URL may be rewritten for internal routing)
 
 **It handles:**
 
