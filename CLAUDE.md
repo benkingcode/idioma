@@ -177,7 +177,8 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `server.ts` (exported via `/server` subpath) - Server-only factories for TanStack Start SSR:
   - `createIsomorphicLocaleDetector()` - SSR-aware locale detection using `createIsomorphicFn` for bundler-driven server/client splitting
   - `createRequestHandler()` - Server entry middleware returning `{ locale, redirectResponse?, localizedCtx }`. **Never sets cookies** — keeps responses CDN-cacheable.
-- `internal/helpers.ts` - Shared utilities (cookie parsing, locale extraction, URL manipulation, `_idiomi` query param extraction)
+- `internal/detection.ts` - Shared locale detection logic for client and server (`detectLocaleFromBrowser()`, `detectLocaleFromHeaders()`, `DetectionOptions` type with `algorithm` option for BCP 47 matching)
+- `internal/helpers.ts` - Shared utilities (cookie parsing, URL path/query locale extraction, `_idiomi` query param handling)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
@@ -191,9 +192,13 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 1. `createRequestHandler(config)` - Factory that creates `handleLocale(ctx)` returning `{ locale, redirectResponse?, localizedCtx }`
 2. `createIsomorphicLocaleDetector(config)` - Factory for SSR-aware `detectLocale()` using `createIsomorphicFn` for bundler-driven server/client code splitting
-3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
-4. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.getMatchedRoutes()`
-5. `getRouter` config option - Factory function returning router instance for auto-detecting localized vs non-localized routes
+3. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.getMatchedRoutes()`
+4. `getRouter` config option - Factory function returning router instance for auto-detecting localized vs non-localized routes
+
+**BCP 47 language matching**: Both client and server use `@idiomi/core/locale`'s `matchLocale()` for locale detection. The `algorithm` option controls matching behavior:
+
+- `'best fit'` (default): Uses language distance (e.g., `en-GB` matches `en-US`)
+- `'lookup'`: Strict RFC 4647 matching (e.g., `en-GB` only matches `en`, not `en-US`)
 
 **Mixed Routes (Localized + Non-Localized)**: When `getRouter` and `localeParamName` are configured, `createRequestHandler` auto-detects which routes are localized by calling `router.getMatchedRoutes(pathname)` and checking if the matched route's ID contains a locale param pattern (e.g., `{-$locale}`). Non-localized routes (e.g., `/dashboard`) skip redirect logic entirely—locale is still detected from cookie/header but no prefix redirects occur.
 
