@@ -6,7 +6,8 @@ export {
   type TransInlineModeProps,
   type TransKeyOnlyModeProps,
 } from './createTrans';
-export { createUseT, type TFunction } from './createUseT';
+export { createUseT } from './createUseT';
+export type { TFunction } from './useT.types';
 
 // Context and Provider factories
 export {

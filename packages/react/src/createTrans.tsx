@@ -2,8 +2,8 @@
 
 import { useContext, type ReactNode } from 'react';
 import { IdiomiContext } from './context';
-import { type BaseIdiomiConfig } from './createUseT';
 import { type TransComponent } from './interpolate';
+import { type BaseIdiomiConfig } from './useT.types';
 
 /**
  * Inline mode props - when children are present.
