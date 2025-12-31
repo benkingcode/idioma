@@ -182,6 +182,14 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
+- `pattern-matching.ts` (exported via `/pattern-matching` subpath) - TanStack-specific route pattern matching:
+  - `matchRoutePattern()` - Matches URL segments against route patterns using TanStack's `$param` syntax
+  - `reconstructPath()` - Rebuilds paths from pattern segments with captured dynamic values
+  - `getLocalizedPath()` - Converts canonical paths to localized (direct lookup + pattern fallback)
+  - `getCanonicalPath()` - Converts localized paths to canonical (direct lookup + pattern fallback)
+  - `RoutePattern<L>` - Type for route patterns with canonical and localized segment arrays
+
+**Why pattern matching is TanStack-specific**: The `matchRoutePattern()` function uses `startsWith('$')` to detect dynamic segments—this is TanStack Router syntax (`$param`, `{$param}`, `{-$param}`). Next.js uses different syntax (`[param]`, `[...param]`) but doesn't need runtime pattern matching because all routes are pre-computed at build time with direct map lookups. Generated code for TanStack imports from `@idiomi/tanstack-react/pattern-matching`; Next.js generated code only exports static route maps.
 
 **TanStack SPA vs SSR separation**: The compiler automatically detects whether a project uses TanStack Start (SSR) or TanStack Router (SPA) based on `@tanstack/react-start` in dependencies:
 

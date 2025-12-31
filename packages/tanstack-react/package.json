@@ -22,6 +22,10 @@
     "./hooks": {
       "types": "./dist/hooks.d.ts",
       "import": "./dist/hooks.js"
+    },
+    "./pattern-matching": {
+      "types": "./dist/pattern-matching.d.ts",
+      "import": "./dist/pattern-matching.js"
     }
   },
   "files": [

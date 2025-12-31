@@ -19,6 +19,11 @@ import {
   extractLocaleFromPath,
   stripLocalePrefix,
 } from './internal/helpers.js';
+import {
+  matchRoutePattern,
+  reconstructPath,
+  type RoutePattern,
+} from './pattern-matching.js';
 
 // ============================================================
 // Types
@@ -27,11 +32,8 @@ import {
 // Re-export DetectionOptions for external use
 export type { DetectionOptions };
 
-/** Route pattern for segment-level matching with dynamic params */
-export interface RoutePattern<L extends string = string> {
-  readonly canonical: readonly string[];
-  readonly localized: Readonly<Record<L, readonly string[]>>;
-}
+// Re-export RoutePattern from pattern-matching module
+export type { RoutePattern };
 
 /** Location info passed to localeLoader from TanStack Router */
 export interface LocationInfo {
@@ -251,46 +253,9 @@ export function createUrlHandler<L extends string>(
 
   const hasLocalizedPaths = routes && routePatterns;
 
-  function matchRoutePattern(
-    segments: string[],
-    locale: L,
-    useLocalized: boolean,
-  ): { pattern: RoutePattern<L>; captured: Record<string, string> } | null {
-    if (!routePatterns) return null;
-
-    for (const pattern of routePatterns) {
-      const patternSegs = useLocalized
-        ? pattern.localized[locale]
-        : pattern.canonical;
-      if (!patternSegs || patternSegs.length !== segments.length) continue;
-
-      const captured: Record<string, string> = {};
-      let matches = true;
-
-      for (let i = 0; i < patternSegs.length; i++) {
-        const patternSeg = patternSegs[i]!;
-        const urlSeg = segments[i]!;
-
-        if (patternSeg.startsWith('$')) {
-          // Dynamic segment - capture the actual value
-          captured[patternSeg] = urlSeg;
-        } else if (patternSeg !== urlSeg) {
-          // Static segment must match exactly
-          matches = false;
-          break;
-        }
-      }
-
-      if (matches) {
-        return { pattern, captured };
-      }
-    }
-    return null;
-  }
-
   function delocalizeUrl(url: URL): URL {
     // Prefix-only mode: no delocalization needed
-    if (!hasLocalizedPaths) return url;
+    if (!hasLocalizedPaths || !routePatterns) return url;
 
     const pathLocale = extractLocaleFromPath(url.pathname, locales);
 
@@ -305,15 +270,14 @@ export function createUrlHandler<L extends string>(
     const segments = pathWithoutLocale.split('/').filter(Boolean);
 
     // Match against localized patterns to find the route
-    const match = matchRoutePattern(segments, pathLocale, true);
+    const match = matchRoutePattern(segments, routePatterns, pathLocale, true);
 
     if (match) {
       // Build canonical path using pattern's canonical segments
-      const canonicalPath =
-        '/' +
-        match.pattern.canonical
-          .map((seg) => (seg.startsWith('$') ? match.captured[seg] : seg))
-          .join('/');
+      const canonicalPath = reconstructPath(
+        match.pattern.canonical as string[],
+        match.captured,
+      );
 
       if (canonicalPath !== pathWithoutLocale) {
         const newUrl = new URL(url);
@@ -349,7 +313,7 @@ export function createUrlHandler<L extends string>(
     }
 
     // Prefix-only mode: just handle prefix stripping
-    if (!hasLocalizedPaths) {
+    if (!hasLocalizedPaths || !routePatterns) {
       if (shouldStripPrefix) {
         const newUrl = new URL(url);
         newUrl.pathname = pathWithoutLocale;
@@ -360,7 +324,7 @@ export function createUrlHandler<L extends string>(
 
     // Localized paths mode: translate the path
     const segments = pathWithoutLocale.split('/').filter(Boolean);
-    const match = matchRoutePattern(segments, pathLocale, false);
+    const match = matchRoutePattern(segments, routePatterns, pathLocale, false);
 
     let localizedPath: string | undefined;
 
@@ -368,11 +332,10 @@ export function createUrlHandler<L extends string>(
       const localizedSegs = match.pattern.localized[pathLocale];
       if (localizedSegs) {
         // Build localized path, substituting captured dynamic values
-        localizedPath =
-          '/' +
-          localizedSegs
-            .map((seg) => (seg.startsWith('$') ? match.captured[seg] : seg))
-            .join('/');
+        localizedPath = reconstructPath(
+          localizedSegs as string[],
+          match.captured,
+        );
       }
     }
 

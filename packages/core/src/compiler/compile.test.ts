@@ -562,7 +562,8 @@ msgstr "sobre"
 
       expect(content).toContain('export type Locale');
       expect(content).toContain('export declare const routes');
-      expect(content).toContain('export declare function getLocalizedPath');
+      // Next.js doesn't include pattern matching functions (only static maps)
+      expect(content).not.toContain('export declare function getLocalizedPath');
     });
 
     it('does not generate routes when routing.localizedPaths is false', async () => {

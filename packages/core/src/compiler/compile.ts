@@ -322,11 +322,11 @@ export async function compileTranslations(
 
     await fs.writeFile(
       join(generatedDir, 'routes.js'),
-      generateRoutesModule(compiledRoutes),
+      generateRoutesModule(compiledRoutes, routing.framework),
     );
     await fs.writeFile(
       join(generatedDir, 'routes.d.ts'),
-      generateRoutesTypes([...detectedLocales]),
+      generateRoutesTypes([...detectedLocales], routing.framework),
     );
   }
 
