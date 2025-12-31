@@ -9,6 +9,7 @@
 // ============================================================
 
 export const DEFAULT_COOKIE_NAME = 'IDIOMI_LOCALE';
+export const DEFAULT_LOCALE_QUERY_PARAM = '_idiomi';
 export const DEFAULT_DETECTION_ORDER: readonly ('cookie' | 'header')[] = [
   'cookie',
   'header',
@@ -39,6 +40,29 @@ export function extractLocaleFromPath<L extends string>(
   const segment = pathname.split('/')[1];
   if (segment && (locales as readonly string[]).includes(segment)) {
     return segment as L;
+  }
+  return undefined;
+}
+
+/**
+ * Extract locale from URL query parameter (set by edge middleware).
+ *
+ * This enables edge middleware (Vercel Middleware, Cloudflare Workers) to
+ * pass their locale detection decision to the origin, ensuring cache
+ * consistency.
+ *
+ * @example
+ * extractLocaleFromQuery(url, ['en', 'es']) // url has ?_idiomi=es => 'es'
+ * extractLocaleFromQuery(url, ['en', 'es']) // url has ?_idiomi=invalid => undefined
+ */
+export function extractLocaleFromQuery<L extends string>(
+  url: URL,
+  locales: readonly L[],
+  paramName: string = DEFAULT_LOCALE_QUERY_PARAM,
+): L | undefined {
+  const queryLocale = url.searchParams.get(paramName);
+  if (queryLocale && (locales as readonly string[]).includes(queryLocale)) {
+    return queryLocale as L;
   }
   return undefined;
 }

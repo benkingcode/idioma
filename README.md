@@ -1261,12 +1261,20 @@ You might expect to use the `Vary: Accept-Language` header, but this approach ha
 
 For CDN-cached sites, detect and normalize the locale at the edge, then include it in the URL (which becomes the cache key).
 
-**Important:** Edge middleware handles **cache keying only**. Your origin's `handleLocale` (or `localeLoader`) still runs and sets cookies for subsequent requests. These work together:
+**Important:** Edge middleware and origin work together:
 
-- **Edge middleware:** Normalizes locale → adds to URL → creates unique cache key
-- **Origin `handleLocale`:** Detects locale → sets cookie → handles routing
+- **Edge middleware:** Normalizes locale → adds `?_idiomi=X` to URL → creates unique cache key
+- **Origin `handleLocale`:** Reads `_idiomi` param → sets cookie → handles routing
 
-**⚠️ Matching consistency:** For cache correctness, edge and origin must agree on locale detection. The examples below prioritize **cookie detection** (always consistent) over Accept-Language (which requires careful matching). See the notes below each example.
+The origin automatically reads the `_idiomi` query param (when present) and uses it for locale detection. This ensures edge and origin always agree, eliminating cache consistency issues.
+
+**Detection priority in `handleLocale`:**
+
+1. URL path locale (`/es/about`)
+2. `_idiomi` query param (from edge middleware)
+3. Cookie
+4. Accept-Language header
+5. Default locale
 
 ```
 User request with Accept-Language: en-US
@@ -1333,9 +1341,9 @@ export function middleware(request: NextRequest) {
   // Handle based on prefix strategy
   if (prefixStrategy === 'never') {
     // Rewrite URL internally to add locale query param for cache keying
-    // User sees /about, CDN caches /about?_locale=es
+    // User sees /about, CDN caches /about?_idiomi=es
     const url = request.nextUrl.clone();
-    url.searchParams.set('_locale', locale);
+    url.searchParams.set('_idiomi', locale);
     return NextResponse.rewrite(url);
   }
 
@@ -1356,12 +1364,7 @@ export function middleware(request: NextRequest) {
 export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
 ```
 
-**Note on Accept-Language matching:** The example above uses a simplified parser that takes the first language preference. For production, consider:
-
-1. **Cookie-only for 'never' strategy** — Safest option. Remove Accept-Language fallback; let origin handle first-time visitors, which sets the cookie for subsequent requests.
-2. **Use `matchLocale` for consistency** — Import `matchLocale` from `@idiomi/core/locale` to match exactly how your origin detects locale (handles quality factors like `es;q=0.5, en;q=0.9`).
-
-For `'always'` and `'as-needed'` strategies, the redirect URL becomes authoritative, so minor detection differences are less critical.
+**Note on Accept-Language matching:** The example above uses a simplified parser. Since the origin reads the `_idiomi` param, edge and origin will always agree. For more accurate user preference matching, you can import `matchLocale` from `@idiomi/core/locale` (handles quality factors like `es;q=0.5, en;q=0.9`).
 
 ### Cloudflare Workers Example
 
@@ -1413,7 +1416,7 @@ export default {
     // Handle based on prefix strategy
     if (PREFIX_STRATEGY === 'never') {
       // Add query param for cache keying (user doesn't see this)
-      url.searchParams.set('_locale', locale);
+      url.searchParams.set('_idiomi', locale);
       return fetch(url.toString(), request);
     }
 
@@ -1432,7 +1435,7 @@ export default {
 };
 ```
 
-**Same note applies:** For `'never'` strategy, consider cookie-only detection or importing `matchLocale` from `@idiomi/core/locale` for consistent matching with your origin.
+**Same note applies:** Since the origin reads `_idiomi`, consistency is guaranteed. Use `matchLocale` from `@idiomi/core/locale` for more accurate user preference matching.
 
 ### Cloudflare: Cache Key Options
 
@@ -1461,7 +1464,7 @@ export default {
     const url = new URL(request.url);
 
     // Skip if locale already in cache key
-    if (url.searchParams.has('_locale')) {
+    if (url.searchParams.has('_idiomi')) {
       return fetch(request);
     }
 
@@ -1478,7 +1481,7 @@ export default {
     }
 
     // Add locale to URL for cache keying (user never sees this)
-    url.searchParams.set('_locale', locale);
+    url.searchParams.set('_idiomi', locale);
 
     // Fetch with modified URL - this becomes the cache key
     return fetch(url.toString(), request);
@@ -1495,8 +1498,8 @@ Transform Rules can access [`http.request.accepted_languages`](https://developer
 1. Go to **Rules → Transform Rules → URL Rewrite**
 2. Create a rule for each locale:
    - **Condition:** `(http.request.accepted_languages[0] eq "es")`
-   - **Rewrite query string:** `_locale=es`
-3. Create a fallback rule (no condition) that sets `_locale=en`
+   - **Rewrite query string:** `_idiomi=es`
+3. Create a fallback rule (no condition) that sets `_idiomi=en`
 
 You can also combine with cookie detection using `http.cookie`:
 
@@ -1509,19 +1512,13 @@ You can also combine with cookie detection using `http.cookie`:
 
 ### Prefix Strategy Compatibility
 
-| Strategy      | CDN Caching | Notes                                                                   |
-| ------------- | ----------- | ----------------------------------------------------------------------- |
-| `'always'`    | ✅ Works    | URL includes locale → naturally unique cache keys                       |
-| `'as-needed'` | ✅ Works    | Non-default locales get prefix → unique cache keys                      |
-| `'never'`     | ⚠️ Risky    | Requires edge middleware with **exact** locale matching to avoid issues |
+| Strategy      | CDN Caching | Notes                                                             |
+| ------------- | ----------- | ----------------------------------------------------------------- |
+| `'always'`    | ✅ Works    | URL includes locale → naturally unique cache keys                 |
+| `'as-needed'` | ✅ Works    | Non-default locales get prefix → unique cache keys                |
+| `'never'`     | ✅ Works    | Edge adds `?_idiomi=X` → origin reads it → guaranteed consistency |
 
-**Recommendation:** For CDN-cached sites, prefer `'always'` or `'as-needed'`. These strategies put the locale in the URL, which becomes the authoritative cache key. Edge detection errors are corrected by the final URL.
-
-For `prefixStrategy: 'never'` with CDN caching:
-
-- Edge and origin **must agree** on locale detection, or you risk serving cached content for the wrong locale
-- **Safest approach:** Cookie-only detection at edge (let origin handle first-time visitors)
-- **Alternative:** Import `matchLocale` from `@idiomi/core/locale` in your edge middleware
+All strategies work with CDN caching when using edge middleware. The origin automatically reads the `_idiomi` query param, so edge and origin always agree on locale detection.
 
 ## Locale Fallbacks
 

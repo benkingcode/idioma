@@ -255,6 +255,127 @@ describe('createRequestHandler', () => {
     });
   });
 
+  describe('locale detection from _idiomi query param (edge middleware)', () => {
+    it('uses _idiomi query param when present', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+      });
+      const ctx = createMockContext('/about?_idiomi=es');
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse).toBeUndefined();
+    });
+
+    it('prefers _idiomi over cookie detection', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+        detection: { order: ['cookie', 'header'] },
+      });
+      const ctx = createMockContext('/about?_idiomi=fr', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('fr');
+    });
+
+    it('prefers _idiomi over Accept-Language header', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+        detection: { order: ['header'] },
+      });
+      const ctx = createMockContext('/about?_idiomi=fr', {
+        'accept-language': 'es-ES',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('fr');
+    });
+
+    it('path locale still wins over _idiomi', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+      });
+      const ctx = createMockContext('/es/about?_idiomi=fr');
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+    });
+
+    it('ignores invalid _idiomi values', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+        detection: { order: ['cookie'] },
+      });
+      const ctx = createMockContext('/about?_idiomi=invalid', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+    });
+
+    it('falls back to cookie/header when _idiomi is missing', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+        detection: { order: ['cookie', 'header'] },
+      });
+      const ctx = createMockContext('/about', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+    });
+
+    it('works with always prefix strategy - uses _idiomi for redirect', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'always',
+      });
+      const ctx = createMockContext('/about?_idiomi=fr');
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('fr');
+      expect(result.redirectResponse?.headers.get('Location')).toBe(
+        'https://example.com/fr/about?_idiomi=fr',
+      );
+    });
+
+    it('works with as-needed prefix strategy', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'as-needed',
+      });
+      const ctx = createMockContext('/about?_idiomi=es');
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse?.headers.get('Location')).toBe(
+        'https://example.com/es/about?_idiomi=es',
+      );
+    });
+
+    it('syncs cookie from _idiomi detection', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+      });
+      const ctx = createMockContext('/about?_idiomi=fr');
+      handleLocale(ctx);
+
+      const setCookie = ctx.responseHeaders.get('Set-Cookie');
+      expect(setCookie).toContain('IDIOMI_LOCALE=fr');
+    });
+  });
+
   describe('locale negotiation with language distance', () => {
     it('matches en-GB to en-US via language distance', () => {
       const handleLocale = createRequestHandler({

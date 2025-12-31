@@ -40,6 +40,7 @@ import {
   DEFAULT_COOKIE_NAME,
   DEFAULT_DETECTION_ORDER,
   extractLocaleFromPath,
+  extractLocaleFromQuery,
   parseCookie,
   SKIP_PATH_PREFIXES,
   STATIC_FILE_PATTERN,
@@ -244,7 +245,10 @@ export function createRequestHandler<L extends string>(
     // Extract locale from URL path
     const pathLocale = extractLocaleFromPath(pathname, locales);
 
-    // Detect locale from headers
+    // Extract locale from query param (set by edge middleware for cache keying)
+    const queryLocale = extractLocaleFromQuery(url, locales);
+
+    // Detect locale from headers (cookie/Accept-Language)
     const detectedLocale = detectLocaleFromRequest(ctx.request, config);
 
     // Check if cookie needs syncing
@@ -255,7 +259,8 @@ export function createRequestHandler<L extends string>(
     // Strategy: 'never' - never show prefix, always rewrite
     // ============================================================
     if (prefixStrategy === 'never') {
-      const locale = pathLocale ?? detectedLocale;
+      // Priority: path > query param (from edge) > cookie/header
+      const locale = pathLocale ?? queryLocale ?? detectedLocale;
 
       // Rewrite URL to include locale prefix for internal routing
       const normalizedPath = pathLocale
@@ -291,7 +296,8 @@ export function createRequestHandler<L extends string>(
 
     // No locale in path
     if (!pathLocale) {
-      const locale = detectedLocale;
+      // Priority: query param (from edge) > cookie/header
+      const locale = queryLocale ?? detectedLocale;
 
       // Redirect if: always prefix OR detected is non-default
       if (prefixStrategy === 'always' || locale !== defaultLocale) {
