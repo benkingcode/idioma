@@ -285,15 +285,99 @@ type StringOnlyKeys<TK extends string, MC extends Record<string, unknown[]>> = {
   [K in TK & keyof MC]: MC[K] extends [] ? K : never;
 }[TK & keyof MC];
 
-export type TFunction<C extends BaseIdiomiConfig = BaseIdiomiConfig> = <
-  Key extends StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
-    string,
->(
-  key: Key,
-  values?: Key extends keyof C['MessageValues']
-    ? C['MessageValues'][Key]
-    : Record<string, unknown>,
-) => string;
+/** Keys in MessageValues that have at least one required value */
+type KeysWithValues<MV extends Record<string, Record<string, unknown>>> = {
+  [K in keyof MV]: MV[K] extends Record<string, never> ? never : K;
+}[keyof MV];
+
+/** Keys in MessageValues that have no required values */
+type KeysWithoutValues<MV extends Record<string, Record<string, unknown>>> = {
+  [K in keyof MV]: MV[K] extends Record<string, never> ? K : never;
+}[keyof MV];
+
+/**
+ * Recursively extract placeholder names from a template string.
+ * "Hello {name}, you have {count} items" → "name" | "count"
+ */
+type ExtractPlaceholders<S extends string> =
+  S extends `${infer _}{${infer Key}}${infer Rest}`
+    ? Key | ExtractPlaceholders<Rest>
+    : never;
+
+/**
+ * Build the required values object from extracted placeholders.
+ * "Hello {name}" → { name: string | number }
+ * "No placeholders" → undefined
+ */
+type PlaceholderValues<S extends string> =
+  ExtractPlaceholders<S> extends never
+    ? undefined
+    : { [K in ExtractPlaceholders<S>]: string | number };
+
+/** Check if a string has any placeholders */
+type HasPlaceholders<S extends string> =
+  ExtractPlaceholders<S> extends never ? false : true;
+
+/**
+ * Source text mode options: t("Submit", undefined, { context: "button", ns: "common" })
+ */
+interface SourceTextOptions {
+  /** Translator context (changes key hash) */
+  context?: string;
+  /** Translator comment (extracted to PO #. comment for translators) */
+  comment?: string;
+  /** Namespace for scoped lookups (placeholder for future) */
+  ns?: string;
+}
+
+/**
+ * Type for the t function returned by useT.
+ * Supports both source text mode and key-only mode with full type safety.
+ *
+ * @template C - IdiomiTypes interface containing TranslationKey, MessageValues, MessageComponents
+ *
+ * The TFunction only accepts keys where MessageComponents[K] is an empty array (string-only keys).
+ */
+export type TFunction<C extends BaseIdiomiConfig = BaseIdiomiConfig> = {
+  // === Key-only mode ===
+
+  // Keys that require values (only string-only keys allowed)
+  <
+    K extends StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
+      string,
+  >(
+    args: K extends KeysWithValues<C['MessageValues']>
+      ? { id: K; values: C['MessageValues'][K]; context?: string; ns?: string }
+      : K extends KeysWithoutValues<C['MessageValues']>
+        ? { id: K; values?: never; context?: string; ns?: string }
+        : {
+            id: K;
+            values?: Record<string, unknown>;
+            context?: string;
+            ns?: string;
+          },
+  ): string;
+
+  // === Source text mode ===
+
+  // Source text WITH placeholders - values required
+  <S extends string>(
+    source: HasPlaceholders<S> extends true ? S : never,
+    values: PlaceholderValues<S>,
+  ): string;
+
+  // Source text WITHOUT placeholders - no values
+  <S extends string>(
+    source: HasPlaceholders<S> extends false ? S : never,
+  ): string;
+
+  // Source text with options (3rd arg)
+  <S extends string>(
+    source: S,
+    values: PlaceholderValues<S>,
+    options: SourceTextOptions,
+  ): string;
+};
 
 /**
  * Internal useT for Suspense mode.
