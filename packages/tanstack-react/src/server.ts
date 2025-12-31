@@ -69,10 +69,15 @@ export interface LocaleDetectorConfig<L extends string = string> {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RouterLike = {
-  matchRoute: (...args: any[]) => any;
-  // Use 'object' to accept TanStack's strict FileRoutesByFullPath type
-  // which doesn't have an index signature for strings
-  routesByPath?: object;
+  /**
+   * Match a pathname against the router's route tree.
+   * Returns matched routes, route params, and the found route.
+   */
+  getMatchedRoutes: (pathname: string) => {
+    routeParams: Record<string, string>;
+    foundRoute: { id: string } | undefined;
+    matchedRoutes: readonly unknown[];
+  };
 };
 
 export interface RequestHandlerConfig<L extends string = string> {
@@ -275,101 +280,37 @@ export function createRequestHandler<L extends string>(
     return router;
   }
 
-  // Cache compiled regex patterns for localized routes (built lazily on first use)
-  type LocalizedRoutePattern =
-    | { type: 'root' } // Special case: /{-$locale} only
-    | { type: 'regex'; regex: RegExp };
-  let localizedRoutePatterns: LocalizedRoutePattern[] | undefined;
+  // Locale param patterns to check in route IDs
+  const localeParamPatterns = localeParamName
+    ? [
+        `{-$${localeParamName}}`, // Optional: {-$locale}
+        `{$${localeParamName}}`, // Required: {$locale}
+        `$${localeParamName}`, // Bare: $locale
+      ]
+    : [];
 
   /**
-   * Build and cache regex patterns for all localized routes.
-   * Called once on first request, then cached for subsequent requests.
-   */
-  function buildLocalizedRoutePatterns(): LocalizedRoutePattern[] | undefined {
-    const currentRouter = getRouterLazy();
-    if (!currentRouter || !localeParamName) return undefined;
-
-    try {
-      const routesByPath = currentRouter.routesByPath as Record<
-        string,
-        { id?: string; path?: string }
-      >;
-      if (!routesByPath || typeof routesByPath !== 'object') {
-        return undefined;
-      }
-
-      const patterns: LocalizedRoutePattern[] = [];
-
-      // Locale param patterns to identify localized routes
-      const localeParamPatterns = [
-        `$${localeParamName}`,
-        `{-$${localeParamName}}`,
-        `{$${localeParamName}}`,
-      ];
-
-      for (const routePath of Object.keys(routesByPath)) {
-        const hasLocaleParam = localeParamPatterns.some((p) =>
-          routePath.includes(p),
-        );
-        if (!hasLocaleParam) continue;
-        if (routePath === '__root__') continue;
-
-        // Special case: locale-only root route /{-$locale}
-        if (routePath === `/{-$${localeParamName}}`) {
-          patterns.push({ type: 'root' });
-          continue;
-        }
-
-        // Convert route path to regex pattern
-        // IMPORTANT: Replace brace patterns FIRST (with preceding /) before bare $param
-        const pattern = routePath
-          .replace(/\/\{-\$[^}]+\}/g, '(?:/[^/]+)?') // Optional segments with preceding /
-          .replace(/\{\$[^}]+\}/g, '[^/]+') // Required segments (e.g., {$id})
-          .replace(/\$[^/]*/g, '[^/]+'); // Bare params (e.g., $slug)
-
-        patterns.push({ type: 'regex', regex: new RegExp(`^${pattern}$`) });
-      }
-
-      return patterns;
-    } catch {
-      return undefined;
-    }
-  }
-
-  /**
-   * Check if a route is localized (has locale param in its definition).
-   * Returns true if pathname matches a route with locale param.
-   * Returns false if no localized route matches (treat as non-localized).
+   * Check if a route is localized by using TanStack Router's getMatchedRoutes.
+   *
+   * This leverages the router's built-in matching logic instead of duplicating it
+   * with custom regex patterns. The matched route's ID contains the original
+   * route pattern (e.g., "/{-$locale}/about"), which we check for locale params.
    */
   function isLocalizedRoute(pathname: string): boolean {
-    // Build cache on first use
-    if (localizedRoutePatterns === undefined) {
-      localizedRoutePatterns = buildLocalizedRoutePatterns() ?? [];
+    const currentRouter = getRouterLazy();
+    if (!currentRouter || !localeParamName) return false;
+
+    try {
+      const { foundRoute } = currentRouter.getMatchedRoutes(pathname);
+      if (!foundRoute) return false;
+
+      // Check if the route's ID contains any locale param pattern
+      return localeParamPatterns.some((pattern) =>
+        foundRoute.id.includes(pattern),
+      );
+    } catch {
+      return false;
     }
-
-    // No patterns means we can't determine - fall back to non-localized
-    if (localizedRoutePatterns.length === 0) return false;
-
-    for (const pattern of localizedRoutePatterns) {
-      if (pattern.type === 'root') {
-        // Root / matches locale-only route
-        if (pathname === '/') return true;
-        // Single segment that is a known locale (e.g., /es, /en)
-        if (/^\/[^/]+$/.test(pathname)) {
-          const segment = pathname.slice(1);
-          if ((locales as readonly string[]).includes(segment)) {
-            return true;
-          }
-        }
-        continue;
-      }
-
-      if (pattern.regex.test(pathname)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   return (ctx) => {

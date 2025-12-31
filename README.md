@@ -1093,8 +1093,8 @@ routes/
 
 **How it works:**
 
-1. `handleLocale` inspects the router's route tree (`router.routesByPath`)
-2. Routes containing `{-$locale}` are treated as localized
+1. `handleLocale` calls `router.getMatchedRoutes(pathname)` to find the matching route
+2. If the matched route's ID contains `{-$locale}`, it's treated as localized
 3. Routes without locale param skip redirect logic—locale is still detected from cookie/header, but no prefix redirects occur
 
 **Generated `idiomi/server.ts`:**

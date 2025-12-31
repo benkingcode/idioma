@@ -25,16 +25,61 @@ const createMockContext = (
 });
 
 describe('createRequestHandler', () => {
-  // Mock router with all routes as localized (for tests that expect redirects)
-  const allLocalizedRouter = {
-    matchRoute: () => ({}),
-    routesByPath: {
-      // All routes are localized (have locale param)
-      '/{-$locale}': {},
-      '/{-$locale}/about': {},
-      '/{-$locale}/settings': {},
+  /**
+   * Create a mock router that simulates TanStack Router's getMatchedRoutes.
+   *
+   * Takes a map of route IDs and returns a router with getMatchedRoutes that
+   * matches pathnames to routes and extracts the locale param if present.
+   */
+  const createAllLocalizedRouter = (routeIds: string[]) => ({
+    getMatchedRoutes: (pathname: string) => {
+      // Simulate TanStack Router's matching logic for localized routes
+      // For simplicity, we match by checking if the pathname (with optional locale prefix stripped)
+      // matches a route pattern with the locale segment removed
+      for (const routeId of routeIds) {
+        const isLocalizedRoute = routeId.includes('{-$locale}');
+        if (isLocalizedRoute) {
+          // Route has optional locale segment like /{-$locale}/about
+          // Match both /about and /es/about to this route
+          const basePattern = routeId
+            .replace('/{-$locale}', '')
+            .replace(/^$/, '/');
+
+          // Check if pathname matches with locale prefix
+          const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*|$)/);
+          if (localeMatch) {
+            const rest = localeMatch[2] || '/';
+            if (rest === basePattern || basePattern === '/') {
+              return {
+                foundRoute: { id: routeId },
+                routeParams: { locale: localeMatch[1] },
+                matchedRoutes: [],
+              };
+            }
+          }
+          // Check if pathname matches without locale prefix
+          if (
+            pathname === basePattern ||
+            (basePattern === '/' && pathname === '/')
+          ) {
+            return {
+              foundRoute: { id: routeId },
+              routeParams: {},
+              matchedRoutes: [],
+            };
+          }
+        }
+      }
+      return { foundRoute: undefined, routeParams: {}, matchedRoutes: [] };
     },
-  };
+  });
+
+  // Mock router with all routes as localized (for tests that expect redirects)
+  const allLocalizedRouter = createAllLocalizedRouter([
+    '/{-$locale}/',
+    '/{-$locale}/about',
+    '/{-$locale}/settings',
+  ]);
 
   const baseConfig: RequestHandlerConfig<'en' | 'es' | 'fr'> = {
     defaultLocale: 'en',
@@ -451,22 +496,76 @@ describe('createRequestHandler', () => {
 
 describe('route-based skipping with getRouter', () => {
   /**
-   * Mock router that simulates TanStack Router's structure.
+   * Mock router that simulates TanStack Router's getMatchedRoutes method.
    *
    * Routes should use TanStack path syntax:
    * - `/{-$locale}/about` for localized routes (optional locale segment)
    * - `/dashboard` for non-localized routes
    *
-   * The mock provides `routesByPath` which is used by `isLocalizedRoute`.
+   * The mock provides `getMatchedRoutes` which returns `foundRoute.id`
+   * containing the original route pattern (used by `isLocalizedRoute`).
    */
   const createMockRouter = (
-    routesByPath: Record<string, Record<string, unknown>>,
+    routePatterns: Record<string, Record<string, unknown>>,
   ) => ({
-    matchRoute: (opts: { to: string }) => {
-      // Simplified matcher - not used by current implementation
-      return routesByPath[opts.to] ?? false;
+    getMatchedRoutes: (pathname: string) => {
+      // Try to match pathname against route patterns
+      for (const [pattern, route] of Object.entries(routePatterns)) {
+        const isLocalizedRoute = pattern.includes('{-$locale}');
+
+        if (isLocalizedRoute) {
+          // Optional locale segment like /{-$locale}/about
+          // Matches both /about and /es/about
+          const basePattern = pattern
+            .replace('/{-$locale}', '')
+            .replace(/^$/, '/');
+
+          // Check if pathname matches with locale prefix
+          const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*|$)/);
+          if (localeMatch) {
+            const rest = localeMatch[2] || '/';
+            // Handle dynamic segments like $slug, {$id}
+            const baseRegex = basePattern.replace(/\$\w+|\{\$\w+\}/g, '[^/]+');
+            if (
+              new RegExp(`^${baseRegex}$`).test(rest) ||
+              (basePattern === '/' && rest === '/')
+            ) {
+              return {
+                foundRoute: { id: pattern },
+                routeParams: { locale: localeMatch[1] },
+                matchedRoutes: [],
+              };
+            }
+          }
+
+          // Check if pathname matches without locale prefix
+          const baseRegex = basePattern.replace(/\$\w+|\{\$\w+\}/g, '[^/]+');
+          if (
+            new RegExp(`^${baseRegex}$`).test(pathname) ||
+            (basePattern === '/' && pathname === '/')
+          ) {
+            return {
+              foundRoute: { id: pattern },
+              routeParams: {},
+              matchedRoutes: [],
+            };
+          }
+        } else {
+          // Non-localized route like /dashboard or /users/$userId
+          const patternRegex = pattern.replace(/\$\w+|\{\$\w+\}/g, '[^/]+');
+          if (new RegExp(`^${patternRegex}$`).test(pathname)) {
+            return {
+              foundRoute: { id: pattern },
+              routeParams: {},
+              matchedRoutes: [],
+            };
+          }
+        }
+      }
+
+      // No route found
+      return { foundRoute: undefined, routeParams: {}, matchedRoutes: [] };
     },
-    routesByPath,
   });
 
   const baseConfig: RequestHandlerConfig<'en' | 'es' | 'fr'> = {

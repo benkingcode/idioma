@@ -192,15 +192,10 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 1. `createRequestHandler(config)` - Factory that creates `handleLocale(ctx)` returning `{ locale, redirectResponse?, localizedCtx }`
 2. `createIsomorphicLocaleDetector(config)` - Factory for SSR-aware `detectLocale()` using `createIsomorphicFn` for bundler-driven server/client code splitting
 3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
-4. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.routesByPath`
+4. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.getMatchedRoutes()`
 5. `getRouter` config option - Factory function returning router instance for auto-detecting localized vs non-localized routes
 
-**Mixed Routes (Localized + Non-Localized)**: When `getRouter` and `localeParamName` are configured, `createRequestHandler` auto-detects which routes are localized by checking if the route pattern contains the locale param (`{-$locale}`). Non-localized routes (e.g., `/dashboard`) skip redirect logic entirely—locale is still detected from cookie/header but no prefix redirects occur.
-
-**Route detection limitations**:
-
-- **Splat routes** (`$` without name): Treated as single-segment match, not multi-segment. Routes like `/{-$locale}/docs/$` won't correctly match `/docs/a/b/c`.
-- **Overlapping patterns**: If a non-localized route's path (e.g., `/admin`) could match a localized pattern (e.g., `/{-$locale}/$category`), the non-localized route may incorrectly trigger locale redirects. Keep localized and non-localized route paths distinct.
+**Mixed Routes (Localized + Non-Localized)**: When `getRouter` and `localeParamName` are configured, `createRequestHandler` auto-detects which routes are localized by calling `router.getMatchedRoutes(pathname)` and checking if the matched route's ID contains a locale param pattern (e.g., `{-$locale}`). Non-localized routes (e.g., `/dashboard`) skip redirect logic entirely—locale is still detected from cookie/header but no prefix redirects occur.
 
 **Cookie model for CDN cacheability**: Server **reads** cookies but **never sets** them. This keeps all responses cacheable. Cookies are only set client-side via `setLocalePreference()` when user explicitly switches locale in a locale picker UI. Detection priority: URL path > `_idiomi` query param > cookie > Accept-Language > default.
 
