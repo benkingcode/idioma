@@ -9,11 +9,14 @@
 
 import { redirect } from '@tanstack/react-router';
 import {
+  detectLocaleFromBrowser,
+  type DetectionContext,
+  type DetectionOptions,
+} from './internal/detection.js';
+import {
   DEFAULT_COOKIE_NAME,
   DEFAULT_DETECTION_ORDER,
   extractLocaleFromPath,
-  matchBrowserLocales,
-  parseCookie,
   stripLocalePrefix,
 } from './internal/helpers.js';
 
@@ -21,11 +24,8 @@ import {
 // Types
 // ============================================================
 
-/** Detection configuration for locale resolution */
-export interface DetectionConfig {
-  readonly order: readonly ('cookie' | 'header')[];
-  readonly cookieName: string;
-}
+// Re-export DetectionOptions for external use
+export type { DetectionOptions };
 
 /** Route pattern for segment-level matching with dynamic params */
 export interface RoutePattern<L extends string = string> {
@@ -53,7 +53,7 @@ export interface LocaleLoaderConfig<L extends string = string> {
   readonly locales: readonly L[];
   readonly defaultLocale: L;
   readonly prefixStrategy: 'always' | 'as-needed' | 'never';
-  readonly detection: DetectionConfig;
+  readonly detection?: DetectionOptions;
   /**
    * Name of the locale param in localized routes (e.g., 'locale' for `{-$locale}`).
    * When provided, routes without this param in their matched params will skip redirects.
@@ -106,25 +106,14 @@ export function createLocaleLoader<L extends string>(
     config;
 
   function detectLocale(): L {
-    for (const source of detection.order) {
-      if (source === 'cookie') {
-        const cookie = parseCookie(
-          typeof document !== 'undefined' ? document.cookie : null,
-          detection.cookieName,
-        );
-        if (cookie && (locales as readonly string[]).includes(cookie)) {
-          return cookie as L;
-        }
-      }
-      if (source === 'header') {
-        // 'header' = navigator.languages on client
-        if (typeof navigator !== 'undefined' && navigator.languages?.length) {
-          const matched = matchBrowserLocales(navigator.languages, locales);
-          if (matched) return matched;
-        }
-      }
-    }
-    return defaultLocale;
+    const ctx: DetectionContext<L> = {
+      locales,
+      defaultLocale,
+      order: detection?.order ?? DEFAULT_DETECTION_ORDER,
+      cookieName: detection?.cookieName ?? DEFAULT_COOKIE_NAME,
+      algorithm: detection?.algorithm ?? 'best fit',
+    };
+    return detectLocaleFromBrowser(ctx);
   }
 
   /**

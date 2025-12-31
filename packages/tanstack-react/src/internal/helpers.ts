@@ -87,42 +87,6 @@ export function parseCookie(
 }
 
 // ============================================================
-// Locale Matching Helpers
-// ============================================================
-
-/**
- * Match browser language preferences against supported locales.
- *
- * Uses simple prefix matching (e.g., 'en-US' matches 'en').
- * For BCP 47-compliant matching, use matchLocale from @idiomi/core/locale instead.
- *
- * @example
- * matchBrowserLocales(['en-US', 'es'], ['en', 'es', 'fr']) // => 'en'
- * matchBrowserLocales(['de-DE'], ['en', 'es']) // => undefined
- */
-export function matchBrowserLocales<L extends string>(
-  browserLocales: readonly string[],
-  locales: readonly L[],
-): L | undefined {
-  for (const browserLang of browserLocales) {
-    const normalized = browserLang.toLowerCase();
-
-    // Exact match
-    for (const locale of locales) {
-      if (locale.toLowerCase() === normalized) return locale;
-    }
-
-    // Prefix match (e.g., 'en-US' matches 'en')
-    const prefix = normalized.split('-')[0];
-    for (const locale of locales) {
-      if (locale.toLowerCase() === prefix) return locale;
-      if (locale.toLowerCase().startsWith(prefix + '-')) return locale;
-    }
-  }
-  return undefined;
-}
-
-// ============================================================
 // URL Helpers
 // ============================================================
 

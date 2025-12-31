@@ -12,7 +12,7 @@ import { match as formatjsMatch } from '@formatjs/intl-localematcher';
  */
 export interface MatchLocaleOptions {
   /** Available locales to match against */
-  locales: string[];
+  locales: readonly string[];
   /** Default locale to use when no match is found */
   defaultLocale: string;
   /**
@@ -96,7 +96,7 @@ export function parseAcceptLanguageHeader(header: string | null): string[] {
  * }
  */
 export function matchLocale(
-  requested: string | string[] | null | undefined,
+  requested: string | readonly string[] | null | undefined,
   options: MatchLocaleOptions,
 ): string {
   const { locales, defaultLocale, algorithm = 'best fit' } = options;
@@ -115,7 +115,7 @@ export function matchLocale(
       requestedLocales = [requested];
     }
   } else {
-    requestedLocales = requested;
+    requestedLocales = requested as string[];
   }
 
   if (requestedLocales.length === 0) {
@@ -123,7 +123,8 @@ export function matchLocale(
   }
 
   try {
-    return formatjsMatch(requestedLocales, locales, defaultLocale, {
+    // Cast readonly to mutable - formatjsMatch doesn't mutate
+    return formatjsMatch(requestedLocales, locales as string[], defaultLocale, {
       algorithm,
     });
   } catch {
@@ -153,7 +154,7 @@ export function matchLocale(
  * isLocaleCompatible(['de'], 'en') // => false (no match)
  */
 export function isLocaleCompatible(
-  requestedLocales: string[],
+  requestedLocales: readonly string[],
   targetLocale: string,
   algorithm: 'lookup' | 'best fit' = 'best fit',
 ): boolean {
@@ -163,8 +164,9 @@ export function isLocaleCompatible(
     // Use formatjsMatch with target as the only available locale.
     // If it returns the target, the request is compatible.
     // Use a sentinel value as default that can never be a real locale.
+    // Cast readonly to mutable - formatjsMatch doesn't mutate
     const result = formatjsMatch(
-      requestedLocales,
+      requestedLocales as string[],
       [targetLocale],
       '__no_match__',
       { algorithm },

@@ -5,12 +5,28 @@
  * in the appropriate context (server or client).
  */
 
-import { matchLocale } from '@idiomi/core/locale';
-import { matchBrowserLocales, parseCookie } from './helpers.js';
+import { isLocaleCompatible, matchLocale } from '@idiomi/core/locale';
+import { parseCookie } from './helpers.js';
 
 // ============================================================
 // Types
 // ============================================================
+
+/**
+ * Detection source configuration.
+ * Shared type for both client and server locale detection.
+ */
+export interface DetectionOptions {
+  readonly order?: readonly ('cookie' | 'header')[];
+  readonly cookieName?: string;
+  /**
+   * Matching algorithm for language detection:
+   * - 'best fit': Uses language distance (e.g., en-GB matches en-US)
+   * - 'lookup': Strict RFC 4647 matching (e.g., en-GB only matches en)
+   * @default 'best fit'
+   */
+  readonly algorithm?: 'lookup' | 'best fit';
+}
 
 export interface DetectionContext<L extends string = string> {
   readonly locales: readonly L[];
@@ -68,7 +84,7 @@ export function detectLocaleFromHeaders<L extends string>(
 /**
  * Client-side locale detection using browser APIs.
  *
- * Uses navigator.languages for language preference detection.
+ * Uses BCP 47-compliant matching via @idiomi/core/locale for navigator.languages.
  * Only call this on the client.
  *
  * @param ctx - Detection context with locales, order, etc.
@@ -89,8 +105,16 @@ export function detectLocaleFromBrowser<L extends string>(
     }
     if (source === 'header') {
       if (typeof navigator !== 'undefined' && navigator.languages?.length) {
-        const matched = matchBrowserLocales(navigator.languages, ctx.locales);
-        if (matched) return matched;
+        // Use BCP 47 matching with algorithm support (same as server)
+        const matched = matchLocale(navigator.languages, {
+          locales: ctx.locales,
+          defaultLocale: ctx.defaultLocale,
+          algorithm: ctx.algorithm,
+        });
+        // Only return if browser languages actually matched (not just fallback to default)
+        if (isLocaleCompatible(navigator.languages, matched, ctx.algorithm)) {
+          return matched as L;
+        }
       }
     }
   }

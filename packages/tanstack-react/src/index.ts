@@ -52,7 +52,7 @@ export {
   type LocaleLoaderResult,
   type UrlHandlerConfig,
   type UrlHandlerApi,
-  type DetectionConfig,
+  type DetectionOptions,
   type RoutePattern,
   type LocationInfo,
   type RoutesMap,

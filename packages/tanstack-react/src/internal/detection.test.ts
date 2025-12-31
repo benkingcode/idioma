@@ -194,4 +194,76 @@ describe('detectLocaleFromBrowser', () => {
     const result = detectLocaleFromBrowser(ctx);
     expect(result).toBe('fr');
   });
+
+  describe('BCP 47 matching with algorithm option', () => {
+    it('should match en-GB to en-US with best fit algorithm', () => {
+      // This tests that 'best fit' uses language distance matching
+      // en-GB should match en-US since they're both English variants
+      const ctxWithEnUS: DetectionContext<'en-US' | 'de'> = {
+        locales: ['en-US', 'de'],
+        defaultLocale: 'de',
+        order: ['header'],
+        cookieName: 'IDIOMI_LOCALE',
+        algorithm: 'best fit',
+      };
+
+      Object.defineProperty(global, 'document', {
+        value: { cookie: '' },
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(global, 'navigator', {
+        value: { languages: ['en-GB'] },
+        writable: true,
+        configurable: true,
+      });
+
+      const result = detectLocaleFromBrowser(ctxWithEnUS);
+      expect(result).toBe('en-US');
+    });
+
+    it('should NOT match en-GB to en-US with lookup algorithm', () => {
+      // This tests that 'lookup' uses strict matching
+      // en-GB should NOT match en-US with strict RFC 4647 lookup
+      const ctxLookup: DetectionContext<'en-US' | 'de'> = {
+        locales: ['en-US', 'de'],
+        defaultLocale: 'de',
+        order: ['header'],
+        cookieName: 'IDIOMI_LOCALE',
+        algorithm: 'lookup',
+      };
+
+      Object.defineProperty(global, 'document', {
+        value: { cookie: '' },
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(global, 'navigator', {
+        value: { languages: ['en-GB'] },
+        writable: true,
+        configurable: true,
+      });
+
+      const result = detectLocaleFromBrowser(ctxLookup);
+      // With strict lookup, en-GB doesn't match en-US, so falls back to default
+      expect(result).toBe('de');
+    });
+
+    it('should match es-MX to es with best fit algorithm', () => {
+      // Verify BCP 47 matching works for regional variants
+      Object.defineProperty(global, 'document', {
+        value: { cookie: '' },
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(global, 'navigator', {
+        value: { languages: ['es-MX'] },
+        writable: true,
+        configurable: true,
+      });
+
+      const result = detectLocaleFromBrowser(ctx);
+      expect(result).toBe('es');
+    });
+  });
 });

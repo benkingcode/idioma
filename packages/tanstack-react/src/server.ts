@@ -27,20 +27,19 @@
  * ```
  */
 
-import { matchLocale } from '@idiomi/core/locale';
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { getRequestHeaders } from '@tanstack/react-start/server';
 import {
   detectLocaleFromBrowser,
   detectLocaleFromHeaders,
   type DetectionContext,
+  type DetectionOptions,
 } from './internal/detection.js';
 import {
   DEFAULT_COOKIE_NAME,
   DEFAULT_DETECTION_ORDER,
   extractLocaleFromPath,
   extractLocaleFromQuery,
-  parseCookie,
   SKIP_PATH_PREFIXES,
   STATIC_FILE_PATTERN,
   stripLocalePrefix,
@@ -50,16 +49,13 @@ import {
 // Types
 // ============================================================
 
-export interface DetectionConfig {
-  readonly order?: readonly ('cookie' | 'header')[];
-  readonly cookieName?: string;
-  readonly algorithm?: 'lookup' | 'best fit';
-}
+// Re-export DetectionOptions for external use
+export type { DetectionOptions };
 
 export interface LocaleDetectorConfig<L extends string = string> {
   readonly locales: readonly L[];
   readonly defaultLocale: L;
-  readonly detection?: DetectionConfig;
+  readonly detection?: DetectionOptions;
 }
 
 /**
@@ -84,7 +80,7 @@ export interface RequestHandlerConfig<L extends string = string> {
   readonly locales: readonly L[];
   readonly defaultLocale: L;
   readonly prefixStrategy: 'always' | 'as-needed' | 'never';
-  readonly detection?: DetectionConfig;
+  readonly detection?: DetectionOptions;
   /**
    * Name of the locale param in localized routes (e.g., 'locale' for `{-$locale}`).
    * Used with `getRouter` to auto-detect which routes need locale handling.
@@ -188,39 +184,25 @@ function shouldSkipPath(pathname: string): boolean {
 
 /**
  * Detect locale from request headers (cookie and Accept-Language).
+ * Uses the shared detectLocaleFromHeaders helper for consistency.
  */
-function detectLocaleFromRequest<L extends string>(
+function detectLocaleFromRequestInternal<L extends string>(
   request: Request,
   config: RequestHandlerConfig<L>,
 ): L {
   const { locales, defaultLocale, detection } = config;
-  const cookieName = detection?.cookieName ?? DEFAULT_COOKIE_NAME;
-  const order = detection?.order ?? DEFAULT_DETECTION_ORDER;
-  const algorithm = detection?.algorithm ?? 'best fit';
-
-  const cookieHeader = request.headers.get('cookie');
-  const acceptLanguage = request.headers.get('accept-language');
-
-  for (const source of order) {
-    if (source === 'cookie') {
-      const cookie = parseCookie(cookieHeader, cookieName);
-      if (cookie && (locales as readonly string[]).includes(cookie)) {
-        return cookie as L;
-      }
-    }
-    if (source === 'header' && acceptLanguage) {
-      const matched = matchLocale(acceptLanguage, {
-        locales: locales as unknown as string[],
-        defaultLocale,
-        algorithm,
-      });
-      if (matched && (locales as readonly string[]).includes(matched)) {
-        return matched as L;
-      }
-    }
-  }
-
-  return defaultLocale;
+  const ctx: DetectionContext<L> = {
+    locales,
+    defaultLocale,
+    order: detection?.order ?? DEFAULT_DETECTION_ORDER,
+    cookieName: detection?.cookieName ?? DEFAULT_COOKIE_NAME,
+    algorithm: detection?.algorithm ?? 'best fit',
+  };
+  return detectLocaleFromHeaders(
+    request.headers.get('cookie'),
+    request.headers.get('accept-language'),
+    ctx,
+  );
 }
 
 /**
@@ -329,7 +311,7 @@ export function createRequestHandler<L extends string>(
     const queryLocale = extractLocaleFromQuery(url, locales);
 
     // Detect locale from headers (cookie/Accept-Language)
-    const detectedLocale = detectLocaleFromRequest(ctx.request, config);
+    const detectedLocale = detectLocaleFromRequestInternal(ctx.request, config);
 
     // ============================================================
     // Non-localized routes: skip redirects, just detect locale
