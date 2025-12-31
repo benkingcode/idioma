@@ -252,6 +252,9 @@ test.describe('Complex Routes - Non-Localized Paths Stress Tests', () => {
       await page.goto('/es/users/john/posts');
       await expect(page.getByTestId('user-posts-page')).toBeVisible();
 
+      // Wait for hydration (SSR sends HTML first, then JS hydrates)
+      await page.waitForLoadState('networkidle');
+
       // Switch to English
       await page.getByTestId('locale-en').click();
 
@@ -265,6 +268,9 @@ test.describe('Complex Routes - Non-Localized Paths Stress Tests', () => {
       // Start in Spanish with userId="about"
       await page.goto('/es/users/about');
       await expect(page.getByTestId('user-id')).toHaveText('about');
+
+      // Wait for hydration (SSR sends HTML first, then JS hydrates)
+      await page.waitForLoadState('networkidle');
 
       // Switch to English
       await page.getByTestId('locale-en').click();
