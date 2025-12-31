@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import {
-  detectClientLocale,
+  detectLocale,
   IdiomiProvider,
   LocaleHead,
   localeLoader,
@@ -32,7 +32,7 @@ function LocaleLayout() {
   const { locale: urlLocale } = Route.useParams();
 
   // Use URL locale if valid, otherwise detect from cookie/browser
-  const locale = (urlLocale as Locale) ?? detectClientLocale();
+  const locale = (urlLocale as Locale) ?? detectLocale();
 
   return (
     <IdiomiProvider locale={locale}>

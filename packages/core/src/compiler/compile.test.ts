@@ -839,7 +839,7 @@ msgstr "sobre"
       const content = await fs.readFile(indexPath, 'utf-8');
 
       // Should export delocalizeUrl and localizeUrl via factory
-      expect(content).toContain('createUrlRewriter');
+      expect(content).toContain('createUrlHandler');
       expect(content).toContain('delocalizeUrl');
       expect(content).toContain('localizeUrl');
       // Should import routes, reverseRoutes, and routePatterns
@@ -920,9 +920,9 @@ msgstr "publicaciones"
       // Should import routePatterns for segment-level matching
       expect(content).toContain('routePatterns');
 
-      // Should use createUrlRewriter factory with routePatterns
+      // Should use createUrlHandler factory with routePatterns
       // Pattern matching logic is now inside the factory
-      expect(content).toContain('createUrlRewriter');
+      expect(content).toContain('createUrlHandler');
       expect(content).toContain('delocalizeUrl');
       expect(content).toContain('localizeUrl');
     });

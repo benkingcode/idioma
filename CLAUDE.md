@@ -95,8 +95,8 @@ The `e2e/fixtures/` directory contains test apps for different framework configu
 
 - Use `tanstackStart()` Vite plugin instead of standard Vite React
 - Root route (`__root.tsx`) renders full HTML document (`<html>`, `<head>`, `<body>`)
-- Server entry (`src/server.ts`) uses `handleLocaleRequest` for locale detection before routing
-- Compiler auto-generates `handleLocaleRequest` from `@idiomi/tanstack-react/start`
+- Server entry (`src/server.ts`) uses `handleLocale` for locale detection before routing
+- Compiler auto-generates `handleLocale` from `@idiomi/tanstack-react/server`
 - No `localeLoader` in `beforeLoad` — server entry handles locale detection
 - Navigation uses anchor tags with `href` (not TanStack's `navigate()`) for full-page reloads
 
@@ -168,18 +168,13 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 **@idiomi/tanstack-react** (`packages/tanstack-react/`) - TanStack Router/Start integration for React
 
-- `spa.ts` - Factory functions for SPA locale handling (browser-safe, no SSR dependencies):
-  - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectClientLocale()` for manual detection
-  - `createDetectLocale()` - Creates standalone `detectLocale()` for non-localized routes (cookie/navigator detection)
-  - `createUrlRewriter()` - Creates `delocalizeUrl` and `localizeUrl` for localized path translation
-  - `createPrefixOnlyRewriter()` - Creates `localizeUrl` for prefix-only strategy (no path translation)
-- `server-entry.ts` - Server entry helpers for TanStack Start SSR:
-  - `detectLocaleFromRequest()` - Standalone locale detection from Request (cookie/Accept-Language), for non-localized routes
-  - `handleLocaleRequest()` - Detect locale, determine redirects/rewrites from a Request
-  - `createHandleLocale()` - Factory that returns `handleLocale` with config baked in
-- `start.ts` - Re-exports from `server-entry.ts` plus SSR-aware factories (exported via `/start` subpath):
-  - `createLocaleLoader()` - SSR-aware locale loader with Accept-Language support
-  - `createDetectLocaleSsr()` - Creates SSR-aware `detectLocale()` for non-localized routes
+- `client.ts` (main package export) - Client-safe factories for both SPA and SSR:
+  - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectLocale()` for manual detection
+  - `createUrlHandler()` - Creates `delocalizeUrl` and `localizeUrl` for URL transformation (handles both localized paths and prefix-only)
+- `server.ts` (exported via `/server` subpath) - Server-only factories for TanStack Start SSR:
+  - `createLocaleDetector()` - SSR-aware locale detection using Accept-Language header
+  - `createRequestHandler()` - Server entry middleware returning `{ locale, redirectResponse?, localizedCtx }`
+- `internal/helpers.ts` - Shared utilities (cookie parsing, locale extraction, URL manipulation)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
@@ -187,16 +182,14 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 **TanStack SPA vs SSR separation**: The compiler automatically detects whether a project uses TanStack Start (SSR) or TanStack Router (SPA) based on `@tanstack/react-start` in dependencies:
 
 - **TanStack Router (SPA)**: Uses `localeLoader` in `beforeLoad` for client-side locale detection and redirects
-- **TanStack Start (SSR)**: Uses `handleLocaleRequest` in `src/server.ts` for server-level locale handling
+- **TanStack Start (SSR)**: Uses `handleLocale` in `src/server.ts` for server-level locale handling
 
-**TanStack Start SSR**: The `/start` subpath exports server entry helpers:
+**TanStack Start SSR**: The `/server` subpath exports server entry helpers:
 
-1. `createHandleLocale(config)` - Factory that creates `handleLocale(ctx)` returning `{ locale, redirectResponse?, localizedCtx }`
-2. `handleLocaleRequest(request, config)` - Low-level function returning `{ locale, redirectUrl?, rewrittenUrl?, setCookie? }`
-3. `detectLocaleFromRequest(request, config)` - Standalone locale detection for non-localized routes
-4. `createDetectLocaleSsr(config)` - Factory for SSR-aware `detectLocale()` function
-5. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
-6. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.matchRoute()`
+1. `createRequestHandler(config)` - Factory that creates `handleLocale(ctx)` returning `{ locale, redirectResponse?, localizedCtx }`
+2. `createLocaleDetector(config)` - Factory for SSR-aware `detectLocale()` using Accept-Language header
+3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
+4. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.matchRoute()`
 
 **Server entry pattern** (`src/server.ts`):
 
@@ -705,12 +698,7 @@ import { createLink, createLocaleHead } from '@idiomi/next'; // or @idiomi/next/
 import { createMiddlewareFactory } from '@idiomi/next/middleware';
 // TanStack Router SPA only: locale detection and URL rewriting via factories
 // Factories encapsulate all helper logic - generated code is ~45 lines vs 270+ before
-import {
-  createDetectLocale,
-  createLocaleLoader,
-  createPrefixOnlyRewriter,
-  createUrlRewriter,
-} from '@idiomi/tanstack-react';
+import { createLocaleLoader, createUrlHandler } from '@idiomi/tanstack-react';
 import {
   defaultLocale,
   localeParamName,
@@ -754,18 +742,10 @@ export { getLocaleHead } from '@idiomi/react';
 // - No locale in path + detected is default → stay, return default locale
 // - Default locale in path + as-needed → redirect to strip prefix (/en/about → /about)
 // IMPORTANT: Uses location.searchStr (raw string like "?foo=bar"), NOT location.search
-export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
+export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({
   locales,
   defaultLocale,
   prefixStrategy,
-  detection,
-});
-
-// Standalone locale detection for non-localized routes (no redirects)
-// Use with router.matchRoute() to check if route has locale param before calling
-export const detectLocale = createDetectLocale<Locale>({
-  locales,
-  defaultLocale,
   detection,
 });
 
@@ -773,20 +753,14 @@ export const detectLocale = createDetectLocale<Locale>({
 // delocalizeUrl: Transform localized path to canonical for route matching (/es/sobre → /es/about)
 // localizeUrl: Transform canonical to localized for display (/es/about → /es/sobre)
 // Use with createRouter({ rewrite: { input: delocalizeUrl, output: localizeUrl } })
-export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
+// For non-localized paths (prefix-only), omit routes/reverseRoutes/routePatterns
+export const { delocalizeUrl, localizeUrl } = createUrlHandler<Locale>({
   locales,
   defaultLocale,
   prefixStrategy,
   routes,
   reverseRoutes,
   routePatterns,
-});
-
-// For non-localized paths (prefix-only): Only handles prefix stripping
-export const { localizeUrl } = createPrefixOnlyRewriter<Locale>({
-  locales,
-  defaultLocale,
-  prefixStrategy,
 });
 
 // Export localeParamName for runtime route matching

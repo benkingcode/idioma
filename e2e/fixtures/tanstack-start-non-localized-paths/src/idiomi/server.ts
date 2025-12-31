@@ -2,7 +2,7 @@
 // Do not edit directly
 // Server-only exports for TanStack Start
 
-import { createHandleLocale } from '@idiomi/tanstack-react/start';
+import { createRequestHandler } from '@idiomi/tanstack-react/server';
 import {
   defaultLocale,
   detection,
@@ -11,7 +11,7 @@ import {
 } from './.generated/config';
 import type { Locale } from './.generated/types';
 
-export const handleLocale = createHandleLocale<Locale>({
+export const handleLocale = createRequestHandler<Locale>({
   locales,
   defaultLocale,
   prefixStrategy,

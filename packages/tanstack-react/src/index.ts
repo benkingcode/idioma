@@ -37,7 +37,6 @@ export {
   resolveLocalizedHref,
   resolveLocalizedPath,
   type LinkConfig,
-  type RoutesMap,
 } from './link.js';
 export { useLocale, useLocalizedHref, useLocalizedPath } from './hooks.js';
 export {
@@ -47,17 +46,16 @@ export {
 } from './LocaleHead.js';
 export {
   createLocaleLoader,
-  createUrlRewriter,
-  createPrefixOnlyRewriter,
-  createDetectLocale,
+  createUrlHandler,
   type LocaleLoaderConfig,
   type LocaleLoaderApi,
-  type UrlRewriterConfig,
-  type UrlRewriterApi,
-  type PrefixOnlyRewriterConfig,
-  type PrefixOnlyRewriterApi,
-  type DetectLocaleConfig,
+  type LocaleLoaderResult,
+  type UrlHandlerConfig,
+  type UrlHandlerApi,
   type DetectionConfig,
   type RoutePattern,
   type LocationInfo,
-} from './spa.js';
+  type RoutesMap,
+  DEFAULT_COOKIE_NAME,
+  DEFAULT_DETECTION_ORDER,
+} from './client.js';

@@ -2,12 +2,7 @@
  * @vitest-environment jsdom
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  createDetectLocale,
-  createLocaleLoader,
-  createPrefixOnlyRewriter,
-  createUrlRewriter,
-} from './spa';
+import { createLocaleLoader, createUrlHandler } from './client';
 
 // Mock @tanstack/react-router's redirect
 vi.mock('@tanstack/react-router', () => ({
@@ -158,27 +153,27 @@ describe('createLocaleLoader', () => {
     });
   });
 
-  describe('detectClientLocale', () => {
+  describe('detectLocale', () => {
     it('returns default locale when no cookie or navigator', () => {
-      const { detectClientLocale } = createLocaleLoader(baseConfig);
-      expect(detectClientLocale()).toBe('en');
+      const { detectLocale } = createLocaleLoader(baseConfig);
+      expect(detectLocale()).toBe('en');
     });
 
     it('returns locale from cookie', () => {
       document.cookie = 'IDIOMI_LOCALE=es';
-      const { detectClientLocale } = createLocaleLoader(baseConfig);
-      expect(detectClientLocale()).toBe('es');
+      const { detectLocale } = createLocaleLoader(baseConfig);
+      expect(detectLocale()).toBe('es');
     });
 
     it('ignores invalid locale in cookie', () => {
       document.cookie = 'IDIOMI_LOCALE=fr';
-      const { detectClientLocale } = createLocaleLoader(baseConfig);
-      expect(detectClientLocale()).toBe('en');
+      const { detectLocale } = createLocaleLoader(baseConfig);
+      expect(detectLocale()).toBe('en');
     });
   });
 });
 
-describe('createUrlRewriter', () => {
+describe('createUrlHandler', () => {
   const routePatterns = [
     {
       canonical: ['about'] as const,
@@ -217,7 +212,7 @@ describe('createUrlRewriter', () => {
 
   describe('delocalizeUrl', () => {
     it('converts localized path to canonical', () => {
-      const { delocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/sobre');
 
       const result = delocalizeUrl(url);
@@ -226,7 +221,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('handles dynamic segments', () => {
-      const { delocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/articulos/my-post');
 
       const result = delocalizeUrl(url);
@@ -235,7 +230,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('preserves dynamic segment values', () => {
-      const { delocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/usuarios/123/publicaciones');
 
       const result = delocalizeUrl(url);
@@ -244,7 +239,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('returns unchanged URL when no locale in path', () => {
-      const { delocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/about');
 
       const result = delocalizeUrl(url);
@@ -253,7 +248,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('returns unchanged URL for root path', () => {
-      const { delocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/');
 
       const result = delocalizeUrl(url);
@@ -262,7 +257,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('returns unchanged URL when already canonical', () => {
-      const { delocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/about');
 
       const result = delocalizeUrl(url);
@@ -274,7 +269,7 @@ describe('createUrlRewriter', () => {
 
   describe('localizeUrl', () => {
     it('converts canonical path to localized', () => {
-      const { localizeUrl } = createUrlRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/about');
 
       const result = localizeUrl(url);
@@ -283,7 +278,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('handles dynamic segments', () => {
-      const { localizeUrl } = createUrlRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/blog/my-post');
 
       const result = localizeUrl(url);
@@ -292,7 +287,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('strips prefix for default locale with as-needed strategy', () => {
-      const { localizeUrl } = createUrlRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/en/about');
 
       const result = localizeUrl(url);
@@ -301,7 +296,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('strips prefix for root with default locale', () => {
-      const { localizeUrl } = createUrlRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/en/');
 
       const result = localizeUrl(url);
@@ -310,7 +305,7 @@ describe('createUrlRewriter', () => {
     });
 
     it('returns unchanged URL when no locale in path', () => {
-      const { localizeUrl } = createUrlRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/about');
 
       const result = localizeUrl(url);
@@ -320,56 +315,9 @@ describe('createUrlRewriter', () => {
   });
 });
 
-describe('createDetectLocale', () => {
-  const baseConfig = {
-    locales: ['en', 'es'] as const,
-    defaultLocale: 'en' as const,
-    detection: {
-      order: ['cookie', 'header'] as const,
-      cookieName: 'IDIOMI_LOCALE',
-    },
-  };
-
-  beforeEach(() => {
-    Object.defineProperty(document, 'cookie', {
-      writable: true,
-      value: '',
-    });
-  });
-
-  it('returns a detectLocale function', () => {
-    const detectLocale = createDetectLocale(baseConfig);
-    expect(typeof detectLocale).toBe('function');
-  });
-
-  it('returns default locale when no cookie or navigator', () => {
-    const detectLocale = createDetectLocale(baseConfig);
-    expect(detectLocale()).toBe('en');
-  });
-
-  it('detects locale from cookie', () => {
-    document.cookie = 'IDIOMI_LOCALE=es';
-    const detectLocale = createDetectLocale(baseConfig);
-    expect(detectLocale()).toBe('es');
-  });
-
-  it('ignores invalid locale in cookie', () => {
-    document.cookie = 'IDIOMI_LOCALE=fr';
-    const detectLocale = createDetectLocale(baseConfig);
-    expect(detectLocale()).toBe('en');
-  });
-
-  it('uses custom cookie name', () => {
-    document.cookie = 'MY_LANG=es';
-    const detectLocale = createDetectLocale({
-      ...baseConfig,
-      detection: { ...baseConfig.detection, cookieName: 'MY_LANG' },
-    });
-    expect(detectLocale()).toBe('es');
-  });
-});
-
-describe('createPrefixOnlyRewriter', () => {
+describe('createUrlHandler (prefix-only mode)', () => {
+  // When routes/reverseRoutes/routePatterns are omitted, createUrlHandler
+  // operates in prefix-only mode (no path translation)
   const config = {
     locales: ['en', 'es'] as const,
     defaultLocale: 'en' as const,
@@ -378,7 +326,7 @@ describe('createPrefixOnlyRewriter', () => {
 
   describe('localizeUrl', () => {
     it('strips prefix for default locale with as-needed strategy', () => {
-      const { localizeUrl } = createPrefixOnlyRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/en/about');
 
       const result = localizeUrl(url);
@@ -387,7 +335,7 @@ describe('createPrefixOnlyRewriter', () => {
     });
 
     it('preserves prefix for non-default locale', () => {
-      const { localizeUrl } = createPrefixOnlyRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/es/about');
 
       const result = localizeUrl(url);
@@ -396,7 +344,7 @@ describe('createPrefixOnlyRewriter', () => {
     });
 
     it('returns root path when stripping default locale prefix', () => {
-      const { localizeUrl } = createPrefixOnlyRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/en/');
 
       const result = localizeUrl(url);
@@ -405,7 +353,7 @@ describe('createPrefixOnlyRewriter', () => {
     });
 
     it('returns unchanged URL when no locale in path', () => {
-      const { localizeUrl } = createPrefixOnlyRewriter(config);
+      const { localizeUrl } = createUrlHandler(config);
       const url = new URL('http://localhost/about');
 
       const result = localizeUrl(url);
@@ -414,7 +362,7 @@ describe('createPrefixOnlyRewriter', () => {
     });
 
     it('preserves prefix with always strategy', () => {
-      const { localizeUrl } = createPrefixOnlyRewriter({
+      const { localizeUrl } = createUrlHandler({
         ...config,
         prefixStrategy: 'always',
       });

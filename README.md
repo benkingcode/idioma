@@ -976,7 +976,7 @@ For client-side SPAs, set up locale detection and the provider in your locale la
 
 ```tsx
 // routes/{-$locale}/route.tsx
-import { detectClientLocale, IdiomiProvider, localeLoader } from '@/idiomi';
+import { detectLocale, IdiomiProvider, localeLoader } from '@/idiomi';
 import type { Locale } from '@/idiomi';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
@@ -988,7 +988,7 @@ export const Route = createFileRoute('/{-$locale}')({
 function LocaleLayout() {
   const { locale: urlLocale } = Route.useParams();
   // Use URL locale if present, otherwise detect from cookie/browser
-  const locale = (urlLocale as Locale) ?? detectClientLocale();
+  const locale = (urlLocale as Locale) ?? detectLocale();
 
   return (
     <IdiomiProvider locale={locale}>
@@ -1007,9 +1007,9 @@ The `localeLoader` handles redirect logic based on your `prefixStrategy`:
 For manual detection outside routes:
 
 ```tsx
-import { detectClientLocale } from '@/idiomi';
+import { detectLocale } from '@/idiomi';
 
-const locale = detectClientLocale(); // From cookie or navigator.languages
+const locale = detectLocale(); // From cookie or navigator.languages
 ```
 
 #### TanStack Start (SSR)

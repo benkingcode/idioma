@@ -11,9 +11,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./start": {
-      "types": "./dist/start.d.ts",
-      "import": "./dist/start.js"
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
     },
     "./link": {
       "types": "./dist/link.d.ts",

@@ -807,15 +807,13 @@ function getLinkPackage(framework: Framework): string | null {
 }
 
 /**
- * Get the package import path for createLocaleLoader based on framework.
- * TanStack Start uses SSR-aware version from /start subpath.
+ * Get the package import path for server-side locale handling based on framework.
+ * TanStack Start uses SSR-aware factories from /server subpath.
  */
-function getLocaleLoaderPackage(framework: Framework): string | null {
+function getServerPackage(framework: Framework): string | null {
   switch (framework) {
-    case 'tanstack':
-      return '@idiomi/tanstack-react';
     case 'tanstack-start':
-      return '@idiomi/tanstack-react/start';
+      return '@idiomi/tanstack-react/server';
     default:
       return null;
   }
@@ -841,7 +839,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     routing.framework === 'next-app' || routing.framework === 'next-pages';
   const isTanStack = isTanStackFramework(routing.framework);
   const isTanStackStart = routing.framework === 'tanstack-start';
-  const localeLoaderPkg = getLocaleLoaderPackage(routing.framework);
+  const serverPkg = getServerPackage(routing.framework);
 
   if (routing.localizedPaths) {
     // Import routes for LocaleHead and URL rewriting
@@ -871,20 +869,18 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       imports.push(
         `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
       );
-    } else if (isTanStack && localeLoaderPkg) {
+    } else if (isTanStack) {
       // TanStack uses factories for locale detection and URL rewriting
-      if (isTanStackStart) {
-        // TanStack Start: SSR-aware factories only (no createDetectLocale - uses createDetectLocaleSsr)
+      if (isTanStackStart && serverPkg) {
+        // TanStack Start: SSR-aware detection from /server, URL handling from main
         imports.push(
-          `import { createLocaleHead, createUrlRewriter } from '${pkg}';`,
+          `import { createLocaleHead, createUrlHandler } from '${pkg}';`,
         );
-        imports.push(
-          `import { createDetectLocaleSsr, createLocaleLoader } from '@idiomi/tanstack-react/start';`,
-        );
+        imports.push(`import { createLocaleDetector } from '${serverPkg}';`);
       } else {
-        // TanStack SPA: Client-only factories including createDetectLocale
+        // TanStack SPA: All factories from main package
         imports.push(
-          `import { createDetectLocale, createLocaleHead, createLocaleLoader, createUrlRewriter } from '${pkg}';`,
+          `import { createLocaleHead, createLocaleLoader, createUrlHandler } from '${pkg}';`,
         );
       }
     }
@@ -932,19 +928,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     if (isTanStack) {
       if (isTanStackStart) {
         // TanStack Start: handleLocale is in server.ts
-        // Export client-safe detectClientLocale and SSR-aware detectLocale
+        // Export SSR-aware detectLocale for components and non-localized routes
         exports.push(
-          `export const { detectClientLocale } = createLocaleLoader<Locale>({`,
-        );
-        exports.push(`  locales,`);
-        exports.push(`  defaultLocale,`);
-        exports.push(`  prefixStrategy,`);
-        exports.push(`  detection,`);
-        exports.push(`});`);
-        exports.push('');
-        // SSR-aware detectLocale for non-localized routes
-        exports.push(
-          `export const detectLocale = createDetectLocaleSsr<Locale>({`,
+          `export const detectLocale = createLocaleDetector<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -954,7 +940,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       } else {
         // TanStack SPA: Generate localeLoader for use in beforeLoad
         exports.push(
-          `export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({`,
+          `export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -962,19 +948,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         exports.push(`  detection,`);
         exports.push(`});`);
         exports.push('');
-        // Client-only detectLocale for non-localized routes
-        exports.push(
-          `export const detectLocale = createDetectLocale<Locale>({`,
-        );
-        exports.push(`  locales,`);
-        exports.push(`  defaultLocale,`);
-        exports.push(`  detection,`);
-        exports.push(`});`);
-        exports.push('');
       }
       // URL rewriting functions for both SPA and Start
       exports.push(
-        `export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({`,
+        `export const { delocalizeUrl, localizeUrl } = createUrlHandler<Locale>({`,
       );
       exports.push(`  locales,`);
       exports.push(`  defaultLocale,`);
@@ -1011,20 +988,18 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Next.js: Still uses createLink for backward compatibility
     if (isNextJs) {
       imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
-    } else if (isTanStack && localeLoaderPkg) {
+    } else if (isTanStack) {
       // TanStack uses factories for locale detection and URL rewriting
-      if (isTanStackStart) {
-        // TanStack Start: SSR-aware factories only (no createDetectLocale - uses createDetectLocaleSsr)
+      if (isTanStackStart && serverPkg) {
+        // TanStack Start: SSR-aware detection from /server, URL handling from main
         imports.push(
-          `import { createLocaleHead, createPrefixOnlyRewriter } from '${pkg}';`,
+          `import { createLocaleHead, createUrlHandler } from '${pkg}';`,
         );
-        imports.push(
-          `import { createDetectLocaleSsr, createLocaleLoader } from '@idiomi/tanstack-react/start';`,
-        );
+        imports.push(`import { createLocaleDetector } from '${serverPkg}';`);
       } else {
-        // TanStack SPA: Client-only factories including createDetectLocale
+        // TanStack SPA: All factories from main package
         imports.push(
-          `import { createDetectLocale, createLocaleHead, createLocaleLoader, createPrefixOnlyRewriter } from '${pkg}';`,
+          `import { createLocaleHead, createLocaleLoader, createUrlHandler } from '${pkg}';`,
         );
       }
     }
@@ -1058,19 +1033,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     if (isTanStack) {
       if (isTanStackStart) {
         // TanStack Start: handleLocale is in server.ts
-        // Export client-safe detectClientLocale and SSR-aware detectLocale
+        // Export SSR-aware detectLocale for components and non-localized routes
         exports.push(
-          `export const { detectClientLocale } = createLocaleLoader<Locale>({`,
-        );
-        exports.push(`  locales,`);
-        exports.push(`  defaultLocale,`);
-        exports.push(`  prefixStrategy,`);
-        exports.push(`  detection,`);
-        exports.push(`});`);
-        exports.push('');
-        // SSR-aware detectLocale for non-localized routes
-        exports.push(
-          `export const detectLocale = createDetectLocaleSsr<Locale>({`,
+          `export const detectLocale = createLocaleDetector<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -1080,7 +1045,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       } else {
         // TanStack SPA: Generate localeLoader for use in beforeLoad
         exports.push(
-          `export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({`,
+          `export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -1088,20 +1053,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         exports.push(`  detection,`);
         exports.push(`});`);
         exports.push('');
-        // Client-only detectLocale for non-localized routes
-        exports.push(
-          `export const detectLocale = createDetectLocale<Locale>({`,
-        );
-        exports.push(`  locales,`);
-        exports.push(`  defaultLocale,`);
-        exports.push(`  detection,`);
-        exports.push(`});`);
-        exports.push('');
       }
-      // Prefix-only URL rewriting for both SPA and Start (no localized paths)
-      exports.push(
-        `export const { localizeUrl } = createPrefixOnlyRewriter<Locale>({`,
-      );
+      // Prefix-only URL rewriting for both SPA and Start (no routes param = prefix-only mode)
+      exports.push(`export const { localizeUrl } = createUrlHandler<Locale>({`);
       exports.push(`  locales,`);
       exports.push(`  defaultLocale,`);
       exports.push(`  prefixStrategy,`);
@@ -1143,27 +1097,21 @@ function generateServerCode(options: RouteAwareCodeOptions): string {
     'prefixStrategy',
     'detection',
   ];
-  if (routing.ignorePaths) {
-    configImports.push('ignorePaths');
-  }
   imports.push(
     `import { ${configImports.join(', ')} } from './.generated/config';`,
   );
   imports.push(`import type { Locale } from './.generated/types';`);
   imports.push(
-    `import { createHandleLocale } from '@idiomi/tanstack-react/start';`,
+    `import { createRequestHandler } from '@idiomi/tanstack-react/server';`,
   );
 
   // Generate handleLocale
   exports.push('');
-  exports.push(`export const handleLocale = createHandleLocale<Locale>({`);
+  exports.push(`export const handleLocale = createRequestHandler<Locale>({`);
   exports.push(`  locales,`);
   exports.push(`  defaultLocale,`);
   exports.push(`  prefixStrategy,`);
   exports.push(`  detection,`);
-  if (routing.ignorePaths) {
-    exports.push(`  ignorePaths,`);
-  }
   exports.push(`});`);
 
   return [...imports, ...exports].join('\n');
