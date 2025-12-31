@@ -116,13 +116,16 @@ test.describe('_idiomi Query Param Detection (SSR)', () => {
     await expect(page).toHaveURL(/\/es/);
   });
 
-  test('cookie is synced from _idiomi detection', async ({ page, context }) => {
+  test('server does not set cookie (CDN cacheable)', async ({
+    page,
+    context,
+  }) => {
     // Navigate with _idiomi query param
     await page.goto('/about?_idiomi=es');
 
-    // Check that cookie was set
+    // Verify server did NOT set a cookie (keeps response cacheable)
     const cookies = await context.cookies();
     const localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
-    expect(localeCookie?.value).toBe('es');
+    expect(localeCookie).toBeUndefined();
   });
 });

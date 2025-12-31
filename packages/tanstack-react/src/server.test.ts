@@ -233,22 +233,35 @@ describe('createRequestHandler', () => {
     });
   });
 
-  describe('cookie sync', () => {
-    it('returns setCookie when locale detected from path', () => {
+  describe('no server-side cookie setting (CDN cacheable)', () => {
+    it('does not set cookie when locale detected from path', () => {
       const handleLocale = createRequestHandler(baseConfig);
       const ctx = createMockContext('/es/about');
-      const result = handleLocale(ctx);
+      handleLocale(ctx);
 
-      // Locale is from path, cookie should be synced
-      const setCookie = ctx.responseHeaders.get('Set-Cookie');
-      expect(setCookie).toContain('IDIOMI_LOCALE=es');
+      expect(ctx.responseHeaders.get('Set-Cookie')).toBeNull();
     });
 
-    it('does not set cookie when already matching', () => {
-      const handleLocale = createRequestHandler(baseConfig);
-      const ctx = createMockContext('/es/about', {
-        cookie: 'IDIOMI_LOCALE=es',
+    it('does not set cookie when locale detected from header', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+        detection: { order: ['header'] },
       });
+      const ctx = createMockContext('/about', {
+        'accept-language': 'es-ES',
+      });
+      handleLocale(ctx);
+
+      expect(ctx.responseHeaders.get('Set-Cookie')).toBeNull();
+    });
+
+    it('does not set cookie when locale detected from _idiomi param', () => {
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        prefixStrategy: 'never',
+      });
+      const ctx = createMockContext('/about?_idiomi=fr');
       handleLocale(ctx);
 
       expect(ctx.responseHeaders.get('Set-Cookie')).toBeNull();
@@ -361,18 +374,6 @@ describe('createRequestHandler', () => {
       expect(result.redirectResponse?.headers.get('Location')).toBe(
         'https://example.com/es/about?_idiomi=es',
       );
-    });
-
-    it('syncs cookie from _idiomi detection', () => {
-      const handleLocale = createRequestHandler({
-        ...baseConfig,
-        prefixStrategy: 'never',
-      });
-      const ctx = createMockContext('/about?_idiomi=fr');
-      handleLocale(ctx);
-
-      const setCookie = ctx.responseHeaders.get('Set-Cookie');
-      expect(setCookie).toContain('IDIOMI_LOCALE=fr');
     });
   });
 

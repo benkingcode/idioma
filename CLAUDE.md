@@ -91,7 +91,7 @@ The `e2e/fixtures/` directory contains test apps for different framework configu
 | `tanstack-start-localized-paths`     | 5179 | TanStack Start SSR  | Localized paths + SSR         |
 | `tanstack-start-non-localized-paths` | 5180 | TanStack Start SSR  | Prefix-only + SSR             |
 
-**TanStack Start SSR fixtures** test server-side `Accept-Language` header detection, cookie persistence across full-page navigation, and SSR hydration. Key differences from SPA fixtures:
+**TanStack Start SSR fixtures** test server-side `Accept-Language` header detection, cookie reading (set client-side), and SSR hydration. Key differences from SPA fixtures:
 
 - Use `tanstackStart()` Vite plugin instead of standard Vite React
 - Root route (`__root.tsx`) renders full HTML document (`<html>`, `<head>`, `<body>`)
@@ -171,10 +171,12 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `client.ts` (main package export) - Client-safe factories for both SPA and SSR:
   - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectLocale()` for manual detection
   - `createUrlHandler()` - Creates `delocalizeUrl` and `localizeUrl` for URL transformation (handles both localized paths and prefix-only)
+  - `setLocalePreference(locale)` - Sets locale cookie client-side (for locale picker UI)
+  - `clearLocalePreference()` - Clears locale cookie (reset to browser detection)
 - `server.ts` (exported via `/server` subpath) - Server-only factories for TanStack Start SSR:
   - `createIsomorphicLocaleDetector()` - SSR-aware locale detection using `createIsomorphicFn` for bundler-driven server/client splitting
-  - `createRequestHandler()` - Server entry middleware returning `{ locale, redirectResponse?, localizedCtx }`
-- `internal/helpers.ts` - Shared utilities (cookie parsing, locale extraction, URL manipulation)
+  - `createRequestHandler()` - Server entry middleware returning `{ locale, redirectResponse?, localizedCtx }`. **Never sets cookies** — keeps responses CDN-cacheable.
+- `internal/helpers.ts` - Shared utilities (cookie parsing, locale extraction, URL manipulation, `_idiomi` query param extraction)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
 - `link.ts` - `resolveLocalizedHref()`, `resolveLocalizedPath()` utilities for URL resolution (TanStack uses native `<Link>` from `@tanstack/react-router`)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (accepts `reverseRoutes` for localized URL → canonical path conversion)
@@ -190,6 +192,10 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 2. `createIsomorphicLocaleDetector(config)` - Factory for SSR-aware `detectLocale()` using `createIsomorphicFn` for bundler-driven server/client code splitting
 3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
 4. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.matchRoute()`
+
+**Cookie model for CDN cacheability**: Server **reads** cookies but **never sets** them. This keeps all responses cacheable. Cookies are only set client-side via `setLocalePreference()` when user explicitly switches locale in a locale picker UI. Detection priority: URL path > `_idiomi` query param > cookie > Accept-Language > default.
+
+**`_idiomi` query param**: For `'never'` prefix strategy with CDN caching, edge middleware (Vercel Middleware, Cloudflare Workers) can add `?_idiomi=es` to create unique cache keys. Origin reads this param to determine locale without needing URL path prefix.
 
 **Server entry pattern** (`src/server.ts`):
 
@@ -220,11 +226,11 @@ export default createServerEntry({ fetch: createStartHandler(customHandler) });
 - `rewrite.output` (`localizeUrl`): Transforms URL for **link generation** (display). Does NOT change browser URL.
 - `localeLoader` (`beforeLoad`): Throws actual **redirects** to change browser URL. Handles prefix strategy enforcement.
 
-For cookie-based locale detection to work correctly:
+For locale detection to work correctly:
 
 1. `delocalizeUrl` returns unprefixed URLs unchanged (e.g., `/` stays `/`)
 2. TanStack's `{-$locale}` optional segment matches the route
-3. `localeLoader` detects locale from cookie, throws redirect to add prefix if needed
+3. `localeLoader` detects locale from cookie (if set by user via locale picker) or Accept-Language, throws redirect to add prefix if needed
 4. Browser URL changes to prefixed version (e.g., `/es/`)
 
 ### Configuration

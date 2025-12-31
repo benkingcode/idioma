@@ -376,6 +376,90 @@ export function createUrlHandler<L extends string>(
 }
 
 // ============================================================
+// Client-side locale preference
+// ============================================================
+
+export interface SetLocalePreferenceConfig {
+  /** Cookie name for storing locale preference */
+  readonly cookieName?: string;
+  /** Max age in seconds (default: 1 year) */
+  readonly maxAge?: number;
+}
+
+/**
+ * Sets the user's locale preference cookie (client-side only).
+ *
+ * Call this from your locale picker when the user explicitly chooses a language.
+ * The server reads this cookie on subsequent requests to honor the preference.
+ *
+ * @example
+ * ```typescript
+ * import { setLocalePreference } from '@idiomi/tanstack-react';
+ *
+ * function LocalePicker() {
+ *   const handleChange = (locale: string) => {
+ *     setLocalePreference(locale);
+ *     // Navigate to the new locale
+ *     window.location.href = `/${locale}/`;
+ *   };
+ *
+ *   return (
+ *     <select onChange={(e) => handleChange(e.target.value)}>
+ *       <option value="en">English</option>
+ *       <option value="es">Español</option>
+ *     </select>
+ *   );
+ * }
+ * ```
+ */
+export function setLocalePreference(
+  locale: string,
+  config?: SetLocalePreferenceConfig,
+): void {
+  if (typeof document === 'undefined') {
+    console.warn('setLocalePreference can only be called on the client');
+    return;
+  }
+
+  const cookieName = config?.cookieName ?? DEFAULT_COOKIE_NAME;
+  const maxAge = config?.maxAge ?? 60 * 60 * 24 * 365; // 1 year
+
+  document.cookie = `${cookieName}=${locale}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+}
+
+/**
+ * Clears the user's locale preference cookie.
+ *
+ * Call this to reset to automatic locale detection (Accept-Language header).
+ *
+ * @example
+ * ```typescript
+ * import { clearLocalePreference } from '@idiomi/tanstack-react';
+ *
+ * function ResetLocale() {
+ *   return (
+ *     <button onClick={() => clearLocalePreference()}>
+ *       Use browser language
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export function clearLocalePreference(
+  config?: Pick<SetLocalePreferenceConfig, 'cookieName'>,
+): void {
+  if (typeof document === 'undefined') {
+    console.warn('clearLocalePreference can only be called on the client');
+    return;
+  }
+
+  const cookieName = config?.cookieName ?? DEFAULT_COOKIE_NAME;
+
+  // Set Max-Age to 0 to delete the cookie
+  document.cookie = `${cookieName}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
+// ============================================================
 // Re-exports for convenience
 // ============================================================
 

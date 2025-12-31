@@ -36,7 +36,6 @@ import {
   type DetectionContext,
 } from './internal/detection.js';
 import {
-  createCookieHeader,
   DEFAULT_COOKIE_NAME,
   DEFAULT_DETECTION_ORDER,
   extractLocaleFromPath,
@@ -78,7 +77,7 @@ export interface HandleLocaleResult<
   locale: L;
   /** Redirect response (302). Return early if set. */
   redirectResponse?: Response;
-  /** Modified context (request rewritten, cookie on responseHeaders) */
+  /** Modified context (request may be rewritten for internal routing) */
   localizedCtx: Ctx;
 }
 
@@ -198,8 +197,12 @@ function detectLocaleFromRequest<L extends string>(
 /**
  * Creates a server entry handler for TanStack Start.
  *
- * Use this in your server entry (src/server.ts) to handle locale detection,
- * redirects, and cookie syncing before React rendering.
+ * Use this in your server entry (src/server.ts) to handle locale detection
+ * and redirects before React rendering.
+ *
+ * Note: This handler does NOT set cookies. Cookies are only used for reading
+ * user preferences (set client-side via locale picker). This keeps responses
+ * cacheable by CDNs.
  *
  * @example
  * ```typescript
@@ -230,8 +233,7 @@ export function createRequestHandler<L extends string>(
 ): <Ctx extends { request: Request; responseHeaders: Headers }>(
   ctx: Ctx,
 ) => HandleLocaleResult<Ctx, L> {
-  const { locales, defaultLocale, prefixStrategy, detection } = config;
-  const cookieName = detection?.cookieName ?? DEFAULT_COOKIE_NAME;
+  const { locales, defaultLocale, prefixStrategy } = config;
 
   return (ctx) => {
     const url = new URL(ctx.request.url);
@@ -250,10 +252,6 @@ export function createRequestHandler<L extends string>(
 
     // Detect locale from headers (cookie/Accept-Language)
     const detectedLocale = detectLocaleFromRequest(ctx.request, config);
-
-    // Check if cookie needs syncing
-    const cookieHeader = ctx.request.headers.get('cookie');
-    const existingCookie = parseCookie(cookieHeader, cookieName);
 
     // ============================================================
     // Strategy: 'never' - never show prefix, always rewrite
@@ -277,15 +275,6 @@ export function createRequestHandler<L extends string>(
             ),
           }
         : ctx;
-
-      // Sync cookie if needed
-      const needsCookieSync = !existingCookie || existingCookie !== locale;
-      if (needsCookieSync) {
-        ctx.responseHeaders.append(
-          'Set-Cookie',
-          createCookieHeader(cookieName, locale),
-        );
-      }
 
       return { locale, localizedCtx };
     }
@@ -329,14 +318,6 @@ export function createRequestHandler<L extends string>(
     }
 
     // Locale in path - use it
-    // Sync cookie if different from current
-    if (existingCookie !== pathLocale) {
-      ctx.responseHeaders.append(
-        'Set-Cookie',
-        createCookieHeader(cookieName, pathLocale),
-      );
-    }
-
     return { locale: pathLocale, localizedCtx: ctx };
   };
 }

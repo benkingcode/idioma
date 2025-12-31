@@ -1160,15 +1160,11 @@ To persist locale preferences across sessions, set a cookie when users switch la
 // components/LocaleSwitcher.tsx
 'use client';
 
-import { Link, locales, useLocale } from '@/idiomi';
+import { Link, locales, setLocalePreference, useLocale } from '@/idiomi';
 import type { Locale } from '@/idiomi';
 
 export function LocaleSwitcher() {
   const currentLocale = useLocale();
-
-  const setLocaleCookie = (locale: Locale) => {
-    document.cookie = `IDIOMI_LOCALE=${locale}; path=/; max-age=31536000`;
-  };
 
   return (
     <div>
@@ -1177,7 +1173,7 @@ export function LocaleSwitcher() {
           key={locale}
           href="/" // Or usePathname() for current page
           locale={locale}
-          onClick={() => setLocaleCookie(locale)}
+          onClick={() => setLocalePreference(locale)}
           aria-current={locale === currentLocale ? 'page' : undefined}
         >
           {locale.toUpperCase()}
@@ -1188,21 +1184,17 @@ export function LocaleSwitcher() {
 }
 ```
 
-**TanStack Router (SPA):**
+**TanStack Router (SPA/SSR):**
 
 ```tsx
 // components/LocaleSwitcher.tsx
-import { locales, useLocale } from '@/idiomi';
+import { locales, setLocalePreference, useLocale } from '@/idiomi';
 import type { Locale } from '@/idiomi';
 import { Link, useLocation } from '@tanstack/react-router';
 
 export function LocaleSwitcher() {
   const currentLocale = useLocale();
   const { pathname } = useLocation();
-
-  const setLocaleCookie = (locale: Locale) => {
-    document.cookie = `IDIOMI_LOCALE=${locale}; path=/; max-age=31536000`;
-  };
 
   return (
     <div>
@@ -1211,7 +1203,7 @@ export function LocaleSwitcher() {
           key={locale}
           to={pathname}
           params={{ locale }}
-          onClick={() => setLocaleCookie(locale)}
+          onClick={() => setLocalePreference(locale)}
           aria-current={locale === currentLocale ? 'page' : undefined}
         >
           {locale.toUpperCase()}
@@ -1222,7 +1214,7 @@ export function LocaleSwitcher() {
 }
 ```
 
-Setting the cookie ensures the user's preference is remembered on their next visit, even if they navigate directly to `/` without a locale prefix.
+The `setLocalePreference` helper sets a cookie that persists the user's choice. On subsequent visits, the server reads this cookie (without setting one in the response), keeping all responses CDN-cacheable.
 
 ### How Route Compilation Works
 
@@ -1248,7 +1240,12 @@ Dynamic segments are preserved using each framework's native syntax—only stati
 
 ## CDN Caching with Locale Detection
 
-When using `detection.order: ['cookie', 'header']` with CDN caching (ISR, edge caching), be aware of caching implications.
+When using CDN caching (ISR, edge caching), your prefix strategy determines cache safety:
+
+- **`'always'`** — Inherently cache-safe (every URL has locale prefix)
+- **`'as-needed'` / `'never'`** — Requires edge middleware for cache safety
+
+If you want CDN caching without edge middleware, use `prefixStrategy: 'always'`.
 
 ### Why `Vary: Accept-Language` Doesn't Work
 
@@ -1264,9 +1261,9 @@ For CDN-cached sites, detect and normalize the locale at the edge, then include 
 **Important:** Edge middleware and origin work together:
 
 - **Edge middleware:** Normalizes locale → adds `?_idiomi=X` to URL → creates unique cache key
-- **Origin `handleLocale`:** Reads `_idiomi` param → sets cookie → handles routing
+- **Origin `handleLocale`:** Reads `_idiomi` param → handles routing (no `Set-Cookie` = cacheable!)
 
-The origin automatically reads the `_idiomi` query param (when present) and uses it for locale detection. This ensures edge and origin always agree, eliminating cache consistency issues.
+The origin reads the `_idiomi` query param and uses it for locale detection. Since the origin never sets cookies in responses, all responses are CDN-cacheable.
 
 **Detection priority in `handleLocale`:**
 
@@ -1512,13 +1509,24 @@ You can also combine with cookie detection using `http.cookie`:
 
 ### Prefix Strategy Compatibility
 
-| Strategy      | CDN Caching | Notes                                                             |
-| ------------- | ----------- | ----------------------------------------------------------------- |
-| `'always'`    | ✅ Works    | URL includes locale → naturally unique cache keys                 |
-| `'as-needed'` | ✅ Works    | Non-default locales get prefix → unique cache keys                |
-| `'never'`     | ✅ Works    | Edge adds `?_idiomi=X` → origin reads it → guaranteed consistency |
+| Strategy      | Without Edge Middleware        | With Edge Middleware |
+| ------------- | ------------------------------ | -------------------- |
+| `'always'`    | ✅ Cache-safe                  | ✅ Cache-safe        |
+| `'as-needed'` | ⚠️ Default locale paths unsafe | ✅ Cache-safe        |
+| `'never'`     | ❌ Not cache-safe              | ✅ Cache-safe        |
 
-All strategies work with CDN caching when using edge middleware. The origin automatically reads the `_idiomi` query param, so edge and origin always agree on locale detection.
+**Why `'as-needed'` is unsafe without edge middleware:**
+
+```
+User A (en) visits /about → Origin serves English → CDN caches /about
+User B (es) visits /about → CDN serves cached English ❌ (should redirect to /es/about)
+```
+
+The Spanish speaker sees English content instead of being redirected. Edge middleware solves this by redirecting _before_ the cache layer.
+
+**Why `'always'` is inherently safe:** Unprefixed paths (`/about`) always redirect, and 302 redirects aren't cached by default. Each user's request to `/about` goes to origin, which detects their locale and redirects to the appropriate prefixed path (`/en/about` or `/es/about`). The prefixed pages are then cached per-locale. The only "cost" is that first visits to unprefixed URLs always hit origin for redirect detection.
+
+**Recommendation:** For CDN-cached sites, use `'always'` (simplest) or add edge middleware for `'as-needed'`/`'never'`.
 
 ## Locale Fallbacks
 
