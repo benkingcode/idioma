@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  createLocaleDetector,
+  createIsomorphicLocaleDetector,
   createRequestHandler,
   type RequestHandlerConfig,
 } from './server.js';
@@ -308,20 +308,18 @@ describe('createRequestHandler', () => {
   });
 });
 
-describe('createLocaleDetector', () => {
-  // Note: createLocaleDetector uses getRequestHeaders from @tanstack/react-start/server
+describe('createIsomorphicLocaleDetector', () => {
+  // Note: createIsomorphicLocaleDetector uses createIsomorphicFn from @tanstack/react-start
   // which can't be easily tested without mocking the entire module.
   // We test the factory returns a function with the right shape.
+  // The actual detection logic is tested in detection.test.ts.
 
   it('returns a detectLocale function', () => {
-    const detectLocale = createLocaleDetector({
+    const detectLocale = createIsomorphicLocaleDetector({
       locales: ['en', 'es'],
       defaultLocale: 'en',
     });
 
     expect(typeof detectLocale).toBe('function');
   });
-
-  // Client-side detection tests would require jsdom environment
-  // and mocking document.cookie and navigator.languages
 });

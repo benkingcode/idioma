@@ -172,7 +172,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
   - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectLocale()` for manual detection
   - `createUrlHandler()` - Creates `delocalizeUrl` and `localizeUrl` for URL transformation (handles both localized paths and prefix-only)
 - `server.ts` (exported via `/server` subpath) - Server-only factories for TanStack Start SSR:
-  - `createLocaleDetector()` - SSR-aware locale detection using Accept-Language header
+  - `createIsomorphicLocaleDetector()` - SSR-aware locale detection using `createIsomorphicFn` for bundler-driven server/client splitting
   - `createRequestHandler()` - Server entry middleware returning `{ locale, redirectResponse?, localizedCtx }`
 - `internal/helpers.ts` - Shared utilities (cookie parsing, locale extraction, URL manipulation)
 - `hooks.ts` - `useLocale()`, `useLocalizedPath()`, `useLocalizedHref()`
@@ -187,7 +187,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 **TanStack Start SSR**: The `/server` subpath exports server entry helpers:
 
 1. `createRequestHandler(config)` - Factory that creates `handleLocale(ctx)` returning `{ locale, redirectResponse?, localizedCtx }`
-2. `createLocaleDetector(config)` - Factory for SSR-aware `detectLocale()` using Accept-Language header
+2. `createIsomorphicLocaleDetector(config)` - Factory for SSR-aware `detectLocale()` using `createIsomorphicFn` for bundler-driven server/client code splitting
 3. Uses `@idiomi/core/locale`'s `matchLocale()` for BCP 47-compliant language matching
 4. `localeParamName` config option (default: `'locale'`) for runtime route matching via `router.matchRoute()`
 

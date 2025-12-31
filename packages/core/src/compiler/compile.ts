@@ -870,7 +870,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         imports.push(
           `import { createLocaleHead, createUrlHandler } from '${pkg}';`,
         );
-        imports.push(`import { createLocaleDetector } from '${serverPkg}';`);
+        imports.push(
+          `import { createIsomorphicLocaleDetector } from '${serverPkg}';`,
+        );
       } else {
         // TanStack SPA: All factories from main package
         imports.push(
@@ -924,7 +926,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         // TanStack Start: handleLocale is in server.ts
         // Export SSR-aware detectLocale for components and non-localized routes
         exports.push(
-          `export const detectLocale = createLocaleDetector<Locale>({`,
+          `export const detectLocale = createIsomorphicLocaleDetector<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);
@@ -989,7 +991,9 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         imports.push(
           `import { createLocaleHead, createUrlHandler } from '${pkg}';`,
         );
-        imports.push(`import { createLocaleDetector } from '${serverPkg}';`);
+        imports.push(
+          `import { createIsomorphicLocaleDetector } from '${serverPkg}';`,
+        );
       } else {
         // TanStack SPA: All factories from main package
         imports.push(
@@ -1029,7 +1033,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         // TanStack Start: handleLocale is in server.ts
         // Export SSR-aware detectLocale for components and non-localized routes
         exports.push(
-          `export const detectLocale = createLocaleDetector<Locale>({`,
+          `export const detectLocale = createIsomorphicLocaleDetector<Locale>({`,
         );
         exports.push(`  locales,`);
         exports.push(`  defaultLocale,`);

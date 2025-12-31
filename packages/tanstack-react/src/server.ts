@@ -28,6 +28,12 @@
  */
 
 import { matchLocale } from '@idiomi/core/locale';
+import { createIsomorphicFn } from '@tanstack/react-start';
+import {
+  detectLocaleFromBrowser,
+  detectLocaleFromHeaders,
+  type DetectionContext,
+} from './internal/detection.js';
 import {
   createCookieHeader,
   DEFAULT_COOKIE_NAME,
@@ -75,23 +81,25 @@ export interface HandleLocaleResult<
 }
 
 // ============================================================
-// createLocaleDetector
+// createIsomorphicLocaleDetector
 // ============================================================
 
 /**
  * Creates an SSR-aware locale detection function for TanStack Start.
  *
- * On server: Uses cookie and Accept-Language header via getRequestHeaders()
- * On client: Uses document.cookie and navigator.languages
+ * Uses TanStack Start's `createIsomorphicFn` to provide bundler-aware
+ * server/client code splitting:
+ * - Server: Uses cookie and Accept-Language header via getRequestHeaders()
+ * - Client: Uses document.cookie and navigator.languages
  *
  * This function is designed for use in components or non-localized routes
  * where you need locale detection but not URL prefix handling.
  *
  * @example
  * ```typescript
- * import { createLocaleDetector } from '@idiomi/tanstack-react/server';
+ * import { createIsomorphicLocaleDetector } from '@idiomi/tanstack-react/server';
  *
- * export const detectLocale = createLocaleDetector({
+ * export const detectLocale = createIsomorphicLocaleDetector({
  *   locales: ['en', 'es'],
  *   defaultLocale: 'en',
  *   detection: { order: ['cookie', 'header'], cookieName: 'IDIOMI_LOCALE' },
@@ -104,80 +112,31 @@ export interface HandleLocaleResult<
  * }
  * ```
  */
-export function createLocaleDetector<L extends string>(
+export function createIsomorphicLocaleDetector<L extends string>(
   config: LocaleDetectorConfig<L>,
 ): () => L {
   const { locales, defaultLocale, detection } = config;
-  const cookieName = detection?.cookieName ?? DEFAULT_COOKIE_NAME;
-  const order = detection?.order ?? DEFAULT_DETECTION_ORDER;
-  const algorithm = detection?.algorithm ?? 'best fit';
 
-  // Cached headers for synchronous access after async initialization
-  let cachedHeaders: {
-    cookie: string | null;
-    acceptLanguage: string | null;
-  } | null = null;
-
-  return function detectLocale(): L {
-    const isServer = typeof window === 'undefined';
-
-    let cookieHeader: string | null = null;
-    let acceptLanguage: string | null = null;
-
-    if (isServer) {
-      // Server: access request headers directly via dynamic import
-      // This pattern avoids bundling server code into client
-      if (!cachedHeaders) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { getRequestHeaders } = require('@tanstack/react-start/server');
-        const headers = getRequestHeaders();
-        cachedHeaders = {
-          cookie: headers.get('cookie'),
-          acceptLanguage: headers.get('accept-language'),
-        };
-      }
-      cookieHeader = cachedHeaders.cookie;
-      acceptLanguage = cachedHeaders.acceptLanguage;
-    } else {
-      cookieHeader = typeof document !== 'undefined' ? document.cookie : null;
-    }
-
-    for (const source of order) {
-      if (source === 'cookie') {
-        const cookie = parseCookie(cookieHeader, cookieName);
-        if (cookie && (locales as readonly string[]).includes(cookie)) {
-          return cookie as L;
-        }
-      }
-      if (source === 'header') {
-        if (isServer && acceptLanguage) {
-          // Server: use Accept-Language header with BCP 47 matching
-          const matched = matchLocale(acceptLanguage, {
-            locales: locales as unknown as string[],
-            defaultLocale,
-            algorithm,
-          });
-          if (matched && (locales as readonly string[]).includes(matched)) {
-            return matched as L;
-          }
-        } else if (!isServer) {
-          // Client: use navigator.languages
-          if (typeof navigator !== 'undefined' && navigator.languages?.length) {
-            const matched = matchLocale(navigator.languages.join(','), {
-              locales: locales as unknown as string[],
-              defaultLocale,
-              algorithm,
-            });
-            if (matched && (locales as readonly string[]).includes(matched)) {
-              return matched as L;
-            }
-          }
-        }
-      }
-    }
-
-    return defaultLocale;
+  const ctx: DetectionContext<L> = {
+    locales,
+    defaultLocale,
+    order: detection?.order ?? DEFAULT_DETECTION_ORDER,
+    cookieName: detection?.cookieName ?? DEFAULT_COOKIE_NAME,
+    algorithm: detection?.algorithm ?? 'best fit',
   };
+
+  return createIsomorphicFn()
+    .server(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getRequestHeaders } = require('@tanstack/react-start/server');
+      const headers = getRequestHeaders();
+      return detectLocaleFromHeaders<L>(
+        headers.get('cookie'),
+        headers.get('accept-language'),
+        ctx,
+      );
+    })
+    .client(() => detectLocaleFromBrowser<L>(ctx));
 }
 
 // ============================================================
