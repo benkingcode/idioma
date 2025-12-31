@@ -21,6 +21,11 @@ import {
   renderMessage,
   type TransComponent,
 } from '../interpolate';
+// Import shared Trans types
+import type {
+  TransInlineModeProps,
+  TransKeyOnlyModeProps,
+} from '../Trans.types';
 // ============ useT Hook ============
 
 // Import shared types from useT.types.ts (same types used by inlined mode)
@@ -179,42 +184,17 @@ export function __TransSuspense({
 }
 
 /**
- * Props for key-only Trans in Suspense mode.
+ * Suspense-specific extension of TransKeyOnlyModeProps.
+ * Adds __chunk and __load props required by Babel transform.
  */
-export interface TransKeyOnlyModeProps<
+type TransKeyOnlyModePropsSuspense<
   K extends string,
   MV extends Record<string, Record<string, unknown>>,
   MC extends Record<string, TransComponent[]>,
-> {
-  id: K;
-  children?: never;
-  context?: never;
-  ns?: string;
-  values?: K extends keyof MV ? MV[K] : Record<string, unknown>;
-  components?: K extends keyof MC ? MC[K] : TransComponent[];
-  // Suspense mode requires chunk/load from Babel transform
+> = TransKeyOnlyModeProps<K, MV, MC> & {
   __chunk?: string;
   __load?: Loader;
-}
-
-/**
- * Props for inline Trans in Suspense mode (dev only).
- */
-export interface TransInlineModeProps {
-  children: ReactNode;
-  id?: string;
-  context?: string;
-  ns?: string;
-}
-
-/**
- * Base interface for project-specific Idiomi types (for Trans).
- */
-interface BaseIdiomiConfigForTrans {
-  TranslationKey: string;
-  MessageValues: Record<string, Record<string, unknown>>;
-  MessageComponents: Record<string, TransComponent[]>;
-}
+};
 
 /**
  * Creates a typed Trans component for Suspense mode.
@@ -223,18 +203,23 @@ interface BaseIdiomiConfigForTrans {
  * In production: Babel transforms to __TransSuspense
  */
 export function createTransSuspense<
-  C extends BaseIdiomiConfigForTrans = BaseIdiomiConfigForTrans,
+  C extends BaseIdiomiConfig = BaseIdiomiConfig,
 >(_config: SuspenseConfig) {
   type TK = C['TranslationKey'];
   type MV = C['MessageValues'];
   type MC = C['MessageComponents'];
 
+  // Type alias to ensure MC satisfies TransComponent[] constraint
+  type MCTyped = MC & Record<string, TransComponent[]>;
+
   function Trans(props: TransInlineModeProps): ReactNode;
   function Trans<K extends TK>(
-    props: TransKeyOnlyModeProps<K & string, MV, MC>,
+    props: TransKeyOnlyModePropsSuspense<K & string, MV, MCTyped>,
   ): ReactNode;
   function Trans(
-    props: TransInlineModeProps | TransKeyOnlyModeProps<TK & string, MV, MC>,
+    props:
+      | TransInlineModeProps
+      | TransKeyOnlyModePropsSuspense<TK & string, MV, MCTyped>,
   ): ReactNode {
     // Inline mode: children present - render them directly
     // In production, Babel transforms this to __TransSuspense
@@ -244,7 +229,7 @@ export function createTransSuspense<
 
     // Key-only mode in Suspense: requires __chunk and __load from Babel
     const { __chunk, __load, id, values, components } =
-      props as TransKeyOnlyModeProps<TK & string, MV, MC>;
+      props as TransKeyOnlyModePropsSuspense<TK & string, MV, MCTyped>;
 
     if (__chunk && __load) {
       return (

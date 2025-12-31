@@ -3,74 +3,16 @@
 import { useContext, type ReactNode } from 'react';
 import { IdiomiContext } from './context';
 import { type TransComponent } from './interpolate';
+import type {
+  TransInlineModeProps,
+  TransKeyOnlyModeProps,
+} from './Trans.types';
 import { type BaseIdiomiConfig } from './useT.types';
 
-/**
- * Inline mode props - when children are present.
- * Used for development and extracted by Babel in production.
- */
-export interface TransInlineModeProps {
-  children: ReactNode;
-  /** Optional explicit key (overrides auto-hash) */
-  id?: string;
-  /** Translator context for key disambiguation (affects hash) */
-  context?: string;
-  /** Translator comment (extracted to PO #. comment for translators) */
-  comment?: string;
-  /** Namespace for large apps */
-  ns?: string;
-}
-
-/**
- * Base props for key-only mode.
- */
-interface TransKeyOnlyBaseProps<K extends string> {
-  /** Translation key - must be a valid key from PO */
-  id: K;
-  /** No children allowed in key-only mode */
-  children?: never;
-  /** No context in key-only mode - message is defined in PO */
-  context?: never;
-  /** Namespace for large apps */
-  ns?: string;
-}
-
-/**
- * Conditional values prop - required if message has placeholders.
- */
-type TransValuesProps<
-  K extends string,
-  MV extends Record<string, Record<string, unknown>>,
-> = K extends keyof MV
-  ? MV[K] extends Record<string, never>
-    ? { values?: never }
-    : { values: MV[K] }
-  : { values?: Record<string, unknown> };
-
-/**
- * Conditional components prop - required if message has component tags.
- */
-type TransComponentsProps<
-  K extends string,
-  MC extends Record<string, TransComponent[]>,
-> = K extends keyof MC
-  ? MC[K] extends []
-    ? { components?: never }
-    : { components: MC[K] }
-  : { components?: TransComponent[] };
-
-/**
- * Key-only mode props - when looking up by id.
- * Values are required if the message has {placeholders}.
- * Components are required if the message has <0>tags</0>.
- */
-export type TransKeyOnlyModeProps<
-  K extends string,
-  MV extends Record<string, Record<string, unknown>>,
-  MC extends Record<string, TransComponent[]>,
-> = TransKeyOnlyBaseProps<K> &
-  TransValuesProps<K, MV> &
-  TransComponentsProps<K, MC>;
+export type {
+  TransInlineModeProps,
+  TransKeyOnlyModeProps,
+} from './Trans.types';
 
 /**
  * Creates a typed Trans component that supports both inline and key-only modes.
