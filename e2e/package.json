@@ -9,7 +9,8 @@
     "test:debug": "playwright test --debug",
     "test:standard": "playwright test --project=standard",
     "test:suspense": "playwright test --project=suspense",
-    "setup": "pnpm --filter './fixtures/*' install && pnpm --filter './fixtures/*' run extract && pnpm --filter './fixtures/*' run compile"
+    "setup": "pnpm --filter './fixtures/*' install && pnpm --filter './fixtures/*' run extract && pnpm --filter './fixtures/*' run compile",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
