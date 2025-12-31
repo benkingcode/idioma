@@ -170,7 +170,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 - `spa.ts` - Factory functions for SPA locale handling (browser-safe, no SSR dependencies):
   - `createLocaleLoader()` - Creates `localeLoader` for `beforeLoad` and `detectClientLocale()` for manual detection
-  - `createUrlRewriter()` - Creates `deLocalizeUrl` and `localizeUrl` for localized path translation
+  - `createUrlRewriter()` - Creates `delocalizeUrl` and `localizeUrl` for localized path translation
   - `createPrefixOnlyRewriter()` - Creates `localizeUrl` for prefix-only strategy (no path translation)
 - `server-entry.ts` - Server entry helpers for TanStack Start SSR:
   - `handleLocaleRequest()` - Detect locale, determine redirects/rewrites from a Request
@@ -217,13 +217,13 @@ export default createServerEntry({ fetch: createStartHandler(customHandler) });
 
 **TanStack URL rewriting vs redirects**: Important architectural distinction:
 
-- `rewrite.input` (`deLocalizeUrl`): Transforms URL for **route matching** (internal). Does NOT change browser URL.
+- `rewrite.input` (`delocalizeUrl`): Transforms URL for **route matching** (internal). Does NOT change browser URL.
 - `rewrite.output` (`localizeUrl`): Transforms URL for **link generation** (display). Does NOT change browser URL.
 - `localeLoader` (`beforeLoad`): Throws actual **redirects** to change browser URL. Handles prefix strategy enforcement.
 
 For cookie-based locale detection to work correctly:
 
-1. `deLocalizeUrl` returns unprefixed URLs unchanged (e.g., `/` stays `/`)
+1. `delocalizeUrl` returns unprefixed URLs unchanged (e.g., `/` stays `/`)
 2. TanStack's `{-$locale}` optional segment matches the route
 3. `localeLoader` detects locale from cookie, throws redirect to add prefix if needed
 4. Browser URL changes to prefixed version (e.g., `/es/`)
@@ -748,10 +748,10 @@ export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
 });
 
 // For localized paths: URL rewrite functions
-// deLocalizeUrl: Transform localized path to canonical for route matching (/es/sobre → /es/about)
+// delocalizeUrl: Transform localized path to canonical for route matching (/es/sobre → /es/about)
 // localizeUrl: Transform canonical to localized for display (/es/about → /es/sobre)
-// Use with createRouter({ rewrite: { input: deLocalizeUrl, output: localizeUrl } })
-export const { deLocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
+// Use with createRouter({ rewrite: { input: delocalizeUrl, output: localizeUrl } })
+export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   locales,
   defaultLocale,
   prefixStrategy,

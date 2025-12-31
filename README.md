@@ -1082,14 +1082,14 @@ If using `localizedPaths: true`, add URL rewriting to your router:
 
 ```ts
 // app/router.tsx
-import { deLocalizeUrl, localizeUrl } from '@/idiomi';
+import { delocalizeUrl, localizeUrl } from '@/idiomi';
 import { createRouter } from '@tanstack/react-router';
 
 export const router = createRouter({
   routeTree,
   rewrite: {
     // /es/sobre → /es/about (for route matching)
-    input: ({ url }) => deLocalizeUrl(url),
+    input: ({ url }) => delocalizeUrl(url),
     // /es/about → /es/sobre (for link display)
     output: ({ url }) => localizeUrl(url),
   },

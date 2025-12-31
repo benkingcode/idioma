@@ -209,7 +209,7 @@ test.describe('Complex Routes - Localized Paths Stress Tests', () => {
       );
     });
 
-    test('deLocalizeUrl correctly handles middle dynamic segment', async ({
+    test('delocalizeUrl correctly handles middle dynamic segment', async ({
       page,
     }) => {
       // This is a critical test - the URL rewriter must:

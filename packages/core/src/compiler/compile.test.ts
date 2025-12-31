@@ -776,7 +776,7 @@ msgstr "Hello"
       expect(content).toContain("from '@idiomi/tanstack-react'");
     });
 
-    it('generates deLocalizeUrl and localizeUrl for TanStack with localizedPaths', async () => {
+    it('generates delocalizeUrl and localizeUrl for TanStack with localizedPaths', async () => {
       // Create TanStack app structure with routeTree.gen.ts
       const srcDir = join(tempDir, 'src');
       await fs.mkdir(srcDir, { recursive: true });
@@ -838,9 +838,9 @@ msgstr "sobre"
       const indexPath = join(outputDir, 'index.ts');
       const content = await fs.readFile(indexPath, 'utf-8');
 
-      // Should export deLocalizeUrl and localizeUrl via factory
+      // Should export delocalizeUrl and localizeUrl via factory
       expect(content).toContain('createUrlRewriter');
-      expect(content).toContain('deLocalizeUrl');
+      expect(content).toContain('delocalizeUrl');
       expect(content).toContain('localizeUrl');
       // Should import routes, reverseRoutes, and routePatterns
       expect(content).toContain('reverseRoutes');
@@ -923,7 +923,7 @@ msgstr "publicaciones"
       // Should use createUrlRewriter factory with routePatterns
       // Pattern matching logic is now inside the factory
       expect(content).toContain('createUrlRewriter');
-      expect(content).toContain('deLocalizeUrl');
+      expect(content).toContain('delocalizeUrl');
       expect(content).toContain('localizeUrl');
     });
   });

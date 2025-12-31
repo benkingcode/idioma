@@ -964,7 +964,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
       }
       // URL rewriting functions for both SPA and Start
       exports.push(
-        `export const { deLocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({`,
+        `export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({`,
       );
       exports.push(`  locales,`);
       exports.push(`  defaultLocale,`);

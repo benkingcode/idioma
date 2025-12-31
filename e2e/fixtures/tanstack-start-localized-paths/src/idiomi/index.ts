@@ -48,7 +48,7 @@ export const { detectClientLocale } = createLocaleLoader<Locale>({
   detection,
 });
 
-export const { deLocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
+export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   locales,
   defaultLocale,
   prefixStrategy,

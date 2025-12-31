@@ -214,57 +214,57 @@ describe('createUrlRewriter', () => {
     routePatterns,
   };
 
-  describe('deLocalizeUrl', () => {
+  describe('delocalizeUrl', () => {
     it('converts localized path to canonical', () => {
-      const { deLocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlRewriter(config);
       const url = new URL('http://localhost/es/sobre');
 
-      const result = deLocalizeUrl(url);
+      const result = delocalizeUrl(url);
 
       expect(result.pathname).toBe('/es/about');
     });
 
     it('handles dynamic segments', () => {
-      const { deLocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlRewriter(config);
       const url = new URL('http://localhost/es/articulos/my-post');
 
-      const result = deLocalizeUrl(url);
+      const result = delocalizeUrl(url);
 
       expect(result.pathname).toBe('/es/blog/my-post');
     });
 
     it('preserves dynamic segment values', () => {
-      const { deLocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlRewriter(config);
       const url = new URL('http://localhost/es/usuarios/123/publicaciones');
 
-      const result = deLocalizeUrl(url);
+      const result = delocalizeUrl(url);
 
       expect(result.pathname).toBe('/es/users/123/posts');
     });
 
     it('returns unchanged URL when no locale in path', () => {
-      const { deLocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlRewriter(config);
       const url = new URL('http://localhost/about');
 
-      const result = deLocalizeUrl(url);
+      const result = delocalizeUrl(url);
 
       expect(result.pathname).toBe('/about');
     });
 
     it('returns unchanged URL for root path', () => {
-      const { deLocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlRewriter(config);
       const url = new URL('http://localhost/es/');
 
-      const result = deLocalizeUrl(url);
+      const result = delocalizeUrl(url);
 
       expect(result.pathname).toBe('/es/');
     });
 
     it('returns unchanged URL when already canonical', () => {
-      const { deLocalizeUrl } = createUrlRewriter(config);
+      const { delocalizeUrl } = createUrlRewriter(config);
       const url = new URL('http://localhost/es/about');
 
-      const result = deLocalizeUrl(url);
+      const result = delocalizeUrl(url);
 
       // Already canonical, no change
       expect(result.pathname).toBe('/es/about');

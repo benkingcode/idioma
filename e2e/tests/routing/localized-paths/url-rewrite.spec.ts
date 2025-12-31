@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('URL Rewrite Functions - Localized Paths', () => {
-  test('deLocalizeUrl maps localized to canonical for route matching', async ({
+  test('delocalizeUrl maps localized to canonical for route matching', async ({
     page,
   }) => {
     // Navigate to Spanish localized URL
     await page.goto('/es/sobre');
 
-    // Page should render correctly (proves deLocalizeUrl worked)
+    // Page should render correctly (proves delocalizeUrl worked)
     await expect(page.getByTestId('about-page')).toBeVisible();
     await expect(page.getByTestId('about-title')).toContainText(
       'Acerca de nuestra empresa',

@@ -15,7 +15,7 @@
  *   locales, defaultLocale, prefixStrategy, detection,
  * });
  *
- * export const { deLocalizeUrl, localizeUrl } = createUrlRewriter({
+ * export const { delocalizeUrl, localizeUrl } = createUrlRewriter({
  *   locales, defaultLocale, prefixStrategy, routes, reverseRoutes, routePatterns,
  * });
  * ```
@@ -90,7 +90,7 @@ export interface UrlRewriterConfig<L extends string = string> {
 
 export interface UrlRewriterApi {
   /** Transform localized URL to canonical for route matching (rewrite.input) */
-  deLocalizeUrl: (url: URL) => URL;
+  delocalizeUrl: (url: URL) => URL;
   /** Transform canonical URL to localized for display (rewrite.output) */
   localizeUrl: (url: URL) => URL;
 }
@@ -243,7 +243,7 @@ export function createLocaleLoader<L extends string>(
  * import { routes, reverseRoutes, routePatterns } from './.generated/routes';
  * import { locales, defaultLocale, prefixStrategy } from './.generated/config';
  *
- * export const { deLocalizeUrl, localizeUrl } = createUrlRewriter({
+ * export const { delocalizeUrl, localizeUrl } = createUrlRewriter({
  *   routes, reverseRoutes, routePatterns, locales, defaultLocale, prefixStrategy,
  * });
  *
@@ -251,7 +251,7 @@ export function createLocaleLoader<L extends string>(
  * const router = createRouter({
  *   routeTree,
  *   rewrite: {
- *     input: ({ url }) => deLocalizeUrl(url),
+ *     input: ({ url }) => delocalizeUrl(url),
  *     output: ({ url }) => localizeUrl(url),
  *   },
  * });
@@ -306,7 +306,7 @@ export function createUrlRewriter<L extends string>(
     return null;
   }
 
-  function deLocalizeUrl(url: URL): URL {
+  function delocalizeUrl(url: URL): URL {
     const pathLocale = extractLocaleFromPath(url.pathname);
 
     // No locale in URL - return unchanged, let localeLoader handle redirect
@@ -399,7 +399,7 @@ export function createUrlRewriter<L extends string>(
     return newUrl;
   }
 
-  return { deLocalizeUrl, localizeUrl };
+  return { delocalizeUrl, localizeUrl };
 }
 
 // ============================================================

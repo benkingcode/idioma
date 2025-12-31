@@ -1,5 +1,5 @@
 import { createRouter } from '@tanstack/react-router';
-import { deLocalizeUrl, localizeUrl } from './idiomi';
+import { delocalizeUrl, localizeUrl } from './idiomi';
 import { routeTree } from './routeTree.gen';
 
 /**
@@ -11,7 +11,7 @@ import { routeTree } from './routeTree.gen';
 export const router = createRouter({
   routeTree,
   rewrite: {
-    input: ({ url }) => deLocalizeUrl(url),
+    input: ({ url }) => delocalizeUrl(url),
     output: ({ url }) => localizeUrl(url),
   },
 });
