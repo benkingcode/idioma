@@ -821,6 +821,7 @@ interface RouteAwareCodeOptions {
 
 /**
  * Generate all route-aware code for index.ts (Link, LocaleHead, createMiddleware, etc.)
+ * Note: For TanStack Start, server-only code (handleLocale) is generated in server.ts instead.
  */
 function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
   const { routing } = options;
@@ -851,9 +852,6 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     if (routing.metadataBase) {
       configImports.push('metadataBase');
     }
-    if (routing.ignorePaths) {
-      configImports.push('ignorePaths');
-    }
     imports.push(
       `import { ${configImports.join(', ')} } from './.generated/config';`,
     );
@@ -872,9 +870,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         `import { createLocaleHead, createUrlRewriter } from '${pkg}';`,
       );
       if (isTanStackStart) {
-        // TanStack Start uses server entry handler + client-side detectClientLocale
+        // TanStack Start: Only import client-safe createLocaleLoader
+        // Server-only handleLocale is in server.ts to avoid bundling issues
         imports.push(
-          `import { createHandleLocale, createLocaleLoader } from '${localeLoaderPkg}';`,
+          `import { createLocaleLoader } from '@idiomi/tanstack-react';`,
         );
       } else {
         // TanStack SPA uses localeLoader for beforeLoad
@@ -926,21 +925,8 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Generate TanStack functions using factories
     if (isTanStack) {
       if (isTanStackStart) {
-        // TanStack Start: Generate handleLocale for use in server entry
-        exports.push(
-          `export const handleLocale = createHandleLocale<Locale>({`,
-        );
-        exports.push(`  locales,`);
-        exports.push(`  defaultLocale,`);
-        exports.push(`  prefixStrategy,`);
-        exports.push(`  detection,`);
-        if (routing.ignorePaths) {
-          exports.push(`  ignorePaths,`);
-        }
-        exports.push(`});`);
-        exports.push('');
-        // Also export detectClientLocale as a client-side fallback
-        // Uses the SSR-aware version that works on both server and client
+        // TanStack Start: handleLocale is in server.ts
+        // Only export client-safe detectClientLocale here
         exports.push(
           `export const { detectClientLocale } = createLocaleLoader<Locale>({`,
         );
@@ -989,9 +975,6 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     if (routing.metadataBase) {
       configImports.push('metadataBase');
     }
-    if (routing.ignorePaths) {
-      configImports.push('ignorePaths');
-    }
     imports.push(
       `import { ${configImports.join(', ')} } from './.generated/config';`,
     );
@@ -1007,9 +990,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
         `import { createLocaleHead, createPrefixOnlyRewriter } from '${pkg}';`,
       );
       if (isTanStackStart) {
-        // TanStack Start uses server entry handler + client-side detectClientLocale
+        // TanStack Start: Only import client-safe createLocaleLoader
+        // Server-only handleLocale is in server.ts to avoid bundling issues
         imports.push(
-          `import { createHandleLocale, createLocaleLoader } from '${localeLoaderPkg}';`,
+          `import { createLocaleLoader } from '@idiomi/tanstack-react';`,
         );
       } else {
         // TanStack SPA uses localeLoader for beforeLoad
@@ -1047,20 +1031,8 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     // Generate TanStack functions using factories
     if (isTanStack) {
       if (isTanStackStart) {
-        // TanStack Start: Generate handleLocale for use in server entry
-        exports.push(
-          `export const handleLocale = createHandleLocale<Locale>({`,
-        );
-        exports.push(`  locales,`);
-        exports.push(`  defaultLocale,`);
-        exports.push(`  prefixStrategy,`);
-        exports.push(`  detection,`);
-        if (routing.ignorePaths) {
-          exports.push(`  ignorePaths,`);
-        }
-        exports.push(`});`);
-        exports.push('');
-        // Also export detectClientLocale as a client-side fallback
+        // TanStack Start: handleLocale is in server.ts
+        // Only export client-safe detectClientLocale here
         exports.push(
           `export const { detectClientLocale } = createLocaleLoader<Locale>({`,
         );
@@ -1102,6 +1074,55 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
 }
 
 /**
+ * Generate server.ts for TanStack Start with server-only exports.
+ * This keeps handleLocale separate from index.ts to prevent server code
+ * from leaking into client bundles.
+ */
+function generateServerCode(options: RouteAwareCodeOptions): string {
+  const { routing } = options;
+
+  // Only generate for TanStack Start
+  if (routing.framework !== 'tanstack-start') {
+    return '';
+  }
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+
+  // Import config values - detection is always generated
+  const configImports = [
+    'locales',
+    'defaultLocale',
+    'prefixStrategy',
+    'detection',
+  ];
+  if (routing.ignorePaths) {
+    configImports.push('ignorePaths');
+  }
+  imports.push(
+    `import { ${configImports.join(', ')} } from './.generated/config';`,
+  );
+  imports.push(`import type { Locale } from './.generated/types';`);
+  imports.push(
+    `import { createHandleLocale } from '@idiomi/tanstack-react/start';`,
+  );
+
+  // Generate handleLocale
+  exports.push('');
+  exports.push(`export const handleLocale = createHandleLocale<Locale>({`);
+  exports.push(`  locales,`);
+  exports.push(`  defaultLocale,`);
+  exports.push(`  prefixStrategy,`);
+  exports.push(`  detection,`);
+  if (routing.ignorePaths) {
+    exports.push(`  ignorePaths,`);
+  }
+  exports.push(`});`);
+
+  return [...imports, ...exports].join('\n');
+}
+
+/**
  * Format TypeScript code using Prettier.
  * Uses the user's Prettier config if found, otherwise falls back to {singleQuote: true}.
  */
@@ -1127,7 +1148,7 @@ interface GenerateIndexOptions {
 }
 
 async function generateIndexTs(options: GenerateIndexOptions): Promise<void> {
-  const { outputDir, locales, defaultLocale, routing } = options;
+  const { outputDir, routing } = options;
   // In non-suspense mode, Babel inlines translations at build time.
   // We call createTrans/createUseT without passing translations to avoid
   // importing translations.js at runtime, which enables tree shaking.
@@ -1165,12 +1186,31 @@ export type { IdiomiTypes, Locale };
   const filePath = join(outputDir, 'index.ts');
   const formatted = await formatWithPrettier(content, filePath);
   await fs.writeFile(filePath, formatted, 'utf-8');
+
+  // Generate server.ts for TanStack Start (keeps server code out of client bundles)
+  if (routing?.enabled && routing.framework === 'tanstack-start') {
+    const serverCode = generateServerCode({ routing });
+    if (serverCode) {
+      const serverContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Server-only exports for TanStack Start
+
+${serverCode}
+`;
+      const serverFilePath = join(outputDir, 'server.ts');
+      const formattedServer = await formatWithPrettier(
+        serverContent,
+        serverFilePath,
+      );
+      await fs.writeFile(serverFilePath, formattedServer, 'utf-8');
+    }
+  }
 }
 
 async function generateIndexTsSuspense(
   options: GenerateIndexOptions,
 ): Promise<void> {
-  const { outputDir, locales, defaultLocale, routing } = options;
+  const { outputDir, locales, routing } = options;
   const routeAwareCode =
     routing?.enabled && routing.framework
       ? generateRouteAwareCode({ routing })
@@ -1208,6 +1248,25 @@ export type { IdiomiTypes, Locale };
   const filePath = join(outputDir, 'index.ts');
   const formatted = await formatWithPrettier(content, filePath);
   await fs.writeFile(filePath, formatted, 'utf-8');
+
+  // Generate server.ts for TanStack Start (keeps server code out of client bundles)
+  if (routing?.enabled && routing.framework === 'tanstack-start') {
+    const serverCode = generateServerCode({ routing });
+    if (serverCode) {
+      const serverContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Server-only exports for TanStack Start
+
+${serverCode}
+`;
+      const serverFilePath = join(outputDir, 'server.ts');
+      const formattedServer = await formatWithPrettier(
+        serverContent,
+        serverFilePath,
+      );
+      await fs.writeFile(serverFilePath, formattedServer, 'utf-8');
+    }
+  }
 }
 
 async function generatePlainTs(outputDir: string): Promise<void> {

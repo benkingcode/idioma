@@ -201,7 +201,7 @@ import {
   defineHandlerCallback,
 } from '@tanstack/react-start/server';
 import { createServerEntry } from '@tanstack/react-start/server-entry';
-import { handleLocale } from './idiomi';
+import { handleLocale } from './idiomi/server';
 
 const customHandler = defineHandlerCallback(async (ctx) => {
   const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);
@@ -261,6 +261,7 @@ src/idiomi/
 │   ├── en.po
 │   └── es.po
 ├── index.ts             # User import: Trans, useT, Link, LocaleHead, createMiddleware (when routing enabled)
+├── server.ts            # Server-only exports for TanStack Start (handleLocale)
 ├── plain.ts             # User import: createT (non-React)
 └── .generated/          # Internal files (gitignored)
     ├── translations.js
