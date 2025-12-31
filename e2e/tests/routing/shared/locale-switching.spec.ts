@@ -30,6 +30,7 @@ test.describe('Locale Switching', () => {
 
     // Wait for hydration (SSR sends HTML first, then JS hydrates)
     await page.waitForLoadState('networkidle');
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
 
     // Switch to English
     await page.getByTestId('locale-en').click();
@@ -48,6 +49,9 @@ test.describe('Locale Switching', () => {
 
     // Verify we're on About
     await expect(page.getByTestId('about-page')).toBeVisible();
+
+    // Wait for hydration before clicking locale switch
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
 
     // Switch to Spanish
     await page.getByTestId('locale-es').click();
@@ -80,6 +84,9 @@ test.describe('Locale Switching', () => {
   });
 
   test('locale button shows active state', async ({ page }) => {
+    // Wait for hydration
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
+
     // English button should be active initially
     const enButton = page.getByTestId('locale-en');
     await expect(enButton).toHaveCSS('font-weight', '700'); // bold
@@ -94,9 +101,14 @@ test.describe('Locale Switching', () => {
   });
 
   test('rapid locale switching works correctly', async ({ page }) => {
+    // Wait for hydration
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
+
     // Switch back and forth rapidly
     await page.getByTestId('locale-es').click();
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
     await page.getByTestId('locale-en').click();
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
     await page.getByTestId('locale-es').click();
 
     // Should end up in Spanish

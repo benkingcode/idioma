@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createHandleLocale,
+  detectLocaleFromRequest,
   handleLocaleRequest,
   type LocaleServerEntryConfig,
 } from './server-entry.js';
@@ -276,6 +277,89 @@ describe('locale negotiation with language distance', () => {
 
     // With lookup, en-GB won't match en-US - falls back to default (de)
     expect(result.redirectUrl).toContain('/de/');
+  });
+});
+
+describe('detectLocaleFromRequest (standalone)', () => {
+  const baseConfig = {
+    locales: ['en', 'es', 'fr'] as const,
+    defaultLocale: 'en' as const,
+  };
+
+  it('detects locale from cookie', () => {
+    const request = createMockRequest('/about', {
+      cookie: 'IDIOMI_LOCALE=es',
+    });
+
+    const locale = detectLocaleFromRequest(request, baseConfig);
+
+    expect(locale).toBe('es');
+  });
+
+  it('detects locale from Accept-Language header', () => {
+    const request = createMockRequest('/about', {
+      'accept-language': 'fr-FR,fr;q=0.9,en;q=0.8',
+    });
+
+    const locale = detectLocaleFromRequest(request, baseConfig);
+
+    expect(locale).toBe('fr');
+  });
+
+  it('prefers cookie over header by default', () => {
+    const request = createMockRequest('/about', {
+      cookie: 'IDIOMI_LOCALE=es',
+      'accept-language': 'fr-FR',
+    });
+
+    const locale = detectLocaleFromRequest(request, baseConfig);
+
+    expect(locale).toBe('es');
+  });
+
+  it('respects custom detection order', () => {
+    const request = createMockRequest('/about', {
+      cookie: 'IDIOMI_LOCALE=es',
+      'accept-language': 'fr-FR',
+    });
+
+    const locale = detectLocaleFromRequest(request, {
+      ...baseConfig,
+      detection: { order: ['header', 'cookie'] },
+    });
+
+    expect(locale).toBe('fr');
+  });
+
+  it('returns defaultLocale when no detection succeeds', () => {
+    const request = createMockRequest('/about', {});
+
+    const locale = detectLocaleFromRequest(request, baseConfig);
+
+    expect(locale).toBe('en');
+  });
+
+  it('ignores invalid locale in cookie', () => {
+    const request = createMockRequest('/about', {
+      cookie: 'IDIOMI_LOCALE=de',
+    });
+
+    const locale = detectLocaleFromRequest(request, baseConfig);
+
+    expect(locale).toBe('en');
+  });
+
+  it('uses custom cookie name', () => {
+    const request = createMockRequest('/about', {
+      cookie: 'MY_LOCALE=es',
+    });
+
+    const locale = detectLocaleFromRequest(request, {
+      ...baseConfig,
+      detection: { cookieName: 'MY_LOCALE' },
+    });
+
+    expect(locale).toBe('es');
   });
 });
 

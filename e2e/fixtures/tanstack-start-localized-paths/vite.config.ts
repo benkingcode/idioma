@@ -5,5 +5,10 @@ import { defineConfig } from 'vite';
 import tsConfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-  plugins: [tsConfigPaths(), tanstackStart(), idiomi(), react()],
+  plugins: [tanstackStart(), tsConfigPaths(), idiomi(), react()],
+  server: {
+    hmr: {
+      overlay: false, // Disable error overlay to prevent blocking E2E tests
+    },
+  },
 });

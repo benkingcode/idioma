@@ -38,6 +38,12 @@ export interface ConfigGeneratorOptions {
   /** Base URL for absolute hreflang links */
   metadataBase?: string;
   /**
+   * Name of the route param used for locale.
+   * Used for runtime route matching in TanStack Router.
+   * @default 'locale'
+   */
+  localeParamName?: string;
+  /**
    * Paths to skip locale handling in middleware.
    * Supports glob array or regex string.
    */
@@ -66,6 +72,7 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
     prefixStrategy = 'as-needed',
     detection = {},
     metadataBase,
+    localeParamName = 'locale',
     ignorePaths,
   } = options;
 
@@ -83,6 +90,7 @@ export function generateConfigModule(options: ConfigGeneratorOptions): string {
     `export const defaultLocale = ${JSON.stringify(defaultLocale)};`,
     `export const prefixStrategy = ${JSON.stringify(prefixStrategy)};`,
     `export const detection = ${JSON.stringify({ order, cookieName, algorithm })};`,
+    `export const localeParamName = ${JSON.stringify(localeParamName)};`,
   ];
 
   if (metadataBase) {
@@ -122,6 +130,7 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     prefixStrategy = 'as-needed',
     detection = {},
     metadataBase,
+    localeParamName = 'locale',
     ignorePaths,
   } = options;
 
@@ -146,6 +155,7 @@ export function generateConfigTypes(options: ConfigGeneratorOptions): string {
     `  readonly cookieName: ${JSON.stringify(cookieName)};`,
     `  readonly algorithm: ${JSON.stringify(algorithm)};`,
     `};`,
+    `export declare const localeParamName: ${JSON.stringify(localeParamName)};`,
   ];
 
   if (metadataBase) {

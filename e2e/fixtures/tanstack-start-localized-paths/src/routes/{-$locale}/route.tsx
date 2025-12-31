@@ -4,6 +4,7 @@ import {
   Outlet,
   useLocation,
 } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import {
   defaultLocale,
   IdiomiProvider,
@@ -45,6 +46,12 @@ function LocaleLayout() {
 function Navigation() {
   const locale = useLocale();
   const location = useLocation();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Mark as hydrated when React is ready
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Calculate locale switch URLs using router location
   const currentPath = location.pathname;
@@ -76,6 +83,7 @@ function Navigation() {
   return (
     <nav
       data-testid="navigation"
+      data-hydrated={isHydrated ? 'true' : undefined}
       style={{
         marginBottom: '20px',
         display: 'flex',

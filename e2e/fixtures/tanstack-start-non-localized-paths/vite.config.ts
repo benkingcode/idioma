@@ -6,4 +6,9 @@ import tsConfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [tsConfigPaths(), tanstackStart(), idiomi(), react()],
+  server: {
+    hmr: {
+      overlay: false, // Disable error overlay to prevent blocking E2E tests
+    },
+  },
 });

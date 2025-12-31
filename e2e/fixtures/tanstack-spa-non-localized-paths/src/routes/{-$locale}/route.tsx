@@ -4,6 +4,7 @@ import {
   Outlet,
   useNavigate,
 } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import {
   detectClientLocale,
   IdiomiProvider,
@@ -43,6 +44,12 @@ function LocaleLayout() {
 function Navigation() {
   const locale = useLocale();
   const navigate = useNavigate();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Mark as hydrated when React is ready
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const handleLocaleChange = (newLocale: Locale) => {
     setLocaleCookie(newLocale);
@@ -67,6 +74,7 @@ function Navigation() {
   return (
     <nav
       data-testid="navigation"
+      data-hydrated={isHydrated ? 'true' : undefined}
       style={{
         marginBottom: '20px',
         display: 'flex',

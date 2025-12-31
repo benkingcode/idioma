@@ -1026,7 +1026,7 @@ import {
   defineHandlerCallback,
 } from '@tanstack/react-start/server';
 import { createServerEntry } from '@tanstack/react-start/server-entry';
-import { handleLocale } from './idiomi';
+import { handleLocale } from './idiomi/server';
 
 const customHandler = defineHandlerCallback(async (ctx) => {
   const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);

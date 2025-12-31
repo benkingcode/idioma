@@ -65,6 +65,21 @@ describe('generateConfigModule', () => {
 
     expect(result).toContain('export const prefixStrategy = "never"');
   });
+
+  it('generates localeParamName with default value', () => {
+    const result = generateConfigModule(baseOptions);
+
+    expect(result).toContain('export const localeParamName = "locale"');
+  });
+
+  it('generates localeParamName with custom value', () => {
+    const result = generateConfigModule({
+      ...baseOptions,
+      localeParamName: 'lang',
+    });
+
+    expect(result).toContain('export const localeParamName = "lang"');
+  });
 });
 
 describe('generateConfigTypes', () => {
@@ -126,5 +141,20 @@ describe('generateConfigTypes', () => {
     expect(result).toContain('readonly order: readonly ["header"]');
     expect(result).toContain('readonly cookieName: "MY_LOCALE"');
     expect(result).toContain('readonly algorithm: "lookup"');
+  });
+
+  it('generates localeParamName type with default value', () => {
+    const result = generateConfigTypes(baseOptions);
+
+    expect(result).toContain('export declare const localeParamName: "locale"');
+  });
+
+  it('generates localeParamName type with custom value', () => {
+    const result = generateConfigTypes({
+      ...baseOptions,
+      localeParamName: 'lang',
+    });
+
+    expect(result).toContain('export declare const localeParamName: "lang"');
   });
 });

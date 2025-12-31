@@ -8,14 +8,15 @@ import {
   createUseLocale,
   createUseT,
 } from '@idiomi/react';
+import { createLocaleHead, createUrlRewriter } from '@idiomi/tanstack-react';
 import {
-  createLocaleHead,
+  createDetectLocaleSsr,
   createLocaleLoader,
-  createUrlRewriter,
-} from '@idiomi/tanstack-react';
+} from '@idiomi/tanstack-react/start';
 import {
   defaultLocale,
   detection,
+  localeParamName,
   locales,
   metadataBase,
   prefixStrategy,
@@ -41,6 +42,12 @@ export const { detectClientLocale } = createLocaleLoader<Locale>({
   detection,
 });
 
+export const detectLocale = createDetectLocaleSsr<Locale>({
+  locales,
+  defaultLocale,
+  detection,
+});
+
 export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   locales,
   defaultLocale,
@@ -49,6 +56,8 @@ export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   reverseRoutes,
   routePatterns,
 });
+
+export { localeParamName };
 
 export { getLocaleHead } from '@idiomi/react';
 

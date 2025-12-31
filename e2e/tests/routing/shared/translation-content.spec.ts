@@ -106,6 +106,9 @@ test.describe('Translation Content', () => {
 
       // Wait for hydration (SSR sends HTML first, then JS hydrates)
       await page.waitForLoadState('networkidle');
+      await page.waitForSelector('[data-hydrated="true"]', {
+        state: 'attached',
+      });
 
       // Switch to English
       await page.getByTestId('locale-en').click();

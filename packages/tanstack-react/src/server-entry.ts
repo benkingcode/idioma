@@ -36,6 +36,26 @@ import picomatch from 'picomatch';
 // Types
 // ============================================================
 
+/**
+ * Simplified config for standalone locale detection (without routing logic).
+ * Use this with `detectLocaleFromRequest()` for non-localized routes.
+ */
+export interface LocaleDetectionConfig<L extends string = string> {
+  /** Supported locales */
+  locales: readonly L[];
+  /** Default/fallback locale */
+  defaultLocale: L;
+  /** Locale detection configuration */
+  detection?: {
+    /** Cookie name for storing locale preference */
+    cookieName?: string;
+    /** Order of detection sources */
+    order?: readonly ('cookie' | 'header')[];
+    /** Matching algorithm for Accept-Language */
+    algorithm?: 'lookup' | 'best fit';
+  };
+}
+
 export interface LocaleServerEntryConfig<L extends string = string> {
   /** Supported locales */
   locales: readonly L[];
@@ -154,11 +174,23 @@ function shouldSkipPath<L extends string>(
 }
 
 /**
- * Detect locale from request headers.
+ * Detect locale from request headers (cookie and Accept-Language).
+ *
+ * This is a standalone function for use with non-localized routes where
+ * you need locale detection without URL prefix handling.
+ *
+ * @example
+ * ```typescript
+ * // In server handler for non-localized route
+ * const locale = detectLocaleFromRequest(ctx.request, {
+ *   locales: ['en', 'es'],
+ *   defaultLocale: 'en',
+ * });
+ * ```
  */
-function detectLocaleFromRequest<L extends string>(
+export function detectLocaleFromRequest<L extends string>(
   request: Request,
-  config: LocaleServerEntryConfig<L>,
+  config: LocaleDetectionConfig<L>,
 ): L {
   const { locales, defaultLocale, detection } = config;
   const cookieName = detection?.cookieName ?? DEFAULT_COOKIE_NAME;

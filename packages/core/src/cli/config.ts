@@ -53,6 +53,15 @@ const RoutingConfigSchema = z
      */
     metadataBase: z.string().optional(),
     /**
+     * Name of the route param used for locale in TanStack Router routes.
+     * Used to auto-detect whether a route is localized via `router.matchRoute()`.
+     *
+     * Matches `{-$locale}`, `{$locale}`, or `$locale` in route definitions.
+     * @default 'locale'
+     * @example 'lang' for routes using {-$lang}
+     */
+    localeParamName: z.string().default('locale'),
+    /**
      * Enable localized pathnames (e.g., /es/sobre instead of /es/about).
      * When enabled, route segments are extracted to PO files for translation.
      * @default false

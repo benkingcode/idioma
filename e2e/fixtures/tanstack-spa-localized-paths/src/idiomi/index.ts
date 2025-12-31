@@ -9,6 +9,7 @@ import {
   createUseT,
 } from '@idiomi/react';
 import {
+  createDetectLocale,
   createLocaleHead,
   createLocaleLoader,
   createUrlRewriter,
@@ -16,6 +17,7 @@ import {
 import {
   defaultLocale,
   detection,
+  localeParamName,
   locales,
   metadataBase,
   prefixStrategy,
@@ -41,6 +43,12 @@ export const { localeLoader, detectClientLocale } = createLocaleLoader<Locale>({
   detection,
 });
 
+export const detectLocale = createDetectLocale<Locale>({
+  locales,
+  defaultLocale,
+  detection,
+});
+
 export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   locales,
   defaultLocale,
@@ -49,6 +57,8 @@ export const { delocalizeUrl, localizeUrl } = createUrlRewriter<Locale>({
   reverseRoutes,
   routePatterns,
 });
+
+export { localeParamName };
 
 export { getLocaleHead } from '@idiomi/react';
 

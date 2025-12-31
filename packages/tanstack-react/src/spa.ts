@@ -107,6 +107,94 @@ export interface PrefixOnlyRewriterApi {
 }
 
 // ============================================================
+// createDetectLocale Factory
+// ============================================================
+
+/**
+ * Simplified config for locale detection without routing logic.
+ */
+export interface DetectLocaleConfig<L extends string = string> {
+  readonly locales: readonly L[];
+  readonly defaultLocale: L;
+  readonly detection: DetectionConfig;
+}
+
+/**
+ * Creates a locale detection function for TanStack Router SPAs.
+ *
+ * This is a standalone factory for use with non-localized routes where
+ * you need locale detection without URL prefix handling.
+ *
+ * @example
+ * ```typescript
+ * import { createDetectLocale } from '@idiomi/tanstack-react';
+ *
+ * const detectLocale = createDetectLocale({
+ *   locales: ['en', 'es'],
+ *   defaultLocale: 'en',
+ *   detection: { order: ['cookie', 'header'], cookieName: 'IDIOMI_LOCALE' },
+ * });
+ *
+ * // In a non-localized route component:
+ * function DashboardPage() {
+ *   const locale = detectLocale();
+ *   return <IdiomiProvider locale={locale}>...</IdiomiProvider>;
+ * }
+ * ```
+ */
+export function createDetectLocale<L extends string>(
+  config: DetectLocaleConfig<L>,
+): () => L {
+  const { locales, defaultLocale, detection } = config;
+
+  function getCookie(name: string): string | undefined {
+    if (typeof document === 'undefined') return undefined;
+    const match = document.cookie.match(
+      new RegExp(`(?:^|;\\s*)${name}=([^;]*)`),
+    );
+    return match?.[1];
+  }
+
+  function matchBrowserLocale(
+    browserLocales: readonly string[],
+  ): L | undefined {
+    for (const browserLang of browserLocales) {
+      const normalized = browserLang.toLowerCase();
+      // Exact match
+      for (const locale of locales) {
+        if (locale.toLowerCase() === normalized) return locale;
+      }
+      // Prefix match (e.g., 'en-US' matches 'en')
+      const prefix = normalized.split('-')[0];
+      for (const locale of locales) {
+        if (locale.toLowerCase() === prefix) return locale;
+        if (locale.toLowerCase().startsWith(prefix + '-')) return locale;
+      }
+    }
+    return undefined;
+  }
+
+  return function detectLocale(): L {
+    for (const source of detection.order) {
+      if (source === 'cookie') {
+        const cookie = getCookie(detection.cookieName);
+        if (cookie && (locales as readonly string[]).includes(cookie)) {
+          return cookie as L;
+        }
+      }
+      if (source === 'header') {
+        // 'header' = navigator.languages on client (skip during SSR)
+        if (typeof navigator !== 'undefined' && navigator.languages?.length) {
+          const matched = matchBrowserLocale(navigator.languages);
+          if (matched) return matched;
+        }
+      }
+    }
+    return defaultLocale;
+  };
+}
+
+// ============================================================
 // createLocaleLoader Factory
 // ============================================================
 

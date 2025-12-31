@@ -3,6 +3,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  createDetectLocale,
   createLocaleLoader,
   createPrefixOnlyRewriter,
   createUrlRewriter,
@@ -316,6 +317,55 @@ describe('createUrlRewriter', () => {
 
       expect(result.pathname).toBe('/about');
     });
+  });
+});
+
+describe('createDetectLocale', () => {
+  const baseConfig = {
+    locales: ['en', 'es'] as const,
+    defaultLocale: 'en' as const,
+    detection: {
+      order: ['cookie', 'header'] as const,
+      cookieName: 'IDIOMI_LOCALE',
+    },
+  };
+
+  beforeEach(() => {
+    Object.defineProperty(document, 'cookie', {
+      writable: true,
+      value: '',
+    });
+  });
+
+  it('returns a detectLocale function', () => {
+    const detectLocale = createDetectLocale(baseConfig);
+    expect(typeof detectLocale).toBe('function');
+  });
+
+  it('returns default locale when no cookie or navigator', () => {
+    const detectLocale = createDetectLocale(baseConfig);
+    expect(detectLocale()).toBe('en');
+  });
+
+  it('detects locale from cookie', () => {
+    document.cookie = 'IDIOMI_LOCALE=es';
+    const detectLocale = createDetectLocale(baseConfig);
+    expect(detectLocale()).toBe('es');
+  });
+
+  it('ignores invalid locale in cookie', () => {
+    document.cookie = 'IDIOMI_LOCALE=fr';
+    const detectLocale = createDetectLocale(baseConfig);
+    expect(detectLocale()).toBe('en');
+  });
+
+  it('uses custom cookie name', () => {
+    document.cookie = 'MY_LANG=es';
+    const detectLocale = createDetectLocale({
+      ...baseConfig,
+      detection: { ...baseConfig.detection, cookieName: 'MY_LANG' },
+    });
+    expect(detectLocale()).toBe('es');
   });
 });
 
