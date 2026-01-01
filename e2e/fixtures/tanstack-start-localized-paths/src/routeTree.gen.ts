@@ -17,6 +17,7 @@ import { Route as Char123LocaleChar125ContactRouteImport } from './routes/{-$loc
 import { Route as Char123LocaleChar125BlogRouteImport } from './routes/{-$locale}/blog'
 import { Route as Char123LocaleChar125AboutRouteImport } from './routes/{-$locale}/about'
 import { Route as Char123LocaleChar125ProductsFeaturedRouteImport } from './routes/{-$locale}/products.featured'
+import { Route as Char123LocaleChar125DocsSplatRouteImport } from './routes/{-$locale}/docs.$'
 import { Route as Char123LocaleChar125BlogSlugRouteImport } from './routes/{-$locale}/blog.$slug'
 import { Route as Char123LocaleChar125UsersUserIdIndexRouteImport } from './routes/{-$locale}/users.$userId.index'
 import { Route as Char123LocaleChar125UsersUserIdPostsRouteImport } from './routes/{-$locale}/users.$userId.posts'
@@ -72,6 +73,12 @@ const Char123LocaleChar125ProductsFeaturedRoute =
     path: '/products/featured',
     getParentRoute: () => Char123LocaleChar125RouteRoute,
   } as any)
+const Char123LocaleChar125DocsSplatRoute =
+  Char123LocaleChar125DocsSplatRouteImport.update({
+    id: '/docs/$',
+    path: '/docs/$',
+    getParentRoute: () => Char123LocaleChar125RouteRoute,
+  } as any)
 const Char123LocaleChar125BlogSlugRoute =
   Char123LocaleChar125BlogSlugRouteImport.update({
     id: '/$slug',
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
+  '/{-$locale}/docs/$': typeof Char123LocaleChar125DocsSplatRoute
   '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
   '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
   '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
+  '/{-$locale}/docs/$': typeof Char123LocaleChar125DocsSplatRoute
   '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
   '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
   '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
@@ -150,6 +159,7 @@ export interface FileRoutesById {
   '/{-$locale}/tests': typeof Char123LocaleChar125TestsRoute
   '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
   '/{-$locale}/blog/$slug': typeof Char123LocaleChar125BlogSlugRoute
+  '/{-$locale}/docs/$': typeof Char123LocaleChar125DocsSplatRoute
   '/{-$locale}/products/featured': typeof Char123LocaleChar125ProductsFeaturedRoute
   '/{-$locale}/shop/$category/$productId': typeof Char123LocaleChar125ShopCategoryProductIdRoute
   '/{-$locale}/users/$userId/posts': typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/tests'
     | '/{-$locale}/'
     | '/{-$locale}/blog/$slug'
+    | '/{-$locale}/docs/$'
     | '/{-$locale}/products/featured'
     | '/{-$locale}/shop/$category/$productId'
     | '/{-$locale}/users/$userId/posts'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/tests'
     | '/{-$locale}'
     | '/{-$locale}/blog/$slug'
+    | '/{-$locale}/docs/$'
     | '/{-$locale}/products/featured'
     | '/{-$locale}/shop/$category/$productId'
     | '/{-$locale}/users/$userId/posts'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
     | '/{-$locale}/tests'
     | '/{-$locale}/'
     | '/{-$locale}/blog/$slug'
+    | '/{-$locale}/docs/$'
     | '/{-$locale}/products/featured'
     | '/{-$locale}/shop/$category/$productId'
     | '/{-$locale}/users/$userId/posts'
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/products/featured'
       fullPath: '/{-$locale}/products/featured'
       preLoaderRoute: typeof Char123LocaleChar125ProductsFeaturedRouteImport
+      parentRoute: typeof Char123LocaleChar125RouteRoute
+    }
+    '/{-$locale}/docs/$': {
+      id: '/{-$locale}/docs/$'
+      path: '/docs/$'
+      fullPath: '/{-$locale}/docs/$'
+      preLoaderRoute: typeof Char123LocaleChar125DocsSplatRouteImport
       parentRoute: typeof Char123LocaleChar125RouteRoute
     }
     '/{-$locale}/blog/$slug': {
@@ -350,6 +370,7 @@ interface Char123LocaleChar125RouteRouteChildren {
   Char123LocaleChar125StressTestRoute: typeof Char123LocaleChar125StressTestRoute
   Char123LocaleChar125TestsRoute: typeof Char123LocaleChar125TestsRoute
   Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
+  Char123LocaleChar125DocsSplatRoute: typeof Char123LocaleChar125DocsSplatRoute
   Char123LocaleChar125ProductsFeaturedRoute: typeof Char123LocaleChar125ProductsFeaturedRoute
   Char123LocaleChar125ShopCategoryProductIdRoute: typeof Char123LocaleChar125ShopCategoryProductIdRoute
   Char123LocaleChar125UsersUserIdPostsRoute: typeof Char123LocaleChar125UsersUserIdPostsRouteWithChildren
@@ -365,6 +386,7 @@ const Char123LocaleChar125RouteRouteChildren: Char123LocaleChar125RouteRouteChil
     Char123LocaleChar125StressTestRoute: Char123LocaleChar125StressTestRoute,
     Char123LocaleChar125TestsRoute: Char123LocaleChar125TestsRoute,
     Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
+    Char123LocaleChar125DocsSplatRoute: Char123LocaleChar125DocsSplatRoute,
     Char123LocaleChar125ProductsFeaturedRoute:
       Char123LocaleChar125ProductsFeaturedRoute,
     Char123LocaleChar125ShopCategoryProductIdRoute:
