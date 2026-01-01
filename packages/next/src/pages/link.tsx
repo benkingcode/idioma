@@ -11,8 +11,7 @@ export type RoutesMap = Record<string, Record<string, string>>;
 /** Configuration for Pages Router Link */
 export interface PagesLinkConfig {
   routes?: RoutesMap;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  routePatterns?: readonly RoutePattern<any>[];
+  routePatterns?: readonly RoutePattern<string>[];
 }
 
 export interface PagesLinkProps extends Omit<

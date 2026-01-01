@@ -45,8 +45,7 @@ export interface IdiomiMiddlewareConfig {
   /** Reverse route maps - only needed when localizedPaths is enabled */
   reverseRoutes?: Record<string, Record<string, string>>;
   /** Route patterns for dynamic segment matching */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  routePatterns?: readonly RoutePattern<any>[];
+  routePatterns?: readonly RoutePattern<string>[];
 }
 
 /** Paths to skip (static files, API routes, Next.js internals) */
@@ -267,8 +266,7 @@ export interface MiddlewareFactoryConfig {
   /** Reverse route maps (from compiled routes) */
   reverseRoutes?: Record<string, Record<string, string>>;
   /** Route patterns for dynamic segment matching */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  routePatterns?: readonly RoutePattern<any>[];
+  routePatterns?: readonly RoutePattern<string>[];
 }
 
 /** Runtime options that can be overridden */

@@ -25,8 +25,7 @@ export interface LocaleHeadConfig {
   /** Reverse route maps for localized → canonical path conversion */
   reverseRoutes?: Record<string, Record<string, string>>;
   /** Route patterns for dynamic segment matching */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  routePatterns?: readonly RoutePattern<any>[];
+  routePatterns?: readonly RoutePattern<string>[];
   /** Prefix strategy for locale URLs */
   prefixStrategy?: 'always' | 'as-needed' | 'never';
 }

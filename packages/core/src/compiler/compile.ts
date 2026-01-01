@@ -1205,10 +1205,7 @@ function generateNextMiddlewareCode(options: RouteAwareCodeOptions): string {
   if (routing.localizedPaths) {
     exports.push(`  routes,`);
     exports.push(`  reverseRoutes,`);
-    exports.push(
-      `  // eslint-disable-next-line @typescript-eslint/no-explicit-any`,
-    );
-    exports.push(`  routePatterns: routePatterns as any,`);
+    exports.push(`  routePatterns,`);
   }
   exports.push(`});`);
 

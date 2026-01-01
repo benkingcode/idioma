@@ -216,7 +216,8 @@ export function generateRoutesTypes(
     'export declare const reverseRoutes: Record<Locale, Record<string, string>>;',
     '',
     '// Route patterns for segment-level matching with dynamic params',
-    'export declare const routePatterns: readonly RoutePattern<Locale>[];',
+    '// Uses RoutePattern<string> to avoid TypeScript variance issues with Record<Locale, X>',
+    'export declare const routePatterns: readonly RoutePattern<string>[];',
   ];
 
   // TanStack: Include helper function types

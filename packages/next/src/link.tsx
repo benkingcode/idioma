@@ -13,8 +13,7 @@ export type RoutesMap = Record<string, Record<string, string>>;
 export interface LinkConfig {
   routes?: RoutesMap;
   /** Route patterns for dynamic segment matching */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  routePatterns?: readonly RoutePattern<any>[];
+  routePatterns?: readonly RoutePattern<string>[];
   defaultLocale: string;
   prefixStrategy: 'always' | 'as-needed' | 'never';
 }

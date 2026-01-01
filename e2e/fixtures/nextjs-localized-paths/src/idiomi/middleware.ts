@@ -11,6 +11,5 @@ export const createMiddleware = createMiddlewareFactory({
   defaultLocale,
   routes,
   reverseRoutes,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  routePatterns: routePatterns as any,
+  routePatterns,
 });
