@@ -309,7 +309,11 @@ export async function compileTranslations(
 
   // Generate routes if localizedPaths is enabled
   if (routing?.localizedPaths && routing.framework && projectRoot) {
-    const extractedRoutes = await extractRoutes(projectRoot, routing.framework);
+    const extractedRoutes = await extractRoutes({
+      projectRoot,
+      framework: routing.framework,
+      localeParamName: routing.localeParamName,
+    });
     const routeMessages = extractRouteMessagesFromCatalogs(catalogs, [
       ...detectedLocales,
     ]);
@@ -857,12 +861,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     );
 
     // TanStack: Users use TanStack's native Link with URL rewriting - no createLink
-    // Next.js: Still uses createLink for backward compatibility
+    // Next.js: Client-only code (Link, LocaleHead) and middleware are in separate files
     if (isNextJs) {
-      imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
-      imports.push(
-        `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
-      );
+      // For Next.js, client-only code is in client.ts and middleware is in middleware.ts
+      // Only import getLocaleHead here for programmatic use
     } else if (isTanStack) {
       // TanStack uses factories for locale detection and URL rewriting
       if (isTanStackStart && serverPkg) {
@@ -883,39 +885,20 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
 
     exports.push('');
 
-    // Generate Link with config (Next.js only - TanStack uses native Link)
-    if (isNextJs) {
-      exports.push('export const Link = createLink({');
-      exports.push('  routes,');
-      exports.push('  defaultLocale,');
-      exports.push('  prefixStrategy,');
-      exports.push('});');
-      exports.push('');
-    }
+    // Generate LocaleHead with config (TanStack only - Next.js has it in client.ts)
+    if (isTanStack) {
+      const localeHeadConfig: string[] = [];
+      if (routing.metadataBase) {
+        localeHeadConfig.push(`  metadataBase,`);
+      }
+      localeHeadConfig.push(`  locales,`);
+      localeHeadConfig.push(`  defaultLocale,`);
+      localeHeadConfig.push(`  routes,`);
+      localeHeadConfig.push(`  reverseRoutes,`);
+      localeHeadConfig.push(`  prefixStrategy,`);
 
-    // Generate LocaleHead with config (uses imported variables from .generated/config)
-    const localeHeadConfig: string[] = [];
-    if (routing.metadataBase) {
-      localeHeadConfig.push(`  metadataBase,`);
-    }
-    localeHeadConfig.push(`  locales,`);
-    localeHeadConfig.push(`  defaultLocale,`);
-    localeHeadConfig.push(`  routes,`);
-    localeHeadConfig.push(`  reverseRoutes,`);
-    localeHeadConfig.push(`  prefixStrategy,`);
-
-    exports.push(`export const LocaleHead = createLocaleHead({`);
-    exports.push(...localeHeadConfig);
-    exports.push(`});`);
-    exports.push('');
-
-    // Generate createMiddleware factory for Next.js (uses imported variables from .generated/config)
-    if (isNextJs) {
-      exports.push(`export const createMiddleware = createMiddlewareFactory({`);
-      exports.push(`  locales,`);
-      exports.push(`  defaultLocale,`);
-      exports.push(`  routes,`);
-      exports.push(`  reverseRoutes,`);
+      exports.push(`export const LocaleHead = createLocaleHead({`);
+      exports.push(...localeHeadConfig);
       exports.push(`});`);
       exports.push('');
     }
@@ -982,9 +965,10 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     );
 
     // TanStack: Users use TanStack's native Link - no createLink
-    // Next.js: Still uses createLink for backward compatibility
+    // Next.js: Client-only code is in client.ts, middleware in middleware.ts
     if (isNextJs) {
-      imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+      // For Next.js, client-only code is in client.ts
+      // Only import getLocaleHead here for programmatic use
     } else if (isTanStack) {
       // TanStack uses factories for locale detection and URL rewriting
       if (isTanStackStart && serverPkg) {
@@ -1005,28 +989,21 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
 
     exports.push('');
 
-    // Generate Link with config but without routes (Next.js only - TanStack uses native Link)
-    if (isNextJs) {
-      exports.push('export const Link = createLink({');
-      exports.push('  defaultLocale,');
-      exports.push('  prefixStrategy,');
-      exports.push('});');
+    // Generate LocaleHead with config but without routes (TanStack only - Next.js has it in client.ts)
+    if (isTanStack) {
+      const localeHeadConfig: string[] = [];
+      if (routing.metadataBase) {
+        localeHeadConfig.push(`  metadataBase,`);
+      }
+      localeHeadConfig.push(`  locales,`);
+      localeHeadConfig.push(`  defaultLocale,`);
+      localeHeadConfig.push(`  prefixStrategy,`);
+
+      exports.push(`export const LocaleHead = createLocaleHead({`);
+      exports.push(...localeHeadConfig);
+      exports.push(`});`);
       exports.push('');
     }
-
-    // Generate LocaleHead with config but without routes (uses imported variables from .generated/config)
-    const localeHeadConfig: string[] = [];
-    if (routing.metadataBase) {
-      localeHeadConfig.push(`  metadataBase,`);
-    }
-    localeHeadConfig.push(`  locales,`);
-    localeHeadConfig.push(`  defaultLocale,`);
-    localeHeadConfig.push(`  prefixStrategy,`);
-
-    exports.push(`export const LocaleHead = createLocaleHead({`);
-    exports.push(...localeHeadConfig);
-    exports.push(`});`);
-    exports.push('');
 
     // Generate TanStack functions using factories
     if (isTanStack) {
@@ -1123,6 +1100,122 @@ function generateServerCode(options: RouteAwareCodeOptions): string {
 }
 
 /**
+ * Generate Next.js client.ts file with 'use client' directive.
+ * Contains Link and LocaleHead which are client-only components.
+ */
+function generateNextClientCode(options: RouteAwareCodeOptions): string {
+  const { routing } = options;
+
+  // Only generate for Next.js
+  if (routing.framework !== 'next-app' && routing.framework !== 'next-pages') {
+    return '';
+  }
+
+  const pkg = getLinkPackage(routing.framework);
+  if (!pkg) return '';
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+
+  imports.push(`'use client';`);
+  imports.push('');
+  imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+
+  // Import config values
+  const configImports = ['locales', 'defaultLocale', 'prefixStrategy'];
+  if (routing.metadataBase) {
+    configImports.push('metadataBase');
+  }
+  imports.push(
+    `import { ${configImports.join(', ')} } from './.generated/config';`,
+  );
+
+  if (routing.localizedPaths) {
+    imports.push(
+      `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
+    );
+  }
+
+  exports.push('');
+
+  // Generate Link
+  exports.push('export const Link = createLink({');
+  if (routing.localizedPaths) {
+    exports.push('  routes,');
+    exports.push('  routePatterns,');
+  }
+  exports.push('  defaultLocale,');
+  exports.push('  prefixStrategy,');
+  exports.push('});');
+  exports.push('');
+
+  // Generate LocaleHead
+  const localeHeadConfig: string[] = [];
+  if (routing.metadataBase) {
+    localeHeadConfig.push(`  metadataBase,`);
+  }
+  localeHeadConfig.push(`  locales,`);
+  localeHeadConfig.push(`  defaultLocale,`);
+  if (routing.localizedPaths) {
+    localeHeadConfig.push(`  routes,`);
+    localeHeadConfig.push(`  reverseRoutes,`);
+    localeHeadConfig.push(`  routePatterns,`);
+  }
+  localeHeadConfig.push(`  prefixStrategy,`);
+
+  exports.push(`export const LocaleHead = createLocaleHead({`);
+  exports.push(...localeHeadConfig);
+  exports.push(`});`);
+
+  return [...imports, ...exports].join('\n');
+}
+
+/**
+ * Generate Next.js middleware.ts file for edge runtime.
+ * Contains createMiddleware which runs on edge and can't import client-only code.
+ */
+function generateNextMiddlewareCode(options: RouteAwareCodeOptions): string {
+  const { routing } = options;
+
+  // Only generate for Next.js
+  if (routing.framework !== 'next-app' && routing.framework !== 'next-pages') {
+    return '';
+  }
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+
+  imports.push(
+    `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
+  );
+
+  // Import config values
+  imports.push(`import { locales, defaultLocale } from './.generated/config';`);
+
+  if (routing.localizedPaths) {
+    imports.push(
+      `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
+    );
+  }
+
+  exports.push('');
+  exports.push(`export const createMiddleware = createMiddlewareFactory({`);
+  exports.push(`  locales,`);
+  exports.push(`  defaultLocale,`);
+  if (routing.localizedPaths) {
+    exports.push(`  routes,`);
+    exports.push(`  reverseRoutes,`);
+    exports.push(
+      `  // eslint-disable-next-line @typescript-eslint/no-explicit-any`,
+    );
+    exports.push(`  routePatterns: routePatterns as any,`);
+  }
+  exports.push(`});`);
+
+  return [...imports, ...exports].join('\n');
+}
+
+/**
  * Format TypeScript code using Prettier.
  * Uses the user's Prettier config if found, otherwise falls back to {singleQuote: true}.
  */
@@ -1157,11 +1250,17 @@ async function generateIndexTs(options: GenerateIndexOptions): Promise<void> {
       ? generateRouteAwareCode({ routing })
       : '';
 
+  // Next.js App Router requires 'use client' since createTrans/createUseT
+  // factory functions must execute on the client
+  const needsUseClient =
+    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
+  const useClientDirective = needsUseClient ? `'use client';\n\n` : '';
+
   const content = `// Auto-generated by @idiomi/core
 // Do not edit directly
 // Translations are inlined by Babel at build time
 
-import {
+${useClientDirective}import {
   createIdiomiProvider,
   createTrans,
   createUseLocale,
@@ -1203,6 +1302,45 @@ ${serverCode}
         serverFilePath,
       );
       await fs.writeFile(serverFilePath, formattedServer, 'utf-8');
+    }
+  }
+
+  // Generate client.ts and middleware.ts for Next.js (keeps client/edge code separate)
+  const isNextJs =
+    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
+  if (routing?.enabled && isNextJs) {
+    // Generate client.ts with 'use client' directive
+    const clientCode = generateNextClientCode({ routing });
+    if (clientCode) {
+      const clientContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client-only exports for Next.js
+
+${clientCode}
+`;
+      const clientFilePath = join(outputDir, 'client.ts');
+      const formattedClient = await formatWithPrettier(
+        clientContent,
+        clientFilePath,
+      );
+      await fs.writeFile(clientFilePath, formattedClient, 'utf-8');
+    }
+
+    // Generate middleware.ts for edge runtime
+    const middlewareCode = generateNextMiddlewareCode({ routing });
+    if (middlewareCode) {
+      const middlewareContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Middleware exports for Next.js edge runtime
+
+${middlewareCode}
+`;
+      const middlewareFilePath = join(outputDir, 'middleware.ts');
+      const formattedMiddleware = await formatWithPrettier(
+        middlewareContent,
+        middlewareFilePath,
+      );
+      await fs.writeFile(middlewareFilePath, formattedMiddleware, 'utf-8');
     }
   }
 }
@@ -1265,6 +1403,45 @@ ${serverCode}
         serverFilePath,
       );
       await fs.writeFile(serverFilePath, formattedServer, 'utf-8');
+    }
+  }
+
+  // Generate client.ts and middleware.ts for Next.js (keeps client/edge code separate)
+  const isNextJs =
+    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
+  if (routing?.enabled && isNextJs) {
+    // Generate client.ts with 'use client' directive
+    const clientCode = generateNextClientCode({ routing });
+    if (clientCode) {
+      const clientContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client-only exports for Next.js
+
+${clientCode}
+`;
+      const clientFilePath = join(outputDir, 'client.ts');
+      const formattedClient = await formatWithPrettier(
+        clientContent,
+        clientFilePath,
+      );
+      await fs.writeFile(clientFilePath, formattedClient, 'utf-8');
+    }
+
+    // Generate middleware.ts for edge runtime
+    const middlewareCode = generateNextMiddlewareCode({ routing });
+    if (middlewareCode) {
+      const middlewareContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Middleware exports for Next.js edge runtime
+
+${middlewareCode}
+`;
+      const middlewareFilePath = join(outputDir, 'middleware.ts');
+      const formattedMiddleware = await formatWithPrettier(
+        middlewareContent,
+        middlewareFilePath,
+      );
+      await fs.writeFile(middlewareFilePath, formattedMiddleware, 'utf-8');
     }
   }
 }

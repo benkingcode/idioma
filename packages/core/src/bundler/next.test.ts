@@ -291,6 +291,12 @@ describe('IdiomiWebpackPlugin', () => {
 
     webpackPlugin.apply(mockCompiler);
 
+    // First call beforeCompile to initialize the resolved config
+    const [, beforeCompileCallback] = (
+      mockCompiler.hooks.beforeCompile.tapAsync as Mock
+    ).mock.calls[0];
+    await beforeCompileCallback({}, vi.fn());
+
     const [, watchRunCallback] = (mockCompiler.hooks.watchRun.tapAsync as Mock)
       .mock.calls[0];
 

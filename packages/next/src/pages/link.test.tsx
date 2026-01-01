@@ -148,7 +148,7 @@ describe('createLink factory', () => {
   };
 
   it('creates Link with routes pre-configured', () => {
-    const LocalizedLink = createLink(routes);
+    const LocalizedLink = createLink({ routes });
 
     render(<LocalizedLink href="/about">About</LocalizedLink>);
 
@@ -166,7 +166,7 @@ describe('createLink factory', () => {
       es: { '/about': '/acerca' },
     };
 
-    const LocalizedLink = createLink(factoryRoutes);
+    const LocalizedLink = createLink({ routes: factoryRoutes });
 
     render(
       <LocalizedLink href="/about" routes={propRoutes}>
@@ -179,7 +179,7 @@ describe('createLink factory', () => {
   });
 
   it('allows locale prop to override router locale', () => {
-    const LocalizedLink = createLink(routes);
+    const LocalizedLink = createLink({ routes });
 
     render(
       <LocalizedLink href="/about" locale="fr">

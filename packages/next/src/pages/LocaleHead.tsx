@@ -1,5 +1,6 @@
 'use client';
 
+import type { RoutePattern } from '@idiomi/core/routes';
 import { getLocaleHead, type RoutesMap } from '@idiomi/react';
 import { useRouter } from 'next/router';
 import React from 'react';
@@ -20,6 +21,11 @@ export interface LocaleHeadConfig {
   defaultLocale: string;
   /** Route translations map (from compiled routes) */
   routes?: RoutesMap;
+  /** Reverse route maps for localized → canonical path conversion */
+  reverseRoutes?: Record<string, Record<string, string>>;
+  /** Route patterns for dynamic segment matching */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  routePatterns?: readonly RoutePattern<any>[];
   /** Prefix strategy for locale URLs */
   prefixStrategy?: 'always' | 'as-needed' | 'never';
 }

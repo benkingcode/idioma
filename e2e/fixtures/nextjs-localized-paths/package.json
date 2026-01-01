@@ -1,0 +1,30 @@
+{
+  "name": "e2e-fixture-nextjs-localized-paths",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:fixture": "next dev --turbopack",
+    "build:fixture": "next build",
+    "start": "next start",
+    "extract": "idiomi extract",
+    "compile": "idiomi compile",
+    "translate": "dotenv -e ../../../.env.local -- idiomi translate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@idiomi/core": "workspace:*",
+    "@idiomi/react": "workspace:*",
+    "@idiomi/next": "workspace:*",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "dotenv-cli": "^8.0.0",
+    "typescript": "^5.7.2"
+  }
+}

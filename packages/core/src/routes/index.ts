@@ -23,19 +23,40 @@ export {
   generateRoutesTypes,
   ROUTE_CONTEXT_PREFIX,
 } from './compile.js';
+export {
+  createPatternMatcher,
+  type PatternMatcher,
+  type PatternMatcherConfig,
+  type PatternMatchResult,
+  type RoutePattern,
+} from './pattern-matching.js';
+
+/**
+ * Options for the extractRoutes function.
+ */
+export interface ExtractRoutesConfig {
+  /** Project root directory */
+  projectRoot: string;
+  /** The detected framework type */
+  framework: Framework;
+  /**
+   * Name of the locale route parameter (e.g., 'locale' for [locale]).
+   * @default 'locale'
+   */
+  localeParamName?: string;
+}
 
 /**
  * Extract routes from a project based on the detected framework.
  *
- * @param projectRoot - Root directory of the project
- * @param framework - The detected framework type
+ * @param config - Extraction configuration
  * @returns Extracted routes for the project
  */
 export async function extractRoutes(
-  projectRoot: string,
-  framework: Framework,
+  config: ExtractRoutesConfig,
 ): Promise<ExtractedRoute[]> {
-  const options = { projectRoot };
+  const { projectRoot, framework, localeParamName = 'locale' } = config;
+  const options = { projectRoot, localeParamName };
   switch (framework) {
     case 'next-app':
     case 'next-pages':

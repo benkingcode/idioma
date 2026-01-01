@@ -46,8 +46,9 @@ describe('createIdiomiMiddleware', () => {
 
       const result = middleware(request as never);
 
-      // Should not redirect - locale already in path
-      expect(result).toBeUndefined();
+      // Should not redirect - locale already in path, returns next() with headers
+      expect(result?.status).toBe(200);
+      expect(result?.headers?.get('x-idiomi-locale')).toBe('es');
     });
 
     it('redirects to default locale path when no locale in path (prefixStrategy: always)', () => {
@@ -68,8 +69,12 @@ describe('createIdiomiMiddleware', () => {
 
       const result = middleware(request as never);
 
-      // Should not redirect - as-needed means no prefix for default locale
-      expect(result).toBeUndefined();
+      // Should internally rewrite to add locale prefix (not a redirect)
+      expect(result?.status).toBe(200);
+      expect(result?.headers?.get('x-idiomi-locale')).toBe('en');
+      expect(result?.headers?.get('x-middleware-rewrite')).toContain(
+        '/en/about',
+      );
     });
   });
 
@@ -184,8 +189,9 @@ describe('createIdiomiMiddleware', () => {
 
       const result = middleware(request as never);
 
-      // No redirect, just passes through
-      expect(result).toBeUndefined();
+      // No redirect, passes through with headers
+      expect(result?.status).toBe(200);
+      expect(result?.headers?.get('x-idiomi-locale')).toBe('es');
     });
   });
 });
@@ -352,7 +358,9 @@ describe('createMiddlewareFactory', () => {
 
     const result = middleware(request as never);
 
-    // Should not redirect with default 'as-needed' strategy for default locale
-    expect(result).toBeUndefined();
+    // Should internally rewrite (not redirect) with default 'as-needed' strategy
+    expect(result?.status).toBe(200);
+    expect(result?.headers?.get('x-idiomi-locale')).toBe('en');
+    expect(result?.headers?.get('x-middleware-rewrite')).toContain('/en/about');
   });
 });

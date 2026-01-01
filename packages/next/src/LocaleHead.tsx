@@ -1,8 +1,10 @@
 'use client';
 
+import type { RoutePattern } from '@idiomi/core/routes';
 import { getLocaleHead, IdiomiContext, type RoutesMap } from '@idiomi/react';
 import { usePathname } from 'next/navigation';
 import React, { useContext } from 'react';
+import { getCanonicalPath, getLocalizedPath } from './pattern-matching.js';
 
 export interface LocaleHeadProps {
   /** Current pathname. Optional in client components (uses usePathname). */
@@ -20,6 +22,11 @@ export interface LocaleHeadConfig {
   defaultLocale: string;
   /** Route translations map (from compiled routes) */
   routes?: RoutesMap;
+  /** Reverse route maps for localized → canonical path conversion */
+  reverseRoutes?: Record<string, Record<string, string>>;
+  /** Route patterns for dynamic segment matching */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  routePatterns?: readonly RoutePattern<any>[];
   /** Prefix strategy for locale URLs */
   prefixStrategy?: 'always' | 'as-needed' | 'never';
 }
@@ -70,18 +77,40 @@ export function createLocaleHead(config: LocaleHeadConfig) {
     locales,
     defaultLocale,
     routes,
+    reverseRoutes,
+    routePatterns = [],
     prefixStrategy = 'always',
   } = config;
+
+  /**
+   * Strip locale prefix from pathname.
+   * E.g., /es/articulos/hello → /articulos/hello
+   */
+  function stripLocalePrefix(pathname: string): {
+    path: string;
+    locale: string | null;
+  } {
+    for (const loc of locales) {
+      const prefix = `/${loc}`;
+      if (pathname === prefix) {
+        return { path: '/', locale: loc };
+      }
+      if (pathname.startsWith(`${prefix}/`)) {
+        return { path: pathname.slice(prefix.length), locale: loc };
+      }
+    }
+    return { path: pathname, locale: null };
+  }
 
   return function LocaleHead(props: LocaleHeadProps): React.ReactElement {
     // Try props first, fall back to hooks
     const routerPathname = usePathname();
     const context = useContext(IdiomiContext);
 
-    const pathname = props.pathname ?? routerPathname;
+    const rawPathname = props.pathname ?? routerPathname;
     const locale = props.locale ?? context?.locale;
 
-    if (!pathname || !locale) {
+    if (!rawPathname || !locale) {
       throw new Error(
         '[idiomi] LocaleHead requires pathname and locale. Either:\n' +
           '1. Use in a Client Component with IdiomiProvider (auto from context/router)\n' +
@@ -89,14 +118,35 @@ export function createLocaleHead(config: LocaleHeadConfig) {
       );
     }
 
+    // Step 1: Strip locale prefix from pathname
+    // usePathname() returns /es/articulos/hello, we need /articulos/hello
+    const { path: pathWithoutLocale, locale: pathLocale } =
+      stripLocalePrefix(rawPathname);
+
+    // Step 2: Convert localized path to canonical using pattern matching
+    // /articulos/hello → /blog/hello
+    const canonicalPath = getCanonicalPath(
+      pathWithoutLocale,
+      pathLocale || locale,
+      reverseRoutes ?? {},
+      routePatterns,
+    );
+
+    // Step 3: Create a getLocalizedPathFn for getLocaleHead
+    // This converts canonical → localized for each locale
+    const getLocalizedPathFn = (path: string, targetLocale: string): string => {
+      return getLocalizedPath(path, targetLocale, routes ?? {}, routePatterns);
+    };
+
     const { links, canonical } = getLocaleHead({
-      pathname,
+      pathname: canonicalPath,
       locale,
       metadataBase,
       locales,
       defaultLocale,
       routes,
       prefixStrategy,
+      getLocalizedPathFn,
     });
 
     return (

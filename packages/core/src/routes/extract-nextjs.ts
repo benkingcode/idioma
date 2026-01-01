@@ -13,7 +13,7 @@ import { isRouteGroup } from './types.js';
 export async function extractNextjsRoutes(
   options: ExtractRoutesOptions,
 ): Promise<ExtractedRoute[]> {
-  const { projectRoot, exclude = [] } = options;
+  const { projectRoot, exclude = [], localeParamName = 'locale' } = options;
 
   // Check for app/ and pages/ directories
   const appDir = join(projectRoot, 'app');
@@ -26,7 +26,12 @@ export async function extractNextjsRoutes(
   // Try App Router first (takes precedence if both exist)
   for (const dir of [appDir, srcAppDir]) {
     if (await directoryExists(dir)) {
-      const appRoutes = await extractAppRouterRoutes(dir, projectRoot, exclude);
+      const appRoutes = await extractAppRouterRoutes(
+        dir,
+        projectRoot,
+        exclude,
+        localeParamName,
+      );
       routes.push(...appRoutes);
       break; // Only use one app directory
     }
@@ -39,6 +44,7 @@ export async function extractNextjsRoutes(
         dir,
         projectRoot,
         exclude,
+        localeParamName,
       );
       routes.push(...pageRoutes);
       break; // Only use one pages directory
@@ -64,6 +70,7 @@ async function extractAppRouterRoutes(
   appDir: string,
   projectRoot: string,
   exclude: string[],
+  localeParamName: string,
 ): Promise<ExtractedRoute[]> {
   // Find all page.tsx, page.js, route.tsx, route.js files
   const files = await fg('**/{page,route}.{tsx,ts,jsx,js}', {
@@ -90,9 +97,11 @@ async function extractAppRouterRoutes(
       .split(/[/\\]/)
       .filter((seg) => seg && !isRouteGroup(seg));
 
-    // Skip [lang] segment if it's the first segment (locale prefix handled separately)
+    // Skip locale segment if it's the first segment (e.g., [locale] or [lang])
+    // This is handled separately by middleware/routing
+    const localeSegment = `[${localeParamName}]`;
     const filteredSegments = segments.filter(
-      (seg, idx) => !(idx === 0 && seg === '[lang]'),
+      (seg, idx) => !(idx === 0 && seg === localeSegment),
     );
 
     // Build the canonical path
@@ -128,6 +137,7 @@ async function extractPagesRouterRoutes(
   pagesDir: string,
   projectRoot: string,
   exclude: string[],
+  localeParamName: string,
 ): Promise<ExtractedRoute[]> {
   // Find all .tsx, .ts, .jsx, .js files (excluding _app, _document, _error, api)
   const files = await fg('**/*.{tsx,ts,jsx,js}', {
@@ -149,9 +159,10 @@ async function extractPagesRouterRoutes(
     // Convert to URL segments
     const segments = routePath.split(/[/\\]/).filter(Boolean);
 
-    // Skip [lang] segment if it's the first segment
+    // Skip locale segment if it's the first segment (e.g., [locale] or [lang])
+    const localeSegment = `[${localeParamName}]`;
     const filteredSegments = segments.filter(
-      (seg, idx) => !(idx === 0 && seg === '[lang]'),
+      (seg, idx) => !(idx === 0 && seg === localeSegment),
     );
 
     // Build the canonical path

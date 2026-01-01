@@ -46,6 +46,10 @@
     "./locale": {
       "types": "./dist/locale/index.d.mts",
       "import": "./dist/locale/index.mjs"
+    },
+    "./routes": {
+      "types": "./dist/routes/index.d.mts",
+      "import": "./dist/routes/index.mjs"
     }
   },
   "bin": {

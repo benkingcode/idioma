@@ -1,8 +1,10 @@
 'use client';
 
+import type { RoutePattern } from '@idiomi/core/routes';
 import { IdiomiContext } from '@idiomi/react';
 import NextLink from 'next/link';
 import { useContext, type ComponentProps } from 'react';
+import { getLocalizedPath as patternGetLocalizedPath } from './pattern-matching.js';
 
 /** Route translations map type */
 export type RoutesMap = Record<string, Record<string, string>>;
@@ -10,6 +12,9 @@ export type RoutesMap = Record<string, Record<string, string>>;
 /** Configuration for Link with locale prefix support */
 export interface LinkConfig {
   routes?: RoutesMap;
+  /** Route patterns for dynamic segment matching */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  routePatterns?: readonly RoutePattern<any>[];
   defaultLocale: string;
   prefixStrategy: 'always' | 'as-needed' | 'never';
 }
@@ -28,29 +33,36 @@ export interface LinkProps extends Omit<
 
 /**
  * Resolves a canonical path to a localized path (without locale prefix).
- * Consistent with @idiomi/next/pages and @idiomi/tanstack-react.
+ * Uses pattern matching to handle dynamic routes like /blog/[slug].
  *
  * @example
  * ```tsx
- * resolveLocalizedPath('/about', 'es', routes); // => '/sobre'
+ * // Static route
+ * resolveLocalizedPath('/about', 'es', routes, patterns); // => '/sobre'
+ *
+ * // Dynamic route - pattern matching localizes the path
+ * resolveLocalizedPath('/blog/hello', 'es', routes, patterns); // => '/articulos/hello'
  * ```
  */
 export function resolveLocalizedPath(
   path: string,
   locale: string,
   routes?: RoutesMap,
+  routePatterns?: readonly RoutePattern[],
 ): string {
-  if (!routes) return path;
-  const localeRoutes = routes[locale];
-  if (localeRoutes?.[path]) {
-    return localeRoutes[path];
-  }
-  return path;
+  // Use pattern matching which handles both direct lookup and dynamic routes
+  return patternGetLocalizedPath(
+    path,
+    locale,
+    routes ?? {},
+    routePatterns ?? [],
+  );
 }
 
 /**
  * Resolves a canonical path to a fully localized href with locale prefix.
  * Handles prefix strategy to determine when locale prefix is added.
+ * Uses pattern matching to handle dynamic routes.
  *
  * @example
  * ```tsx
@@ -58,8 +70,8 @@ export function resolveLocalizedPath(
  * resolveLocalizedHref('/about', 'es', config); // => '/es/sobre'
  * resolveLocalizedHref('/about', 'en', config); // => '/about' (no prefix for default)
  *
- * // With prefixStrategy: 'always'
- * resolveLocalizedHref('/about', 'en', config); // => '/en/about'
+ * // Dynamic routes work too:
+ * resolveLocalizedHref('/blog/hello', 'es', config); // => '/es/articulos/hello'
  * ```
  */
 export function resolveLocalizedHref(
@@ -67,8 +79,13 @@ export function resolveLocalizedHref(
   locale: string,
   config: LinkConfig,
 ): string {
-  const { routes, defaultLocale, prefixStrategy } = config;
-  const localizedPath = resolveLocalizedPath(href, locale, routes);
+  const { routes, routePatterns, defaultLocale, prefixStrategy } = config;
+  const localizedPath = resolveLocalizedPath(
+    href,
+    locale,
+    routes,
+    routePatterns,
+  );
 
   if (prefixStrategy === 'never') {
     return localizedPath;

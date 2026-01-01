@@ -84,13 +84,14 @@ pnpm test:e2e:ui         # Run with Playwright UI
 
 The `e2e/fixtures/` directory contains test apps for different framework configurations:
 
-| Fixture                              | Port | Framework           | Features                        |
-| ------------------------------------ | ---- | ------------------- | ------------------------------- |
-| `tanstack-localized-paths`           | 5175 | TanStack Router SPA | Localized paths (`/es/sobre`)   |
-| `tanstack-non-localized-paths`       | 5176 | TanStack Router SPA | Prefix-only (`/es/about`)       |
-| `tanstack-start-localized-paths`     | 5179 | TanStack Start SSR  | Localized paths + SSR           |
-| `tanstack-start-non-localized-paths` | 5180 | TanStack Start SSR  | Prefix-only + SSR               |
-| `tanstack-start-mixed-routes`        | 5181 | TanStack Start SSR  | Mixed localized + non-localized |
+| Fixture                              | Port | Framework           | Features                            |
+| ------------------------------------ | ---- | ------------------- | ----------------------------------- |
+| `nextjs-localized-paths`             | 3333 | Next.js App Router  | Localized paths with dynamic routes |
+| `tanstack-localized-paths`           | 5175 | TanStack Router SPA | Localized paths (`/es/sobre`)       |
+| `tanstack-non-localized-paths`       | 5176 | TanStack Router SPA | Prefix-only (`/es/about`)           |
+| `tanstack-start-localized-paths`     | 5179 | TanStack Start SSR  | Localized paths + SSR               |
+| `tanstack-start-non-localized-paths` | 5180 | TanStack Start SSR  | Prefix-only + SSR                   |
+| `tanstack-start-mixed-routes`        | 5181 | TanStack Start SSR  | Mixed localized + non-localized     |
 
 **TanStack Start SSR fixtures** test server-side `Accept-Language` header detection, cookie reading (set client-side), and SSR hydration. Key differences from SPA fixtures:
 
@@ -164,6 +165,11 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 - `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting
 - `link.tsx` - `createLink()` factory for localized Link component, `resolveLocalizedHref()` for URL resolution with prefix strategy (App Router)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (App Router)
+- `pattern-matching.ts` - Next.js route pattern matching for dynamic segments:
+  - `matchRoutePattern()` - Matches URL segments against route patterns using Next.js syntax (`[param]`, `[...slug]`, `[[...optional]]`)
+  - `reconstructPath()` - Rebuilds paths from pattern segments with captured dynamic values
+  - `getLocalizedPath()` - Converts canonical paths to localized (direct lookup + pattern fallback)
+  - `getCanonicalPath()` - Converts localized paths to canonical (direct lookup + pattern fallback)
 - `server/` - `setLocale()` for cookies
 - `pages/` - Pages Router support with `createLink()`, `createLocaleHead()`, and `useLocalizedPath`
 
@@ -189,7 +195,18 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
   - `getCanonicalPath()` - Converts localized paths to canonical (direct lookup + pattern fallback)
   - `RoutePattern<L>` - Type for route patterns with canonical and localized segment arrays
 
-**Why pattern matching is TanStack-specific**: The `matchRoutePattern()` function detects dynamic segments using TanStack Router syntax: `$param`, `{$param}`, `{-$param}` (single segment), and `$` (splat, captures all remaining segments joined with `/`). Next.js uses different syntax (`[param]`, `[...param]`) but doesn't need runtime pattern matching because all routes are pre-computed at build time with direct map lookups. Generated code for TanStack imports from `@idiomi/tanstack-react/pattern-matching`; Next.js generated code only exports static route maps.
+**Pattern matching in both frameworks**: Both Next.js and TanStack require runtime pattern matching for dynamic routes (e.g., `/blog/[slug]` → `/articulos/[slug]`). Direct map lookups work for static routes but fail for dynamic ones because the actual URL includes concrete values (e.g., `/blog/hello`) that don't match pattern keys (e.g., `/blog/[slug]`). Pattern matching:
+
+1. Matches URL segments against route patterns to find the corresponding template
+2. Captures dynamic segment values
+3. Reconstructs the path with captured values in the target locale's template
+
+**Framework-specific syntax detection**:
+
+- **Next.js**: `[param]` (single), `[...slug]` (catch-all), `[[...optional]]` (optional catch-all)
+- **TanStack**: `$param`, `{$param}`, `{-$param}` (single segment), `$` (splat)
+
+Generated code imports `routePatterns` for runtime matching. The core algorithm (`packages/core/src/routes/pattern-matching.ts`) provides a factory that creates framework-specific matchers.
 
 **Unsupported TanStack patterns**: Prefix/suffix patterns like `post-{$postId}`, `{$fileName}.txt`, or `user-{$id}.json` are NOT supported. These require regex-based segment matching and are rare for i18n use cases (typical translations are whole-segment like `/about` → `/sobre`).
 

@@ -646,8 +646,9 @@ msgstr "sobre"
         },
       });
 
-      const indexPath = join(outputDir, 'index.ts');
-      const content = await fs.readFile(indexPath, 'utf-8');
+      // For Next.js, LocaleHead is in client.ts (separate from middleware)
+      const clientPath = join(outputDir, 'client.ts');
+      const content = await fs.readFile(clientPath, 'utf-8');
 
       // Should export LocaleHead
       expect(content).toContain('export const LocaleHead');
@@ -692,8 +693,9 @@ msgstr "about"
         },
       });
 
-      const indexPath = join(outputDir, 'index.ts');
-      const content = await fs.readFile(indexPath, 'utf-8');
+      // For Next.js, createMiddleware is in middleware.ts (edge runtime)
+      const middlewarePath = join(outputDir, 'middleware.ts');
+      const content = await fs.readFile(middlewarePath, 'utf-8');
 
       // Should export createMiddleware factory
       expect(content).toContain('export const createMiddleware');

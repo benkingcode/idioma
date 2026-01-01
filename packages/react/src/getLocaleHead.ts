@@ -32,6 +32,12 @@ export interface GetLocaleHeadOptions {
   routes?: RoutesMap;
   /** Prefix strategy for locale URLs */
   prefixStrategy?: 'always' | 'as-needed' | 'never';
+  /**
+   * Custom function to get localized path for a locale.
+   * Used for pattern matching with dynamic routes.
+   * If not provided, falls back to direct routes lookup.
+   */
+  getLocalizedPathFn?: (pathname: string, locale: string) => string;
 }
 
 /**
@@ -70,6 +76,7 @@ export function getLocaleHead(options: GetLocaleHeadOptions): LocaleHeadData {
     defaultLocale,
     prefixStrategy = 'always',
     routes,
+    getLocalizedPathFn,
   } = options;
 
   // Normalize base (remove trailing slash)
@@ -79,9 +86,11 @@ export function getLocaleHead(options: GetLocaleHeadOptions): LocaleHeadData {
   let canonical = '';
 
   for (const loc of locales) {
-    // Get localized path from routes map, or use canonical path
+    // Get localized path - use custom function if provided, fallback to routes lookup
     let localizedPath = pathname;
-    if (routes?.[loc]?.[pathname]) {
+    if (getLocalizedPathFn) {
+      localizedPath = getLocalizedPathFn(pathname, loc);
+    } else if (routes?.[loc]?.[pathname]) {
       localizedPath = routes[loc][pathname];
     }
 

@@ -24,6 +24,7 @@ export default defineConfig({
         /suspense\/.*\.spec\.ts$/,
         /tree-shaking\/.*\.spec\.ts$/,
         /routing\/.*\.spec\.ts$/,
+        /nextjs-localized-paths\/.*\.spec\.ts$/,
       ],
       use: {
         ...devices['Desktop Chrome'],
@@ -156,6 +157,15 @@ export default defineConfig({
         baseURL: 'http://localhost:5181',
       },
     },
+    // Next.js App Router - Localized paths (route translation)
+    {
+      name: 'nextjs-localized-paths',
+      testMatch: /nextjs-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5182',
+      },
+    },
   ],
 
   webServer: [
@@ -221,6 +231,14 @@ export default defineConfig({
       command:
         'pnpm --filter e2e-fixture-tanstack-start-mixed-routes dev:fixture --port 5181 --strictPort',
       url: 'http://localhost:5181',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router - Localized paths fixture
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-localized-paths dev:fixture --port 5182',
+      url: 'http://localhost:5182',
       reuseExistingServer: !CI,
       timeout: 120000,
     },

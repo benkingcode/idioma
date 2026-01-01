@@ -45,6 +45,46 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
+  e2e/fixtures/nextjs-localized-paths:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.0
+        version: 3.0.1(zod@4.2.1)
+      '@idiomi/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      '@idiomi/next':
+        specifier: workspace:*
+        version: link:../../../packages/next
+      '@idiomi/react':
+        specifier: workspace:*
+        version: link:../../../packages/react
+      next:
+        specifier: ^15.1.0
+        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.3
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.3(react@19.2.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.27
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.7
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.7)
+      dotenv-cli:
+        specifier: ^8.0.0
+        version: 8.0.0
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   e2e/fixtures/standard:
     dependencies:
       '@ai-sdk/anthropic':

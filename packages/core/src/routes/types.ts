@@ -46,6 +46,12 @@ export interface ExtractRoutesOptions {
   projectRoot: string;
   /** Patterns to exclude (e.g., ['api/**', '_next/**']) */
   exclude?: string[];
+  /**
+   * Name of the locale route parameter (e.g., 'locale' for [locale]).
+   * If set, this segment is filtered from extracted routes.
+   * @default 'locale'
+   */
+  localeParamName?: string;
 }
 
 /**
@@ -67,11 +73,11 @@ export interface ExtractRoutesOptions {
  *   }
  * }
  */
-export interface RoutePattern {
+export interface RoutePattern<L extends string = string> {
   /** Canonical path segments (e.g., ['users', '$userId']) */
-  canonical: string[];
+  canonical: readonly string[];
   /** Localized segments per locale */
-  localized: Record<string, string[]>;
+  localized: Readonly<Record<L, readonly string[]>>;
 }
 
 /** Compiled route maps for runtime use */

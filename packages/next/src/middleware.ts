@@ -3,13 +3,15 @@ import {
   matchLocale,
   parseAcceptLanguageHeader,
 } from '@idiomi/core/locale';
+import type { RoutePattern } from '@idiomi/core/routes';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCanonicalPath as patternGetCanonicalPath } from './pattern-matching.js';
 
 export interface IdiomiMiddlewareConfig {
   /** Default/source locale */
   defaultLocale: string;
   /** All supported locales */
-  locales: string[];
+  locales: readonly string[];
   /**
    * Locale prefix strategy for URLs.
    * - 'always': All locales prefixed (e.g., /en/about, /es/about)
@@ -42,6 +44,9 @@ export interface IdiomiMiddlewareConfig {
   routes?: Record<string, Record<string, string>>;
   /** Reverse route maps - only needed when localizedPaths is enabled */
   reverseRoutes?: Record<string, Record<string, string>>;
+  /** Route patterns for dynamic segment matching */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  routePatterns?: readonly RoutePattern<any>[];
 }
 
 /** Paths to skip (static files, API routes, Next.js internals) */
@@ -79,6 +84,7 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
     detection = {},
     routes,
     reverseRoutes,
+    routePatterns,
   } = config;
 
   const {
@@ -125,23 +131,46 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
         const url = request.nextUrl.clone();
         url.pathname = `/${locale}${pathname}`;
         return NextResponse.redirect(url, 307);
+      } else {
+        // as-needed with default locale: rewrite internally to add locale prefix
+        // This keeps the URL as /blog but routes to /en/blog internally
+        const url = request.nextUrl.clone();
+        url.pathname = `/${locale}${pathname}`;
+        const response = NextResponse.rewrite(url);
+        response.headers.set('x-idiomi-locale', locale);
+        response.headers.set('x-pathname', pathname);
+        return response;
       }
     }
 
     // Handle localized paths rewriting (when routes are provided)
     if (reverseRoutes && pathLocale) {
-      const localeReverse = reverseRoutes[pathLocale];
-      if (localeReverse) {
-        const canonicalPath = localeReverse[pathWithoutLocale];
-        if (canonicalPath && canonicalPath !== pathWithoutLocale) {
-          // Rewrite to canonical path internally
-          const url = request.nextUrl.clone();
-          url.pathname = `/${pathLocale}${canonicalPath}`;
-          const response = NextResponse.rewrite(url);
-          response.headers.set('x-idiomi-rewrite', 'true');
-          return response;
-        }
+      // Use pattern matching to get canonical path
+      // This handles both static routes (direct lookup) and dynamic routes (pattern matching)
+      const canonicalPath = patternGetCanonicalPath(
+        pathWithoutLocale,
+        pathLocale,
+        reverseRoutes,
+        routePatterns ?? [],
+      );
+      if (canonicalPath && canonicalPath !== pathWithoutLocale) {
+        // Rewrite to canonical path internally
+        const url = request.nextUrl.clone();
+        url.pathname = `/${pathLocale}${canonicalPath}`;
+        const response = NextResponse.rewrite(url);
+        response.headers.set('x-idiomi-rewrite', 'true');
+        response.headers.set('x-idiomi-locale', pathLocale);
+        response.headers.set('x-pathname', pathWithoutLocale);
+        return response;
       }
+    }
+
+    // If we have a path locale but no rewrite needed, still set headers
+    if (pathLocale) {
+      const response = NextResponse.next();
+      response.headers.set('x-idiomi-locale', pathLocale);
+      response.headers.set('x-pathname', pathWithoutLocale);
+      return response;
     }
 
     return undefined;
@@ -161,7 +190,7 @@ function shouldSkipPath(pathname: string): boolean {
  */
 function extractLocaleFromPath(
   pathname: string,
-  locales: string[],
+  locales: readonly string[],
 ): string | undefined {
   const firstSegment = pathname.split('/')[1];
   if (firstSegment && locales.includes(firstSegment)) {
@@ -177,7 +206,7 @@ function detectLocale(
   request: NextRequest,
   order: Array<'cookie' | 'header' | 'path'>,
   cookieName: string,
-  locales: string[],
+  locales: readonly string[],
   defaultLocale: string,
   algorithm: 'lookup' | 'best fit',
 ): string | undefined {
@@ -230,13 +259,16 @@ function detectLocale(
 /** Configuration baked in by the factory */
 export interface MiddlewareFactoryConfig {
   /** All supported locales */
-  locales: string[];
+  locales: readonly string[];
   /** Default/source locale */
   defaultLocale: string;
   /** Route translations map (from compiled routes) */
   routes?: Record<string, Record<string, string>>;
   /** Reverse route maps (from compiled routes) */
   reverseRoutes?: Record<string, Record<string, string>>;
+  /** Route patterns for dynamic segment matching */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  routePatterns?: readonly RoutePattern<any>[];
 }
 
 /** Runtime options that can be overridden */
@@ -296,7 +328,8 @@ export interface MiddlewareRuntimeConfig {
 export function createMiddlewareFactory(
   factoryConfig: MiddlewareFactoryConfig,
 ) {
-  const { locales, defaultLocale, routes, reverseRoutes } = factoryConfig;
+  const { locales, defaultLocale, routes, reverseRoutes, routePatterns } =
+    factoryConfig;
 
   return function createMiddleware(runtimeConfig?: MiddlewareRuntimeConfig) {
     return createIdiomiMiddleware({
@@ -304,6 +337,7 @@ export function createMiddlewareFactory(
       defaultLocale,
       routes,
       reverseRoutes,
+      routePatterns,
       ...runtimeConfig,
     });
   };

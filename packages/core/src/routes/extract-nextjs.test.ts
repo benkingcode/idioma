@@ -94,7 +94,10 @@ describe('extractNextjsRoutes', () => {
         'export default function Contact() {}',
       );
 
-      const routes = await extractNextjsRoutes({ projectRoot: fixtureRoot });
+      const routes = await extractNextjsRoutes({
+        projectRoot: fixtureRoot,
+        localeParamName: 'lang',
+      });
 
       expect(routes).toContainEqual(
         expect.objectContaining({

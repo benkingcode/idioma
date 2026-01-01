@@ -1,10 +1,19 @@
 'use client';
 
+import type { RoutePattern } from '@idiomi/core/routes';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import type { ComponentProps } from 'react';
+import { getLocalizedPath as patternGetLocalizedPath } from '../pattern-matching.js';
 
 export type RoutesMap = Record<string, Record<string, string>>;
+
+/** Configuration for Pages Router Link */
+export interface PagesLinkConfig {
+  routes?: RoutesMap;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  routePatterns?: readonly RoutePattern<any>[];
+}
 
 export interface PagesLinkProps extends Omit<
   ComponentProps<typeof NextLink>,
@@ -20,23 +29,26 @@ export interface PagesLinkProps extends Omit<
 
 /**
  * Resolve a canonical path to a localized path.
+ * Uses pattern matching to handle dynamic routes.
  *
  * @example
  * ```tsx
- * resolveLocalizedPath('/about', 'es', routes); // => '/sobre'
+ * resolveLocalizedPath('/about', 'es', routes, patterns); // => '/sobre'
+ * resolveLocalizedPath('/blog/hello', 'es', routes, patterns); // => '/articulos/hello'
  * ```
  */
 export function resolveLocalizedPath(
   path: string,
   locale: string,
   routes?: RoutesMap,
+  routePatterns?: readonly RoutePattern[],
 ): string {
-  if (!routes) return path;
-  const localeRoutes = routes[locale];
-  if (localeRoutes?.[path]) {
-    return localeRoutes[path];
-  }
-  return path;
+  return patternGetLocalizedPath(
+    path,
+    locale,
+    routes ?? {},
+    routePatterns ?? [],
+  );
 }
 
 /**
@@ -46,15 +58,18 @@ export function resolveLocalizedPath(
  * ```tsx
  * // idiomi/index.ts
  * import { createLink } from '@idiomi/next/pages';
- * import { routes } from './.generated/routes';
+ * import { routes, routePatterns } from './.generated/routes';
  *
- * export const Link = createLink(routes);
+ * export const Link = createLink({ routes, routePatterns });
  *
- * // Usage
+ * // Usage - dynamic routes work too
  * <Link href="/about">About</Link>
+ * <Link href="/blog/hello">Post</Link>  // => /articulos/hello in Spanish
  * ```
  */
-export function createLink(routes?: RoutesMap) {
+export function createLink(config?: PagesLinkConfig) {
+  const { routes, routePatterns } = config ?? {};
+
   return function Link({
     href,
     locale,
@@ -66,7 +81,7 @@ export function createLink(routes?: RoutesMap) {
 
     const routesMap = routesProp ?? routes;
     const localizedPath = targetLocale
-      ? resolveLocalizedPath(href, targetLocale, routesMap)
+      ? resolveLocalizedPath(href, targetLocale, routesMap, routePatterns)
       : href;
 
     return <NextLink href={localizedPath} locale={locale} {...props} />;

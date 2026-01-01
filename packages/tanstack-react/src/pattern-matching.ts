@@ -13,9 +13,9 @@
  */
 export interface RoutePattern<L extends string = string> {
   /** Canonical path segments (e.g., ['users', '$userId']) */
-  canonical: string[];
+  canonical: readonly string[];
   /** Localized segments per locale */
-  localized: Record<L, string[]>;
+  localized: Readonly<Record<L, readonly string[]>>;
 }
 
 /**
@@ -177,7 +177,7 @@ export function matchRoutePattern<L extends string>(
  * ```
  */
 export function reconstructPath(
-  patternSegments: string[],
+  patternSegments: readonly string[],
   captured: Record<string, string>,
 ): string {
   if (patternSegments.length === 0) return '/';
