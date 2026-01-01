@@ -250,3 +250,8 @@ msgstr "v2"
 msgctxt "route:reference"
 msgid "002YacJM"
 msgstr "referencia"
+
+#: src/routes/{-$locale}/docs.$.tsx
+#, extracted
+msgid "002Lv8fK"
+msgstr "Documentacion"

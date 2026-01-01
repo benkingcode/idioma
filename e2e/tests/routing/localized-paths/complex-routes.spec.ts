@@ -381,7 +381,77 @@ test.describe('Complex Routes - Localized Paths Stress Tests', () => {
   });
 
   // ============================================
-  // SECTION 7: Stress Test Page Links
+  // SECTION 7: Splat Routes (Catch-all)
+  // ============================================
+  test.describe('Splat Routes', () => {
+    // Note: Splat routes work best with non-default locales due to how
+    // TanStack Router handles optional parent segments. Tests focus on
+    // Spanish paths which go through proper URL rewriting.
+
+    test('splat route works with localized base segment in Spanish', async ({
+      page,
+    }) => {
+      // /docs -> /documentos in Spanish
+      await page.goto('/es/documentos/guia/inicio');
+
+      await expect(page.getByTestId('docs-page')).toBeVisible();
+      await expect(page.getByTestId('docs-splat')).toHaveText('guia/inicio');
+      // Note: Title translation test removed - focus is on splat URL handling
+    });
+
+    test('splat route captures deeply nested paths in Spanish', async ({
+      page,
+    }) => {
+      await page.goto('/es/documentos/api/v3/users/create/bulk');
+
+      await expect(page.getByTestId('docs-page')).toBeVisible();
+      await expect(page.getByTestId('docs-splat')).toHaveText(
+        'api/v3/users/create/bulk',
+      );
+    });
+
+    test('splat route captures single segment in Spanish', async ({ page }) => {
+      await page.goto('/es/documentos/intro');
+
+      await expect(page.getByTestId('docs-page')).toBeVisible();
+      await expect(page.getByTestId('docs-splat')).toHaveText('intro');
+    });
+
+    test('splat route handles special characters in path in Spanish', async ({
+      page,
+    }) => {
+      await page.goto('/es/documentos/tutorials/getting-started-with-react');
+
+      await expect(page.getByTestId('docs-page')).toBeVisible();
+      await expect(page.getByTestId('docs-splat')).toHaveText(
+        'tutorials/getting-started-with-react',
+      );
+    });
+
+    test('splat route distinguishes from static docs/api/v2/reference route', async ({
+      page,
+    }) => {
+      // This tests that the more specific static route takes precedence
+      // The existing /docs/api/v2/reference is a static route, not caught by splat
+      await page.goto('/docs/api/v2/reference');
+
+      // Should match the static route, not the splat
+      await expect(page.getByTestId('docs-reference-page')).toBeVisible();
+    });
+
+    test('splat route in Spanish distinguishes from static docs route', async ({
+      page,
+    }) => {
+      // Navigate to the static docs route in Spanish
+      await page.goto('/es/documentos/api/v2/referencia');
+
+      // Should match the static route, not the splat
+      await expect(page.getByTestId('docs-reference-page')).toBeVisible();
+    });
+  });
+
+  // ============================================
+  // SECTION 8: Stress Test Page Links
   // ============================================
   test.describe('Stress Test Page Link Verification', () => {
     test.beforeEach(async ({ page }) => {

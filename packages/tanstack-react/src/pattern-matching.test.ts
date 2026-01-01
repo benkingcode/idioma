@@ -123,6 +123,123 @@ describe('matchRoutePattern', () => {
     // Spanish localized is 'articulos', so this should be null
     expect(result).toBeNull();
   });
+
+  describe('brace-wrapped dynamic params', () => {
+    const bracePatterns: RoutePattern<'en' | 'es'>[] = [
+      {
+        canonical: ['settings', '{$section}'],
+        localized: {
+          en: ['settings', '{$section}'],
+          es: ['configuracion', '{$section}'],
+        },
+      },
+      {
+        canonical: ['profile', '{-$tab}'],
+        localized: {
+          en: ['profile', '{-$tab}'],
+          es: ['perfil', '{-$tab}'],
+        },
+      },
+    ];
+
+    it('captures {$param} brace-wrapped dynamic segments', () => {
+      const result = matchRoutePattern(
+        ['settings', 'privacy'],
+        bracePatterns,
+        'en',
+        false,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.captured).toEqual({ '{$section}': 'privacy' });
+    });
+
+    it('captures {-$param} optional brace-wrapped dynamic segments', () => {
+      const result = matchRoutePattern(
+        ['profile', 'security'],
+        bracePatterns,
+        'en',
+        false,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.captured).toEqual({ '{-$tab}': 'security' });
+    });
+
+    it('matches localized brace-wrapped patterns', () => {
+      const result = matchRoutePattern(
+        ['configuracion', 'privacidad'],
+        bracePatterns,
+        'es',
+        true,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.captured).toEqual({ '{$section}': 'privacidad' });
+    });
+  });
+
+  describe('splat routes', () => {
+    const splatPatterns: RoutePattern<'en' | 'es'>[] = [
+      {
+        canonical: ['docs', '$'],
+        localized: { en: ['docs', '$'], es: ['documentacion', '$'] },
+      },
+      {
+        canonical: ['files', '$path', '$'],
+        localized: {
+          en: ['files', '$path', '$'],
+          es: ['archivos', '$path', '$'],
+        },
+      },
+    ];
+
+    it('matches single segment after splat', () => {
+      const result = matchRoutePattern(
+        ['docs', 'intro'],
+        splatPatterns,
+        'en',
+        false,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.pattern.canonical).toEqual(['docs', '$']);
+      expect(result?.captured).toEqual({ $: 'intro' });
+    });
+
+    it('matches multiple segments after splat (joined with /)', () => {
+      const result = matchRoutePattern(
+        ['docs', 'api', 'v2', 'reference'],
+        splatPatterns,
+        'en',
+        false,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.pattern.canonical).toEqual(['docs', '$']);
+      expect(result?.captured).toEqual({ $: 'api/v2/reference' });
+    });
+
+    it('matches splat with preceding dynamic param', () => {
+      const result = matchRoutePattern(
+        ['files', 'images', 'photos', '2024', 'vacation.jpg'],
+        splatPatterns,
+        'en',
+        false,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.captured).toEqual({
+        $path: 'images',
+        $: 'photos/2024/vacation.jpg',
+      });
+    });
+
+    it('matches localized splat patterns', () => {
+      const result = matchRoutePattern(
+        ['documentacion', 'guia', 'inicio'],
+        splatPatterns,
+        'es',
+        true,
+      );
+      expect(result).not.toBeNull();
+      expect(result?.captured).toEqual({ $: 'guia/inicio' });
+    });
+  });
 });
 
 describe('reconstructPath', () => {
@@ -147,6 +264,18 @@ describe('reconstructPath', () => {
   it('returns root path for empty segments', () => {
     const result = reconstructPath([], {});
     expect(result).toBe('/');
+  });
+
+  it('substitutes brace-wrapped params', () => {
+    const result = reconstructPath(['settings', '{$section}'], {
+      '{$section}': 'privacy',
+    });
+    expect(result).toBe('/settings/privacy');
+  });
+
+  it('substitutes splat with captured multi-segment value', () => {
+    const result = reconstructPath(['docs', '$'], { $: 'api/v2/reference' });
+    expect(result).toBe('/docs/api/v2/reference');
   });
 });
 

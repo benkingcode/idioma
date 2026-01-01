@@ -29,11 +29,33 @@ export interface PatternMatchResult<L extends string = string> {
 }
 
 /**
+ * Check if a segment is a dynamic param (captures a single segment).
+ * TanStack syntax: $param, {$param}, {-$param}
+ */
+function isDynamicParam(segment: string): boolean {
+  return (
+    segment.startsWith('$') ||
+    segment.startsWith('{$') ||
+    segment.startsWith('{-$')
+  );
+}
+
+/**
+ * Check if a segment is a splat (captures all remaining segments).
+ * TanStack syntax: $
+ */
+function isSplat(segment: string): boolean {
+  return segment === '$';
+}
+
+/**
  * Match URL segments against route patterns.
  *
- * Uses TanStack's $param syntax for dynamic segment detection.
- * Dynamic segments (starting with $) match any value and capture it.
- * Static segments must match exactly.
+ * Uses TanStack's $param syntax for dynamic segment detection:
+ * - `$param` - named dynamic segment
+ * - `{$param}` - brace-wrapped dynamic segment
+ * - `{-$param}` - optional brace-wrapped dynamic segment
+ * - `$` - splat (captures all remaining segments, joined with /)
  *
  * @param segments - URL path segments to match (e.g., ['blog', 'hello-world'])
  * @param patterns - Array of route patterns to match against
@@ -54,6 +76,10 @@ export interface PatternMatchResult<L extends string = string> {
  * // Match localized pattern
  * matchRoutePattern(['articulos', 'hola'], patterns, 'es', true);
  * // => { pattern: {...}, captured: { $slug: 'hola' } }
+ *
+ * // Splat routes capture all remaining segments
+ * matchRoutePattern(['docs', 'api', 'v2', 'ref'], patterns, 'en', false);
+ * // => { pattern: {...}, captured: { $: 'api/v2/ref' } }
  * ```
  */
 export function matchRoutePattern<L extends string>(
@@ -62,22 +88,44 @@ export function matchRoutePattern<L extends string>(
   locale: L,
   useLocalized: boolean,
 ): PatternMatchResult<L> | null {
+  // Try non-splat patterns first (more specific matches)
+  // Then try splat patterns as fallback
+  let splatMatch: PatternMatchResult<L> | null = null;
+
   for (const pattern of patterns) {
     const patternSegs = useLocalized
       ? pattern.localized[locale]
       : pattern.canonical;
 
-    // Skip if pattern doesn't exist for locale or segment count differs
-    if (!patternSegs || patternSegs.length !== segments.length) continue;
+    if (!patternSegs) continue;
+
+    // Check if pattern has a splat (must be last segment)
+    const hasSplat =
+      patternSegs.length > 0 && isSplat(patternSegs[patternSegs.length - 1]!);
+
+    // For splat patterns: URL must have at least (patternLength - 1) segments (splat can match 1+)
+    // For non-splat: exact segment count match required
+    if (hasSplat) {
+      if (segments.length < patternSegs.length) continue;
+    } else {
+      if (patternSegs.length !== segments.length) continue;
+    }
 
     const captured: Record<string, string> = {};
     let matches = true;
 
     for (let i = 0; i < patternSegs.length; i++) {
       const patternSeg = patternSegs[i]!;
+
+      if (isSplat(patternSeg)) {
+        // Splat - capture all remaining segments joined with /
+        captured['$'] = segments.slice(i).join('/');
+        break; // Splat consumes rest, we're done
+      }
+
       const urlSeg = segments[i]!;
 
-      if (patternSeg.startsWith('$')) {
+      if (isDynamicParam(patternSeg)) {
         // Dynamic segment - capture the actual value
         captured[patternSeg] = urlSeg;
       } else if (patternSeg !== urlSeg) {
@@ -88,15 +136,29 @@ export function matchRoutePattern<L extends string>(
     }
 
     if (matches) {
-      return { pattern, captured };
+      if (hasSplat) {
+        // Save splat match but keep looking for a more specific non-splat match
+        if (!splatMatch) {
+          splatMatch = { pattern, captured };
+        }
+      } else {
+        // Non-splat match is preferred, return immediately
+        return { pattern, captured };
+      }
     }
   }
 
-  return null;
+  // Return splat match if no non-splat match was found
+  return splatMatch;
 }
 
 /**
  * Reconstruct a path from pattern segments, substituting captured dynamic params.
+ *
+ * Handles all TanStack dynamic segment types:
+ * - `$param` - substituted with captured value
+ * - `{$param}`, `{-$param}` - substituted with captured value
+ * - `$` (splat) - substituted with captured value (may contain /)
  *
  * @param patternSegments - Pattern segments (may contain $param placeholders)
  * @param captured - Captured dynamic values from pattern matching
@@ -109,6 +171,9 @@ export function matchRoutePattern<L extends string>(
  *
  * reconstructPath(['users', '$userId', 'posts', '$postId'], { $userId: '123', $postId: '456' });
  * // => '/users/123/posts/456'
+ *
+ * reconstructPath(['docs', '$'], { $: 'api/v2/reference' });
+ * // => '/docs/api/v2/reference'
  * ```
  */
 export function reconstructPath(
@@ -117,11 +182,25 @@ export function reconstructPath(
 ): string {
   if (patternSegments.length === 0) return '/';
 
-  const segments = patternSegments.map((seg) =>
-    seg.startsWith('$') ? (captured[seg] ?? seg) : seg,
-  );
+  const resultSegments: string[] = [];
 
-  return '/' + segments.join('/');
+  for (const seg of patternSegments) {
+    if (isSplat(seg)) {
+      // Splat value may contain /, push it directly (will be joined correctly)
+      const splatValue = captured['$'];
+      if (splatValue) {
+        resultSegments.push(splatValue);
+      }
+    } else if (isDynamicParam(seg)) {
+      // Dynamic param - substitute with captured value or keep original
+      resultSegments.push(captured[seg] ?? seg);
+    } else {
+      // Static segment
+      resultSegments.push(seg);
+    }
+  }
+
+  return '/' + resultSegments.join('/');
 }
 
 /**
