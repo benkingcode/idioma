@@ -262,14 +262,25 @@ export function createRequestHandler<L extends string>(
     return router;
   }
 
-  // Locale param patterns to check in route IDs
-  const localeParamPatterns = localeParamName
-    ? [
-        `{-$${localeParamName}}`, // Optional: {-$locale}
-        `{$${localeParamName}}`, // Required: {$locale}
-        `$${localeParamName}`, // Bare: $locale
-      ]
-    : [];
+  /**
+   * Regex to match locale param patterns in route IDs.
+   *
+   * Uses word boundaries to prevent false positives like $localeinfo matching $locale.
+   * Matches:
+   * - {-$locale} (optional bracket syntax)
+   * - {$locale} (required bracket syntax)
+   * - $locale (bare syntax)
+   *
+   * Bounded by: start of string, /, or end of string
+   */
+  const localeParamRegex = localeParamName
+    ? new RegExp(
+        `(^|/)` + // Start of string OR after slash
+          `(\\{-?\\$${localeParamName}\\}|` + // Bracketed: {$locale} or {-$locale}
+          `\\$${localeParamName})` + // OR bare: $locale
+          `(/|$)`, // Followed by slash OR end of string
+      )
+    : null;
 
   /**
    * Check if a route is localized by using TanStack Router's getMatchedRoutes.
@@ -280,16 +291,14 @@ export function createRequestHandler<L extends string>(
    */
   function isLocalizedRoute(pathname: string): boolean {
     const currentRouter = getRouterLazy();
-    if (!currentRouter || !localeParamName) return false;
+    if (!currentRouter || !localeParamRegex) return false;
 
     try {
       const { foundRoute } = currentRouter.getMatchedRoutes(pathname);
       if (!foundRoute) return false;
 
-      // Check if the route's ID contains any locale param pattern
-      return localeParamPatterns.some((pattern) =>
-        foundRoute.id.includes(pattern),
-      );
+      // Check if the route's ID contains a locale param pattern with proper boundaries
+      return localeParamRegex.test(foundRoute.id);
     } catch {
       return false;
     }

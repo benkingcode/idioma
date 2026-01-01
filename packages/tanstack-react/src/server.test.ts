@@ -885,3 +885,290 @@ describe('createIsomorphicLocaleDetector', () => {
     expect(typeof detectLocale).toBe('function');
   });
 });
+
+describe('isLocalizedRoute false positive prevention', () => {
+  /**
+   * These tests verify that the locale param detection doesn't
+   * incorrectly match compound parameter names.
+   *
+   * For example, when localeParamName='locale':
+   * - `{-$localedata}` should NOT match (it's a different param)
+   * - `{-$locale}` SHOULD match (exact match)
+   */
+
+  const createMockRouter = (
+    routePatterns: Record<string, Record<string, unknown>>,
+  ) => ({
+    getMatchedRoutes: (pathname: string) => {
+      for (const [pattern] of Object.entries(routePatterns)) {
+        // Handle optional segments: {-$param} matches with or without the segment
+        // Handle required segments: {$param} and $param require the segment
+
+        // Check for locale prefix in pathname
+        const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*|$)/);
+        const hasLocalePrefix = !!localeMatch;
+        const pathWithoutPrefix = localeMatch
+          ? localeMatch[2] || '/'
+          : pathname;
+
+        // Determine if this pattern has optional vs required locale param
+        const hasOptionalLocale = /\{-\$\w+\}/.test(pattern);
+        const hasRequiredLocale = /\{\$\w+\}|\$\w+/.test(pattern);
+
+        // Build base pattern (remove locale segment for matching)
+        let basePattern = pattern
+          .replace(/\/?\{-\$\w+\}/, '') // Remove optional segment
+          .replace(/^$/, '/'); // Handle root becoming empty
+
+        // For required segments, we need to check if path has a prefix
+        if (hasRequiredLocale && !hasOptionalLocale) {
+          // Required locale - only match if path has locale prefix
+          basePattern = pattern.replace(/\{\$\w+\}|\$\w+/g, '[^/]+');
+          const regex = new RegExp(`^${basePattern}$`);
+          if (regex.test(pathname)) {
+            return {
+              foundRoute: { id: pattern },
+              routeParams: {},
+              matchedRoutes: [],
+            };
+          }
+        } else if (hasOptionalLocale) {
+          // Optional locale - match with or without prefix
+          // Convert remaining params to regex
+          const baseRegex = basePattern.replace(/\{\$\w+\}|\$\w+/g, '[^/]+');
+
+          // Match without locale prefix
+          if (new RegExp(`^${baseRegex}$`).test(pathWithoutPrefix)) {
+            return {
+              foundRoute: { id: pattern },
+              routeParams: {},
+              matchedRoutes: [],
+            };
+          }
+          // Also match with locale prefix
+          if (
+            hasLocalePrefix &&
+            new RegExp(`^${baseRegex}$`).test(pathWithoutPrefix)
+          ) {
+            return {
+              foundRoute: { id: pattern },
+              routeParams: { locale: localeMatch[1] },
+              matchedRoutes: [],
+            };
+          }
+        } else {
+          // No locale param at all - just match literally
+          const baseRegex = pattern.replace(/\{\$\w+\}|\$\w+/g, '[^/]+');
+          if (new RegExp(`^${baseRegex}$`).test(pathname)) {
+            return {
+              foundRoute: { id: pattern },
+              routeParams: {},
+              matchedRoutes: [],
+            };
+          }
+        }
+      }
+      return { foundRoute: undefined, routeParams: {}, matchedRoutes: [] };
+    },
+  });
+
+  const baseConfig = {
+    defaultLocale: 'en' as const,
+    locales: ['en', 'es', 'fr'] as const,
+    prefixStrategy: 'as-needed' as const,
+    localeParamName: 'locale',
+  };
+
+  describe('should NOT match compound param names (false positive prevention)', () => {
+    it('does not match {-$localedata} when looking for {-$locale}', () => {
+      // Route uses a compound param name that contains "locale" as substring
+      const router = createMockRouter({
+        '/{-$localedata}/settings': {}, // NOT a locale route, just happens to contain "locale"
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      // With Spanish cookie - should NOT redirect since this isn't a locale route
+      const ctx = createMockContext('/settings', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es'); // Detected from cookie
+      expect(result.redirectResponse).toBeUndefined(); // NO redirect - not a localized route!
+    });
+
+    it('does not match {$localeName} when looking for {$locale}', () => {
+      const router = createMockRouter({
+        '/{$localeName}/users': {}, // Different param, not a locale route
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      const ctx = createMockContext('/users', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse).toBeUndefined(); // Not a localized route
+    });
+
+    it('does not match $localeinfo when looking for $locale', () => {
+      const router = createMockRouter({
+        '/about/$localeinfo': {}, // Bare param that contains "locale"
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      const ctx = createMockContext('/about/test', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse).toBeUndefined(); // Not a localized route
+    });
+  });
+
+  describe('should STILL match exact locale params (regression prevention)', () => {
+    it('matches {-$locale} exactly (optional bracket syntax)', () => {
+      const router = createMockRouter({
+        '/{-$locale}/about': {},
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      const ctx = createMockContext('/about', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse?.headers.get('Location')).toBe(
+        'https://example.com/es/about',
+      ); // SHOULD redirect
+    });
+
+    it('matches {$locale} exactly (required bracket syntax)', () => {
+      const router = createMockRouter({
+        '/{$locale}/dashboard': {},
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      // For required segments, path must include locale to match the route
+      const ctx = createMockContext('/es/dashboard', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      // With required segment and as-needed strategy, /es/dashboard stays as-is (non-default)
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse).toBeUndefined(); // No redirect needed - already has locale
+    });
+
+    it('matches $locale exactly (bare syntax)', () => {
+      const router = createMockRouter({
+        '/$locale/posts': {},
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      // For bare required segments, path must include locale to match
+      const ctx = createMockContext('/es/posts', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      expect(result.locale).toBe('es');
+      expect(result.redirectResponse).toBeUndefined(); // No redirect - already has locale
+    });
+  });
+
+  describe('boundary cases', () => {
+    it('matches locale param at start of route ID', () => {
+      const router = createMockRouter({
+        '{-$locale}/home': {}, // No leading slash (edge case)
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      const ctx = createMockContext('/home', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      // Should match because {-$locale} is at start followed by /
+      expect(result.redirectResponse).toBeDefined();
+    });
+
+    it('matches locale param at end of route ID', () => {
+      const router = createMockRouter({
+        '/settings/{-$locale}': {}, // Locale at end (unusual but valid)
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      const ctx = createMockContext('/settings', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      // Should match because {-$locale} is at end
+      expect(result.redirectResponse).toBeDefined();
+    });
+
+    it('matches locale param in middle of route ID', () => {
+      const router = createMockRouter({
+        '/app/{-$locale}/settings': {},
+      });
+
+      const handleLocale = createRequestHandler({
+        ...baseConfig,
+        getRouter: () => router as any,
+        detection: { order: ['cookie'] },
+      });
+
+      const ctx = createMockContext('/app/settings', {
+        cookie: 'IDIOMI_LOCALE=es',
+      });
+      const result = handleLocale(ctx);
+
+      // Should match because {-$locale} is between slashes
+      expect(result.redirectResponse).toBeDefined();
+    });
+  });
+});
