@@ -1,8 +1,27 @@
 /**
- * Server-side factories for TanStack Start locale handling.
+ * Locale handling factories for TanStack Start SSR applications.
  *
- * These factories provide SSR-aware locale detection and server entry
- * middleware for TanStack Start applications.
+ * ## SPA vs SSR
+ *
+ * This module is for **SSR** (TanStack Start). For plain TanStack Router (SPA),
+ * use `@idiomi/tanstack-react` instead.
+ *
+ * **Why separate modules?**
+ * - SSR: Redirects via `Response` objects in server entry
+ * - SPA: Redirects via `throw redirect()` in `beforeLoad` hooks
+ *
+ * The underlying detection logic is shared — only the redirect mechanism differs.
+ *
+ * ## Exports
+ *
+ * - `createRequestHandler()` — Creates `handleLocale` for server entry
+ * - `createIsomorphicLocaleDetector()` — Creates SSR-aware `detectLocale`
+ *   (wraps TanStack Start's `createIsomorphicFn` for bundler-aware code splitting)
+ *
+ * ## Cookie Model (CDN-Cacheable)
+ *
+ * The server NEVER sets cookies. Cookies are only used for reading user preferences
+ * (set client-side via locale picker). This keeps all responses cacheable by CDNs.
  *
  * @example
  * ```typescript
@@ -13,7 +32,6 @@
  *   locales: ['en', 'es'],
  *   defaultLocale: 'en',
  *   prefixStrategy: 'as-needed',
- *   detection: { order: ['cookie', 'header'], cookieName: 'IDIOMI_LOCALE' },
  * });
  *
  * // src/server.ts
@@ -44,17 +62,21 @@ import {
   STATIC_FILE_PATTERN,
   stripLocalePrefix,
 } from './internal/helpers.js';
+import {
+  type BaseLocaleConfig,
+  type PrefixStrategy,
+} from './internal/types.js';
 
 // ============================================================
 // Types
 // ============================================================
 
-// Re-export DetectionOptions for external use
-export type { DetectionOptions };
+// Re-export types for external use
+export type { BaseLocaleConfig, DetectionOptions, PrefixStrategy };
 
-export interface LocaleDetectorConfig<L extends string = string> {
-  readonly locales: readonly L[];
-  readonly defaultLocale: L;
+export interface LocaleDetectorConfig<
+  L extends string = string,
+> extends BaseLocaleConfig<L> {
   readonly detection?: DetectionOptions;
 }
 
@@ -76,10 +98,10 @@ export type RouterLike = {
   };
 };
 
-export interface RequestHandlerConfig<L extends string = string> {
-  readonly locales: readonly L[];
-  readonly defaultLocale: L;
-  readonly prefixStrategy: 'always' | 'as-needed' | 'never';
+export interface RequestHandlerConfig<
+  L extends string = string,
+> extends BaseLocaleConfig<L> {
+  readonly prefixStrategy: PrefixStrategy;
   readonly detection?: DetectionOptions;
   /**
    * Name of the locale param in localized routes (e.g., 'locale' for `{-$locale}`).

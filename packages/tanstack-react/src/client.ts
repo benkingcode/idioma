@@ -1,10 +1,41 @@
 /**
- * Client-side factories for TanStack Router locale handling.
+ * Locale handling factories for TanStack Router SPA applications.
  *
- * These factories work in both SPA (Vite + TanStack Router) and SSR (TanStack Start)
- * contexts. They handle URL rewriting and locale detection for the browser.
+ * ## SPA vs SSR
  *
- * For server-side handling in TanStack Start, use @idiomi/tanstack-react/server.
+ * This module is for **SPA** (Vite + TanStack Router). For TanStack Start (SSR),
+ * use `@idiomi/tanstack-react/server` instead.
+ *
+ * **Why separate modules?**
+ * - SPA: Redirects via `throw redirect()` in `beforeLoad` hooks
+ * - SSR: Redirects via `Response` objects in server entry
+ *
+ * The underlying detection logic is shared — only the redirect mechanism differs.
+ *
+ * ## Exports
+ *
+ * - `createLocaleLoader()` — Creates `localeLoader` for route `beforeLoad` hooks
+ *   (wraps TanStack Router's redirect API)
+ * - `createUrlHandler()` — Creates URL rewrite functions for `createRouter()`
+ * - `setLocalePreference()` / `clearLocalePreference()` — Cookie management
+ *
+ * @example
+ * ```typescript
+ * import { createLocaleLoader, createUrlHandler } from '@idiomi/tanstack-react';
+ *
+ * export const { localeLoader, detectLocale } = createLocaleLoader({
+ *   locales: ['en', 'es'],
+ *   defaultLocale: 'en',
+ *   prefixStrategy: 'as-needed',
+ * });
+ *
+ * export const { delocalizeUrl, localizeUrl } = createUrlHandler({ ... });
+ *
+ * // In route definition:
+ * export const Route = createFileRoute('/{-$locale}/')({
+ *   beforeLoad: localeLoader,
+ * });
+ * ```
  */
 
 import { redirect } from '@tanstack/react-router';
@@ -20,6 +51,10 @@ import {
   stripLocalePrefix,
 } from './internal/helpers.js';
 import {
+  type BaseLocaleConfig,
+  type PrefixStrategy,
+} from './internal/types.js';
+import {
   matchRoutePattern,
   reconstructPath,
   type RoutePattern,
@@ -29,8 +64,8 @@ import {
 // Types
 // ============================================================
 
-// Re-export DetectionOptions for external use
-export type { DetectionOptions };
+// Re-export types for external use
+export type { BaseLocaleConfig, DetectionOptions, PrefixStrategy };
 
 // Re-export RoutePattern from pattern-matching module
 export type { RoutePattern };
@@ -51,10 +86,10 @@ export type RoutesMap<L extends string = string> = Readonly<
 // createLocaleLoader
 // ============================================================
 
-export interface LocaleLoaderConfig<L extends string = string> {
-  readonly locales: readonly L[];
-  readonly defaultLocale: L;
-  readonly prefixStrategy: 'always' | 'as-needed' | 'never';
+export interface LocaleLoaderConfig<
+  L extends string = string,
+> extends BaseLocaleConfig<L> {
+  readonly prefixStrategy: PrefixStrategy;
   readonly detection?: DetectionOptions;
   /**
    * Name of the locale param in localized routes (e.g., 'locale' for `{-$locale}`).
@@ -191,10 +226,10 @@ export function createLocaleLoader<L extends string>(
 // createUrlHandler
 // ============================================================
 
-export interface UrlHandlerConfig<L extends string = string> {
-  readonly locales: readonly L[];
-  readonly defaultLocale: L;
-  readonly prefixStrategy: 'always' | 'as-needed' | 'never';
+export interface UrlHandlerConfig<
+  L extends string = string,
+> extends BaseLocaleConfig<L> {
+  readonly prefixStrategy: PrefixStrategy;
   /** Routes for localized path translation. Omit for prefix-only mode. */
   readonly routes?: RoutesMap<L>;
   /** Reverse routes for delocalization. Required if routes is provided. */
