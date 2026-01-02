@@ -44,7 +44,10 @@ function Navigation() {
   const currentPath = location.pathname;
   const pathWithoutLocale = currentPath.replace(/^\/(en|es)/, '') || '/';
   const searchParams = location.searchStr || '';
-  const hash = location.hash || '';
+  // Use window.location.hash as fallback - TanStack's location.hash can be empty during hydration
+  const hash =
+    (typeof window !== 'undefined' ? window.location.hash : location.hash) ||
+    '';
 
   const getLocaleUrl = (newLocale: Locale) => {
     const newPath =

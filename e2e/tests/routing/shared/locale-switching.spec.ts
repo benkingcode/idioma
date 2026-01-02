@@ -63,24 +63,17 @@ test.describe('Locale Switching', () => {
     );
   });
 
-  test('sets locale cookie on switch', async ({ page, context, baseURL }) => {
-    // Skip for SSR fixtures - full-page navigation causes Playwright cookie detection issues
-    // The functionality works, but context.cookies() doesn't see cookies after full reload
-    const isSSR = baseURL?.includes('5179') || baseURL?.includes('5180');
-    test.skip(
-      isSSR === true,
-      'Cookie detection unreliable with SSR full-page navigation',
-    );
+  test('sets locale cookie on switch', async ({ page }) => {
+    // Wait for hydration so onClick handler is attached
+    await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
 
     // Switch to Spanish
     await page.getByTestId('locale-es').click();
     await page.waitForURL(/\/es/);
 
-    // Check that cookie was set
-    const cookies = await context.cookies();
-    const localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
-    expect(localeCookie).toBeDefined();
-    expect(localeCookie?.value).toBe('es');
+    // Check that cookie was set (use page.evaluate for SSR compatibility)
+    const cookies = await page.evaluate(() => document.cookie);
+    expect(cookies).toContain('IDIOMI_LOCALE=es');
   });
 
   test('locale button shows active state', async ({ page }) => {

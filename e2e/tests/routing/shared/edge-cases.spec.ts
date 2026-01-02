@@ -40,16 +40,13 @@ test.describe('Edge Cases', () => {
   });
 
   test.describe('Hash Fragments', () => {
-    test('hash preserved on locale switch', async ({ page, baseURL }) => {
-      // Skip for SSR fixtures - hash detection is unreliable with full-page navigation
-      // TanStack Start SSR uses anchor tag navigation which can drop hash on some redirects
-      const isSSR = baseURL?.includes('5179') || baseURL?.includes('5180');
-      test.skip(
-        isSSR === true,
-        'Hash preservation unreliable with SSR full-page navigation',
-      );
-
+    test('hash preserved on locale switch', async ({ page }) => {
       await page.goto('/about#section-2');
+
+      // Wait for hydration before clicking locale switch
+      await page.waitForSelector('[data-hydrated="true"]', {
+        state: 'attached',
+      });
 
       // Switch to Spanish
       await page.getByTestId('locale-es').click();
@@ -58,15 +55,13 @@ test.describe('Edge Cases', () => {
       await expect(page).toHaveURL(/#section-2$/);
     });
 
-    test('hash and query params both preserved', async ({ page, baseURL }) => {
-      // Skip for SSR fixtures - hash detection is unreliable with full-page navigation
-      const isSSR = baseURL?.includes('5179') || baseURL?.includes('5180');
-      test.skip(
-        isSSR === true,
-        'Hash preservation unreliable with SSR full-page navigation',
-      );
-
+    test('hash and query params both preserved', async ({ page }) => {
       await page.goto('/about?ref=test#section-2');
+
+      // Wait for hydration before clicking locale switch
+      await page.waitForSelector('[data-hydrated="true"]', {
+        state: 'attached',
+      });
 
       // Switch to Spanish
       await page.getByTestId('locale-es').click();
