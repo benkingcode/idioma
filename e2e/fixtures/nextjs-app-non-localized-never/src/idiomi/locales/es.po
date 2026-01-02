@@ -1,0 +1,86 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/app/[locale]/page.tsx
+#. Home page title
+msgid "Welcome to our website"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/app/[locale]/page.tsx
+#. Home page description
+msgid "This is a demonstration of Idiomi with Next.js App Router."
+msgstr "Esta es una demostración de Idiomi con Next.js App Router."
+
+#: src/app/[locale]/about/page.tsx
+#. About page title
+msgid "About our company"
+msgstr "Acerca de nuestra empresa"
+
+#: src/app/[locale]/about/page.tsx
+#. About page description
+msgid "We are building the future of internationalization."
+msgstr "Estamos construyendo el futuro de la internacionalización."
+
+#: src/app/[locale]/contact/page.tsx
+#. Contact page title
+msgid "Contact us"
+msgstr "Contáctenos"
+
+#: src/app/[locale]/contact/page.tsx
+#. Contact page description
+msgid "Get in touch with our team."
+msgstr "Póngase en contacto con nuestro equipo."
+
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#. Docs page title
+msgid "Documentation"
+msgstr "Documentación"
+
+#: src/app/[locale]/blog/page.tsx
+#. Blog page title
+msgid "Our Blog"
+msgstr "Nuestro Blog"
+
+#: src/app/[locale]/blog/page.tsx
+#. Blog page description
+msgid "Read our latest articles"
+msgstr "Lee nuestros últimos artículos"
+
+#: src/app/[locale]/blog/page.tsx
+#. Blog post link
+msgid "Hello World Post"
+msgstr "Publicación Hola Mundo"
+
+#: src/app/[locale]/blog/page.tsx
+#. Blog post link
+msgid "Getting Started"
+msgstr "Empezando"
+
+#: src/app/[locale]/blog/[slug]/page.tsx
+#. Blog post title
+msgid "Blog Post"
+msgstr "Artículo del Blog"
+
+#. Route segment: blog -> articulos
+msgctxt "route:blog"
+msgid "blog"
+msgstr "articulos"
+
+#. Route segment: about -> sobre
+msgctxt "route:about"
+msgid "about"
+msgstr "sobre"
+
+#. Route segment: contact -> contacto
+msgctxt "route:contact"
+msgid "contact"
+msgstr "contacto"
+
+#. Route segment: docs -> documentacion
+msgctxt "route:docs"
+msgid "docs"
+msgstr "documentacion"

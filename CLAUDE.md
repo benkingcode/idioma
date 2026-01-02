@@ -84,14 +84,30 @@ pnpm test:e2e:ui         # Run with Playwright UI
 
 The `e2e/fixtures/` directory contains test apps for different framework configurations:
 
-| Fixture                              | Port | Framework           | Features                            |
-| ------------------------------------ | ---- | ------------------- | ----------------------------------- |
-| `nextjs-localized-paths`             | 3333 | Next.js App Router  | Localized paths with dynamic routes |
-| `tanstack-localized-paths`           | 5175 | TanStack Router SPA | Localized paths (`/es/sobre`)       |
-| `tanstack-non-localized-paths`       | 5176 | TanStack Router SPA | Prefix-only (`/es/about`)           |
-| `tanstack-start-localized-paths`     | 5179 | TanStack Start SSR  | Localized paths + SSR               |
-| `tanstack-start-non-localized-paths` | 5180 | TanStack Start SSR  | Prefix-only + SSR                   |
-| `tanstack-start-mixed-routes`        | 5181 | TanStack Start SSR  | Mixed localized + non-localized     |
+### Next.js Fixtures
+
+| Fixture                                | Port | Router | Localized Paths | Prefix Strategy |
+| -------------------------------------- | ---- | ------ | --------------- | --------------- |
+| `nextjs-app-localized-as-needed`       | 5182 | App    | Yes             | as-needed       |
+| `nextjs-app-localized-always`          | 5183 | App    | Yes             | always          |
+| `nextjs-app-non-localized-as-needed`   | 5184 | App    | No              | as-needed       |
+| `nextjs-app-non-localized-never`       | 5185 | App    | No              | never           |
+| `nextjs-pages-localized-as-needed`     | 5186 | Pages  | Yes             | as-needed       |
+| `nextjs-pages-localized-always`        | 5187 | Pages  | Yes             | always          |
+| `nextjs-pages-non-localized-as-needed` | 5188 | Pages  | No              | as-needed       |
+| `nextjs-pages-non-localized-never`     | 5189 | Pages  | No              | never           |
+
+Suspense mode variants (`*-suspense`) use ports 5190-5197 and test lazy-loaded translations via React 19's `use()` hook.
+
+### TanStack Fixtures
+
+| Fixture                              | Port | Framework           | Features                        |
+| ------------------------------------ | ---- | ------------------- | ------------------------------- |
+| `tanstack-localized-paths`           | 5177 | TanStack Router SPA | Localized paths (`/es/sobre`)   |
+| `tanstack-non-localized-paths`       | 5178 | TanStack Router SPA | Prefix-only (`/es/about`)       |
+| `tanstack-start-localized-paths`     | 5179 | TanStack Start SSR  | Localized paths + SSR           |
+| `tanstack-start-non-localized-paths` | 5180 | TanStack Start SSR  | Prefix-only + SSR               |
+| `tanstack-start-mixed-routes`        | 5181 | TanStack Start SSR  | Mixed localized + non-localized |
 
 **TanStack Start SSR fixtures** test server-side `Accept-Language` header detection, cookie reading (set client-side), and SSR hydration. Key differences from SPA fixtures:
 

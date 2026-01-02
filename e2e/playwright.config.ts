@@ -24,7 +24,7 @@ export default defineConfig({
         /suspense\/.*\.spec\.ts$/,
         /tree-shaking\/.*\.spec\.ts$/,
         /routing\/.*\.spec\.ts$/,
-        /nextjs-localized-paths\/.*\.spec\.ts$/,
+        /nextjs-app\/.*\.spec\.ts$/,
       ],
       use: {
         ...devices['Desktop Chrome'],
@@ -157,13 +157,358 @@ export default defineConfig({
         baseURL: 'http://localhost:5181',
       },
     },
-    // Next.js App Router - Localized paths (route translation)
+    // ============ NEXT.JS APP ROUTER ============
+
+    // Next.js App Router - Localized paths with as-needed prefix
     {
-      name: 'nextjs-localized-paths',
-      testMatch: /nextjs-localized-paths\/.*\.spec\.ts$/,
+      name: 'nextjs-app-localized-as-needed',
+      testMatch: /nextjs-app\/localized-paths\/.*\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:5182',
+      },
+    },
+    // Shared routing tests - run on App Router localized as-needed fixture
+    {
+      name: 'nextjs-app-localized-as-needed-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5182',
+      },
+    },
+    // Next.js App Router - Localized paths with always prefix
+    {
+      name: 'nextjs-app-localized-always',
+      testMatch: /nextjs-app\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5183',
+      },
+    },
+    // Shared routing tests - run on App Router localized always fixture
+    {
+      name: 'nextjs-app-localized-always-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5183',
+      },
+    },
+    // Next.js App Router - Non-localized paths with as-needed prefix
+    {
+      name: 'nextjs-app-non-localized-as-needed',
+      testMatch: /nextjs-app\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5184',
+      },
+    },
+    // Shared routing tests - run on App Router non-localized as-needed fixture
+    {
+      name: 'nextjs-app-non-localized-as-needed-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5184',
+      },
+    },
+    // Next.js App Router - Non-localized paths with never prefix
+    {
+      name: 'nextjs-app-non-localized-never',
+      testMatch: /nextjs-app\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5185',
+      },
+    },
+    // Shared routing tests - run on App Router non-localized never fixture
+    {
+      name: 'nextjs-app-non-localized-never-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5185',
+      },
+    },
+
+    // ============ NEXT.JS PAGES ROUTER ============
+
+    // Next.js Pages Router - Localized paths with as-needed prefix
+    {
+      name: 'nextjs-pages-localized-as-needed',
+      testMatch: /nextjs-pages\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5186',
+      },
+    },
+    // Shared routing tests - run on Pages Router localized as-needed fixture
+    {
+      name: 'nextjs-pages-localized-as-needed-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5186',
+      },
+    },
+    // Next.js Pages Router - Localized paths with always prefix
+    {
+      name: 'nextjs-pages-localized-always',
+      testMatch: /nextjs-pages\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5187',
+      },
+    },
+    // Shared routing tests - run on Pages Router localized always fixture
+    {
+      name: 'nextjs-pages-localized-always-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5187',
+      },
+    },
+    // Next.js Pages Router - Non-localized paths with as-needed prefix
+    {
+      name: 'nextjs-pages-non-localized-as-needed',
+      testMatch: /nextjs-pages\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5188',
+      },
+    },
+    // Shared routing tests - run on Pages Router non-localized as-needed fixture
+    {
+      name: 'nextjs-pages-non-localized-as-needed-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5188',
+      },
+    },
+    // Next.js Pages Router - Non-localized paths with never prefix
+    {
+      name: 'nextjs-pages-non-localized-never',
+      testMatch: /nextjs-pages\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5189',
+      },
+    },
+    // Shared routing tests - run on Pages Router non-localized never fixture
+    {
+      name: 'nextjs-pages-non-localized-never-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5189',
+      },
+    },
+
+    // ============ PREFIX STRATEGY TESTS ============
+
+    // App Router - as-needed strategy tests (run on localized-as-needed fixture)
+    {
+      name: 'nextjs-app-prefix-as-needed',
+      testMatch: /nextjs-app\/prefix-strategies\/as-needed\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5182',
+      },
+    },
+    // App Router - always strategy tests (run on localized-always fixture)
+    {
+      name: 'nextjs-app-prefix-always',
+      testMatch: /nextjs-app\/prefix-strategies\/always\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5183',
+      },
+    },
+    // App Router - never strategy tests (run on non-localized-never fixture)
+    {
+      name: 'nextjs-app-prefix-never',
+      testMatch: /nextjs-app\/prefix-strategies\/never\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5185',
+      },
+    },
+    // Pages Router - as-needed strategy tests
+    {
+      name: 'nextjs-pages-prefix-as-needed',
+      testMatch: /nextjs-pages\/prefix-strategies\/as-needed\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5186',
+      },
+    },
+    // Pages Router - always strategy tests
+    {
+      name: 'nextjs-pages-prefix-always',
+      testMatch: /nextjs-pages\/prefix-strategies\/always\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5187',
+      },
+    },
+    // Pages Router - never strategy tests
+    {
+      name: 'nextjs-pages-prefix-never',
+      testMatch: /nextjs-pages\/prefix-strategies\/never\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5189',
+      },
+    },
+
+    // ============ NEXT.JS SUSPENSE MODE ============
+
+    // Next.js App Router Suspense - Localized paths with as-needed prefix
+    {
+      name: 'nextjs-app-localized-as-needed-suspense',
+      testMatch: /nextjs-app\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5190',
+      },
+    },
+    // Shared routing tests - run on App Router localized as-needed suspense fixture
+    {
+      name: 'nextjs-app-localized-as-needed-suspense-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5190',
+      },
+    },
+    // Next.js App Router Suspense - Localized paths with always prefix
+    {
+      name: 'nextjs-app-localized-always-suspense',
+      testMatch: /nextjs-app\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5191',
+      },
+    },
+    // Shared routing tests - run on App Router localized always suspense fixture
+    {
+      name: 'nextjs-app-localized-always-suspense-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5191',
+      },
+    },
+    // Next.js App Router Suspense - Non-localized paths with as-needed prefix
+    {
+      name: 'nextjs-app-non-localized-as-needed-suspense',
+      testMatch: /nextjs-app\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5192',
+      },
+    },
+    // Shared routing tests - run on App Router non-localized as-needed suspense fixture
+    {
+      name: 'nextjs-app-non-localized-as-needed-suspense-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5192',
+      },
+    },
+    // Next.js App Router Suspense - Non-localized paths with never prefix
+    {
+      name: 'nextjs-app-non-localized-never-suspense',
+      testMatch: /nextjs-app\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5193',
+      },
+    },
+    // Shared routing tests - run on App Router non-localized never suspense fixture
+    {
+      name: 'nextjs-app-non-localized-never-suspense-shared',
+      testMatch: /nextjs-app\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5193',
+      },
+    },
+
+    // Next.js Pages Router Suspense - Localized paths with as-needed prefix
+    {
+      name: 'nextjs-pages-localized-as-needed-suspense',
+      testMatch: /nextjs-pages\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5194',
+      },
+    },
+    // Shared routing tests - run on Pages Router localized as-needed suspense fixture
+    {
+      name: 'nextjs-pages-localized-as-needed-suspense-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5194',
+      },
+    },
+    // Next.js Pages Router Suspense - Localized paths with always prefix
+    {
+      name: 'nextjs-pages-localized-always-suspense',
+      testMatch: /nextjs-pages\/localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5195',
+      },
+    },
+    // Shared routing tests - run on Pages Router localized always suspense fixture
+    {
+      name: 'nextjs-pages-localized-always-suspense-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5195',
+      },
+    },
+    // Next.js Pages Router Suspense - Non-localized paths with as-needed prefix
+    {
+      name: 'nextjs-pages-non-localized-as-needed-suspense',
+      testMatch: /nextjs-pages\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5196',
+      },
+    },
+    // Shared routing tests - run on Pages Router non-localized as-needed suspense fixture
+    {
+      name: 'nextjs-pages-non-localized-as-needed-suspense-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5196',
+      },
+    },
+    // Next.js Pages Router Suspense - Non-localized paths with never prefix
+    {
+      name: 'nextjs-pages-non-localized-never-suspense',
+      testMatch: /nextjs-pages\/non-localized-paths\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5197',
+      },
+    },
+    // Shared routing tests - run on Pages Router non-localized never suspense fixture
+    {
+      name: 'nextjs-pages-non-localized-never-suspense-shared',
+      testMatch: /nextjs-pages\/shared\/.*\.spec\.ts$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:5197',
       },
     },
   ],
@@ -234,11 +579,134 @@ export default defineConfig({
       reuseExistingServer: !CI,
       timeout: 120000,
     },
-    // Next.js App Router - Localized paths fixture
+    // Next.js App Router - Localized paths with as-needed prefix
     {
       command:
-        'pnpm --filter e2e-fixture-nextjs-localized-paths dev:fixture --port 5182',
+        'pnpm --filter e2e-fixture-nextjs-app-localized-as-needed dev:fixture --port 5182',
       url: 'http://localhost:5182',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router - Localized paths with always prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-localized-always dev:fixture --port 5183',
+      url: 'http://localhost:5183',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router - Non-localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-non-localized-as-needed dev:fixture --port 5184',
+      url: 'http://localhost:5184',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router - Non-localized paths with never prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-non-localized-never dev:fixture --port 5185',
+      url: 'http://localhost:5185',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router - Localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-localized-as-needed dev:fixture --port 5186',
+      url: 'http://localhost:5186',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router - Localized paths with always prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-localized-always dev:fixture --port 5187',
+      url: 'http://localhost:5187',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router - Non-localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-non-localized-as-needed dev:fixture --port 5188',
+      url: 'http://localhost:5188',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router - Non-localized paths with never prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-non-localized-never dev:fixture --port 5189',
+      url: 'http://localhost:5189',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+
+    // ============ NEXT.JS SUSPENSE MODE ============
+
+    // Next.js App Router Suspense - Localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-localized-as-needed-suspense dev:fixture --port 5190',
+      url: 'http://localhost:5190',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router Suspense - Localized paths with always prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-localized-always-suspense dev:fixture --port 5191',
+      url: 'http://localhost:5191',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router Suspense - Non-localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-non-localized-as-needed-suspense dev:fixture --port 5192',
+      url: 'http://localhost:5192',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js App Router Suspense - Non-localized paths with never prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-app-non-localized-never-suspense dev:fixture --port 5193',
+      url: 'http://localhost:5193',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router Suspense - Localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-localized-as-needed-suspense dev:fixture --port 5194',
+      url: 'http://localhost:5194',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router Suspense - Localized paths with always prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-localized-always-suspense dev:fixture --port 5195',
+      url: 'http://localhost:5195',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router Suspense - Non-localized paths with as-needed prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-non-localized-as-needed-suspense dev:fixture --port 5196',
+      url: 'http://localhost:5196',
+      reuseExistingServer: !CI,
+      timeout: 120000,
+    },
+    // Next.js Pages Router Suspense - Non-localized paths with never prefix
+    {
+      command:
+        'pnpm --filter e2e-fixture-nextjs-pages-non-localized-never-suspense dev:fixture --port 5197',
+      url: 'http://localhost:5197',
       reuseExistingServer: !CI,
       timeout: 120000,
     },
