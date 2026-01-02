@@ -318,14 +318,20 @@ src/idiomi/
 ├── locales/             # PO files (git tracked)
 │   ├── en.po
 │   └── es.po
-├── index.ts             # User import: Trans, useT, Link, LocaleHead, createMiddleware (when routing enabled)
-├── server.ts            # Server-only exports for TanStack Start (handleLocale)
+├── index.ts             # Server-safe exports (config, types, getLocaleHead)
+├── client.ts            # Next.js only: Client components (Trans, useT, Link, LocaleHead) with 'use client'
+├── middleware.ts        # Next.js only: Edge middleware factory (createMiddleware)
+├── server.ts            # TanStack Start only: Server exports (handleLocale)
 ├── plain.ts             # User import: createT (non-React)
 └── .generated/          # Internal files (gitignored)
     ├── translations.js
     ├── types.ts
     └── routes.js        # Only when routing.localizedPaths: true
 ```
+
+**Next.js module separation**: For Next.js (App and Pages Router), client-only React components (`Trans`, `useT`, `IdiomiProvider`, `useLocale`, `Link`, `LocaleHead`) are generated in `client.ts` with a `'use client'` directive. This prevents SSR errors when Server Components import from the idiomi folder. The `index.ts` remains server-safe, exporting only config values, types, and the pure `getLocaleHead` function.
+
+**TanStack**: All components are exported from `index.ts` since TanStack SPA doesn't have the same server/client module boundary constraints.
 
 ---
 

@@ -6,12 +6,19 @@
 
 import { createLink, createLocaleHead } from '@idiomi/next/pages';
 import {
+  createIdiomiProvider,
+  createTransSuspense,
+  createUseLocale,
+  createUseTSuspense,
+} from '@idiomi/react/runtime-suspense';
+import {
   defaultLocale,
   locales,
   metadataBase,
   prefixStrategy,
 } from './.generated/config';
 import { reverseRoutes, routePatterns, routes } from './.generated/routes';
+import type { IdiomiTypes, Locale } from './.generated/types';
 
 export const Link = createLink({
   routes,
@@ -29,3 +36,15 @@ export const LocaleHead = createLocaleHead({
   routePatterns,
   prefixStrategy,
 });
+
+const config = {
+  locales: ['en', 'es'] as const,
+};
+
+export const Trans = createTransSuspense<IdiomiTypes>(config);
+
+export const useT = createUseTSuspense<IdiomiTypes>(config);
+
+export const IdiomiProvider = createIdiomiProvider();
+
+export const useLocale = createUseLocale<Locale>();

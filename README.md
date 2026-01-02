@@ -240,7 +240,7 @@ Set up the provider in your root layout:
 
 ```tsx
 // app/layout.tsx (App Router)
-import { IdiomiProvider } from '@/idiomi';
+import { IdiomiProvider } from '@/idiomi/client';
 
 export default function RootLayout({ children }) {
   return (
@@ -254,6 +254,8 @@ export default function RootLayout({ children }) {
 ```
 
 Works with both App Router and Pages Router.
+
+> **Note:** For Next.js, client components (`Trans`, `useT`, `IdiomiProvider`, `useLocale`, `Link`, `LocaleHead`) are in `client.ts`. Server-safe exports (`locales`, `defaultLocale`, `getLocaleHead`, types) remain in `index.ts`.
 
 ## React Native
 
@@ -848,11 +850,11 @@ export default createMiddleware();
 export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
 ```
 
-When routing is configured, the `Link` component is auto-generated in your `idiomi/index.ts`:
+When routing is configured, the `Link` component is auto-generated in your `idiomi/client.ts`:
 
 ```tsx
 // Inside IdiomiProvider tree - locale is read from context automatically
-import { Link } from '@/idiomi';
+import { Link } from '@/idiomi/client';
 
 function Navigation() {
   return (
@@ -869,7 +871,7 @@ function Navigation() {
 
 ```tsx
 // Server Component (outside IdiomiProvider) - must pass locale prop explicitly
-import { Link } from '@/idiomi';
+import { Link } from '@/idiomi/client';
 
 export default async function Page({
   params,
@@ -889,7 +891,7 @@ Generate SEO hreflang tags using the `LocaleHead` component:
 
 ```tsx
 // app/[lang]/layout.tsx (server component)
-import { LocaleHead } from '@/idiomi';
+import { LocaleHead } from '@/idiomi/client';
 
 export default async function Layout({
   children,
@@ -915,7 +917,7 @@ export default async function Layout({
 // Client component (inside IdiomiProvider) - zero props needed
 'use client';
 
-import { LocaleHead } from '@/idiomi';
+import { LocaleHead } from '@/idiomi/client';
 
 function SomeClientComponent() {
   // pathname from usePathname(), locale from context
@@ -956,7 +958,7 @@ Pages Router uses Next.js's built-in `i18n` config for detection and prefixes. W
 
 ```tsx
 // pages/_app.tsx
-import { Link } from '@/idiomi';
+import { Link } from '@/idiomi/client';
 
 function Navigation() {
   return <Link href="/about">About</Link>;
@@ -1211,8 +1213,8 @@ To persist locale preferences across sessions, set a cookie when users switch la
 // components/LocaleSwitcher.tsx
 'use client';
 
-import { Link, locales, setLocalePreference, useLocale } from '@/idiomi';
 import type { Locale } from '@/idiomi';
+import { Link, locales, setLocalePreference, useLocale } from '@/idiomi/client';
 
 export function LocaleSwitcher() {
   const currentLocale = useLocale();

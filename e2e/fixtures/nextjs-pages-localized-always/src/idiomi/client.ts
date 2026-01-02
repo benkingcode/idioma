@@ -6,12 +6,19 @@
 
 import { createLink, createLocaleHead } from '@idiomi/next/pages';
 import {
+  createIdiomiProvider,
+  createTrans,
+  createUseLocale,
+  createUseT,
+} from '@idiomi/react';
+import {
   defaultLocale,
   locales,
   metadataBase,
   prefixStrategy,
 } from './.generated/config';
 import { reverseRoutes, routePatterns, routes } from './.generated/routes';
+import type { IdiomiTypes, Locale } from './.generated/types';
 
 export const Link = createLink({
   routes,
@@ -29,3 +36,11 @@ export const LocaleHead = createLocaleHead({
   routePatterns,
   prefixStrategy,
 });
+
+export const Trans = createTrans<IdiomiTypes>();
+
+export const useT = createUseT<IdiomiTypes>();
+
+export const IdiomiProvider = createIdiomiProvider();
+
+export const useLocale = createUseLocale<Locale>();

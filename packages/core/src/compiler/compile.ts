@@ -840,7 +840,16 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
   const serverPkg = getServerPackage(routing.framework);
 
   if (routing.localizedPaths) {
-    // Import routes for LocaleHead and URL rewriting
+    // Next.js: All client-only code (Link, LocaleHead, Trans, useT) is in client.ts
+    // index.ts only has server-safe exports (config, types, getLocaleHead)
+    if (isNextJs) {
+      // Re-export getLocaleHead for programmatic use (it's a pure function, server-safe)
+      exports.push('');
+      exports.push(`export { getLocaleHead } from '@idiomi/react';`);
+      return exports.join('\n');
+    }
+
+    // TanStack: Import routes for LocaleHead and URL rewriting
     // routePatterns is used for segment-level matching with dynamic params
     imports.push(
       `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
@@ -861,11 +870,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     );
 
     // TanStack: Users use TanStack's native Link with URL rewriting - no createLink
-    // Next.js: Client-only code (Link, LocaleHead) and middleware are in separate files
-    if (isNextJs) {
-      // For Next.js, client-only code is in client.ts and middleware is in middleware.ts
-      // Only import getLocaleHead here for programmatic use
-    } else if (isTanStack) {
+    if (isTanStack) {
       // TanStack uses factories for locale detection and URL rewriting
       if (isTanStackStart && serverPkg) {
         // TanStack Start: SSR-aware detection from /server, URL handling from main
@@ -950,6 +955,17 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     exports.push(`export { getLocaleHead } from '@idiomi/react';`);
   } else {
     // Routing enabled but no path translation - still need locale prefix support
+
+    // Next.js: All client-only code is in client.ts
+    // index.ts only has server-safe exports (config, types, getLocaleHead)
+    if (isNextJs) {
+      // Re-export getLocaleHead for programmatic use (it's a pure function, server-safe)
+      exports.push('');
+      exports.push(`export { getLocaleHead } from '@idiomi/react';`);
+      return exports.join('\n');
+    }
+
+    // TanStack: Import config values for factories
     const configImports = [
       'locales',
       'defaultLocale',
@@ -965,11 +981,7 @@ function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
     );
 
     // TanStack: Users use TanStack's native Link - no createLink
-    // Next.js: Client-only code is in client.ts, middleware in middleware.ts
-    if (isNextJs) {
-      // For Next.js, client-only code is in client.ts
-      // Only import getLocaleHead here for programmatic use
-    } else if (isTanStack) {
+    if (isTanStack) {
       // TanStack uses factories for locale detection and URL rewriting
       if (isTanStackStart && serverPkg) {
         // TanStack Start: SSR-aware detection from /server, URL handling from main
@@ -1099,12 +1111,20 @@ function generateServerCode(options: RouteAwareCodeOptions): string {
   return [...imports, ...exports].join('\n');
 }
 
+/** Options for generating client code */
+interface NextClientCodeOptions extends RouteAwareCodeOptions {
+  /** Whether to include suspense component exports (Trans, useT, etc.) */
+  useSuspense?: boolean;
+  locales?: string[];
+}
+
 /**
  * Generate Next.js client.ts file with 'use client' directive.
- * Contains Link and LocaleHead which are client-only components.
+ * Contains all client-only components: Link, LocaleHead, Trans, useT, IdiomiProvider, useLocale.
+ * When useSuspense is true, uses suspense factories (createTransSuspense, etc.).
  */
-function generateNextClientCode(options: RouteAwareCodeOptions): string {
-  const { routing } = options;
+function generateNextClientCode(options: NextClientCodeOptions): string {
+  const { routing, useSuspense, locales } = options;
 
   // Only generate for Next.js
   if (routing.framework !== 'next-app' && routing.framework !== 'next-pages') {
@@ -1120,6 +1140,26 @@ function generateNextClientCode(options: RouteAwareCodeOptions): string {
   imports.push(`'use client';`);
   imports.push('');
   imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+
+  // Import the appropriate Trans/useT factories based on suspense mode
+  if (useSuspense) {
+    imports.push(`import {`);
+    imports.push(`  createIdiomiProvider,`);
+    imports.push(`  createTransSuspense,`);
+    imports.push(`  createUseLocale,`);
+    imports.push(`  createUseTSuspense,`);
+    imports.push(`} from '@idiomi/react/runtime-suspense';`);
+  } else {
+    imports.push(`import {`);
+    imports.push(`  createIdiomiProvider,`);
+    imports.push(`  createTrans,`);
+    imports.push(`  createUseLocale,`);
+    imports.push(`  createUseT,`);
+    imports.push(`} from '@idiomi/react';`);
+  }
+  imports.push(
+    `import type { IdiomiTypes, Locale } from './.generated/types';`,
+  );
 
   // Import config values
   const configImports = ['locales', 'defaultLocale', 'prefixStrategy'];
@@ -1166,6 +1206,31 @@ function generateNextClientCode(options: RouteAwareCodeOptions): string {
   exports.push(`export const LocaleHead = createLocaleHead({`);
   exports.push(...localeHeadConfig);
   exports.push(`});`);
+
+  // Add Trans, useT, IdiomiProvider, useLocale exports
+  // These are always client-only for Next.js
+  exports.push('');
+  if (useSuspense && locales) {
+    exports.push(`const config = {`);
+    exports.push(`  locales: ${JSON.stringify(locales)} as const,`);
+    exports.push(`};`);
+    exports.push('');
+    exports.push(
+      `export const Trans = createTransSuspense<IdiomiTypes>(config);`,
+    );
+    exports.push('');
+    exports.push(
+      `export const useT = createUseTSuspense<IdiomiTypes>(config);`,
+    );
+  } else {
+    exports.push(`export const Trans = createTrans<IdiomiTypes>();`);
+    exports.push('');
+    exports.push(`export const useT = createUseT<IdiomiTypes>();`);
+  }
+  exports.push('');
+  exports.push(`export const IdiomiProvider = createIdiomiProvider();`);
+  exports.push('');
+  exports.push(`export const useLocale = createUseLocale<Locale>();`);
 
   return [...imports, ...exports].join('\n');
 }
@@ -1238,7 +1303,7 @@ interface GenerateIndexOptions {
 }
 
 async function generateIndexTs(options: GenerateIndexOptions): Promise<void> {
-  const { outputDir, routing } = options;
+  const { outputDir, locales, routing } = options;
   // In non-suspense mode, Babel inlines translations at build time.
   // We call createTrans/createUseT without passing translations to avoid
   // importing translations.js at runtime, which enables tree shaking.
@@ -1247,17 +1312,29 @@ async function generateIndexTs(options: GenerateIndexOptions): Promise<void> {
       ? generateRouteAwareCode({ routing })
       : '';
 
-  // Next.js App Router requires 'use client' since createTrans/createUseT
-  // factory functions must execute on the client
-  const needsUseClient =
+  const isNextJs =
     routing?.framework === 'next-app' || routing?.framework === 'next-pages';
-  const useClientDirective = needsUseClient ? `'use client';\n\n` : '';
 
-  const content = `// Auto-generated by @idiomi/core
+  // For Next.js: Client components (Trans, useT, Link, LocaleHead) are in client.ts
+  // index.ts only has server-safe exports (config, types, getLocaleHead)
+  // For other frameworks: Define components directly in index.ts
+  let content: string;
+  if (isNextJs) {
+    content = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client components (Trans, useT, Link, LocaleHead) are in client.ts
+// Import from './client' for client-side components
+
+export { locales, defaultLocale } from './.generated/config';
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
+export type { IdiomiTypes, Locale } from './.generated/types';
+`;
+  } else {
+    content = `// Auto-generated by @idiomi/core
 // Do not edit directly
 // Translations are inlined by Babel at build time
 
-${useClientDirective}import {
+import {
   createIdiomiProvider,
   createTrans,
   createUseLocale,
@@ -1278,6 +1355,7 @@ export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };
 `;
+  }
 
   const filePath = join(outputDir, 'index.ts');
   const formatted = await formatWithPrettier(content, filePath);
@@ -1303,11 +1381,9 @@ ${serverCode}
   }
 
   // Generate client.ts and middleware.ts for Next.js (keeps client/edge code separate)
-  const isNextJs =
-    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
   if (routing?.enabled && isNextJs) {
     // Generate client.ts with 'use client' directive
-    const clientCode = generateNextClientCode({ routing });
+    const clientCode = generateNextClientCode({ routing, locales });
     if (clientCode) {
       const clientContent = `// Auto-generated by @idiomi/core
 // Do not edit directly
@@ -1351,7 +1427,25 @@ async function generateIndexTsSuspense(
       ? generateRouteAwareCode({ routing })
       : '';
 
-  const content = `// Auto-generated by @idiomi/core
+  const isNextJs =
+    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
+
+  // For Next.js: Client components (Trans, useT, Link, LocaleHead) are in client.ts
+  // index.ts only has server-safe exports (config, types, getLocaleHead)
+  // For other frameworks: Define components directly in index.ts
+  let content: string;
+  if (isNextJs) {
+    content = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client components (Trans, useT, Link, LocaleHead) are in client.ts
+// Import from './client' for client-side components
+
+export { locales, defaultLocale } from './.generated/config';
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
+export type { IdiomiTypes, Locale } from './.generated/types';
+`;
+  } else {
+    content = `// Auto-generated by @idiomi/core
 // Do not edit directly
 
 import {
@@ -1379,6 +1473,7 @@ export const useLocale = createUseLocale<Locale>();
 
 export type { IdiomiTypes, Locale };
 `;
+  }
 
   const filePath = join(outputDir, 'index.ts');
   const formatted = await formatWithPrettier(content, filePath);
@@ -1404,11 +1499,13 @@ ${serverCode}
   }
 
   // Generate client.ts and middleware.ts for Next.js (keeps client/edge code separate)
-  const isNextJs =
-    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
   if (routing?.enabled && isNextJs) {
-    // Generate client.ts with 'use client' directive
-    const clientCode = generateNextClientCode({ routing });
+    // Generate client.ts with 'use client' directive (includes suspense factories)
+    const clientCode = generateNextClientCode({
+      routing,
+      useSuspense: true,
+      locales,
+    });
     if (clientCode) {
       const clientContent = `// Auto-generated by @idiomi/core
 // Do not edit directly
