@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from '@/idiomi';
+import { useLocale } from '@/idiomi/client';
 import type { Locale } from '@/idiomi';
 import { Link } from '@/idiomi/client';
 import { usePathname } from 'next/navigation';

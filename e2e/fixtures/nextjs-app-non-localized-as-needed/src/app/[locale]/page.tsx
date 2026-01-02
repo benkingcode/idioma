@@ -1,4 +1,4 @@
-import { Trans } from '@/idiomi';
+import { Trans } from '@/idiomi/client';
 
 export default function HomePage() {
   return (

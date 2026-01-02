@@ -1,4 +1,4 @@
-import { Trans } from '@/idiomi';
+import { Trans } from '@/idiomi/client';
 import { Link } from '@/idiomi/client';
 
 export default function BlogPage() {

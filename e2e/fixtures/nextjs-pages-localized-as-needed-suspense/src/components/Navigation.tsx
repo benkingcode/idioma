@@ -1,4 +1,4 @@
-import { useLocale } from '@/idiomi';
+import { useLocale } from '@/idiomi/client';
 import type { Locale } from '@/idiomi';
 import { Link } from '@/idiomi/client';
 import NextLink from 'next/link';

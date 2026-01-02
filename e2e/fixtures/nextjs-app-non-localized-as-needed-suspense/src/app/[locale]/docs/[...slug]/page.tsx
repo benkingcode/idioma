@@ -1,6 +1,6 @@
 'use client';
 
-import { Trans } from '@/idiomi';
+import { Trans } from '@/idiomi/client';
 import React from 'react';
 
 interface Props {

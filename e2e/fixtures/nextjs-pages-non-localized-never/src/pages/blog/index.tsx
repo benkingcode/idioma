@@ -1,5 +1,5 @@
 import { Navigation } from '@/components/Navigation';
-import { Trans } from '@/idiomi';
+import { Trans } from '@/idiomi/client';
 import { Link, LocaleHead } from '@/idiomi/client';
 
 const posts = [

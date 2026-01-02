@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from '@/idiomi';
+import { useLocale } from '@/idiomi/client';
 import type { Locale } from '@/idiomi';
 import { reverseRoutes, routes } from '@/idiomi/.generated/routes';
 import { Link, LocaleHead } from '@/idiomi/client';

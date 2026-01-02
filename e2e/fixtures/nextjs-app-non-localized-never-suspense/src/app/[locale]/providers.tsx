@@ -1,6 +1,7 @@
 'use client';
 
-import { IdiomiProvider, type Locale } from '@/idiomi';
+import { IdiomiProvider } from '@/idiomi/client';
+import type { Locale } from '@/idiomi';
 
 interface ProvidersProps {
   locale: Locale;

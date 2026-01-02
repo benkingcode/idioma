@@ -1,5 +1,5 @@
 import { Navigation } from '@/components/Navigation';
-import { Trans } from '@/idiomi';
+import { Trans } from '@/idiomi/client';
 import { LocaleHead } from '@/idiomi/client';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
