@@ -10,7 +10,14 @@
     "test:standard": "playwright test --project=standard",
     "test:suspense": "playwright test --project=suspense",
     "setup": "pnpm --filter './fixtures/*' install && pnpm --filter './fixtures/*' run extract && pnpm --filter './fixtures/*' run compile",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start:vite": "pnpm --filter e2e-fixture-standard dev:fixture --port 5173 & pnpm --filter e2e-fixture-suspense dev:fixture --port 5174",
+    "start:tanstack": "pnpm --filter 'e2e-fixture-tanstack-*' dev:fixture",
+    "start:nextjs-app": "pnpm --filter 'e2e-fixture-nextjs-app-*' --parallel dev:fixture",
+    "start:nextjs-pages": "pnpm --filter 'e2e-fixture-nextjs-pages-*' --parallel dev:fixture",
+    "start:nextjs": "pnpm --filter 'e2e-fixture-nextjs-*' --parallel dev:fixture",
+    "start:all": "pnpm --filter 'e2e-fixture-*' --parallel dev:fixture",
+    "stop:all": "pkill -f 'dev:fixture' || true"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
