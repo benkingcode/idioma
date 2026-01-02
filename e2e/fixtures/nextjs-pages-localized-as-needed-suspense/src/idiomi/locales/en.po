@@ -70,9 +70,21 @@ msgctxt "route:blog"
 msgid "blog"
 msgstr "blog"
 
+#: src/pages/blog/[slug].tsx
+#, extracted
+msgctxt "route:blog"
+msgid "0030YUzz"
+msgstr "blog"
+
 #. Route segment: about
 msgctxt "route:about"
 msgid "about"
+msgstr "about"
+
+#: src/pages/about.tsx
+#, extracted
+msgctxt "route:about"
+msgid "003R6yRq"
 msgstr "about"
 
 #. Route segment: contact
@@ -80,7 +92,19 @@ msgctxt "route:contact"
 msgid "contact"
 msgstr "contact"
 
+#: src/pages/contact.tsx
+#, extracted
+msgctxt "route:contact"
+msgid "002dJ8dM"
+msgstr "contact"
+
 #. Route segment: docs
 msgctxt "route:docs"
 msgid "docs"
+msgstr "docs"
+
+#: src/pages/docs/[...slug].tsx
+#, extracted
+msgctxt "route:docs"
+msgid "001eY9Px"
 msgstr "docs"

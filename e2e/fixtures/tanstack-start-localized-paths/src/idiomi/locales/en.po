@@ -91,69 +91,88 @@ msgid "000bv8XP"
 msgstr "Getting Started"
 
 #: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#. [AI Context]: Main page heading for the API v2 reference documentation section
 #, extracted
 msgid "001Qpsb7"
 msgstr "API Reference"
 
 #: src/routes/{-$locale}/docs.api.v2.reference.tsx
+#. [AI Context]: Descriptive subtitle explaining the contents of the API reference page
 #, extracted
 msgid "0049xyvP"
 msgstr "Complete API documentation"
 
 #: src/routes/{-$locale}/products.featured.tsx
+#. [AI Context]: Main page heading for the featured products section, displayed at the top of the featured products page
 #, extracted
 msgid "0017Xuw4"
 msgstr "Featured Products"
 
 #: src/routes/{-$locale}/shop.$category.$productId.tsx
+#. [AI Context]: Page heading for the product details page that displays information about a selected product
 #, extracted
 msgid "003xcdAn"
 msgstr "Product Details"
 
 #: src/routes/{-$locale}/shop.$category.$productId.tsx
+#. [AI Context]: Product description text with dynamic values: {productId} replaced with the specific product ID and {category} replaced with the product's category name
 #, extracted
 msgid "001nvw0c"
 msgstr "Product {productId} in category {category}"
 
 #: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#. [AI Context]: Page heading displayed at the top of the user post detail page
 #, extracted
 msgid "000rooat"
 msgstr "Post Detail"
 
 #: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#. [AI Context]: Description text showing which user created a post; contains placeholders for {postId} and {userId} that are dynamically filled
 #, extracted
 msgid "002v3Cim"
 msgstr "Post {postId} by {userId}"
 
 #: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Page heading displayed at the top of the user posts listing page
 #, extracted
 msgid "004HGxPa"
 msgstr "User Posts"
 
 #: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Descriptive text showing which user's posts are being displayed; {user} is replaced with the userId
 #, extracted
 msgid "0012esD3"
 msgstr "Posts by {user}"
 
 #: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Link text for the first post item in the posts list
 #, extracted
 msgid "001kLT4X"
 msgstr "First Post"
 
 #: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Link text for the second post item in the posts list
 #, extracted
 msgid "0026pTpY"
 msgstr "Second Post"
 
 #: src/routes/{-$locale}/users.$userId.index.tsx
+#. [AI Context]: Page heading for the user profile view
 #, extracted
 msgid "0042IuEu"
 msgstr "User Profile"
 
 #: src/routes/{-$locale}/users.$userId.index.tsx
+#. [AI Context]: Descriptive text showing which user's profile is being viewed; {user} is replaced with the user ID
 #, extracted
 msgid "0040JPXJ"
 msgstr "Viewing profile for {user}"
+
+#: src/routes/{-$locale}/docs.$.tsx
+#. [AI Context]: Page heading for the documentation section
+#, extracted
+msgid "001LdocT"
+msgstr "Documentation"
 
 #: src/routes/about.tsx
 #, extracted

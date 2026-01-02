@@ -2,36 +2,43 @@ msgid ""
 msgstr "Content-Type: text/plain\n"
 
 #: src/routes/dashboard.tsx
+#. [AI Context]: Page heading for the dashboard section, displayed as the main title in the content area
 #, extracted
 msgid "003zr0xA"
 msgstr "Dashboard"
 
 #: src/routes/dashboard.tsx
+#. [AI Context]: Descriptive paragraph explaining that this page is a non-localized route using cookie-based locale detection
 #, extracted
 msgid "004adTk4"
 msgstr "This is a non-localized route that uses cookie detection."
 
 #: src/routes/dashboard.tsx
+#. [AI Context]: Inline text displaying the current active locale; {locale} is a placeholder replaced with the language code (e.g., 'en', 'es')
 #, extracted
 msgid "003lEGzQ"
 msgstr "Current locale: {locale}"
 
 #: src/routes/{-$locale}/about.tsx
+#. [AI Context]: Page heading in the About section displayed at the top of the about page
 #, extracted
 msgid "000Emt1m"
 msgstr "About our company"
 
 #: src/routes/{-$locale}/about.tsx
+#. [AI Context]: Description paragraph on the about page explaining the company's purpose
 #, extracted
 msgid "004U2qa8"
 msgstr "Learn more about what we do"
 
 #: src/routes/{-$locale}/index.tsx
+#. [AI Context]: Page heading on the home page welcoming users to the website
 #, extracted
 msgid "0043pNTf"
 msgstr "Welcome to our website"
 
 #: src/routes/{-$locale}/index.tsx
+#. [AI Context]: Descriptive text below the main heading explaining that this is the localized home page
 #, extracted
 msgid "004RNHTH"
 msgstr "This is the home page with localized paths routing"

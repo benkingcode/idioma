@@ -143,6 +143,16 @@ msgstr "Perfil de Usuario"
 msgid "0040JPXJ"
 msgstr "Viendo perfil de {user}"
 
+#: src/routes/{-$locale}/docs.$.tsx
+#, extracted
+msgid "002Lv8fK"
+msgstr "Documentacion"
+
+#: src/routes/{-$locale}/docs.$.tsx
+#, extracted, ai-translated
+msgid "001LdocT"
+msgstr "Documentación"
+
 #: src/routes/about.tsx
 #, extracted
 msgctxt "route:about"
@@ -250,8 +260,3 @@ msgstr "v2"
 msgctxt "route:reference"
 msgid "002YacJM"
 msgstr "referencia"
-
-#: src/routes/{-$locale}/docs.$.tsx
-#, extracted
-msgid "002Lv8fK"
-msgstr "Documentacion"
