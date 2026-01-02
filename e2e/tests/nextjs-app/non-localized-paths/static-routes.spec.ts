@@ -97,19 +97,26 @@ test.describe('Next.js Static Routes - Non-Localized Paths', () => {
   });
 
   test.describe('Never Prefix Strategy', () => {
-    test.skip(
-      ({ browserName }, testInfo) => !testInfo.project.name.includes('never'),
-      'Skipping: only runs for never prefix strategy',
-    );
+    test('default locale has no prefix at root', async ({ page }, testInfo) => {
+      test.skip(
+        !testInfo.project.name.includes('never'),
+        'Only runs for never prefix strategy',
+      );
 
-    test('default locale has no prefix at root', async ({ page }) => {
       await page.goto('/');
 
       await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/$/);
       await expect(page.getByTestId('home-page')).toBeVisible();
     });
 
-    test('non-default locale also has no prefix', async ({ page }) => {
+    test('non-default locale also has no prefix', async ({
+      page,
+    }, testInfo) => {
+      test.skip(
+        !testInfo.project.name.includes('never'),
+        'Only runs for never prefix strategy',
+      );
+
       // With never strategy, even Spanish should be at root
       // Locale is determined by cookie or Accept-Language header
       await page.goto('/');

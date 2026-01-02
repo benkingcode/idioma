@@ -11,7 +11,7 @@ msgstr "Acerca de nuestra empresa"
 #: src/routes/{-$locale}/about.tsx
 #, extracted, ai-translated
 msgid "004U2qa8"
-msgstr "Obtén más información sobre lo que hacemos"
+msgstr "Conoce mas sobre lo que hacemos"
 
 #: src/routes/{-$locale}/blog.$slug.tsx
 #, extracted, ai-translated
@@ -46,7 +46,7 @@ msgstr "Primeros pasos"
 #: src/routes/{-$locale}/contact.tsx
 #, extracted, ai-translated
 msgid "0034rp6e"
-msgstr "Ponte en contacto con nosotros"
+msgstr "Contáctenos"
 
 #: src/routes/{-$locale}/contact.tsx
 #, extracted, ai-translated
@@ -81,7 +81,7 @@ msgstr "Esta es la página de inicio con rutas localizadas"
 #: src/routes/{-$locale}/products.featured.tsx
 #, extracted, ai-translated
 msgid "0017Xuw4"
-msgstr "Productos destacados"
+msgstr "Productos Destacados"
 
 #: src/routes/{-$locale}/shop.$category.$productId.tsx
 #, extracted, ai-translated
@@ -179,7 +179,7 @@ msgstr "destacados"
 #, extracted, ai-translated
 msgctxt "route:docs"
 msgid "001eY9Px"
-msgstr "docs"
+msgstr "documentos"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated

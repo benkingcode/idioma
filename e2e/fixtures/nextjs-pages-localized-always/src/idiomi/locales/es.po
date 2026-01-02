@@ -16,7 +16,7 @@ msgstr "Aprende más sobre lo que hacemos."
 #: src/pages/contact.tsx
 #, extracted, ai-translated
 msgid "000J06Wk"
-msgstr "Contáctanos"
+msgstr "Contáctenos"
 
 #: src/pages/contact.tsx
 #, extracted, ai-translated
@@ -64,7 +64,7 @@ msgstr "contacto"
 #, extracted, ai-translated
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr "blog"
+msgstr "articulos"
 
 #: src/pages/docs/[...slug].tsx
 #, extracted, ai-translated

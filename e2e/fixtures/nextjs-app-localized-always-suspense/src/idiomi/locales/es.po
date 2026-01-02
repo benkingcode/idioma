@@ -26,7 +26,7 @@ msgstr "Estamos construyendo el futuro de la internacionalización."
 #: src/app/[locale]/contact/page.tsx
 #, extracted, ai-translated
 msgid "001INXnu"
-msgstr "Contáctanos"
+msgstr "Contáctenos"
 
 #: src/app/[locale]/contact/page.tsx
 #, extracted, ai-translated
@@ -73,7 +73,7 @@ msgstr "sobre"
 #, extracted, ai-translated
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr "blog"
+msgstr "articulos"
 
 #: src/app/[locale]/contact/page.tsx
 #, extracted, ai-translated

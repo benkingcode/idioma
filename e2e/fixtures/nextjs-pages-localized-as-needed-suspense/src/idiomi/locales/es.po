@@ -6,7 +6,7 @@ msgstr ""
 #: src/pages/about.tsx
 #, extracted, ai-translated
 msgid "000Emt1m"
-msgstr "Sobre nuestra empresa"
+msgstr "Acerca de nuestra empresa"
 
 #: src/pages/about.tsx
 #, extracted, ai-translated
@@ -64,7 +64,7 @@ msgstr "contacto"
 #, extracted, ai-translated
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr "blog"
+msgstr "articulos"
 
 #: src/pages/docs/[...slug].tsx
 #, extracted, ai-translated

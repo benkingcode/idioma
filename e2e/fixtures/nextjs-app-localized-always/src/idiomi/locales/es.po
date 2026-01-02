@@ -16,7 +16,7 @@ msgstr "Esta es una demostración de Idiomi con Next.js App Router."
 #: src/app/[locale]/about/page.tsx
 #, extracted, ai-translated
 msgid "000Emt1m"
-msgstr "Sobre nuestra empresa"
+msgstr "Acerca de nuestra empresa"
 
 #: src/app/[locale]/about/page.tsx
 #, extracted, ai-translated
@@ -46,7 +46,7 @@ msgstr "Primeros pasos"
 #: src/app/[locale]/contact/page.tsx
 #, extracted, ai-translated
 msgid "001INXnu"
-msgstr "Contáctanos"
+msgstr "Contáctenos"
 
 #: src/app/[locale]/contact/page.tsx
 #, extracted, ai-translated
@@ -79,7 +79,7 @@ msgstr "contacto"
 #, extracted, ai-translated
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr "blog"
+msgstr "articulos"
 
 #: src/app/[locale]/docs/[...slug]/page.tsx
 #, extracted, ai-translated

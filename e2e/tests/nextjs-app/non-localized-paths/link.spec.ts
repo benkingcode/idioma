@@ -76,14 +76,14 @@ test.describe('Next.js Link Component - Non-Localized Paths', () => {
   });
 
   test.describe('Never Prefix Strategy', () => {
-    test.skip(
-      ({ browserName }, testInfo) => !testInfo.project.name.includes('never'),
-      'Skipping: only runs for never prefix strategy',
-    );
-
     test('links have no locale prefix regardless of locale', async ({
       page,
-    }) => {
+    }, testInfo) => {
+      test.skip(
+        !testInfo.project.name.includes('never'),
+        'Only runs for never prefix strategy',
+      );
+
       await page.goto('/');
 
       const aboutLink = page.getByTestId('nav-about');
