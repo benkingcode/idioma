@@ -160,10 +160,21 @@ export async function runTranslate(
       const sourceText = sourceTextByKey.get(key) || message.source;
       // Read context from default (source) locale, not target locale
       const defaultMessage = defaultCatalog.messages.get(key);
+
+      // Build context string
+      let context = defaultMessage?.comments?.join(' ');
+
+      // Add special context for route segments
+      if (message.context?.startsWith('route:')) {
+        const routeContext =
+          'URL path segment - must be URL-safe (no spaces, use hyphens if needed)';
+        context = context ? `${routeContext}. ${context}` : routeContext;
+      }
+
       messagesToTranslate.push({
         key,
         source: sourceText,
-        context: defaultMessage?.comments?.join(' '),
+        context,
       });
     } else {
       skippedKeys.add(key);

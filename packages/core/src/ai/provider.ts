@@ -50,7 +50,7 @@ Translation guidelines:
 - Match the source's tone and formality level
 - Keep translations concise — UI space is limited
 - Use context hints (if provided) to choose appropriate wording
-- Return translations in the exact order provided
+- Return translations in the exact order provided (matching [1], [2], etc.)
 
 Do NOT:
 - Add words, explanations, or politeness not in the source
@@ -58,7 +58,7 @@ Do NOT:
 - Change questions to statements or vice versa
 - Translate placeholder names inside {braces}
 
-Each message has a key and source text. Some may include context to help with accurate translation.`;
+Each message is numbered [1], [2], etc. Some may include context to help with accurate translation. Return translations with their numeric ID.`;
 
 /**
  * Build the system prompt for translation, optionally including user guidelines.
@@ -84,12 +84,14 @@ ${guidelines}`;
 }
 
 /**
- * Zod schema for structured translation output
+ * Zod schema for structured translation output.
+ * Uses numeric IDs (matching [1], [2], etc. in prompt) rather than echoing
+ * the original keys, which may contain special characters like \u0004.
  */
 const TranslationResultSchema = z.object({
   translations: z.array(
     z.object({
-      key: z.string(),
+      id: z.number(),
       translation: z.string(),
     }),
   ),
@@ -117,7 +119,9 @@ export function createTranslationProvider(
 
       const userContent = messages
         .map((m, i) => {
-          let text = `[${i + 1}] Key: ${m.key}\nSource: ${m.source}`;
+          // Don't include the internal key in the prompt - use position instead
+          // Keys may contain special characters like \u0004 that AI can't preserve
+          let text = `[${i + 1}] ${m.source}`;
           if (m.context) {
             text += `\nContext: ${m.context}`;
           }
@@ -142,7 +146,19 @@ export function createTranslationProvider(
         throw new Error('No output from AI provider');
       }
 
-      return result.output.translations;
+      // Match translations back to original keys by numeric ID
+      const translations = result.output.translations;
+      return translations.map((t) => {
+        const index = t.id - 1; // IDs are 1-indexed in the prompt
+        const message = messages[index];
+        if (!message) {
+          throw new Error(`AI returned invalid ID ${t.id}`);
+        }
+        return {
+          key: message.key,
+          translation: t.translation,
+        };
+      });
     },
   };
 }
@@ -177,7 +193,8 @@ export function createDryRunProvider(
 
         const userContent = messages
           .map((m, i) => {
-            let text = `[${i + 1}] Key: ${m.key}\nSource: ${m.source}`;
+            // Same format as real provider - no key in prompt
+            let text = `[${i + 1}] ${m.source}`;
             if (m.context) {
               text += `\nContext: ${m.context}`;
             }
