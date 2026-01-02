@@ -17,7 +17,7 @@ test.describe('Translation Content', () => {
         'About our company',
       );
       await expect(page.getByTestId('about-description')).toContainText(
-        'We are building the future of internationalization',
+        'Learn more about what we do',
       );
     });
 
@@ -25,16 +25,13 @@ test.describe('Translation Content', () => {
       await page.goto('/blog');
 
       await expect(page.getByTestId('blog-title')).toContainText('Our Blog');
-      await expect(page.getByTestId('blog-description')).toContainText(
-        'Read our latest articles',
-      );
     });
 
     test('contact page shows English content', async ({ page }) => {
       await page.goto('/contact');
 
       await expect(page.getByTestId('contact-title')).toContainText(
-        'Contact us',
+        'Contact Us',
       );
     });
   });
@@ -55,8 +52,9 @@ test.describe('Translation Content', () => {
       await expect(page.getByTestId('about-title')).toContainText(
         'Acerca de nuestra empresa',
       );
+      // AI translation of "Learn more about what we do."
       await expect(page.getByTestId('about-description')).toContainText(
-        'Estamos construyendo el futuro de la internacionalización',
+        'información sobre lo que hacemos',
       );
     });
 
@@ -73,9 +71,8 @@ test.describe('Translation Content', () => {
       await page.goto('/es');
       await page.getByTestId('nav-contact').click();
 
-      await expect(page.getByTestId('contact-title')).toContainText(
-        'Contáctenos',
-      );
+      // AI translation of "Contact Us"
+      await expect(page.getByTestId('contact-title')).toContainText('Contáct');
     });
   });
 

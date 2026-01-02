@@ -118,7 +118,7 @@ test.describe('Prefix Strategy: always', () => {
     }) => {
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',

@@ -6,6 +6,5 @@ export default {
   i18n: {
     locales: ['en', 'es'],
     defaultLocale: 'en',
-    localeDetection: false, // We handle detection ourselves
   },
 } satisfies NextConfig;

@@ -1,85 +1,79 @@
 msgid ""
 msgstr ""
 "Language: en\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain\n"
 
 #: src/app/[locale]/page.tsx
-#. Home page title
-msgid "Welcome to our website"
+#. [AI Context]: Main page heading displayed at the top of the home page to greet users
+#, extracted
+msgid "0043pNTf"
 msgstr "Welcome to our website"
 
 #: src/app/[locale]/page.tsx
-#. Home page description
-msgid "This is a demonstration of Idiomi with Next.js App Router."
+#. [AI Context]: Introductory paragraph text on the home page describing the purpose of the site
+#, extracted
+msgid "000I3ScQ"
 msgstr "This is a demonstration of Idiomi with Next.js App Router."
 
 #: src/app/[locale]/about/page.tsx
-#. About page title
-msgid "About our company"
+#. [AI Context]: Page heading on the About page introducing the company
+#, extracted
+msgid "000Emt1m"
 msgstr "About our company"
 
 #: src/app/[locale]/about/page.tsx
-#. About page description
-msgid "We are building the future of internationalization."
+#. [AI Context]: Descriptive paragraph on the About page explaining the company's mission
+#, extracted
+msgid "002O6MmQ"
 msgstr "We are building the future of internationalization."
 
-#: src/app/[locale]/contact/page.tsx
-#. Contact page title
-msgid "Contact us"
-msgstr "Contact us"
-
-#: src/app/[locale]/contact/page.tsx
-#. Contact page description
-msgid "Get in touch with our team."
-msgstr "Get in touch with our team."
-
-#: src/app/[locale]/docs/[...slug]/page.tsx
-#. Docs page title
-msgid "Documentation"
-msgstr "Documentation"
-
 #: src/app/[locale]/blog/page.tsx
-#. Blog page title
-msgid "Our Blog"
+#. [AI Context]: Main page heading on the blog landing page
+#, extracted
+msgid "0039uF2j"
 msgstr "Our Blog"
 
 #: src/app/[locale]/blog/page.tsx
-#. Blog page description
-msgid "Read our latest articles"
+#. [AI Context]: Subheading on the blog landing page describing the page's content
+#, extracted
+msgid "003woyf5"
 msgstr "Read our latest articles"
 
 #: src/app/[locale]/blog/page.tsx
-#. Blog post link
-msgid "Hello World Post"
+#. [AI Context]: Clickable link text for the first blog post in the article list
+#, extracted
+msgid "004QtLkv"
 msgstr "Hello World Post"
 
 #: src/app/[locale]/blog/page.tsx
-#. Blog post link
-msgid "Getting Started"
+#. [AI Context]: Clickable link text for the second blog post in the article list
+#, extracted
+msgid "000bv8XP"
 msgstr "Getting Started"
 
+#: src/app/[locale]/contact/page.tsx
+#. [AI Context]: Page heading for the contact page where users can reach out to support
+#, extracted
+msgid "001INXnu"
+msgstr "Contact us"
+
+#: src/app/[locale]/contact/page.tsx
+#. [AI Context]: Introductory text/subheading on the contact page describing the purpose of the page
+#, extracted
+msgid "003T8F3W"
+msgstr "Get in touch with our team."
+
 #: src/app/[locale]/blog/[slug]/page.tsx
-#. Blog post title
-msgid "Blog Post"
+#. [AI Context]: Page heading for individual blog post articles
+#, extracted
+msgid "002mrR1N"
 msgstr "Blog Post"
 
-#. Route segment: blog
-msgctxt "route:blog"
-msgid "blog"
-msgstr "blog"
-
-#: src/app/[locale]/blog/page.tsx
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#. [AI Context]: Page heading for the documentation section
 #, extracted
-msgctxt "route:blog"
-msgid "0030YUzz"
-msgstr "blog"
-
-#. Route segment: about
-msgctxt "route:about"
-msgid "about"
-msgstr "about"
+msgid "001LdocT"
+msgstr "Documentation"
 
 #: src/app/[locale]/about/page.tsx
 #, extracted
@@ -87,21 +81,17 @@ msgctxt "route:about"
 msgid "003R6yRq"
 msgstr "about"
 
-#. Route segment: contact
-msgctxt "route:contact"
-msgid "contact"
-msgstr "contact"
+#: src/app/[locale]/blog/page.tsx
+#, extracted
+msgctxt "route:blog"
+msgid "0030YUzz"
+msgstr "blog"
 
 #: src/app/[locale]/contact/page.tsx
 #, extracted
 msgctxt "route:contact"
 msgid "002dJ8dM"
 msgstr "contact"
-
-#. Route segment: docs
-msgctxt "route:docs"
-msgid "docs"
-msgstr "docs"
 
 #: src/app/[locale]/docs/[...slug]/page.tsx
 #, extracted

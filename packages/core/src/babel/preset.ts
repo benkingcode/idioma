@@ -1,3 +1,5 @@
+import { join } from 'path';
+import { createJiti } from 'jiti';
 import type { IdiomiPluginOptions } from './plugin.js';
 
 export interface IdiomiBabelPresetOptions {
@@ -20,6 +22,26 @@ type PluginEntry = [string, Partial<IdiomiPluginOptions>];
 
 interface PresetResult {
   plugins: PluginEntry[];
+}
+
+/**
+ * Load translations synchronously from the .generated folder.
+ * Uses jiti to handle ESM/CJS interop.
+ */
+function loadTranslations(
+  idiomiDir: string,
+): Record<string, Record<string, string>> | null {
+  try {
+    const translationsPath = join(idiomiDir, '.generated', 'translations.js');
+    const jiti = createJiti(import.meta.url, { interopDefault: true });
+    const module = jiti(translationsPath) as {
+      translations?: Record<string, Record<string, string>>;
+    };
+    return module.translations ?? null;
+  } catch {
+    // Translations may not exist yet
+    return null;
+  }
 }
 
 /**
@@ -53,15 +75,21 @@ export default function idiomiBabelPreset(
   // Use @idiomi/core/babel which resolves to the plugin
   const pluginPath = '@idiomi/core/babel';
 
+  // Build plugin options
+  const pluginOptions: Partial<IdiomiPluginOptions> = {
+    mode,
+    ...options,
+  };
+
+  // For inlined mode, load translations from the .generated folder
+  if (mode === 'inlined' && options.idiomiDir) {
+    const translations = loadTranslations(options.idiomiDir);
+    if (translations) {
+      pluginOptions.translations = translations;
+    }
+  }
+
   return {
-    plugins: [
-      [
-        pluginPath,
-        {
-          mode,
-          ...options,
-        },
-      ],
-    ],
+    plugins: [[pluginPath, pluginOptions]],
   };
 }

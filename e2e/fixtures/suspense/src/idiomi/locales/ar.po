@@ -36,7 +36,7 @@ msgstr "مرحبا <Bold>{name}</Bold>!"
 #: src/components/ComponentTags.tsx
 #, extracted, ai-translated
 msgid "002eTXHM"
-msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، والعادي"
+msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، وعادي"
 
 #: src/components/ComponentTags.tsx
 #, extracted, ai-translated
@@ -67,13 +67,13 @@ msgstr "قد لا تتم ترجمة هذه الرسالة"
 #, extracted, ai-translated
 msgid "0047ZVOp"
 msgstr ""
-"هذا نص أطول يمتد على عدة كلمات ويختبر كيفية قيام النظام بالتعامل مع المحتوى "
-"الأطول في الترجمات"
+"هذا نص أطول يمتد على عدة كلمات ويختبر كيفية التعامل مع المحتوى الأطول في "
+"الترجمات"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
 msgid "001r7GGR"
-msgstr "خاص: & < > \"علامات اقتباس\""
+msgstr "خاص: & < > \"الاقتباسات\""
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -98,7 +98,7 @@ msgstr "قبل {name} بعد"
 #: src/components/Interpolation.tsx
 #, extracted, ai-translated
 msgid "002r0ybS"
-msgstr "لديك {0} عنصر"
+msgstr "لديك {0} عناصر"
 
 #: src/components/Plurals.tsx
 #, extracted, ai-translated
@@ -113,7 +113,7 @@ msgstr "{count, plural, zero {لا توجد رسائل} one {# رسالة} other
 #: src/components/Plurals.tsx
 #, extracted, ai-translated
 msgid "002EaYd6"
-msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
+msgstr "هناك {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
 
 #: src/components/Plurals.tsx
 #, extracted, ai-translated
@@ -130,12 +130,12 @@ msgstr "مرحبا من useT!"
 #: src/components/UseT.tsx
 #, extracted, ai-translated
 msgid "003X3cVZ"
-msgstr "مرحبا بك، {name}!"
+msgstr "مرحبا، {name}!"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated
 msgid "001gZ2vk"
-msgstr "{count} عنصر بواسطة {author}"
+msgstr "{count} عناصر بواسطة {author}"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated

@@ -73,24 +73,26 @@ test.describe('Locale Switching', () => {
 
     // Check that cookie was set
     const cookies = await page.evaluate(() => document.cookie);
-    expect(cookies).toContain('IDIOMI_LOCALE=es');
+    expect(cookies).toContain('NEXT_LOCALE=es');
   });
 
   test('locale button shows active state', async ({ page }) => {
     // Wait for hydration
     await page.waitForSelector('[data-hydrated="true"]', { state: 'attached' });
 
-    // English button should be active initially
+    // English button should be active initially (via aria-pressed)
     const enButton = page.getByTestId('locale-en');
-    await expect(enButton).toHaveCSS('font-weight', '700'); // bold
+    await expect(enButton).toHaveAttribute('aria-pressed', 'true');
 
     // Switch to Spanish
     await page.getByTestId('locale-es').click();
     await page.waitForURL(/\/es/);
 
-    // Spanish button should now be active
+    // Spanish button should now be active (via aria-pressed)
     const esButton = page.getByTestId('locale-es');
-    await expect(esButton).toHaveCSS('font-weight', '700'); // bold
+    await expect(esButton).toHaveAttribute('aria-pressed', 'true');
+    // English button should no longer be active
+    await expect(enButton).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('rapid locale switching works correctly', async ({ page }) => {

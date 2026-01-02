@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
 
+// Check if current fixture uses localized paths
+const isLocalizedPathFixture = () => {
+  const projectName = test.info().project.name;
+  return (
+    projectName.includes('localized-') && !projectName.includes('non-localized')
+  );
+};
+
 test.describe('Middleware Edge Cases', () => {
   test.describe('Static Assets', () => {
     test('does not intercept Next.js internal routes', async ({ page }) => {
@@ -26,10 +34,11 @@ test.describe('Middleware Edge Cases', () => {
     });
 
     test('handles double slashes gracefully', async ({ page }) => {
-      // Double slashes should be normalized
-      await page.goto('//es');
-      // Should either work or redirect to proper path
-      await expect(page).toHaveURL(/\/es/);
+      // Double slashes in path should be normalized by the server
+      // Note: We can't test '//es' because browsers interpret that as a protocol-relative URL
+      await page.goto('/es//about');
+      // Should either normalize to /es/about or still work
+      await expect(page.getByTestId('about-title')).toBeVisible();
     });
 
     test('rejects invalid locale prefix', async ({ page }) => {
@@ -55,13 +64,6 @@ test.describe('Middleware Edge Cases', () => {
   });
 
   test.describe('URL Encoding', () => {
-    test('handles encoded characters in path', async ({ page }) => {
-      // Visit blog with URL-encoded slug
-      await page.goto('/es/articulos/mi%20post');
-      // Should work with encoded spaces
-      await expect(page.getByTestId('blog-post-page')).toBeVisible();
-    });
-
     test('handles special characters in dynamic segments', async ({ page }) => {
       // Blog slug with special characters
       await page.goto('/blog/hello-world-123');
@@ -73,41 +75,11 @@ test.describe('Middleware Edge Cases', () => {
   });
 
   test.describe('Redirect Behavior', () => {
-    test('canonical path with Spanish cookie redirects to localized', async ({
-      page,
-    }) => {
-      // Set Spanish preference
-      await page.context().addCookies([
-        {
-          name: 'IDIOMI_LOCALE',
-          value: 'es',
-          domain: 'localhost',
-          path: '/',
-        },
-      ]);
-
-      // Visit canonical /about
-      await page.goto('/about');
-
-      // Should redirect to /es/sobre
-      await expect(page).toHaveURL(/\/es\/sobre/);
-    });
-
-    test('localized path for wrong locale redirects correctly', async ({
-      page,
-    }) => {
-      // Visit Spanish path /sobre without /es prefix
-      await page.goto('/sobre');
-
-      // This is an unknown route in English, should 404 or redirect
-      // Exact behavior depends on implementation
-    });
-
     test('preserves query parameters on redirect', async ({ page }) => {
       // Set Spanish preference
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',
@@ -126,7 +98,7 @@ test.describe('Middleware Edge Cases', () => {
       // Set Spanish preference
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',
@@ -155,5 +127,52 @@ test.describe('Middleware Edge Cases', () => {
       // Should end up at home
       await expect(page.getByTestId('home-title')).toBeVisible();
     });
+  });
+});
+
+// Tests specific to localized path fixtures (e.g., /es/sobre instead of /es/about)
+test.describe('Localized Paths (fixtures with translated URLs)', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(
+      !isLocalizedPathFixture(),
+      'Only applies to localized path fixtures',
+    );
+  });
+
+  test('canonical path with Spanish cookie redirects to localized', async ({
+    page,
+  }) => {
+    // Set Spanish preference
+    await page.context().addCookies([
+      {
+        name: 'NEXT_LOCALE',
+        value: 'es',
+        domain: 'localhost',
+        path: '/',
+      },
+    ]);
+
+    // Visit canonical /about
+    await page.goto('/about');
+
+    // Should redirect to /es/sobre
+    await expect(page).toHaveURL(/\/es\/sobre/);
+  });
+
+  test('localized path for wrong locale redirects correctly', async ({
+    page,
+  }) => {
+    // Visit Spanish path /sobre without /es prefix
+    await page.goto('/sobre');
+
+    // This is an unknown route in English, should 404 or redirect
+    // Exact behavior depends on implementation
+  });
+
+  test('handles encoded characters in localized path', async ({ page }) => {
+    // Visit blog with URL-encoded slug in localized path
+    await page.goto('/es/articulos/mi%20post');
+    // Should work with encoded spaces
+    await expect(page.getByTestId('blog-post-page')).toBeVisible();
   });
 });

@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "extract": "idiomi extract",
-    "compile": "idiomi compile"
+    "compile": "idiomi compile",
+    "translate": "dotenv -e ../../../.env.local -- idiomi translate"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.0",

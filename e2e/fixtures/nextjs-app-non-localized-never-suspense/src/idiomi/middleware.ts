@@ -3,9 +3,10 @@
 // Middleware exports for Next.js edge runtime
 
 import { createMiddlewareFactory } from '@idiomi/next/middleware';
-import { defaultLocale, locales } from './.generated/config';
+import { defaultLocale, locales, prefixStrategy } from './.generated/config';
 
 export const createMiddleware = createMiddlewareFactory({
   locales,
   defaultLocale,
+  prefixStrategy,
 });

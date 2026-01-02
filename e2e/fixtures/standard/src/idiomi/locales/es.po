@@ -41,7 +41,7 @@ msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal
 #: src/components/ComponentTags.tsx
 #, extracted, ai-translated
 msgid "0013HsIP"
-msgstr "<Bold> Importante: <Italic>lee con cuidado</Italic> </Bold>"
+msgstr "<Bold> Importante: <Italic>lee atentamente</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -68,7 +68,7 @@ msgstr "Este mensaje podría no estar traducido"
 msgid "0047ZVOp"
 msgstr ""
 "Este es un texto más largo que abarca múltiples palabras y prueba cómo el "
-"sistema maneja contenido más extenso en las traducciones"
+"sistema maneja contenido más extenso en traducciones"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -93,7 +93,7 @@ msgstr "¡Hola, {name}!"
 #: src/components/Interpolation.tsx
 #, extracted, ai-translated
 msgid "003lIRId"
-msgstr "Bienvenido, ¡{firstName} {lastName}!"
+msgstr "Bienvenido, {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx
 #, extracted, ai-translated
@@ -126,7 +126,7 @@ msgid "004CDxng"
 msgstr ""
 "{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# "
 "archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other "
-"{# archivos (otros)}}"
+"{# archivos (otro)}}"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated

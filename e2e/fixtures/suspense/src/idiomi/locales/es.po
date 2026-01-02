@@ -41,7 +41,7 @@ msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal
 #: src/components/ComponentTags.tsx
 #, extracted, ai-translated
 msgid "0013HsIP"
-msgstr "<Bold> Importante: <Italic>lee con cuidado</Italic> </Bold>"
+msgstr "<Bold> Importante: <Italic>lee atentamente</Italic> </Bold>"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -51,7 +51,7 @@ msgstr "Valor: [{emptyString}]"
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
 msgid "002Baos1"
-msgstr "Recuento: {zero}"
+msgstr "Conteo: {zero}"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -88,7 +88,7 @@ msgstr "¡Hola, {name}!"
 #: src/components/Interpolation.tsx
 #, extracted, ai-translated
 msgid "003lIRId"
-msgstr "Bienvenido, {firstName} {lastName}!"
+msgstr "¡Bienvenido, {firstName} {lastName}!"
 
 #: src/components/Interpolation.tsx
 #, extracted, ai-translated

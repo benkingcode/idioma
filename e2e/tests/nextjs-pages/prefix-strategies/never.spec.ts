@@ -57,7 +57,7 @@ test.describe('Prefix Strategy: never', () => {
     test('cookie determines content language', async ({ page }) => {
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',
@@ -80,7 +80,7 @@ test.describe('Prefix Strategy: never', () => {
       });
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'en',
           domain: 'localhost',
           path: '/',
@@ -124,7 +124,7 @@ test.describe('Prefix Strategy: never', () => {
 
       // Check cookie was set
       const cookies = await page.context().cookies();
-      const localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
+      const localeCookie = cookies.find((c) => c.name === 'NEXT_LOCALE');
       expect(localeCookie?.value).toBe('es');
     });
   });
@@ -133,7 +133,7 @@ test.describe('Prefix Strategy: never', () => {
     test('links have no locale prefix', async ({ page }) => {
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',
@@ -167,7 +167,7 @@ test.describe('Prefix Strategy: never', () => {
       // Same URL with Spanish cookie
       await context.addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',

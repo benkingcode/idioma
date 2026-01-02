@@ -261,6 +261,14 @@ export interface MiddlewareFactoryConfig {
   locales: readonly string[];
   /** Default/source locale */
   defaultLocale: string;
+  /**
+   * Locale prefix strategy for URLs.
+   * - 'always': All locales prefixed (e.g., /en/about, /es/about)
+   * - 'as-needed': Default locale unprefixed (e.g., /about, /es/about)
+   * - 'never': No locale prefixes in URLs
+   * @default 'as-needed'
+   */
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
   /** Route translations map (from compiled routes) */
   routes?: Record<string, Record<string, string>>;
   /** Reverse route maps (from compiled routes) */
@@ -326,13 +334,20 @@ export interface MiddlewareRuntimeConfig {
 export function createMiddlewareFactory(
   factoryConfig: MiddlewareFactoryConfig,
 ) {
-  const { locales, defaultLocale, routes, reverseRoutes, routePatterns } =
-    factoryConfig;
+  const {
+    locales,
+    defaultLocale,
+    prefixStrategy,
+    routes,
+    reverseRoutes,
+    routePatterns,
+  } = factoryConfig;
 
   return function createMiddleware(runtimeConfig?: MiddlewareRuntimeConfig) {
     return createIdiomiMiddleware({
       locales,
       defaultLocale,
+      prefixStrategy,
       routes,
       reverseRoutes,
       routePatterns,

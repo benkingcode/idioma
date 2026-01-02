@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "extract": "idiomi extract",
     "compile": "idiomi compile",
+    "translate": "dotenv -e ../../../.env.local -- idiomi translate",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

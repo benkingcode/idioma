@@ -1,86 +1,64 @@
 msgid ""
 msgstr ""
 "Language: es\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain\n"
 
 #: src/app/[locale]/page.tsx
-#. Home page title
-msgid "Welcome to our website"
+#, extracted, ai-translated
+msgid "0043pNTf"
 msgstr "Bienvenido a nuestro sitio web"
 
 #: src/app/[locale]/page.tsx
-#. Home page description
-msgid "This is a demonstration of Idiomi with Next.js App Router."
+#, extracted, ai-translated
+msgid "000I3ScQ"
 msgstr "Esta es una demostración de Idiomi con Next.js App Router."
 
 #: src/app/[locale]/about/page.tsx
-#. About page title
-msgid "About our company"
-msgstr "Acerca de nuestra empresa"
+#, extracted, ai-translated
+msgid "000Emt1m"
+msgstr "Sobre nuestra empresa"
 
 #: src/app/[locale]/about/page.tsx
-#. About page description
-msgid "We are building the future of internationalization."
+#, extracted, ai-translated
+msgid "002O6MmQ"
 msgstr "Estamos construyendo el futuro de la internacionalización."
 
-#: src/app/[locale]/contact/page.tsx
-#. Contact page title
-msgid "Contact us"
-msgstr "Contáctenos"
-
-#: src/app/[locale]/contact/page.tsx
-#. Contact page description
-msgid "Get in touch with our team."
-msgstr "Póngase en contacto con nuestro equipo."
-
-#: src/app/[locale]/docs/[...slug]/page.tsx
-#. Docs page title
-msgid "Documentation"
-msgstr "Documentación"
-
 #: src/app/[locale]/blog/page.tsx
-#. Blog page title
-msgid "Our Blog"
+#, extracted, ai-translated
+msgid "0039uF2j"
 msgstr "Nuestro Blog"
 
 #: src/app/[locale]/blog/page.tsx
-#. Blog page description
-msgid "Read our latest articles"
-msgstr "Lee nuestros últimos artículos"
+#, extracted, ai-translated
+msgid "003woyf5"
+msgstr "Lee nuestros artículos más recientes"
 
 #: src/app/[locale]/blog/page.tsx
-#. Blog post link
-msgid "Hello World Post"
-msgstr "Publicación Hola Mundo"
+#, extracted, ai-translated
+msgid "004QtLkv"
+msgstr "Hello World Post"
 
 #: src/app/[locale]/blog/page.tsx
-#. Blog post link
-msgid "Getting Started"
-msgstr "Empezando"
+#, extracted, ai-translated
+msgid "000bv8XP"
+msgstr "Getting Started"
+
+#: src/app/[locale]/contact/page.tsx
+#, extracted, ai-translated
+msgid "001INXnu"
+msgstr "Contáctanos"
+
+#: src/app/[locale]/contact/page.tsx
+#, extracted, ai-translated
+msgid "003T8F3W"
+msgstr "Ponte en contacto con nuestro equipo."
 
 #: src/app/[locale]/blog/[slug]/page.tsx
-#. Blog post title
-msgid "Blog Post"
-msgstr "Artículo del Blog"
+#, extracted, ai-translated
+msgid "002mrR1N"
+msgstr "Entrada de Blog"
 
-#. Route segment: blog -> articulos
-msgctxt "route:blog"
-msgid "blog"
-msgstr "articulos"
-
-#. Route segment: about -> sobre
-msgctxt "route:about"
-msgid "about"
-msgstr "sobre"
-
-#. Route segment: contact -> contacto
-msgctxt "route:contact"
-msgid "contact"
-msgstr "contacto"
-
-#. Route segment: docs -> documentacion
-msgctxt "route:docs"
-msgid "docs"
-msgstr "documentacion"
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#, extracted, ai-translated
+msgid "001LdocT"
+msgstr "Documentación"

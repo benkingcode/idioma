@@ -4,37 +4,37 @@ msgstr ""
 "Content-Type: text/plain\n"
 
 #: src/routes/about.lazy.tsx
-#. [AI Context]: Main heading on the About page that introduces the company section
+#. [AI Context]: Main heading on the About page, displayed as an h1 element
 #, extracted
 msgid "000Emt1m"
 msgstr "About our company"
 
 #: src/routes/about.lazy.tsx
-#. [AI Context]: Descriptive paragraph text on the About page below the main heading
+#. [AI Context]: Introductory description text on the About page below the main heading
 #, extracted
 msgid "004U2qa8"
 msgstr "Learn more about what we do"
 
 #: src/routes/contact.lazy.tsx
-#. [AI Context]: Page heading on the contact page that greets users and invites them to get in touch
+#. [AI Context]: Main heading on the contact page introducing the contact form
 #, extracted
 msgid "0034rp6e"
 msgstr "Get in touch with us"
 
 #: src/routes/contact.lazy.tsx
-#. [AI Context]: Descriptive subtext on the contact page explaining that users can send a message and expect a response
+#. [AI Context]: Subheading on the contact page describing what happens after users submit a message
 #, extracted
 msgid "002p8oRq"
 msgstr "Send us a message and we will respond"
 
 #: src/routes/index.lazy.tsx
-#. [AI Context]: Main page heading (h1) displayed at the top of the home page
+#. [AI Context]: Main heading displayed on the home page of the website
 #, extracted
 msgid "0043pNTf"
 msgstr "Welcome to our website"
 
 #: src/routes/index.lazy.tsx
-#. [AI Context]: Descriptive paragraph text below the main heading on the home page
+#. [AI Context]: Descriptive text below the main heading on the home page
 #, extracted
 msgid "000SSgaT"
 msgstr "This is the home page with unique translations"

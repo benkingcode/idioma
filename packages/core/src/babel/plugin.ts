@@ -1,4 +1,4 @@
-import { dirname, relative, resolve } from 'path';
+import { basename, dirname, relative, resolve } from 'path';
 import type { NodePath, PluginObj } from '@babel/core';
 import { parse as babelParse } from '@babel/parser';
 import * as t from '@babel/types';
@@ -231,12 +231,23 @@ export default function idiomiPlugin(): PluginObj<PluginState> {
 
         // Check if import resolves to idiomiDir
         let isIdiomiImport = false;
+
         if (source.startsWith('.')) {
+          // Relative import - resolve and check
           const fileDir = dirname(state.filename);
           const resolvedImport = resolve(fileDir, source);
           isIdiomiImport = resolvedImport.startsWith(resolvedIdiomiDir);
+        } else {
+          // Path alias or package import
+          // Check for common idiomi path patterns:
+          // - @/idiomi, @/idiomi/client, ~/idiomi, #idiomi, etc.
+          // - idiomi (bare import matching folder name)
+          const idiomiFolderName = basename(resolvedIdiomiDir);
+          const pathAliasPattern = new RegExp(
+            `^[@~#]?/?${idiomiFolderName}(/|$)`,
+          );
+          isIdiomiImport = pathAliasPattern.test(source);
         }
-        // Non-relative imports (e.g., 'some-package') won't match idiomiDir
 
         if (!isIdiomiImport) {
           return;
@@ -461,12 +472,30 @@ export default function idiomiPlugin(): PluginObj<PluginState> {
 
         // Check if this is a Trans component using binding tracking
         const isTrans = translatableBindings.get(componentName) === 'Trans';
+        console.log(
+          '[idiomi babel] Checking JSX:',
+          componentName,
+          'isTrans:',
+          isTrans,
+          'bindings:',
+          [...translatableBindings.entries()],
+        );
         if (!isTrans) {
           return;
         }
 
         // Extract the message (skip name check since we verified via binding tracking)
         const extracted = extractTransMessage(path, filename, true);
+        console.log(
+          '[idiomi babel] Extracted message:',
+          extracted?.source,
+          'key:',
+          extracted?.key,
+        );
+        console.log(
+          '[idiomi babel] Translations keys:',
+          Object.keys(opts.translations || {}).slice(0, 5),
+        );
 
         // Call extraction callback if provided
         if (extracted && opts.onExtract) {
@@ -585,7 +614,9 @@ function transformTransComponent(
     ).__ns;
     messageTranslations = nsTranslations?.[namespace]?.[key] || {};
   } else {
-    messageTranslations = translations[key] || {};
+    // Look up by source string (how translations.js is keyed)
+    // Fall back to key lookup for backward compatibility
+    messageTranslations = translations[source] || translations[key] || {};
   }
 
   // Build the __t prop (translations object)

@@ -53,7 +53,7 @@ test.describe('Cookie Persistence', () => {
       // Set Spanish cookie
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',
@@ -92,7 +92,7 @@ test.describe('Cookie Persistence', () => {
       await page.waitForURL(/\/es/);
 
       const cookies = await page.context().cookies();
-      const localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
+      const localeCookie = cookies.find((c) => c.name === 'NEXT_LOCALE');
 
       expect(localeCookie).toBeDefined();
       expect(localeCookie?.value).toBe('es');
@@ -112,7 +112,7 @@ test.describe('Cookie Persistence', () => {
       });
 
       let cookies = await page.context().cookies();
-      let localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
+      let localeCookie = cookies.find((c) => c.name === 'NEXT_LOCALE');
       expect(localeCookie?.value).toBe('es');
 
       // Switch back to English
@@ -120,17 +120,32 @@ test.describe('Cookie Persistence', () => {
       await page.waitForURL(/^http:\/\/localhost:\d+\/$/);
 
       cookies = await page.context().cookies();
-      localeCookie = cookies.find((c) => c.name === 'IDIOMI_LOCALE');
+      localeCookie = cookies.find((c) => c.name === 'NEXT_LOCALE');
       expect(localeCookie?.value).toBe('en');
     });
   });
 
   test.describe('Cross-Route Persistence', () => {
-    test('cookie applies to all routes', async ({ page }) => {
+    // Note: Pages Router with built-in i18n only uses NEXT_LOCALE cookie for
+    // initial "/" detection. Explicit URLs like "/about" are NOT redirected
+    // based on cookie - they serve the default locale. This test is for
+    // fixtures with custom middleware that redirects based on cookie.
+    test('cookie applies to all routes', async ({ page }, testInfo) => {
+      // Skip for Pages Router - it uses built-in i18n which doesn't redirect
+      // explicit URLs based on cookie
+      test.skip(
+        testInfo.project.name.includes('nextjs-pages'),
+        'Pages Router built-in i18n does not redirect explicit paths based on cookie',
+      );
+
+      const isLocalized =
+        testInfo.project.name.includes('localized-') &&
+        !testInfo.project.name.includes('non-localized');
+
       // Set Spanish cookie manually
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',
@@ -139,13 +154,25 @@ test.describe('Cookie Persistence', () => {
 
       // Visit various routes without locale prefix - should redirect to Spanish
       await page.goto('/about');
-      await expect(page).toHaveURL(/\/es\/sobre/);
+      if (isLocalized) {
+        await expect(page).toHaveURL(/\/es\/sobre/);
+      } else {
+        await expect(page).toHaveURL(/\/es\/about/);
+      }
 
       await page.goto('/contact');
-      await expect(page).toHaveURL(/\/es\/contacto/);
+      if (isLocalized) {
+        await expect(page).toHaveURL(/\/es\/contacto/);
+      } else {
+        await expect(page).toHaveURL(/\/es\/contact/);
+      }
 
       await page.goto('/blog');
-      await expect(page).toHaveURL(/\/es\/articulos/);
+      if (isLocalized) {
+        await expect(page).toHaveURL(/\/es\/articulos/);
+      } else {
+        await expect(page).toHaveURL(/\/es\/blog/);
+      }
     });
 
     test('explicit URL locale overrides cookie for that request', async ({
@@ -154,7 +181,7 @@ test.describe('Cookie Persistence', () => {
       // Set Spanish cookie
       await page.context().addCookies([
         {
-          name: 'IDIOMI_LOCALE',
+          name: 'NEXT_LOCALE',
           value: 'es',
           domain: 'localhost',
           path: '/',

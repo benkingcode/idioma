@@ -13,11 +13,15 @@
     },
     "./babel": {
       "types": "./dist/babel/plugin.d.mts",
-      "import": "./dist/babel/plugin.mjs"
+      "import": "./dist/babel/plugin.mjs",
+      "require": "./dist/babel/plugin.mjs",
+      "default": "./dist/babel/plugin.mjs"
     },
     "./babel-preset": {
       "types": "./dist/babel/preset.d.mts",
-      "import": "./dist/babel/preset.mjs"
+      "import": "./dist/babel/preset.mjs",
+      "require": "./dist/babel/preset.mjs",
+      "default": "./dist/babel/preset.mjs"
     },
     "./vite": {
       "types": "./dist/bundler/vite.d.mts",

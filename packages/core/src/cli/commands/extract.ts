@@ -213,10 +213,29 @@ export async function extractFromFile(
 
                 // Check if this import is from the idiomi folder
                 let isIdiomiImport = false;
+
+                // Handle relative imports (e.g., './idiomi', '../idiomi/client')
                 if (source.startsWith('.')) {
                   const fileDir = dirname(absolutePath);
                   const resolvedImport = resolve(fileDir, source);
                   isIdiomiImport = resolvedImport.startsWith(idiomiDir);
+                }
+
+                // Handle path aliases (e.g., '@/idiomi/client', '~/idiomi/client')
+                // Extract the idiomi folder name from idiomiDir and check if source contains it
+                if (!isIdiomiImport) {
+                  const idiomiFolderName = idiomiDir.split('/').pop();
+                  // Check for common alias patterns: @/idiomi, ~/idiomi, #/idiomi, etc.
+                  const aliasPatterns = [
+                    `@/${idiomiFolderName}`,
+                    `~/${idiomiFolderName}`,
+                    `#/${idiomiFolderName}`,
+                    `@src/${idiomiFolderName}`,
+                  ];
+                  isIdiomiImport = aliasPatterns.some(
+                    (pattern) =>
+                      source === pattern || source.startsWith(`${pattern}/`),
+                  );
                 }
 
                 if (!isIdiomiImport) return;

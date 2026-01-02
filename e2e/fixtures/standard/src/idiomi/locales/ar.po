@@ -6,7 +6,7 @@ msgstr ""
 #: src/components/BasicTrans.tsx
 #, extracted, ai-translated
 msgid "000e6cSN"
-msgstr "مرحبا، العالم!"
+msgstr "مرحبا بالعالم!"
 
 #: src/components/BasicTrans.tsx
 #, extracted, ai-translated
@@ -36,7 +36,7 @@ msgstr "مرحبا <Bold>{name}</Bold>!"
 #: src/components/ComponentTags.tsx
 #, extracted, ai-translated
 msgid "002eTXHM"
-msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، والعادي"
+msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، وعادي"
 
 #: src/components/ComponentTags.tsx
 #, extracted, ai-translated
@@ -56,7 +56,7 @@ msgstr "العدد: {zero}"
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
 msgid "0043ID7R"
-msgstr "Null: [{nullValue}]"
+msgstr "فارغ: [{nullValue}]"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -67,8 +67,8 @@ msgstr "قد لا تتم ترجمة هذه الرسالة"
 #, extracted, ai-translated
 msgid "0047ZVOp"
 msgstr ""
-"هذا نص أطول يمتد عبر كلمات متعددة ويختبر كيفية تعامل النظام مع المحتوى "
-"الأطول في الترجمات"
+"هذا نص أطول يمتد على عدة كلمات ويختبر كيفية تعامل النظام مع محتوى أطول في "
+"الترجمات"
 
 #: src/components/EdgeCases.tsx
 #, extracted, ai-translated
@@ -103,7 +103,7 @@ msgstr "قبل {name} بعد"
 #: src/components/Interpolation.tsx
 #, extracted, ai-translated
 msgid "002r0ybS"
-msgstr "لديك {0} عنصر"
+msgstr "لديك {0} عناصر"
 
 #: src/components/Plurals.tsx
 #, extracted, ai-translated
@@ -118,31 +118,31 @@ msgstr "{count, plural, zero {لا توجد رسائل} one {# رسالة} other
 #: src/components/Plurals.tsx
 #, extracted, ai-translated
 msgid "002EaYd6"
-msgstr "هناك {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
+msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
 
 #: src/components/Plurals.tsx
 #, extracted, ai-translated
 msgid "004CDxng"
 msgstr ""
-"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
-"(اثنان)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
+"{count, plural, zero {# ملف (صفر)} one {# ملف (واحد)} two {# ملفان (اثنان)} "
+"few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated
 msgid "002UQheH"
-msgstr "مرحبا من useT!"
+msgstr "مرحباً من useT!"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated
 msgid "003X3cVZ"
-msgstr "مرحبا، {name}!"
+msgstr "أهلاً وسهلاً، {name}!"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated
 msgid "001gZ2vk"
-msgstr "{count} عنصر بواسطة {author}"
+msgstr "{count} عناصر بواسطة {author}"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated
 msgid "002RXyTq"
-msgstr "الترجمة المضمنة"
+msgstr "ترجمة مضمنة"

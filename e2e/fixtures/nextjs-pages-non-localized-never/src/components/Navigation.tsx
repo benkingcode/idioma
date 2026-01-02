@@ -6,7 +6,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 function setLocaleCookie(locale: string) {
-  document.cookie = `IDIOMI_LOCALE=${locale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
+  document.cookie = `NEXT_LOCALE=${locale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
 }
 
 export function Navigation() {

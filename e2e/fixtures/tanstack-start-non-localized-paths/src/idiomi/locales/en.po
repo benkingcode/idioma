@@ -3,92 +3,65 @@ msgstr ""
 "Language: en\n"
 "Content-Type: text/plain\n"
 
-#: src/routes/{-$locale}/index.tsx
-#. [AI Context]: Main page heading displayed on the home page
-#, extracted
-msgid "0043pNTf"
-msgstr "Welcome to our website"
-
-#: src/routes/index.tsx
-#, extracted
-msgid "004WjXeB"
-msgstr "This is the home page with prefix-only routing"
-
 #: src/routes/{-$locale}/about.tsx
-#. [AI Context]: Page heading (h1) on the About page that introduces the company section
+#. [AI Context]: Page heading for the About page, displayed as an h1 element at the top of the page
 #, extracted
 msgid "000Emt1m"
 msgstr "About our company"
 
 #: src/routes/{-$locale}/about.tsx
-#. [AI Context]: Description text below the About heading that invites users to learn more about the company's activities
+#. [AI Context]: Descriptive paragraph text on the About page, below the main heading
 #, extracted
 msgid "004U2qa8"
 msgstr "Learn more about what we do"
 
-#: src/routes/blog.tsx
-#, extracted
-msgid "002nB7Kd"
-msgstr "Our Blog"
-
-#: src/routes/blog.tsx
-#, extracted
-msgid "003X9pLm"
-msgstr "Read our latest articles and updates"
-
-#: src/routes/{-$locale}/contact.tsx
-#. [AI Context]: Page heading in the contact page that invites users to reach out
-#, extracted
-msgid "0034rp6e"
-msgstr "Get in touch with us"
-
-#: src/routes/{-$locale}/contact.tsx
-#. [AI Context]: Descriptive text on the contact page explaining that the team will respond to user messages
-#, extracted
-msgid "002p8oRq"
-msgstr "Send us a message and we will respond"
-
-#: src/routes/{-$locale}/blog.tsx
-#. [AI Context]: Main heading on the blog list page, displayed at the top of the page
-#, extracted
-msgid "0039uF2j"
-msgstr "Our Blog"
-
-#: src/routes/{-$locale}/blog.tsx
-#. [AI Context]: Subtitle text on the blog list page describing the content, displayed below the main heading
-#, extracted
-msgid "00403S5Z"
-msgstr "Read our latest articles and updates"
-
-#: src/routes/{-$locale}/index.tsx
-#. [AI Context]: Descriptive paragraph text on the home page explaining the routing setup
-#, extracted
-msgid "003bBaea"
-msgstr "This is the home page with non-localized paths routing"
-
 #: src/routes/{-$locale}/blog.$slug.tsx
-#. [AI Context]: Page heading at the top of a blog post detail page. The {topic} parameter is dynamically filled with the blog post slug/title.
+#. [AI Context]: Page heading for a blog post, displayed at the top of the blog post detail page
 #, extracted
 msgid "002mrR1N"
 msgstr "Blog Post"
 
 #: src/routes/{-$locale}/blog.$slug.tsx
-#. [AI Context]: Introductory description text on a blog post page. The {topic} placeholder is replaced with the specific blog post slug at runtime.
+#. [AI Context]: Description text shown on blog post page with {topic} placeholder replaced by the blog post slug/title
 #, extracted
 msgid "003LYDLw"
 msgstr "This is a blog post about {topic}"
 
 #: src/routes/{-$locale}/blog.tsx
-#. [AI Context]: Blog post title displayed as a clickable link in the blog list
+#. [AI Context]: Main heading on the blog listing page
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/routes/{-$locale}/blog.tsx
+#. [AI Context]: Subheading description displayed below the blog page title
+#, extracted
+msgid "00403S5Z"
+msgstr "Read our latest articles and updates"
+
+#: src/routes/{-$locale}/blog.tsx
+#. [AI Context]: Link text for the first blog post in the blog post list
 #, extracted
 msgid "000SuTYU"
 msgstr "Hello World"
 
 #: src/routes/{-$locale}/blog.tsx
-#. [AI Context]: Blog post title displayed as a clickable link in the blog list
+#. [AI Context]: Link text for the second blog post in the blog post list
 #, extracted
 msgid "000bv8XP"
 msgstr "Getting Started"
+
+#: src/routes/{-$locale}/contact.tsx
+#. [AI Context]: Page heading for the contact page introducing the main purpose of the contact form
+#, extracted
+msgid "0034rp6e"
+msgstr "Get in touch with us"
+
+#: src/routes/{-$locale}/contact.tsx
+#. [AI Context]: Descriptive text below the contact page heading explaining what users can expect after submitting a message
+#, extracted
+msgid "002p8oRq"
+msgstr "Send us a message and we will respond"
 
 #: src/routes/{-$locale}/docs.api.v2.reference.tsx
 #. [AI Context]: Main page heading for the API v2 reference documentation section
@@ -97,73 +70,85 @@ msgid "001Qpsb7"
 msgstr "API Reference"
 
 #: src/routes/{-$locale}/docs.api.v2.reference.tsx
-#. [AI Context]: Subheading describing the API v2 reference documentation page
+#. [AI Context]: Descriptive subtitle displayed under the API Reference heading to introduce the complete documentation
 #, extracted
 msgid "0049xyvP"
 msgstr "Complete API documentation"
 
+#: src/routes/{-$locale}/index.tsx
+#. [AI Context]: Main heading on the home page displayed to users when they first visit the site
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/routes/{-$locale}/index.tsx
+#. [AI Context]: Descriptive paragraph text below the main heading on the home page explaining the routing structure
+#, extracted
+msgid "003bBaea"
+msgstr "This is the home page with non-localized paths routing"
+
 #: src/routes/{-$locale}/products.featured.tsx
-#. [AI Context]: Page heading for the featured products page displayed at the top of the content
+#. [AI Context]: Page heading for the featured products section of the e-commerce website
 #, extracted
 msgid "0017Xuw4"
 msgstr "Featured Products"
 
 #: src/routes/{-$locale}/shop.$category.$productId.tsx
-#. [AI Context]: Page heading displayed at the top of the product details page
+#. [AI Context]: Main heading on the product details page, displays the page title
 #, extracted
 msgid "003xcdAn"
 msgstr "Product Details"
 
 #: src/routes/{-$locale}/shop.$category.$productId.tsx
-#. [AI Context]: Product description text with two dynamic placeholders: {productId} is the product identifier and {category} is the product's category name
+#. [AI Context]: Product description text with dynamic placeholders: {productId} is replaced with the product ID and {category} is replaced with the product's category name
 #, extracted
 msgid "001nvw0c"
 msgstr "Product {productId} in category {category}"
 
-#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
-#. [AI Context]: Page heading in the user post detail view displaying the title of the section
-#, extracted
-msgid "000rooat"
-msgstr "Post Detail"
-
-#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
-#. [AI Context]: Description text showing a post with two dynamic values: {postId} is replaced with the numeric post ID and {userId} is replaced with the user ID
-#, extracted
-msgid "002v3Cim"
-msgstr "Post {postId} by {userId}"
-
-#: src/routes/{-$locale}/users.$userId.posts.tsx
-#. [AI Context]: Page heading displayed at the top of the user posts listing page
-#, extracted
-msgid "004HGxPa"
-msgstr "User Posts"
-
-#: src/routes/{-$locale}/users.$userId.posts.tsx
-#. [AI Context]: Description text showing which user's posts are being displayed; {user} is replaced with the userId parameter
-#, extracted
-msgid "0012esD3"
-msgstr "Posts by {user}"
-
-#: src/routes/{-$locale}/users.$userId.posts.tsx
-#. [AI Context]: Link label for the first post in the posts list on the user posts page
-#, extracted
-msgid "001kLT4X"
-msgstr "First Post"
-
-#: src/routes/{-$locale}/users.$userId.posts.tsx
-#. [AI Context]: Link label for the second post in the posts list on the user posts page
-#, extracted
-msgid "0026pTpY"
-msgstr "Second Post"
-
 #: src/routes/{-$locale}/users.$userId.index.tsx
-#. [AI Context]: Page heading for the user profile page displayed at the top of the screen
+#. [AI Context]: Page heading for the user profile view, displayed at the top of the user's profile page
 #, extracted
 msgid "0042IuEu"
 msgstr "User Profile"
 
 #: src/routes/{-$locale}/users.$userId.index.tsx
-#. [AI Context]: Description text showing which user's profile is being viewed; {user} is replaced with the user ID
+#. [AI Context]: Description text showing which user's profile is being viewed; {user} is replaced with the user ID at runtime
 #, extracted
 msgid "0040JPXJ"
 msgstr "Viewing profile for {user}"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#. [AI Context]: Page heading that displays at the top of the user post detail page
+#, extracted
+msgid "000rooat"
+msgstr "Post Detail"
+
+#: src/routes/{-$locale}/users.$userId.posts.$postId.tsx
+#. [AI Context]: Descriptive text showing which post and user are being viewed, with {postId} and {userId} replaced by actual values
+#, extracted
+msgid "002v3Cim"
+msgstr "Post {postId} by {userId}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Page heading displaying the title of the user posts section
+#, extracted
+msgid "004HGxPa"
+msgstr "User Posts"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Description text showing which user's posts are being displayed; includes a variable placeholder for the user ID
+#, extracted
+msgid "0012esD3"
+msgstr "Posts by {user}"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Link text for the first example post in the posts list
+#, extracted
+msgid "001kLT4X"
+msgstr "First Post"
+
+#: src/routes/{-$locale}/users.$userId.posts.tsx
+#. [AI Context]: Link text for the second example post in the posts list
+#, extracted
+msgid "0026pTpY"
+msgstr "Second Post"

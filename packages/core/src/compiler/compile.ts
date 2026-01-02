@@ -1254,8 +1254,10 @@ function generateNextMiddlewareCode(options: RouteAwareCodeOptions): string {
     `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
   );
 
-  // Import config values
-  imports.push(`import { locales, defaultLocale } from './.generated/config';`);
+  // Import config values - always include prefixStrategy for correct routing behavior
+  imports.push(
+    `import { locales, defaultLocale, prefixStrategy } from './.generated/config';`,
+  );
 
   if (routing.localizedPaths) {
     imports.push(
@@ -1267,6 +1269,7 @@ function generateNextMiddlewareCode(options: RouteAwareCodeOptions): string {
   exports.push(`export const createMiddleware = createMiddlewareFactory({`);
   exports.push(`  locales,`);
   exports.push(`  defaultLocale,`);
+  exports.push(`  prefixStrategy,`);
   if (routing.localizedPaths) {
     exports.push(`  routes,`);
     exports.push(`  reverseRoutes,`);

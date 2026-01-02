@@ -380,8 +380,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -420,8 +420,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -460,8 +460,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -500,8 +500,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -540,8 +540,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -580,8 +580,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -620,8 +620,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -660,8 +660,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/react
       next:
-        specifier: ^15.1.0
-        version: 15.5.9(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: ^16.0.0
+        version: 16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@19.1.0-rc.2)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react:
         specifier: ^19.0.0
         version: 19.2.3
