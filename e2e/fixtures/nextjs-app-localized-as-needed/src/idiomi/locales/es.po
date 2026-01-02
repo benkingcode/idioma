@@ -71,10 +71,10 @@ msgid "blog"
 msgstr "articulos"
 
 #: src/app/[locale]/blog/page.tsx
-#, extracted
+#, extracted, ai-translated
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr ""
+msgstr "blog"
 
 #. Route segment: about -> sobre
 msgctxt "route:about"
@@ -82,10 +82,10 @@ msgid "about"
 msgstr "sobre"
 
 #: src/app/[locale]/about/page.tsx
-#, extracted
+#, extracted, ai-translated
 msgctxt "route:about"
 msgid "003R6yRq"
-msgstr ""
+msgstr "acerca-de"
 
 #. Route segment: contact -> contacto
 msgctxt "route:contact"
@@ -93,10 +93,10 @@ msgid "contact"
 msgstr "contacto"
 
 #: src/app/[locale]/contact/page.tsx
-#, extracted
+#, extracted, ai-translated
 msgctxt "route:contact"
 msgid "002dJ8dM"
-msgstr ""
+msgstr "contacto"
 
 #. Route segment: docs -> documentacion
 msgctxt "route:docs"
@@ -104,7 +104,7 @@ msgid "docs"
 msgstr "documentacion"
 
 #: src/app/[locale]/docs/[...slug]/page.tsx
-#, extracted
+#, extracted, ai-translated
 msgctxt "route:docs"
 msgid "001eY9Px"
-msgstr ""
+msgstr "docs"
