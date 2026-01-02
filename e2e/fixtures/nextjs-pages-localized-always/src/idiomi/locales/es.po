@@ -52,7 +52,7 @@ msgstr "Documentación"
 #, extracted, ai-translated
 msgctxt "route:about"
 msgid "003R6yRq"
-msgstr "acerca-de"
+msgstr "sobre"
 
 #: src/pages/contact.tsx
 #, extracted, ai-translated
@@ -70,4 +70,4 @@ msgstr "blog"
 #, extracted, ai-translated
 msgctxt "route:docs"
 msgid "001eY9Px"
-msgstr "docs"
+msgstr "documentacion"

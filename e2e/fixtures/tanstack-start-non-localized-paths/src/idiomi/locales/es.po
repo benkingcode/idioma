@@ -36,12 +36,12 @@ msgstr "Lee nuestros últimos artículos y actualizaciones"
 #: src/routes/{-$locale}/blog.tsx
 #, extracted, ai-translated
 msgid "000SuTYU"
-msgstr "Hello World"
+msgstr "Hola Mundo"
 
 #: src/routes/{-$locale}/blog.tsx
 #, extracted, ai-translated
 msgid "000bv8XP"
-msgstr "Getting Started"
+msgstr "Primeros pasos"
 
 #: src/routes/{-$locale}/contact.tsx
 #, extracted, ai-translated

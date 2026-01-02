@@ -24,7 +24,7 @@ test.describe('Dynamic Routes - Non-Localized Paths', () => {
     await expect(page.getByTestId('blog-post-page')).toBeVisible();
     await expect(page.getByTestId('blog-post-slug')).toHaveText('hello-world');
     await expect(page.getByTestId('blog-post-title')).toContainText(
-      'Articulo del Blog',
+      'Artículo del Blog',
     );
   });
 

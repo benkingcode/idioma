@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { createJiti } from 'jiti';
 import type { IdiomiPluginOptions } from './plugin.js';
 
@@ -45,6 +45,24 @@ function loadTranslations(
 }
 
 /**
+ * Load config synchronously from the .generated folder.
+ * Used to derive locales for suspense mode.
+ */
+function loadConfig(idiomiDir: string): { locales?: string[] } | null {
+  try {
+    const configPath = join(idiomiDir, '.generated', 'config.js');
+    const jiti = createJiti(import.meta.url, { interopDefault: true });
+    const module = jiti(configPath) as {
+      locales?: string[];
+    };
+    return module;
+  } catch {
+    // Config may not exist yet
+    return null;
+  }
+}
+
+/**
  * Babel preset for Idiomi i18n.
  *
  * Configures the Idiomi Babel plugin with inlined or suspense mode.
@@ -86,6 +104,35 @@ export default function idiomiBabelPreset(
     const translations = loadTranslations(options.idiomiDir);
     if (translations) {
       pluginOptions.translations = translations;
+    }
+  }
+
+  // For suspense mode, auto-derive missing options from idiomiDir
+  if (mode === 'suspense' && options.idiomiDir) {
+    // Set outputDir to idiomiDir if not provided
+    if (!pluginOptions.outputDir) {
+      pluginOptions.outputDir = options.idiomiDir;
+    }
+
+    // Derive projectRoot from idiomiDir (go up to find package.json level)
+    // idiomiDir is typically like /path/to/project/src/idiomi
+    if (!pluginOptions.projectRoot) {
+      // Walk up to find a reasonable project root (directory containing idiomiDir)
+      // A simple heuristic: the parent of idiomiDir's parent (e.g., /path/to/project from /path/to/project/src/idiomi)
+      let dir = dirname(options.idiomiDir);
+      // Go up one more level if we're in a src folder
+      if (dir.endsWith('/src') || dir.endsWith('\\src')) {
+        dir = dirname(dir);
+      }
+      pluginOptions.projectRoot = dir;
+    }
+
+    // Load locales from config if not provided
+    if (!pluginOptions.locales) {
+      const config = loadConfig(options.idiomiDir);
+      if (config?.locales) {
+        pluginOptions.locales = config.locales;
+      }
     }
   }
 

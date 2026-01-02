@@ -67,7 +67,7 @@ msgstr "Documentación"
 #, extracted, ai-translated
 msgctxt "route:about"
 msgid "003R6yRq"
-msgstr "acerca-de"
+msgstr "sobre"
 
 #: src/app/[locale]/blog/page.tsx
 #, extracted, ai-translated

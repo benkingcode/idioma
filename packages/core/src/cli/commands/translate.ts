@@ -19,10 +19,35 @@ import {
   type TranslationProvider,
 } from '../../ai/provider.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
+import { ROUTE_CONTEXT_PREFIX } from '../../routes/compile.js';
 import { getIdiomiPaths, loadConfig } from '../config.js';
 import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
 import { colors } from '../ui/theme.js';
 import { ensureExtracted } from './ensure-extracted.js';
+
+/**
+ * Slugify a route segment for URL-safe usage.
+ * Removes accents, converts to lowercase, replaces spaces with hyphens.
+ */
+function slugifyRouteSegment(text: string): string {
+  return (
+    text
+      // Normalize Unicode to decomposed form (separate base + combining marks)
+      .normalize('NFD')
+      // Remove combining diacritical marks (accents)
+      .replace(/[\u0300-\u036f]/g, '')
+      // Convert to lowercase
+      .toLowerCase()
+      // Replace spaces with hyphens
+      .replace(/\s+/g, '-')
+      // Remove any remaining non-URL-safe characters (keep alphanumeric, hyphens)
+      .replace(/[^a-z0-9-]/g, '')
+      // Collapse multiple hyphens
+      .replace(/-+/g, '-')
+      // Trim leading/trailing hyphens
+      .replace(/^-+|-+$/g, '')
+  );
+}
 
 export interface TranslateResult {
   translated: number;
@@ -242,7 +267,13 @@ export async function runTranslate(
     for (const [key, translation] of translatedMessages) {
       const message = catalog.messages.get(key);
       if (message) {
-        message.translation = translation;
+        // Slugify route translations to ensure URL-safe values
+        const finalTranslation = message.context?.startsWith(
+          ROUTE_CONTEXT_PREFIX,
+        )
+          ? slugifyRouteSegment(translation)
+          : translation;
+        message.translation = finalTranslation;
 
         if (markAI) {
           message.flags = message.flags || [];

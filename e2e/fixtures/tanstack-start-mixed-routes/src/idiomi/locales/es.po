@@ -42,10 +42,10 @@ msgstr "Esta es la página de inicio con enrutamiento de rutas localizadas"
 #, extracted, ai-translated
 msgctxt "route:dashboard"
 msgid "0028mxXJ"
-msgstr "panel-de-control"
+msgstr "dashboard"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:about"
 msgid "003R6yRq"
-msgstr "acerca-de"
+msgstr "sobre"

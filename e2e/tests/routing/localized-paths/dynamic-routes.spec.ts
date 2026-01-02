@@ -24,7 +24,7 @@ test.describe('Dynamic Routes - Localized Paths', () => {
         'hello-world',
       );
       await expect(page.getByTestId('blog-post-title')).toContainText(
-        'Articulo del Blog',
+        'Artículo del Blog',
       );
     });
 
@@ -114,7 +114,7 @@ test.describe('Dynamic Routes - Localized Paths', () => {
       await expect(page.getByTestId('blog-post-page')).toBeVisible();
       await expect(page.getByTestId('blog-post-slug')).toHaveText('test-post');
       await expect(page.getByTestId('blog-post-title')).toContainText(
-        'Articulo del Blog',
+        'Artículo del Blog',
       );
     });
   });

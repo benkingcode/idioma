@@ -16,7 +16,7 @@ msgstr "Aprende más sobre lo que hacemos"
 #: src/routes/{-$locale}/blog.$slug.tsx
 #, extracted, ai-translated
 msgid "002mrR1N"
-msgstr "Blog Post"
+msgstr "Artículo del Blog"
 
 #: src/routes/{-$locale}/blog.$slug.tsx
 #, extracted, ai-translated
@@ -36,12 +36,12 @@ msgstr "Lee nuestros últimos artículos y actualizaciones"
 #: src/routes/{-$locale}/blog.tsx
 #, extracted, ai-translated
 msgid "000SuTYU"
-msgstr "Hello World"
+msgstr "Hola Mundo"
 
 #: src/routes/{-$locale}/blog.tsx
 #, extracted, ai-translated
 msgid "000bv8XP"
-msgstr "Getting Started"
+msgstr "Primeros pasos"
 
 #: src/routes/{-$locale}/contact.tsx
 #, extracted, ai-translated
@@ -61,7 +61,7 @@ msgstr "Documentación"
 #: src/routes/{-$locale}/docs.api.v2.reference.tsx
 #, extracted, ai-translated
 msgid "001Qpsb7"
-msgstr "Referencia API"
+msgstr "Referencia de API"
 
 #: src/routes/{-$locale}/docs.api.v2.reference.tsx
 #, extracted, ai-translated
@@ -116,12 +116,12 @@ msgstr "Post {postId} por {userId}"
 #: src/routes/{-$locale}/users.$userId.posts.tsx
 #, extracted, ai-translated
 msgid "004HGxPa"
-msgstr "Posts del Usuario"
+msgstr "Publicaciones del Usuario"
 
 #: src/routes/{-$locale}/users.$userId.posts.tsx
 #, extracted, ai-translated
 msgid "0012esD3"
-msgstr "Posts por {user}"
+msgstr "Publicaciones de {user}"
 
 #: src/routes/{-$locale}/users.$userId.posts.tsx
 #, extracted, ai-translated
@@ -137,67 +137,67 @@ msgstr "Segundo Post"
 #, extracted, ai-translated
 msgctxt "route:tests"
 msgid "000x7Jli"
-msgstr "tests"
+msgstr "pruebas"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:stress-test"
 msgid "001ZbfTe"
-msgstr "stress-test"
+msgstr "prueba-estres"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:contact"
 msgid "002dJ8dM"
-msgstr "contact"
+msgstr "contacto"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:blog"
 msgid "0030YUzz"
-msgstr "blog"
+msgstr "articulos"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:about"
 msgid "003R6yRq"
-msgstr "about"
+msgstr "sobre"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:products"
 msgid "004Y8mrc"
-msgstr "products"
+msgstr "productos"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:featured"
 msgid "002qOwrn"
-msgstr "featured"
+msgstr "destacados"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:docs"
 msgid "001eY9Px"
-msgstr "docs"
+msgstr "documentos"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:users"
 msgid "001eImfX"
-msgstr "users"
+msgstr "usuarios"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:posts"
 msgid "004fsxH3"
-msgstr "posts"
+msgstr "publicaciones"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
 msgctxt "route:shop"
 msgid "001ECqlR"
-msgstr "shop"
+msgstr "tienda"
 
 #: src/routeTree.gen.ts
 #, extracted, ai-translated
@@ -215,4 +215,4 @@ msgstr "v2"
 #, extracted, ai-translated
 msgctxt "route:reference"
 msgid "002YacJM"
-msgstr "reference"
+msgstr "referencia"

@@ -52,6 +52,11 @@ Translation guidelines:
 - Use context hints (if provided) to choose appropriate wording
 - Return translations in the exact order provided (matching [1], [2], etc.)
 
+URL Route translations (Context starts with "route:"):
+- MUST be URL-safe: no accents (á→a, é→e, etc.), no spaces, no special characters
+- Use lowercase with hyphens between words (e.g., "sobre-nosotros" not "sobre nosotros")
+- Keep them short and meaningful
+
 Do NOT:
 - Add words, explanations, or politeness not in the source
 - Translate brand names, product names, or technical terms (keep in original language)

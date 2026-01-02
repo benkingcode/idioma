@@ -8,14 +8,9 @@
  *
  * Requires React 19+.
  */
-import {
-  createContext,
-  use,
-  useContext,
-  useMemo,
-  version,
-  type ReactNode,
-} from 'react';
+import { use, useContext, version, type ReactNode } from 'react';
+// Import IdiomiContext for internal use (useContext calls)
+import { IdiomiContext } from '../context';
 import {
   interpolateValues,
   renderMessage,
@@ -87,47 +82,16 @@ export function preloadTranslations(
 }
 
 // ============ Context ============
-
-export interface IdiomiContextValue {
-  locale: string;
-}
-
-export const IdiomiContext = createContext<IdiomiContextValue | null>(null);
-
-export interface IdiomiProviderProps {
-  children: ReactNode;
-  locale: string;
-}
-
-/**
- * Creates an IdiomiProvider for Suspense mode.
- * Same controlled API as the inlined runtime.
- */
-export function createIdiomiProvider() {
-  return function IdiomiProvider({ children, locale }: IdiomiProviderProps) {
-    const value = useMemo(() => ({ locale }), [locale]);
-
-    return (
-      <IdiomiContext.Provider value={value}>{children}</IdiomiContext.Provider>
-    );
-  };
-}
-
-/**
- * Creates a useLocale hook that returns the current locale.
- */
-export function createUseLocale<L extends string = string>() {
-  return function useLocale(): L {
-    const context = useContext(IdiomiContext);
-    if (!context) {
-      throw new Error(
-        '[idiomi] useLocale must be used within an IdiomiProvider. ' +
-          'Make sure to wrap your app with <IdiomiProvider>.',
-      );
-    }
-    return context.locale as L;
-  };
-}
+// Re-export shared context from main module to ensure single context instance
+// This is critical: @idiomi/next's Link uses IdiomiContext from @idiomi/react,
+// so we must use the same context here for IdiomiProvider to work with Link
+export {
+  createIdiomiProvider,
+  createUseLocale,
+  IdiomiContext,
+  type IdiomiContextValue,
+  type IdiomiProviderProps,
+} from '../context';
 
 // ============ Trans Component ============
 
