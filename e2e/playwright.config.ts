@@ -8,7 +8,9 @@ export default defineConfig({
   forbidOnly: CI,
   retries: CI ? 2 : 0,
   workers: CI ? 1 : undefined,
-  reporter: CI ? 'github' : 'list',
+  reporter: CI
+    ? 'github'
+    : [['json', { outputFile: 'playwright-results.json' }]],
   timeout: 10000,
 
   use: {
@@ -19,26 +21,31 @@ export default defineConfig({
   projects: [
     // ============ SETUP PROJECTS ============
     // These start dev servers on-demand when their dependent tests run
+    // Each setup test gets 2 minutes to start its server
     {
       name: 'setup:vite',
       testMatch: /setup\/vite\.setup\.ts$/,
-      teardown: undefined,
+      timeout: 120000,
     },
     {
       name: 'setup:tree-shaking',
       testMatch: /setup\/tree-shaking\.setup\.ts$/,
+      timeout: 180000, // Extra time for build + preview
     },
     {
       name: 'setup:tanstack',
       testMatch: /setup\/tanstack\.setup\.ts$/,
+      timeout: 120000,
     },
     {
       name: 'setup:nextjs-app',
       testMatch: /setup\/nextjs-app\.setup\.ts$/,
+      timeout: 120000,
     },
     {
       name: 'setup:nextjs-pages',
       testMatch: /setup\/nextjs-pages\.setup\.ts$/,
+      timeout: 120000,
     },
 
     // ============ VITE FIXTURES ============

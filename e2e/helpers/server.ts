@@ -59,12 +59,10 @@ export async function ensureServer(config: {
   console.log(`Starting ${filter} on port ${port}...`);
 
   // Start server in background (detached)
-  // Use '--' to pass args through pnpm to the underlying script
   const args = [
     '--filter',
     filter,
     'dev:fixture',
-    '--',
     '--port',
     String(port),
     ...extraArgs,
