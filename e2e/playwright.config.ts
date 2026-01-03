@@ -8,9 +8,7 @@ export default defineConfig({
   forbidOnly: CI,
   retries: CI ? 2 : 0,
   workers: CI ? 1 : undefined,
-  reporter: CI
-    ? 'github'
-    : [['json', { outputFile: 'playwright-results.json' }]],
+  reporter: CI ? 'github' : [['html', { open: 'never' }]],
   timeout: 10000,
 
   use: {
