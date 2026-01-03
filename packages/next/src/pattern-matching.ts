@@ -10,7 +10,8 @@
  * @module
  */
 
-import { createPatternMatcher } from '@idiomi/core/routes';
+// Import from dedicated subpath to avoid pulling in Node.js-only extraction code
+import { createPatternMatcher } from '@idiomi/core/routes/pattern-matching';
 
 /**
  * Re-export types from core for convenience.
@@ -20,7 +21,7 @@ export type {
   PatternMatcherConfig,
   PatternMatchResult,
   RoutePattern,
-} from '@idiomi/core/routes';
+} from '@idiomi/core/routes/pattern-matching';
 
 /**
  * Next.js pattern matcher configured for App Router dynamic segment syntax.

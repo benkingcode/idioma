@@ -56,6 +56,10 @@
     "./routes": {
       "types": "./dist/routes/index.d.mts",
       "import": "./dist/routes/index.mjs"
+    },
+    "./routes/pattern-matching": {
+      "types": "./dist/routes/pattern-matching.d.mts",
+      "import": "./dist/routes/pattern-matching.mjs"
     }
   },
   "bin": {

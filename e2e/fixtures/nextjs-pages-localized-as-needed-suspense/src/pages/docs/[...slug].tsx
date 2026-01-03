@@ -1,6 +1,5 @@
 import { Navigation } from '@/components/Navigation';
-import { Trans } from '@/idiomi/client';
-import { LocaleHead } from '@/idiomi/client';
+import { LocaleHead, Trans } from '@/idiomi/client';
 import type { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 
@@ -22,13 +21,23 @@ export default function DocsPage({ slugPath }: DocsPageProps) {
       <h1 data-testid="docs-title">
         <Trans>Documentation</Trans>
       </h1>
-      <p data-testid="docs-path">Path: {slugPath}</p>
+      <p data-testid="docs-slug">Path: /{slugPath}</p>
+      <p data-testid="docs-locale">Locale: {router.locale}</p>
     </main>
   );
 }
 
 export const getStaticPaths: GetStaticPaths = async ({ locales }) => {
-  const slugs = [['getting-started'], ['guide', 'installation']];
+  const slugs = [
+    ['intro'],
+    ['getting-started'],
+    ['getting-started', 'installation'],
+    ['guide', 'installation'],
+    ['api', 'v1', 'users', 'create'],
+    // Spanish paths
+    ['introduccion'],
+    ['guia', 'primeros-pasos'],
+  ];
   const paths: { params: { slug: string[] }; locale: string }[] = [];
 
   for (const locale of locales ?? ['en']) {
