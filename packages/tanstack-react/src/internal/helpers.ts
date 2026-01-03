@@ -28,15 +28,20 @@ export const SKIP_PATH_PREFIXES = ['/_build', '/assets/', '/__'];
 /**
  * Extract locale from URL path (first segment after /).
  *
+ * Handles edge cases like double slashes (//es) by filtering empty segments.
+ *
  * @example
  * extractLocaleFromPath('/es/about', ['en', 'es']) // => 'es'
  * extractLocaleFromPath('/about', ['en', 'es']) // => undefined
+ * extractLocaleFromPath('//es/about', ['en', 'es']) // => 'es'
  */
 export function extractLocaleFromPath<L extends string>(
   pathname: string,
   locales: readonly L[],
 ): L | undefined {
-  const segment = pathname.split('/')[1];
+  // Filter out empty segments to handle double slashes (e.g., //es)
+  const segments = pathname.split('/').filter(Boolean);
+  const segment = segments[0];
   if (segment && (locales as readonly string[]).includes(segment)) {
     return segment as L;
   }

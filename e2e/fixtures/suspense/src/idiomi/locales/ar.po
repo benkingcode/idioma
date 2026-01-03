@@ -119,8 +119,8 @@ msgstr "هناك {count, plural, one {# تفاحة} other {# تفاحات}} في
 #, extracted, ai-translated
 msgid "004CDxng"
 msgstr ""
-"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات (اثنان)} "
-"few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
+"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
+"(اثنان)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
 
 #: src/components/UseT.tsx
 #, extracted, ai-translated

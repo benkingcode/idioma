@@ -125,7 +125,39 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
     // Use default locale if nothing detected
     const locale = detectedLocale || defaultLocale;
 
-    // Handle prefix strategy
+    // ============================================================
+    // Handle prefix stripping (must come before prefix adding)
+    // ============================================================
+
+    // 1. Handle 'never' strategy - always strip locale prefix from URL
+    if (prefixStrategy === 'never' && pathLocale) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathWithoutLocale;
+      return NextResponse.redirect(url, 307);
+    }
+
+    // 2. Handle 'as-needed' with default locale in path - strip it
+    if (prefixStrategy === 'as-needed' && pathLocale === defaultLocale) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathWithoutLocale;
+      return NextResponse.redirect(url, 307);
+    }
+
+    // 3. Handle 'never' strategy with no path locale - rewrite internally
+    if (prefixStrategy === 'never' && !pathLocale) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}${pathname}`;
+      const response = NextResponse.rewrite(url);
+      response.headers.set('x-idiomi-locale', locale);
+      response.headers.set('x-pathname', pathname);
+      return response;
+    }
+
+    // ============================================================
+    // Handle prefix adding
+    // ============================================================
+
+    // Handle prefix strategy (only for 'always' and 'as-needed' without path locale)
     if (prefixStrategy !== 'never' && !pathLocale) {
       // No locale in path - need to add locale prefix
       // Also localize the path if routes are configured
@@ -203,12 +235,16 @@ function shouldSkipPath(pathname: string): boolean {
 /**
  * Extract locale from the beginning of a path.
  * Returns the locale if found, otherwise undefined.
+ *
+ * Handles edge cases like double slashes (//es) by filtering empty segments.
  */
 function extractLocaleFromPath(
   pathname: string,
   locales: readonly string[],
 ): string | undefined {
-  const firstSegment = pathname.split('/')[1];
+  // Filter out empty segments to handle double slashes (e.g., //es)
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0];
   if (firstSegment && locales.includes(firstSegment)) {
     return firstSegment;
   }
