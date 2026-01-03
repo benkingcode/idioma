@@ -26,7 +26,7 @@ msgstr "Acerca de nuestra empresa"
 #: src/routes/{-$locale}/about.tsx
 #, extracted, ai-translated
 msgid "004U2qa8"
-msgstr "Aprende más sobre lo que hacemos"
+msgstr "Conoce mas sobre lo que hacemos"
 
 #: src/routes/{-$locale}/index.tsx
 #, extracted, ai-translated

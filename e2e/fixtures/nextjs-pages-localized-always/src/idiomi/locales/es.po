@@ -11,7 +11,7 @@ msgstr "Acerca de nuestra empresa"
 #: src/pages/about.tsx
 #, extracted, ai-translated
 msgid "002klSky"
-msgstr "Aprende más sobre lo que hacemos."
+msgstr "Obtén más información sobre lo que hacemos."
 
 #: src/pages/contact.tsx
 #, extracted, ai-translated

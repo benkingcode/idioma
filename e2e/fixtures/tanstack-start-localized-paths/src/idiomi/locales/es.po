@@ -46,7 +46,7 @@ msgstr "Primeros pasos"
 #: src/routes/{-$locale}/contact.tsx
 #, extracted, ai-translated
 msgid "0034rp6e"
-msgstr "Contáctenos"
+msgstr "Contactanos"
 
 #: src/routes/{-$locale}/contact.tsx
 #, extracted, ai-translated

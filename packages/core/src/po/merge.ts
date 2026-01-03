@@ -175,8 +175,15 @@ export function mergeFileIntoCatalog(
       continue;
     }
 
-    // Check if any non-default locale has a translation for this message
-    const hasTranslation = otherLocaleCatalogs.some((catalog) => {
+    // Check if any locale has a translation for this message
+    // First check the current locale's own translation
+    const currentHasTranslation =
+      existing.locale !== defaultLocale &&
+      msg.translation &&
+      msg.translation.length > 0;
+
+    // Then check other non-default locales
+    const otherHasTranslation = otherLocaleCatalogs.some((catalog) => {
       // Skip if this is the default locale catalog
       if (catalog.locale === defaultLocale) {
         return false;
@@ -186,6 +193,8 @@ export function mergeFileIntoCatalog(
         otherMsg && otherMsg.translation && otherMsg.translation.length > 0
       );
     });
+
+    const hasTranslation = currentHasTranslation || otherHasTranslation;
 
     if (!hasTranslation) {
       keysToRemove.push(key);
