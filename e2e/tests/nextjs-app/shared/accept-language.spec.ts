@@ -1,12 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { setAcceptLanguage } from '../../helpers/accept-language';
 
 test.describe('Accept-Language Header Detection', () => {
   test.describe('First Visit (No Cookie)', () => {
     test('detects Spanish from Accept-Language header', async ({ page }) => {
       // Set Accept-Language header to prefer Spanish
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-      });
+      await setAcceptLanguage(page, 'es-ES,es;q=0.9,en;q=0.8');
 
       // Visit root without any locale
       await page.goto('/');
@@ -20,9 +19,7 @@ test.describe('Accept-Language Header Detection', () => {
 
     test('detects English from Accept-Language header', async ({ page }) => {
       // Set Accept-Language header to prefer English
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-      });
+      await setAcceptLanguage(page, 'en-US,en;q=0.9');
 
       // Visit root without any locale
       await page.goto('/');
@@ -37,9 +34,7 @@ test.describe('Accept-Language Header Detection', () => {
       page,
     }) => {
       // Set Accept-Language header to an unsupported language
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'fr-FR,fr;q=0.9,de;q=0.8',
-      });
+      await setAcceptLanguage(page, 'fr-FR,fr;q=0.9,de;q=0.8');
 
       // Visit root without any locale
       await page.goto('/');
@@ -54,9 +49,7 @@ test.describe('Accept-Language Header Detection', () => {
       page,
     }) => {
       // Spanish has higher quality than English
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'fr;q=0.5,es;q=0.9,en;q=0.7',
-      });
+      await setAcceptLanguage(page, 'fr;q=0.5,es;q=0.9,en;q=0.7');
 
       await page.goto('/');
 
@@ -68,9 +61,7 @@ test.describe('Accept-Language Header Detection', () => {
   test.describe('Cookie Takes Precedence', () => {
     test('cookie overrides Accept-Language header', async ({ page }) => {
       // Set Accept-Language to Spanish
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'es-ES,es;q=0.9',
-      });
+      await setAcceptLanguage(page, 'es-ES,es;q=0.9');
 
       // Set cookie to English
       await page.context().addCookies([
@@ -94,9 +85,7 @@ test.describe('Accept-Language Header Detection', () => {
       page,
     }) => {
       // Set Accept-Language to English
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-      });
+      await setAcceptLanguage(page, 'en-US,en;q=0.9');
 
       // Set cookie to English
       await page.context().addCookies([
@@ -121,9 +110,7 @@ test.describe('Accept-Language Header Detection', () => {
   test.describe('BCP 47 Language Matching', () => {
     test('matches regional variant to base language', async ({ page }) => {
       // es-MX (Mexican Spanish) should match es
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'es-MX',
-      });
+      await setAcceptLanguage(page, 'es-MX');
 
       await page.goto('/');
 
@@ -131,9 +118,7 @@ test.describe('Accept-Language Header Detection', () => {
     });
 
     test('matches en-GB to en', async ({ page }) => {
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-GB',
-      });
+      await setAcceptLanguage(page, 'en-GB');
 
       await page.goto('/');
 

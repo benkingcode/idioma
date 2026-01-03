@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { setAcceptLanguage } from '../../helpers/accept-language';
 
 test.describe('Cookie Persistence', () => {
   test.describe('Cookie Behavior', () => {
@@ -68,9 +69,7 @@ test.describe('Cookie Persistence', () => {
       await page.context().clearCookies();
 
       // Set Accept-Language to English
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-      });
+      await setAcceptLanguage(page, 'en-US,en;q=0.9');
 
       // Navigate to root
       await page.goto('/');

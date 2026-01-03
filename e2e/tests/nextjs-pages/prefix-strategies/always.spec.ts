@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { setAcceptLanguage } from '../../helpers/accept-language';
 
 /**
  * Tests specific to the 'always' prefix strategy.
@@ -19,9 +20,7 @@ test.describe('Prefix Strategy: always', () => {
     test('root with English Accept-Language redirects to /en', async ({
       page,
     }) => {
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-      });
+      await setAcceptLanguage(page, 'en-US,en;q=0.9');
       await page.goto('/');
       await expect(page).toHaveURL(/\/en/);
     });
@@ -29,9 +28,7 @@ test.describe('Prefix Strategy: always', () => {
     test('root with Spanish Accept-Language redirects to /es', async ({
       page,
     }) => {
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'es-ES,es;q=0.9',
-      });
+      await setAcceptLanguage(page, 'es-ES,es;q=0.9');
       await page.goto('/');
       await expect(page).toHaveURL(/\/es/);
     });
@@ -56,9 +53,7 @@ test.describe('Prefix Strategy: always', () => {
     test('canonical path without prefix redirects to prefixed', async ({
       page,
     }) => {
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-      });
+      await setAcceptLanguage(page, 'en-US,en;q=0.9');
 
       await page.goto('/about');
       // Should redirect to /en/about

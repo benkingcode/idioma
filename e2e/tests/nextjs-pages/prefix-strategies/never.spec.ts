@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { setAcceptLanguage } from '../../helpers/accept-language';
 
 /**
  * Tests specific to the 'never' prefix strategy.
@@ -40,9 +41,7 @@ test.describe('Prefix Strategy: never', () => {
 
   test.describe('Locale Detection Without Prefix', () => {
     test('Accept-Language determines content language', async ({ page }) => {
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'es-ES,es;q=0.9',
-      });
+      await setAcceptLanguage(page, 'es-ES,es;q=0.9');
 
       await page.goto('/');
 
@@ -75,9 +74,7 @@ test.describe('Prefix Strategy: never', () => {
     });
 
     test('cookie takes precedence over Accept-Language', async ({ page }) => {
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'es-ES,es;q=0.9',
-      });
+      await setAcceptLanguage(page, 'es-ES,es;q=0.9');
       await page.context().addCookies([
         {
           name: 'NEXT_LOCALE',
@@ -158,9 +155,7 @@ test.describe('Prefix Strategy: never', () => {
       context,
     }) => {
       // First visit with English preference
-      await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US',
-      });
+      await setAcceptLanguage(page, 'en-US');
       await page.goto('/about');
       await expect(page.getByTestId('about-title')).toContainText('About');
 
