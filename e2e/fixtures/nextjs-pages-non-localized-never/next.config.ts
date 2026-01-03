@@ -1,10 +1,9 @@
+import { withIdiomi } from '@idiomi/core/next';
 import type { NextConfig } from 'next';
 
-// For now, skip the Idiomi webpack plugin and just use standard Next.js
-// Pages Router uses built-in i18n routing
-export default {
+export default withIdiomi()({
   i18n: {
     locales: ['en', 'es'],
     defaultLocale: 'en',
   },
-} satisfies NextConfig;
+} satisfies NextConfig);

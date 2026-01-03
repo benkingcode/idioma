@@ -251,3 +251,66 @@ async function loadConfigFile(configPath: string): Promise<unknown> {
   const module = await jiti.import(absolutePath);
   return (module as { default?: unknown }).default ?? module;
 }
+
+function loadConfigFileSync(configPath: string): unknown {
+  const absolutePath = resolve(configPath);
+
+  // Use jiti's synchronous require for synchronous loading
+  const jiti = createJiti(absolutePath, {
+    // Enable native ESM interop
+    interopDefault: true,
+  });
+
+  // jiti supports require() for sync loading
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const module = jiti(absolutePath);
+  return (module as { default?: unknown }).default ?? module;
+}
+
+/**
+ * Load Idiomi configuration synchronously.
+ * Used by withIdiomi() to generate rewrites at config time.
+ */
+export function loadConfigSync(cwd: string): IdiomiConfig {
+  const { existsSync } = require('fs') as typeof import('fs');
+
+  const tsPath = join(cwd, 'idiomi.config.ts');
+  const jsPath = join(cwd, 'idiomi.config.js');
+
+  let configPath: string | null = null;
+
+  // Check for .ts first (preferred)
+  if (existsSync(tsPath)) {
+    configPath = tsPath;
+  } else if (existsSync(jsPath)) {
+    configPath = jsPath;
+  }
+
+  if (!configPath) {
+    throw new Error(
+      `No idiomi config file found in ${cwd}. ` +
+        `Create idiomi.config.ts or idiomi.config.js`,
+    );
+  }
+
+  // Load the config synchronously
+  const rawConfig = loadConfigFileSync(configPath);
+
+  // Validate config against schema
+  const result = IdiomiConfigSchema.safeParse(rawConfig);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
+      .join('\n');
+    throw new Error(`Invalid idiomi.config.ts:\n${issues}`);
+  }
+
+  const config = result.data;
+
+  // Merge with defaults
+  return {
+    ...config,
+    sourcePatterns: config.sourcePatterns ?? DEFAULT_SOURCE_PATTERNS,
+    useSuspense: config.useSuspense ?? false,
+  };
+}

@@ -1,7 +1,12 @@
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import type { NextConfig } from 'next';
 import type { Compiler, Configuration as WebpackConfiguration } from 'webpack';
-import { loadConfig, type IdiomiConfig } from '../cli/config.js';
+import {
+  loadConfig,
+  loadConfigSync,
+  type IdiomiConfig,
+} from '../cli/config.js';
 import {
   compileTranslations,
   type RoutingCompileOptions,
@@ -14,6 +19,127 @@ import {
 } from './debounce.js';
 import { shouldIgnorePath } from './ignore-patterns.js';
 import { extractAndMergeFile } from './incremental-extract.js';
+
+/**
+ * Next.js rewrite configuration object.
+ * Defines a URL rewrite from source to destination.
+ */
+interface Rewrite {
+  source: string;
+  destination: string;
+  /** Must be false to disable locale prefix handling in rewrites */
+  locale?: false;
+}
+
+/**
+ * Route map type: locale -> { canonicalPath: localizedPath }
+ */
+type RoutesMap = Record<string, Record<string, string>>;
+
+/**
+ * Reverse route map type: locale -> { localizedPath: canonicalPath }
+ */
+type ReverseRoutesMap = Record<string, Record<string, string>>;
+
+/**
+ * Parse the generated routes.js file synchronously.
+ * Returns null if file doesn't exist or can't be parsed.
+ */
+function parseRoutesFile(
+  routesPath: string,
+): { routes: RoutesMap; reverseRoutes: ReverseRoutesMap } | null {
+  if (!existsSync(routesPath)) {
+    return null;
+  }
+
+  try {
+    const content = readFileSync(routesPath, 'utf-8');
+
+    // Parse the routes and reverseRoutes exports using regex
+    // The file format is: export const routes = { ... }; export const reverseRoutes = { ... };
+    const routesMatch = content.match(
+      /export\s+const\s+routes\s*=\s*(\{[\s\S]*?\});/,
+    );
+    const reverseRoutesMatch = content.match(
+      /export\s+const\s+reverseRoutes\s*=\s*(\{[\s\S]*?\});/,
+    );
+
+    if (!routesMatch || !reverseRoutesMatch) {
+      return null;
+    }
+
+    // Use Function constructor to safely evaluate the object literals
+    // This is safe because we control the file content
+    const routes = new Function(`return ${routesMatch[1]}`)() as RoutesMap;
+    const reverseRoutes = new Function(
+      `return ${reverseRoutesMatch[1]}`,
+    )() as ReverseRoutesMap;
+
+    return { routes, reverseRoutes };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Convert Next.js dynamic route syntax to rewrite patterns.
+ * [slug] -> :slug
+ * [...slug] -> :slug*
+ * [[...slug]] -> :slug*
+ */
+function convertToRewritePattern(path: string): string {
+  return path
+    .replace(/\[\[\.\.\.(\w+)\]\]/g, ':$1*') // [[...slug]] -> :slug*
+    .replace(/\[\.\.\.(\w+)\]/g, ':$1*') // [...slug] -> :slug*
+    .replace(/\[(\w+)\]/g, ':$1'); // [slug] -> :slug
+}
+
+/**
+ * Generate Next.js rewrites from the reverse routes map.
+ * For Pages Router, localized paths need to be rewritten to canonical paths
+ * so Next.js can find the page files.
+ */
+function generateRewrites(
+  reverseRoutes: ReverseRoutesMap,
+  locales: string[],
+  defaultLocale: string,
+): Rewrite[] {
+  const rewrites: Rewrite[] = [];
+
+  for (const locale of locales) {
+    const localeRoutes = reverseRoutes[locale];
+    if (!localeRoutes) continue;
+
+    for (const [localizedPath, canonicalPath] of Object.entries(localeRoutes)) {
+      // Skip if paths are the same (no translation needed)
+      if (localizedPath === canonicalPath) continue;
+
+      // Skip root path
+      if (localizedPath === '/') continue;
+
+      const sourcePattern = convertToRewritePattern(localizedPath);
+      const destPattern = convertToRewritePattern(canonicalPath);
+
+      // Add rewrite with locale prefix
+      rewrites.push({
+        source: `/${locale}${sourcePattern}`,
+        destination: `/${locale}${destPattern}`,
+        locale: false,
+      });
+
+      // For non-default locales, also add without prefix (for as-needed strategy)
+      if (locale !== defaultLocale) {
+        rewrites.push({
+          source: sourcePattern,
+          destination: destPattern,
+          locale: false,
+        });
+      }
+    }
+  }
+
+  return rewrites;
+}
 
 export interface IdiomiNextOptions {
   /**
@@ -322,6 +448,7 @@ class IdiomiWebpackPlugin {
  * - Compiles PO files on build start
  * - Watches PO files for changes in dev mode
  * - Works with both App Router and Pages Router
+ * - Auto-generates rewrites for Pages Router with localized paths
  *
  * @example
  * // Auto-load from idiomi.config.ts
@@ -348,8 +475,41 @@ export function withIdiomi(
   let pluginAdded = false;
   const projectRoot = process.cwd();
 
+  // Try to load config synchronously for rewrite generation
+  let idiomiConfig: IdiomiConfig | null = null;
+  try {
+    idiomiConfig = loadConfigSync(projectRoot);
+  } catch {
+    // Config not found - will be loaded async later
+  }
+
   return function createNextConfig(nextConfig: NextConfig = {}): NextConfig {
-    return {
+    // Check if this is Pages Router (has i18n config)
+    const isPagesRouter = !!nextConfig.i18n;
+
+    // For Pages Router with localized paths, we need to inject rewrites
+    let generatedRewrites: Rewrite[] = [];
+    if (isPagesRouter && idiomiConfig?.routing?.localizedPaths) {
+      const idiomiDir = options.idiomiDir ?? idiomiConfig.idiomiDir;
+      if (idiomiDir) {
+        const routesPath = join(projectRoot, idiomiDir, '.generated/routes.js');
+        const routesData = parseRoutesFile(routesPath);
+
+        if (routesData && nextConfig.i18n) {
+          // Spread to convert readonly string[] to string[]
+          const locales = [...(nextConfig.i18n.locales ?? [])];
+          const defaultLocale = nextConfig.i18n.defaultLocale ?? 'en';
+          generatedRewrites = generateRewrites(
+            routesData.reverseRoutes,
+            locales,
+            defaultLocale,
+          );
+        }
+      }
+    }
+
+    // Build the enhanced config
+    const enhancedConfig: NextConfig = {
       ...nextConfig,
 
       webpack(
@@ -381,5 +541,31 @@ export function withIdiomi(
         return config;
       },
     };
+
+    // Add rewrites if we have generated ones for Pages Router
+    if (generatedRewrites.length > 0) {
+      enhancedConfig.rewrites = async () => {
+        // Get user-defined rewrites if any
+        const userRewrites = nextConfig.rewrites
+          ? await nextConfig.rewrites()
+          : null;
+
+        // Normalize to object format
+        const normalizedRewrites = Array.isArray(userRewrites)
+          ? { beforeFiles: userRewrites, afterFiles: [], fallback: [] }
+          : (userRewrites ?? { beforeFiles: [], afterFiles: [], fallback: [] });
+
+        return {
+          beforeFiles: [
+            ...generatedRewrites,
+            ...(normalizedRewrites.beforeFiles ?? []),
+          ],
+          afterFiles: normalizedRewrites.afterFiles ?? [],
+          fallback: normalizedRewrites.fallback ?? [],
+        };
+      };
+    }
+
+    return enhancedConfig;
   };
 }

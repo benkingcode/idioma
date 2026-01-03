@@ -178,7 +178,7 @@ Idiomi is a compile-time React i18n library. Translations are extracted, stored 
 
 **@idiomi/next** (`packages/next/`) - Next.js integration
 
-- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting
+- `middleware.ts` - `createIdiomiMiddleware()` and `createMiddlewareFactory()` for locale detection and URL rewriting (App Router uses `proxy.ts` in Next.js 16+, `middleware.ts` in Next.js 15)
 - `link.tsx` - `createLink()` factory for localized Link component, `resolveLocalizedHref()` for URL resolution with prefix strategy (App Router)
 - `LocaleHead.tsx` - `createLocaleHead()` factory for SEO hreflang tags (App Router)
 - `pattern-matching.ts` - Next.js route pattern matching for dynamic segments:
@@ -320,7 +320,7 @@ src/idiomi/
 │   └── es.po
 ├── index.ts             # Server-safe exports (config, types, getLocaleHead)
 ├── client.ts            # Next.js only: Client components (Trans, useT, Link, LocaleHead) with 'use client'
-├── middleware.ts        # Next.js only: Edge middleware factory (createMiddleware)
+├── middleware.ts        # Next.js App Router only: Edge middleware/proxy factory (exports as proxy.ts in Next.js 16+)
 ├── server.ts            # TanStack Start only: Server exports (handleLocale)
 ├── plain.ts             # User import: createT (non-React)
 └── .generated/          # Internal files (gitignored)
@@ -881,10 +881,15 @@ babelConfig.plugins.push([
 
 #### Next.js Plugin (`packages/core/src/bundler/next.ts`)
 
-- Custom Webpack plugin instead of Babel config approach
-- Hooks: `beforeCompile`, `watchRun`
+- `withIdiomi()` - Next.js config wrapper that:
+  - Adds Idiomi Babel preset for compile-time translation inlining
+  - Adds custom Webpack plugin for PO file compilation
+  - **Pages Router only**: Auto-generates URL rewrites for localized paths (e.g., `/es/sobre` → `/es/about`)
+- Custom Webpack plugin hooks: `beforeCompile`, `watchRun`
 - No HMR (relies on Next.js refresh)
 - Same Babel plugin, different integration point
+
+**Pages Router auto-rewrites**: When `routing.localizedPaths: true` and the config has `i18n` (Pages Router), `withIdiomi()` automatically generates Next.js rewrites from the compiled `reverseRoutes` map. This eliminates manual rewrite configuration for localized path segments.
 
 #### Metro Plugin (`packages/core/src/bundler/metro.ts`)
 

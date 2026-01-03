@@ -12,6 +12,10 @@ export type RoutesMap = Record<string, Record<string, string>>;
 export interface PagesLinkConfig {
   routes?: RoutesMap;
   routePatterns?: readonly RoutePattern<string>[];
+  /** Default locale (for matching router.defaultLocale) */
+  defaultLocale?: string;
+  /** Prefix strategy (for matching with App Router style) */
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
 }
 
 export interface PagesLinkProps extends Omit<

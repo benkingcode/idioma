@@ -5,7 +5,10 @@ import {
 } from '@idiomi/core/locale';
 import type { RoutePattern } from '@idiomi/core/routes';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCanonicalPath as patternGetCanonicalPath } from './pattern-matching.js';
+import {
+  getCanonicalPath as patternGetCanonicalPath,
+  getLocalizedPath as patternGetLocalizedPath,
+} from './pattern-matching.js';
 
 export interface IdiomiMiddlewareConfig {
   /** Default/source locale */
@@ -124,11 +127,25 @@ export function createIdiomiMiddleware(config: IdiomiMiddlewareConfig) {
 
     // Handle prefix strategy
     if (prefixStrategy !== 'never' && !pathLocale) {
-      // No locale in path
+      // No locale in path - need to add locale prefix
+      // Also localize the path if routes are configured
+      let targetPath = pathname;
+      if (routes) {
+        const localizedPath = patternGetLocalizedPath(
+          pathname,
+          locale,
+          routes,
+          routePatterns ?? [],
+        );
+        if (localizedPath) {
+          targetPath = localizedPath;
+        }
+      }
+
       if (prefixStrategy === 'always' || locale !== defaultLocale) {
-        // Redirect to add locale prefix
+        // Redirect to add locale prefix (with localized path)
         const url = request.nextUrl.clone();
-        url.pathname = `/${locale}${pathname}`;
+        url.pathname = `/${locale}${targetPath}`;
         return NextResponse.redirect(url, 307);
       } else {
         // as-needed with default locale: rewrite internally to add locale prefix

@@ -29,7 +29,9 @@
     },
     "./next": {
       "types": "./dist/bundler/next.d.mts",
-      "import": "./dist/bundler/next.mjs"
+      "import": "./dist/bundler/next.mjs",
+      "require": "./dist/bundler/next.mjs",
+      "default": "./dist/bundler/next.mjs"
     },
     "./metro": {
       "types": "./dist/bundler/metro.d.mts",

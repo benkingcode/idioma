@@ -46,4 +46,4 @@ msgstr "Publicación de blog"
 #: src/pages/blog/index.tsx
 #, extracted, ai-translated
 msgid "0039uF2j"
-msgstr "Nuestro blog"
+msgstr "Nuestro Blog"

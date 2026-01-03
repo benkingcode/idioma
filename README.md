@@ -835,17 +835,19 @@ Install the Next.js package:
 npm install @idiomi/next
 ```
 
-Set up middleware for locale detection and URL rewriting:
+Set up proxy (Next.js 16+) or middleware (Next.js 15) for locale detection and URL rewriting:
 
 ```ts
-// middleware.ts
+// proxy.ts (Next.js 16+) or middleware.ts (Next.js 15)
 import { createMiddleware } from './src/idiomi';
 
 // All config (locales, routes, etc.) is pre-baked by the compiler
-export default createMiddleware();
+// Next.js 16+: export const proxy = createMiddleware();
+// Next.js 15:  export const middleware = createMiddleware();
+export const proxy = createMiddleware();
 
 // Or override specific options at runtime:
-// export default createMiddleware({ prefixStrategy: 'always' });
+// export const proxy = createMiddleware({ prefixStrategy: 'always' });
 
 export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
 ```
