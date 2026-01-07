@@ -9,6 +9,7 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
+    "clean:deep": "pnpm clean && rm -rf e2e/fixtures/*/.next e2e/test-results e2e/playwright-report",
     "format": "prettier --write .",
     "test:e2e": "pnpm --filter idiomi-e2e test",
     "test:e2e:ui": "pnpm --filter idiomi-e2e test:ui",
