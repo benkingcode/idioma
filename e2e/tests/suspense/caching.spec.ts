@@ -16,7 +16,7 @@ test.describe('Suspense Mode - Caching', () => {
     // Switch to Arabic
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('basic-hello')).toContainText(
-      'مرحباً بالعالم!',
+      'مرحبا، العالم!',
     );
 
     // Switch back to Spanish (should use cache, no network request)
@@ -38,7 +38,7 @@ test.describe('Suspense Mode - Caching', () => {
 
       await selectLocale(page, 'ar');
       await expect(page.getByTestId('basic-hello')).toContainText(
-        'مرحباً بالعالم!',
+        'مرحبا، العالم!',
       );
 
       await selectLocale(page, 'en');
@@ -65,7 +65,7 @@ test.describe('Suspense Mode - Caching', () => {
     // Plurals
     await page.getByTestId('plural-increment').click();
     await expect(page.getByTestId('plural-basic')).toContainText(
-      'Tienes 1 artículo',
+      'Tienes 1 elemento',
     );
 
     // Component tags
@@ -85,7 +85,7 @@ test.describe('Suspense Mode - Caching', () => {
       '¡Hola, Alice!',
     );
     await expect(page.getByTestId('plural-basic')).toContainText(
-      'Tienes 1 artículo',
+      'Tienes 1 elemento',
     );
     await expect(page.getByTestId('comp-single')).toContainText(
       'Haz clic aquí para continuar',

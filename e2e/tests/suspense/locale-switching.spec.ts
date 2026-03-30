@@ -21,7 +21,7 @@ test.describe('Suspense Mode - Locale Switching', () => {
     // Arabic
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('basic-hello')).toContainText(
-      'مرحباً بالعالم!',
+      'مرحبا، العالم!',
     );
 
     // Back to English
@@ -48,7 +48,7 @@ test.describe('Suspense Mode - Locale Switching', () => {
     // Arabic - same "Alice" value
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('interp-simple')).toContainText(
-      'مرحباً، Alice!',
+      'مرحبا، Alice!',
     );
   });
 
@@ -64,7 +64,7 @@ test.describe('Suspense Mode - Locale Switching', () => {
     // Spanish
     await selectLocale(page, 'es');
     await expect(page.getByTestId('plural-basic')).toContainText(
-      'Tienes 3 artículos',
+      'Tienes 3 elementos',
     );
 
     // Arabic (few form)

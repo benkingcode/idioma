@@ -25,7 +25,7 @@ test.describe('ICU Plurals - CLDR Arabic Forms', () => {
   test('two form (2)', async ({ page }) => {
     await clickNTimes(page, 'plural-increment', 2);
     await expect(page.getByTestId('plural-cldr')).toContainText(
-      '2 ملفات (اثنين)',
+      '2 ملفان (اثنان)',
     );
   });
 
@@ -70,7 +70,7 @@ test.describe('ICU Plurals - CLDR Arabic Forms', () => {
 
     // Two
     await clickNTimes(page, 'plural-increment', 1);
-    await expect(page.getByTestId('plural-cldr')).toContainText('(اثنين)');
+    await expect(page.getByTestId('plural-cldr')).toContainText('(اثنان)');
 
     // Few
     await clickNTimes(page, 'plural-increment', 1);

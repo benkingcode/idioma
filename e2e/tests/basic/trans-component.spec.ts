@@ -40,12 +40,14 @@ test.describe('Trans Component - Basic', () => {
   test('switches to Arabic locale', async ({ page }) => {
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('basic-hello')).toContainText(
-      'مرحبا، يا عالم!',
+      'مرحبا، العالم!',
     );
     await expect(page.getByTestId('basic-welcome')).toContainText(
       'مرحبا بك في تطبيقنا',
     );
-    await expect(page.getByTestId('basic-explicit-id')).toContainText('وداعا!');
+    await expect(page.getByTestId('basic-explicit-id')).toContainText(
+      'مع السلامة!',
+    );
   });
 
   test('switches back to English from Spanish', async ({ page }) => {
@@ -75,7 +77,7 @@ test.describe('Trans Component - Basic', () => {
     // Switch to Arabic
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('basic-hello')).toContainText(
-      'مرحبا، يا عالم!',
+      'مرحبا، العالم!',
     );
 
     // Switch back to English
