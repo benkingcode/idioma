@@ -4,6 +4,7 @@ import { checkCommand } from './commands/check.js';
 import { compileCommand } from './commands/compile.js';
 import { debugCommand } from './commands/debug.js';
 import { extractCommand } from './commands/extract.js';
+import { initCommand } from './commands/init.js';
 import { statsCommand } from './commands/stats.js';
 import { translateCommand } from './commands/translate.js';
 import { setNonInteractive } from './ui/index.js';
@@ -32,6 +33,7 @@ const main = defineCommand({
     }
   },
   subCommands: {
+    init: initCommand,
     extract: extractCommand,
     compile: compileCommand,
     check: checkCommand,
