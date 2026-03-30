@@ -4,6 +4,7 @@ import { extractFromFile, messagesToCatalog } from '../cli/commands/extract.js';
 import { mergeFileIntoCatalog } from '../po/merge.js';
 import { loadPoFile, writePoFile } from '../po/parser.js';
 import type { Catalog } from '../po/types.js';
+import type { PathsMatcher } from '../utils/resolve-tsconfig-paths.js';
 
 /**
  * Options for incremental single-file extraction
@@ -21,6 +22,8 @@ export interface IncrementalExtractOptions {
   defaultLocale: string;
   /** All supported locales */
   locales: string[];
+  /** Matcher for resolving TypeScript path aliases to file paths */
+  pathsMatcher?: PathsMatcher;
 }
 
 /**
@@ -63,6 +66,7 @@ export async function extractAndMergeFile(
     localeDir,
     defaultLocale,
     locales,
+    pathsMatcher,
   } = options;
 
   // Compute relative path for references (file-only, no line numbers)
@@ -84,6 +88,7 @@ export async function extractAndMergeFile(
     filePath,
     relativePath,
     idiomaDir,
+    pathsMatcher,
   );
 
   // Load all locale catalogs upfront (needed for translation checking)

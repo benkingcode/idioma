@@ -4,6 +4,10 @@ import { parse as babelParse } from '@babel/parser';
 import * as t from '@babel/types';
 import { getChunkId } from '../compiler/chunk-id.js';
 import { generateKey } from '../keys/generator.js';
+import {
+  isAliasedIdiomaImport,
+  type PathsMatcher,
+} from '../utils/resolve-tsconfig-paths.js';
 import { extractTransMessage, type ExtractedMessage } from './extract-trans.js';
 import { serializeJsxChildren, serializeTemplateLiteral } from './serialize.js';
 
@@ -79,6 +83,8 @@ export interface IdiomaPluginOptions {
   projectRoot?: string;
   /** Absolute path to idioma folder for robust import detection */
   idiomaDir?: string;
+  /** Matcher for resolving TypeScript path aliases to file paths */
+  pathsMatcher?: PathsMatcher;
 }
 
 interface PluginState {
@@ -91,6 +97,8 @@ interface PluginState {
   translatableBindings: Map<string, 'Trans' | 'useT' | 't' | 'createT'>;
   /** Resolved absolute path to idioma folder */
   resolvedIdiomaDir: string | null;
+  /** Matcher for resolving TypeScript path aliases */
+  pathsMatcher: PathsMatcher | null;
 }
 
 /**
@@ -123,6 +131,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         : 'unknown';
       this.translatableBindings = new Map();
       this.resolvedIdiomaDir = opts.idiomaDir ? resolve(opts.idiomaDir) : null;
+      this.pathsMatcher = opts.pathsMatcher ?? null;
     },
 
     visitor: {
@@ -235,8 +244,14 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           const fileDir = dirname(state.filename);
           const resolvedImport = resolve(fileDir, source);
           isIdiomaImport = resolvedImport.startsWith(resolvedIdiomaDir);
+        } else if (state.pathsMatcher) {
+          // Resolve TypeScript path aliases (e.g., @app/idioma → src/idioma)
+          isIdiomaImport = isAliasedIdiomaImport(
+            source,
+            resolvedIdiomaDir,
+            state.pathsMatcher,
+          );
         }
-        // Non-relative imports (e.g., 'some-package') won't match idiomaDir
 
         if (!isIdiomaImport) {
           return;

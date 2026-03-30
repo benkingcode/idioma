@@ -1,5 +1,7 @@
+import { join } from 'path';
 import * as babel from '@babel/core';
 import { describe, expect, it } from 'vitest';
+import type { PathsMatcher } from '../utils/resolve-tsconfig-paths';
 import idiomaPlugin, { type IdiomaPluginOptions } from './plugin';
 
 // Default test configuration for idiomaDir-based detection
@@ -885,6 +887,105 @@ describe('Idioma Babel Plugin', () => {
 
       expect(extracted).toHaveLength(1);
       expect(extracted[0].source).toBe('Hello world');
+    });
+  });
+
+  describe('path alias import detection', () => {
+    const idiomaDir = '/project/src/idioma';
+    const testFilename = '/project/src/App.tsx';
+
+    // Mock matcher: @dancefloor-start/* → /project/src/*
+    const mockMatcher: PathsMatcher = (specifier: string) => {
+      if (specifier.startsWith('@dancefloor-start/')) {
+        const rest = specifier.slice('@dancefloor-start/'.length);
+        return [join('/project/src', rest)];
+      }
+      return [];
+    };
+
+    it('transforms Trans from aliased import when pathsMatcher is provided', () => {
+      const code = `
+        import { Trans } from '@dancefloor-start/idioma'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(
+        code,
+        {
+          mode: 'inlined',
+          idiomaDir,
+          pathsMatcher: mockMatcher,
+          translations: {},
+        },
+        testFilename,
+      );
+
+      expect(result).toContain('__Trans');
+    });
+
+    it('does not transform aliased import without pathsMatcher', () => {
+      const code = `
+        import { Trans } from '@dancefloor-start/idioma'
+        const x = <Trans>Hello world</Trans>
+      `;
+
+      const result = transform(
+        code,
+        {
+          mode: 'inlined',
+          idiomaDir,
+          translations: {},
+          // No pathsMatcher
+        },
+        testFilename,
+      );
+
+      expect(result).not.toContain('__Trans');
+    });
+
+    it('extracts messages from aliased Trans', () => {
+      const extracted: Array<{ source: string }> = [];
+
+      const code = `
+        import { Trans } from '@dancefloor-start/idioma'
+        const x = <Trans>Discover events</Trans>
+      `;
+
+      transform(
+        code,
+        {
+          mode: 'inlined',
+          idiomaDir,
+          pathsMatcher: mockMatcher,
+          onExtract: (msg) => extracted.push(msg),
+        },
+        testFilename,
+      );
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).toBe('Discover events');
+    });
+
+    it('handles useT from aliased import in suspense mode', () => {
+      const code = `
+        import { useT } from '@dancefloor-start/idioma'
+        const t = useT()
+      `;
+
+      const result = transform(
+        code,
+        {
+          mode: 'suspense',
+          idiomaDir,
+          pathsMatcher: mockMatcher,
+          locales: ['en', 'es'],
+          outputDir: './idioma',
+          projectRoot: '/project',
+        },
+        testFilename,
+      );
+
+      expect(result).toContain('__useTSuspense');
     });
   });
 

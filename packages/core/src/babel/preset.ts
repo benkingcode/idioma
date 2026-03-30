@@ -1,3 +1,5 @@
+import type { PathsMatcher } from '../utils/resolve-tsconfig-paths.js';
+import { loadPathsMatcher } from '../utils/resolve-tsconfig-paths.js';
 import type { IdiomaPluginOptions } from './plugin.js';
 
 export interface IdiomaBabelPresetOptions {
@@ -14,6 +16,8 @@ export interface IdiomaBabelPresetOptions {
    * This enables config-based detection which handles import aliasing.
    */
   idiomaDir?: string;
+  /** Matcher for resolving TypeScript path aliases to file paths */
+  pathsMatcher?: PathsMatcher;
 }
 
 type PluginEntry = [string, Partial<IdiomaPluginOptions>];
@@ -50,6 +54,10 @@ export default function idiomaBabelPreset(
   // Determine mode: 'suspense' for lazy loading, 'inlined' for baked-in translations
   const mode = options.useSuspense ? 'suspense' : 'inlined';
 
+  // Auto-load TypeScript path aliases when not explicitly provided
+  const pathsMatcher =
+    options.pathsMatcher ?? loadPathsMatcher(process.cwd()) ?? undefined;
+
   // Use @idioma/core/babel which resolves to the plugin
   const pluginPath = '@idioma/core/babel';
 
@@ -60,6 +68,7 @@ export default function idiomaBabelPreset(
         {
           mode,
           ...options,
+          pathsMatcher,
         },
       ],
     ],

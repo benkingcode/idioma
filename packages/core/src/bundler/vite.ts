@@ -5,6 +5,10 @@ import { loadConfig } from '../cli/config.js';
 import { createCompileLock } from '../compiler/compile.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
+  loadPathsMatcher,
+  type PathsMatcher,
+} from '../utils/resolve-tsconfig-paths.js';
+import {
   createDebouncedExtractor,
   type DebouncedExtractor,
 } from './debounce.js';
@@ -81,6 +85,7 @@ export default function idiomaVitePlugin(
 
   let isDevMode = false;
   let projectRoot = '';
+  let pathsMatcher: PathsMatcher | null = null;
   // Use a stable object reference so Babel plugin always sees updates
   // (reactBabel callback captures this by reference at config time)
   const loadedTranslations: Record<string, Record<string, unknown>> = {};
@@ -135,6 +140,9 @@ export default function idiomaVitePlugin(
       // Load idioma config (from idioma.config.ts or options)
       await loadIdiomaConfig();
 
+      // Load TypeScript path aliases for resolving non-relative imports
+      pathsMatcher = loadPathsMatcher(projectRoot);
+
       // Compile translations at build start
       await compile();
 
@@ -174,6 +182,7 @@ export default function idiomaVitePlugin(
                 localeDir: join(projectRoot, localeDir),
                 defaultLocale,
                 locales: locales ?? [defaultLocale],
+                pathsMatcher: pathsMatcher ?? undefined,
               });
             }
             // Recompile after extraction
@@ -254,6 +263,8 @@ export default function idiomaVitePlugin(
           mode: useSuspense ? 'suspense' : 'inlined',
           // Pass idiomaDir for robust config-based import detection
           idiomaDir: join(projectRoot, idiomaDir),
+          // Pass path alias matcher for resolving non-relative imports
+          pathsMatcher: pathsMatcher ?? undefined,
         };
 
         // Pass loaded translations for inlining (inlined mode only)

@@ -10,6 +10,11 @@ import { mergeCatalogs } from '../../po/merge.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import type { Catalog, Message } from '../../po/types.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
+import {
+  isAliasedIdiomaImport,
+  loadPathsMatcher,
+  type PathsMatcher,
+} from '../../utils/resolve-tsconfig-paths.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 
@@ -34,6 +39,8 @@ export interface ExtractOptions {
   clean?: boolean;
   /** Absolute path to idioma folder for robust import detection */
   idiomaDir?: string;
+  /** Matcher for resolving TypeScript path aliases to file paths */
+  pathsMatcher?: PathsMatcher;
 }
 
 export interface ExtractResult {
@@ -55,6 +62,7 @@ export async function extractMessages(
     locales,
     clean,
     idiomaDir,
+    pathsMatcher,
   } = options;
 
   // Find all source files
@@ -76,6 +84,7 @@ export async function extractMessages(
       file,
       relativePath,
       idiomaDir,
+      pathsMatcher,
     );
     messages.push(...fileMessages);
   }
@@ -163,6 +172,7 @@ export async function extractFromFile(
   absolutePath: string,
   displayPath: string,
   idiomaDir?: string,
+  pathsMatcher?: PathsMatcher,
 ): Promise<ExtractedMessage[]> {
   const messages: ExtractedMessage[] = [];
 
@@ -197,6 +207,12 @@ export async function extractFromFile(
                   const fileDir = dirname(absolutePath);
                   const resolvedImport = resolve(fileDir, source);
                   isIdiomaImport = resolvedImport.startsWith(idiomaDir);
+                } else if (pathsMatcher) {
+                  isIdiomaImport = isAliasedIdiomaImport(
+                    source,
+                    idiomaDir,
+                    pathsMatcher,
+                  );
                 }
 
                 if (!isIdiomaImport) return;
@@ -441,6 +457,9 @@ export const extractCommand = defineCommand({
     // Ensure .gitignore exists in the idioma directory
     await ensureGitignore(config.idiomaDir);
 
+    // Load TypeScript path aliases for resolving non-relative imports
+    const pathsMatcher = loadPathsMatcher(cwd);
+
     const spinner = createSpinner();
     spinner.start('Extracting messages...');
 
@@ -454,6 +473,7 @@ export const extractCommand = defineCommand({
         clean: args.clean,
         // Pass absolute idiomaDir for robust import detection
         idiomaDir: resolve(cwd, config.idiomaDir),
+        pathsMatcher: pathsMatcher ?? undefined,
       });
 
       spinner.succeed(

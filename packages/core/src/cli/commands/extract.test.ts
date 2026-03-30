@@ -2,7 +2,8 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { extractMessages } from './extract';
+import type { PathsMatcher } from '../../utils/resolve-tsconfig-paths';
+import { extractFromFile, extractMessages } from './extract';
 
 describe('Extract Command', () => {
   let tempDir: string;
@@ -466,5 +467,121 @@ msgstr "Old message"
     const poPath = join(localeDir, 'en.po');
     const content = await fs.readFile(poPath, 'utf-8');
     expect(content).toContain('#. Primary action button for form submission');
+  });
+
+  describe('path alias support', () => {
+    it('extracts from aliased imports when pathsMatcher is provided', async () => {
+      // Simulate: import { Trans } from '@dancefloor-start/idioma'
+      // where @dancefloor-start/* maps to ./src/*
+      const mockMatcher: PathsMatcher = (specifier: string) => {
+        if (specifier.startsWith('@dancefloor-start/')) {
+          const rest = specifier.slice('@dancefloor-start/'.length);
+          return [join(tempDir, 'src', rest)];
+        }
+        return [];
+      };
+
+      await fs.writeFile(
+        join(srcDir, 'App.tsx'),
+        `
+        import { Trans } from '@dancefloor-start/idioma'
+        export function App() {
+          return <Trans>Hello world</Trans>
+        }
+        `,
+      );
+
+      const result = await extractMessages({
+        cwd: tempDir,
+        sourcePatterns: ['src/**/*.tsx'],
+        localeDir,
+        defaultLocale: 'en',
+        idiomaDir,
+        pathsMatcher: mockMatcher,
+      });
+
+      expect(result.messages.length).toBe(1);
+      expect(result.messages[0].source).toBe('Hello world');
+    });
+
+    it('extracts nothing from aliased imports without pathsMatcher', async () => {
+      await fs.writeFile(
+        join(srcDir, 'App.tsx'),
+        `
+        import { Trans } from '@dancefloor-start/idioma'
+        export function App() {
+          return <Trans>Hello world</Trans>
+        }
+        `,
+      );
+
+      const result = await extractMessages({
+        cwd: tempDir,
+        sourcePatterns: ['src/**/*.tsx'],
+        localeDir,
+        defaultLocale: 'en',
+        idiomaDir,
+        // No pathsMatcher — alias won't be resolved
+      });
+
+      expect(result.messages.length).toBe(0);
+    });
+
+    it('extractFromFile detects aliased Trans import', async () => {
+      const mockMatcher: PathsMatcher = (specifier: string) => {
+        if (specifier.startsWith('@app/')) {
+          const rest = specifier.slice('@app/'.length);
+          return [join('/project/src', rest)];
+        }
+        return [];
+      };
+
+      const code = `
+        import { Trans } from '@app/idioma'
+        export function App() {
+          return <Trans>Hello world</Trans>
+        }
+      `;
+
+      const messages = await extractFromFile(
+        code,
+        '/project/src/App.tsx',
+        'src/App.tsx',
+        '/project/src/idioma',
+        mockMatcher,
+      );
+
+      expect(messages.length).toBe(1);
+      expect(messages[0].source).toBe('Hello world');
+    });
+
+    it('extractFromFile detects aliased useT import', async () => {
+      const mockMatcher: PathsMatcher = (specifier: string) => {
+        if (specifier.startsWith('@app/')) {
+          const rest = specifier.slice('@app/'.length);
+          return [join('/project/src', rest)];
+        }
+        return [];
+      };
+
+      const code = `
+        import { useT } from '@app/idioma'
+        function Component() {
+          const t = useT()
+          return t('Hello')
+        }
+      `;
+
+      const messages = await extractFromFile(
+        code,
+        '/project/src/Component.tsx',
+        'src/Component.tsx',
+        '/project/src/idioma',
+        mockMatcher,
+      );
+
+      expect(messages.length).toBe(1);
+      expect(messages[0].source).toBe('Hello');
+    });
   });
 });
