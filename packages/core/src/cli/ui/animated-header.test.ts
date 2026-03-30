@@ -20,41 +20,41 @@ describe('SimpleAnimatedHeader', () => {
   it('prints static header line on start', () => {
     const header = new SimpleAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
       model: 'claude-sonnet-4',
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'idioma translate | Auto context: on | Model: claude-sonnet-4 (anthropic)',
+      'idiomi translate | Auto context: on | Model: claude-sonnet-4 (anthropic)',
     );
   });
 
   it('handles auto context off', () => {
     const header = new SimpleAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: false,
       provider: 'openai',
       model: 'gpt-4o',
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'idioma translate | Auto context: off | Model: gpt-4o (openai)',
+      'idiomi translate | Auto context: off | Model: gpt-4o (openai)',
     );
   });
 
   it('handles missing model gracefully', () => {
     const header = new SimpleAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: false,
       provider: 'openai',
     });
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'idioma translate | Auto context: off | Model: openai',
+      'idiomi translate | Auto context: off | Model: openai',
     );
   });
 
@@ -116,7 +116,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('hides cursor on start', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -128,7 +128,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('shows cursor on stop', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -140,7 +140,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('prints initial frame on start', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -148,7 +148,7 @@ describe('InteractiveAnimatedHeader', () => {
     // Find call that contains the title (part of rendered frame)
     const calls = stdoutSpy.mock.calls.map((c) => c[0]);
     const hasTitle = calls.some(
-      (call) => typeof call === 'string' && call.includes('idioma translate'),
+      (call) => typeof call === 'string' && call.includes('idiomi translate'),
     );
     expect(hasTitle).toBe(true);
 
@@ -158,7 +158,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('advances frames on interval', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -175,7 +175,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('clears interval on stop', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -193,7 +193,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('stop is safe to call multiple times', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -205,7 +205,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('setStatus updates the content area', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -227,7 +227,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('setProgress updates the progress bar', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });
@@ -249,7 +249,7 @@ describe('InteractiveAnimatedHeader', () => {
   it('log adds to the log lines', () => {
     const header = new InteractiveAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext: true,
       provider: 'anthropic',
     });

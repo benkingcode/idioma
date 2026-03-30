@@ -1,0 +1,51 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/dashboard.tsx
+#, extracted, ai-translated
+msgid "003zr0xA"
+msgstr "Panel de control"
+
+#: src/routes/dashboard.tsx
+#, extracted, ai-translated
+msgid "004adTk4"
+msgstr "Esta es una ruta no localizada que utiliza detección de cookies."
+
+#: src/routes/dashboard.tsx
+#, extracted, ai-translated
+msgid "003lEGzQ"
+msgstr "Configuración regional actual: {locale}"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted, ai-translated
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/routes/{-$locale}/about.tsx
+#, extracted, ai-translated
+msgid "004U2qa8"
+msgstr "Conoce mas sobre lo que hacemos"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted, ai-translated
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/routes/{-$locale}/index.tsx
+#, extracted, ai-translated
+msgid "004RNHTH"
+msgstr "Esta es la página de inicio con enrutamiento de rutas localizadas"
+
+#: src/routeTree.gen.ts
+#, extracted, ai-translated
+msgctxt "route:dashboard"
+msgid "0028mxXJ"
+msgstr "dashboard"
+
+#: src/routeTree.gen.ts
+#, extracted, ai-translated
+msgctxt "route:about"
+msgid "003R6yRq"
+msgstr "sobre"

@@ -1,20 +1,21 @@
-// Main public exports for @idioma/react
+// Main public exports for @idiomi/react
 
-// Factory functions for generated idioma/ folder
+// Factory functions for generated idiomi/ folder
 export {
   createTrans,
   type TransInlineModeProps,
   type TransKeyOnlyModeProps,
 } from './createTrans';
-export { createUseT, type TFunction } from './createUseT';
+export { createUseT } from './createUseT';
+export type { TFunction } from './useT.types';
 
 // Context and Provider factories
 export {
-  createIdiomaProvider,
+  createIdiomiProvider,
   createUseLocale,
-  IdiomaContext,
-  type IdiomaContextValue,
-  type IdiomaProviderProps,
+  IdiomiContext,
+  type IdiomiContextValue,
+  type IdiomiProviderProps,
 } from './context';
 
 // Runtime internals (used by Babel-compiled code)
@@ -25,3 +26,12 @@ export {
   interpolateTags,
   type TransComponent,
 } from './interpolate';
+
+// SEO utilities
+export {
+  getLocaleHead,
+  type GetLocaleHeadOptions,
+  type LocaleHeadData,
+  type HreflangLink,
+  type RoutesMap,
+} from './getLocaleHead';

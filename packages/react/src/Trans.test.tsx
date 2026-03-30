@@ -1,21 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { createIdiomaProvider } from './context';
+import { createIdiomiProvider } from './context';
 import { __Trans } from './Trans';
 
-const IdiomaProvider = createIdiomaProvider();
+const IdiomiProvider = createIdiomiProvider();
 
 describe('__Trans', () => {
   it('renders a simple string for the current locale', () => {
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: 'Hello',
             es: 'Hola',
           }}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('Hello')).toBeDefined();
@@ -23,27 +23,27 @@ describe('__Trans', () => {
 
   it('switches locale dynamically', () => {
     const { rerender } = render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: 'Hello',
             es: 'Hola',
           }}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('Hello')).toBeDefined();
 
     rerender(
-      <IdiomaProvider locale="es">
+      <IdiomiProvider locale="es">
         <__Trans
           __t={{
             en: 'Hello',
             es: 'Hola',
           }}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('Hola')).toBeDefined();
@@ -51,7 +51,7 @@ describe('__Trans', () => {
 
   it('interpolates values with __a prop', () => {
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: 'Hello {name}!',
@@ -59,7 +59,7 @@ describe('__Trans', () => {
           }}
           __a={{ name: 'Ben' }}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('Hello Ben!')).toBeDefined();
@@ -71,7 +71,7 @@ describe('__Trans', () => {
     );
 
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: 'Hello <0>world</0>!',
@@ -79,7 +79,7 @@ describe('__Trans', () => {
           }}
           __c={[Bold]}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('bold').textContent).toBe('world');
@@ -87,7 +87,7 @@ describe('__Trans', () => {
 
   it('handles function messages (compiled plurals)', () => {
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: ({ count }: { count: number }) =>
@@ -97,7 +97,7 @@ describe('__Trans', () => {
           }}
           __a={{ count: 5 }}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('5 items')).toBeDefined();
@@ -105,7 +105,7 @@ describe('__Trans', () => {
 
   it('handles function messages with count of 1', () => {
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: ({ count }: { count: number }) =>
@@ -115,7 +115,7 @@ describe('__Trans', () => {
           }}
           __a={{ count: 1 }}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('1 item')).toBeDefined();
@@ -127,7 +127,7 @@ describe('__Trans', () => {
     );
 
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <__Trans
           __t={{
             en: 'Hello {name}, click <0>here</0>!',
@@ -136,7 +136,7 @@ describe('__Trans', () => {
           __a={{ name: 'Ben' }}
           __c={[Link]}
         />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('link').textContent).toBe('here');
@@ -151,18 +151,18 @@ describe('__Trans', () => {
         .mockImplementation(() => {});
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <__Trans
             // @ts-expect-error - testing runtime behavior when Babel didn't transform
             __t={undefined}
             children="Hello world"
           />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByText('Hello world')).toBeDefined();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Idioma: Missing translations'),
+        expect.stringContaining('Idiomi: Missing translations'),
       );
 
       consoleSpy.mockRestore();
@@ -176,13 +176,13 @@ describe('__Trans', () => {
         .mockImplementation(() => {});
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <__Trans
             // @ts-expect-error - testing runtime behavior when Babel didn't transform
             __t={undefined}
             children="Hello world"
           />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByText('Hello world')).toBeDefined();

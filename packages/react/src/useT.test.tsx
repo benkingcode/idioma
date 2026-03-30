@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { createIdiomaProvider } from './context';
+import { createIdiomiProvider } from './context';
 import { generateKey } from './server/generateKey';
 import { __useT } from './useT';
 
-const IdiomaProvider = createIdiomaProvider();
+const IdiomiProvider = createIdiomiProvider();
 
 describe('__useT', () => {
   // Translations keyed by hash for source text mode
@@ -58,9 +58,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('¡Hola mundo!');
@@ -87,9 +87,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
@@ -117,9 +117,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('5 items');
@@ -134,9 +134,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hello');
@@ -149,9 +149,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hola');
@@ -168,9 +168,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hello Ben!');
@@ -187,9 +187,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('5 items');
@@ -206,9 +206,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('1 item');
@@ -221,9 +221,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('nonexistent.key');
@@ -237,17 +237,17 @@ describe('__useT', () => {
     }
 
     const { rerender } = render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <TestComponent />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('result').textContent).toBe('Hello');
 
     rerender(
-      <IdiomaProvider locale="es">
+      <IdiomiProvider locale="es">
         <TestComponent />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('result').textContent).toBe('Hola');
@@ -265,14 +265,14 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hello world');
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Idioma: Missing translations'),
+        expect.stringContaining('Idiomi: Missing translations'),
       );
 
       consoleSpy.mockRestore();
@@ -291,9 +291,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hello Ben');
@@ -314,9 +314,9 @@ describe('__useT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hello world');

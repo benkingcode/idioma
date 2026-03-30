@@ -33,13 +33,13 @@ jobs:
         run: pnpm build
 
       - name: Setup e2e fixtures
-        run: pnpm --filter idioma-e2e run setup
+        run: pnpm --filter idiomi-e2e run setup
 
       - name: Install Playwright browsers
-        run: pnpm --filter idioma-e2e exec playwright install --with-deps chromium
+        run: pnpm --filter idiomi-e2e exec playwright install --with-deps chromium
 
       - name: Run e2e tests
-        run: pnpm --filter idioma-e2e test
+        run: pnpm --filter idiomi-e2e test
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

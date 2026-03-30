@@ -1,7 +1,11 @@
 import { defineCommand } from 'citty';
-import { compileTranslations } from '../../compiler/compile.js';
+import {
+  compileTranslations,
+  type RoutingCompileOptions,
+} from '../../compiler/compile.js';
+import { detectFramework } from '../../framework.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
+import { getIdiomiPaths, loadConfig, type IdiomiConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 import { ensureExtracted } from './ensure-extracted.js';
 
@@ -17,6 +21,26 @@ export interface CompileCommandOptions {
   useSuspense?: boolean;
   locales?: string[];
   projectRoot?: string;
+  routing?: RoutingCompileOptions;
+}
+
+/**
+ * Build routing compile options from config.
+ */
+async function buildRoutingOptions(
+  config: IdiomiConfig,
+  projectRoot: string,
+): Promise<RoutingCompileOptions | undefined> {
+  if (!config.routing) return undefined;
+
+  const framework = await detectFramework(projectRoot);
+  return {
+    enabled: true,
+    localizedPaths: config.routing.localizedPaths ?? false,
+    framework,
+    metadataBase: config.routing.metadataBase,
+    prefixStrategy: config.routing.prefixStrategy,
+  };
 }
 
 /**
@@ -32,6 +56,7 @@ export async function runCompile(
     useSuspense,
     locales,
     projectRoot,
+    routing,
   } = options;
 
   await compileTranslations({
@@ -41,6 +66,7 @@ export async function runCompile(
     useSuspense,
     locales,
     projectRoot,
+    routing,
   });
 
   // Read back results to get stats
@@ -71,10 +97,10 @@ export const compileCommand = defineCommand({
   async run() {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
-    const { localeDir, outputDir } = getIdiomaPaths(config);
+    const { localeDir, outputDir } = getIdiomiPaths(config);
 
-    // Ensure .gitignore exists in the idioma directory
-    await ensureGitignore(config.idiomaDir);
+    // Ensure .gitignore exists in the idiomi directory
+    await ensureGitignore(config.idiomiDir);
 
     const spinner = createSpinner();
 
@@ -95,6 +121,7 @@ export const compileCommand = defineCommand({
     spinner.start('Compiling translations...');
 
     try {
+      const routing = await buildRoutingOptions(config, cwd);
       const result = await runCompile({
         localeDir,
         outputDir,
@@ -102,6 +129,7 @@ export const compileCommand = defineCommand({
         useSuspense: config.useSuspense,
         locales: config.locales,
         projectRoot: cwd,
+        routing,
       });
 
       spinner.succeed(

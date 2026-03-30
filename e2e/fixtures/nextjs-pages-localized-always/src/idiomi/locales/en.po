@@ -1,0 +1,82 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/pages/about.tsx
+#. [AI Context]: Page heading (h1) at the top of the About page that introduces the company information section
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/pages/about.tsx
+#. [AI Context]: Subheading paragraph on the About page that encourages users to read more about the company
+#, extracted
+msgid "002klSky"
+msgstr "Learn more about what we do."
+
+#: src/pages/contact.tsx
+#. [AI Context]: Main page heading on the contact page that users see when visiting the contact section
+#, extracted
+msgid "000J06Wk"
+msgstr "Contact Us"
+
+#: src/pages/contact.tsx
+#. [AI Context]: Descriptive subheading below the main heading on the contact page, introducing the contact form or team contact information
+#, extracted
+msgid "003T8F3W"
+msgstr "Get in touch with our team."
+
+#: src/pages/index.tsx
+#. [AI Context]: Page heading on the home page welcoming users to the website
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/pages/index.tsx
+#. [AI Context]: Introductory paragraph displaying main content on the home page
+#, extracted
+msgid "001uxLgK"
+msgstr "This is the home page content."
+
+#: src/pages/blog/[slug].tsx
+#. [AI Context]: Page heading on individual blog post page that introduces the blog post title; followed by the dynamic slug value
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"
+
+#: src/pages/blog/index.tsx
+#. [AI Context]: Main page heading for the blog section
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/pages/docs/[...slug].tsx
+#. [AI Context]: Page heading displayed at the top of the documentation page
+#, extracted
+msgid "001LdocT"
+msgstr "Documentation"
+
+#: src/pages/about.tsx
+#, extracted
+msgctxt "route:about"
+msgid "003R6yRq"
+msgstr "about"
+
+#: src/pages/contact.tsx
+#, extracted
+msgctxt "route:contact"
+msgid "002dJ8dM"
+msgstr "contact"
+
+#: src/pages/blog/[slug].tsx
+#, extracted
+msgctxt "route:blog"
+msgid "0030YUzz"
+msgstr "blog"
+
+#: src/pages/docs/[...slug].tsx
+#, extracted
+msgctxt "route:docs"
+msgid "001eY9Px"
+msgstr "docs"

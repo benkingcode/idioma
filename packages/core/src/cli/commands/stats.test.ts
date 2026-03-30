@@ -9,7 +9,7 @@ describe('Stats Command', () => {
   let localeDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-stats-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-stats-'));
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(localeDir, { recursive: true });
   });

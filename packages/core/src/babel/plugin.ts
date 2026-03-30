@@ -1,4 +1,4 @@
-import { dirname, relative, resolve } from 'path';
+import { basename, dirname, relative, resolve } from 'path';
 import type { NodePath, PluginObj } from '@babel/core';
 import { parse as babelParse } from '@babel/parser';
 import * as t from '@babel/types';
@@ -49,7 +49,7 @@ function parseExpressionToAst(expr: string): t.Expression {
     }
   } catch {
     // If parsing fails, fall back to identifier with warning
-    console.warn(`[idioma] Unable to parse expression: ${expr}`);
+    console.warn(`[idiomi] Unable to parse expression: ${expr}`);
   }
 
   // Fallback: extract first identifier (legacy behavior for truly unparseable cases)
@@ -57,7 +57,7 @@ function parseExpressionToAst(expr: string): t.Expression {
   return t.identifier(firstPart);
 }
 
-export interface IdiomaPluginOptions {
+export interface IdiomiPluginOptions {
   /**
    * Plugin mode:
    * - 'inlined': Bakes all translations into the bundle (default)
@@ -77,24 +77,24 @@ export interface IdiomaPluginOptions {
   outputDir?: string;
   /** Project root for computing chunk IDs (required for suspense mode) */
   projectRoot?: string;
-  /** Absolute path to idioma folder for robust import detection */
-  idiomaDir?: string;
+  /** Absolute path to idiomi folder for robust import detection */
+  idiomiDir?: string;
 }
 
 interface PluginState {
-  opts: IdiomaPluginOptions;
+  opts: IdiomiPluginOptions;
   filename: string;
-  idiomaUsed: boolean;
-  idiomaKeys: Set<string>;
+  idiomiUsed: boolean;
+  idiomiKeys: Set<string>;
   chunkId: string;
-  /** Map of local binding names to their imported type from idioma folder */
+  /** Map of local binding names to their imported type from idiomi folder */
   translatableBindings: Map<string, 'Trans' | 'useT' | 't' | 'createT'>;
-  /** Resolved absolute path to idioma folder */
-  resolvedIdiomaDir: string | null;
+  /** Resolved absolute path to idiomi folder */
+  resolvedIdiomiDir: string | null;
 }
 
 /**
- * Idioma Babel plugin for transforming Trans components and useT hooks.
+ * Idiomi Babel plugin for transforming Trans components and useT hooks.
  *
  * In inlined mode (default):
  * - Transforms <Trans>...</Trans> to <__Trans __t={...} __a={...} __c={...} />
@@ -106,32 +106,32 @@ interface PluginState {
  *
  * Extraction (via onExtract callback) runs in both modes.
  */
-export default function idiomaPlugin(): PluginObj<PluginState> {
+export default function idiomiPlugin(): PluginObj<PluginState> {
   return {
-    name: 'idioma',
+    name: 'idiomi',
 
     pre(file) {
-      const opts = (this.opts || {}) as IdiomaPluginOptions;
+      const opts = (this.opts || {}) as IdiomiPluginOptions;
       const filename = file.opts.filename || 'unknown';
 
       this.opts = opts;
       this.filename = filename;
-      this.idiomaUsed = false;
-      this.idiomaKeys = new Set();
+      this.idiomiUsed = false;
+      this.idiomiKeys = new Set();
       this.chunkId = opts.projectRoot
         ? getChunkId(filename, opts.projectRoot)
         : 'unknown';
       this.translatableBindings = new Map();
-      this.resolvedIdiomaDir = opts.idiomaDir ? resolve(opts.idiomaDir) : null;
+      this.resolvedIdiomiDir = opts.idiomiDir ? resolve(opts.idiomiDir) : null;
     },
 
     visitor: {
       Program: {
         exit(path, state) {
-          const { opts, idiomaUsed, chunkId } = state;
+          const { opts, idiomiUsed, chunkId } = state;
 
           // Handle Suspense mode - inject chunk loaders
-          if (opts.mode === 'suspense' && idiomaUsed) {
+          if (opts.mode === 'suspense' && idiomiUsed) {
             const { locales, outputDir, projectRoot } = opts;
             if (!locales || !outputDir || !projectRoot) {
               return;
@@ -164,18 +164,18 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
                   t.identifier('__useTSuspense'),
                 ),
               ],
-              t.stringLiteral('@idioma/react/runtime-suspense'),
+              t.stringLiteral('@idiomi/react/runtime-suspense'),
             );
 
-            // Inject __$idiomaChunk constant
+            // Inject __$idiomiChunk constant
             const chunkDecl = t.variableDeclaration('const', [
               t.variableDeclarator(
-                t.identifier('__$idiomaChunk'),
+                t.identifier('__$idiomiChunk'),
                 t.stringLiteral(chunkId),
               ),
             ]);
 
-            // Inject __$idiomaLoad object with dynamic imports
+            // Inject __$idiomiLoad object with dynamic imports
             const loaderProps = locales.map((locale) =>
               t.objectProperty(
                 t.identifier(locale),
@@ -190,7 +190,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
             const loadDecl = t.variableDeclaration('const', [
               t.variableDeclarator(
-                t.identifier('__$idiomaLoad'),
+                t.identifier('__$idiomiLoad'),
                 t.objectExpression(loaderProps),
               ),
             ]);
@@ -200,7 +200,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           }
 
           // Handle inlined mode - inject __Trans import
-          if (opts.mode !== 'suspense' && idiomaUsed) {
+          if (opts.mode !== 'suspense' && idiomiUsed) {
             const transImport = t.importDeclaration(
               [
                 t.importSpecifier(
@@ -208,7 +208,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
                   t.identifier('__Trans'),
                 ),
               ],
-              t.stringLiteral('@idioma/react'),
+              t.stringLiteral('@idiomi/react'),
             );
             path.unshiftContainer('body', [transImport]);
           }
@@ -216,29 +216,40 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
 
       /**
-       * Detect imports from user's idioma folder.
+       * Detect imports from user's idiomi folder.
        * Tracks local names to handle aliased imports.
-       * Requires idiomaDir to be configured.
+       * Requires idiomiDir to be configured.
        */
       ImportDeclaration(path: NodePath<t.ImportDeclaration>, state) {
         const source = path.node.source.value;
-        const { resolvedIdiomaDir } = state;
+        const { resolvedIdiomiDir } = state;
 
-        // Skip if idiomaDir not configured
-        if (!resolvedIdiomaDir) {
+        // Skip if idiomiDir not configured
+        if (!resolvedIdiomiDir) {
           return;
         }
 
-        // Check if import resolves to idiomaDir
-        let isIdiomaImport = false;
+        // Check if import resolves to idiomiDir
+        let isIdiomiImport = false;
+
         if (source.startsWith('.')) {
+          // Relative import - resolve and check
           const fileDir = dirname(state.filename);
           const resolvedImport = resolve(fileDir, source);
-          isIdiomaImport = resolvedImport.startsWith(resolvedIdiomaDir);
+          isIdiomiImport = resolvedImport.startsWith(resolvedIdiomiDir);
+        } else {
+          // Path alias or package import
+          // Check for common idiomi path patterns:
+          // - @/idiomi, @/idiomi/client, ~/idiomi, #idiomi, etc.
+          // - idiomi (bare import matching folder name)
+          const idiomiFolderName = basename(resolvedIdiomiDir);
+          const pathAliasPattern = new RegExp(
+            `^[@~#]?/?${idiomiFolderName}(/|$)`,
+          );
+          isIdiomiImport = pathAliasPattern.test(source);
         }
-        // Non-relative imports (e.g., 'some-package') won't match idiomaDir
 
-        if (!isIdiomaImport) {
+        if (!isIdiomiImport) {
           return;
         }
 
@@ -301,7 +312,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
        * In development: optionally extracts messages.
        */
       CallExpression(path: NodePath<t.CallExpression>, state) {
-        const { opts, filename, translatableBindings, resolvedIdiomaDir } =
+        const { opts, filename, translatableBindings, resolvedIdiomiDir } =
           state;
         const callee = path.node.callee;
 
@@ -309,8 +320,8 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           return;
         }
 
-        // Skip if idiomaDir not configured
-        if (!resolvedIdiomaDir) {
+        // Skip if idiomiDir not configured
+        if (!resolvedIdiomiDir) {
           return;
         }
 
@@ -319,20 +330,20 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
         // Handle useT() calls in suspense mode
         if (bindingType === 'useT' && opts.mode === 'suspense') {
-          // Mark that idioma is used (triggers chunk/loader injection)
-          state.idiomaUsed = true;
+          // Mark that idiomi is used (triggers chunk/loader injection)
+          state.idiomiUsed = true;
 
-          // Transform: useT() → __useTSuspense(__$idiomaChunk, __$idiomaLoad)
+          // Transform: useT() → __useTSuspense(__$idiomiChunk, __$idiomiLoad)
           path.replaceWith(
             t.callExpression(t.identifier('__useTSuspense'), [
-              t.identifier('__$idiomaChunk'),
-              t.identifier('__$idiomaLoad'),
+              t.identifier('__$idiomiChunk'),
+              t.identifier('__$idiomiLoad'),
             ]),
           );
           return;
         }
 
-        // Check if this is a t() call from idioma
+        // Check if this is a t() call from idiomi
         if (bindingType !== 't') {
           return;
         }
@@ -432,11 +443,11 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
       },
 
       JSXElement(path: NodePath<t.JSXElement>, state) {
-        const { opts, filename, translatableBindings, resolvedIdiomaDir } =
+        const { opts, filename, translatableBindings, resolvedIdiomiDir } =
           state;
 
-        // Skip if idiomaDir not configured
-        if (!resolvedIdiomaDir) {
+        // Skip if idiomiDir not configured
+        if (!resolvedIdiomiDir) {
           return;
         }
 
@@ -449,7 +460,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         if (t.isJSXIdentifier(elementName)) {
           componentName = elementName.name;
         } else if (t.isJSXMemberExpression(elementName)) {
-          // For member expressions like Idioma.Trans, check the property
+          // For member expressions like Idiomi.Trans, check the property
           if (t.isJSXIdentifier(elementName.property)) {
             componentName = elementName.property.name;
           }
@@ -461,12 +472,30 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
         // Check if this is a Trans component using binding tracking
         const isTrans = translatableBindings.get(componentName) === 'Trans';
+        console.log(
+          '[idiomi babel] Checking JSX:',
+          componentName,
+          'isTrans:',
+          isTrans,
+          'bindings:',
+          [...translatableBindings.entries()],
+        );
         if (!isTrans) {
           return;
         }
 
         // Extract the message (skip name check since we verified via binding tracking)
         const extracted = extractTransMessage(path, filename, true);
+        console.log(
+          '[idiomi babel] Extracted message:',
+          extracted?.source,
+          'key:',
+          extracted?.key,
+        );
+        console.log(
+          '[idiomi babel] Translations keys:',
+          Object.keys(opts.translations || {}).slice(0, 5),
+        );
 
         // Call extraction callback if provided
         if (extracted && opts.onExtract) {
@@ -478,9 +507,9 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           return;
         }
 
-        // Mark that idioma was used in this file
-        state.idiomaUsed = true;
-        state.idiomaKeys.add(extracted.key);
+        // Mark that idiomi was used in this file
+        state.idiomiUsed = true;
+        state.idiomiKeys.add(extracted.key);
 
         // Transform based on mode
         if (opts.mode === 'suspense') {
@@ -585,7 +614,9 @@ function transformTransComponent(
     ).__ns;
     messageTranslations = nsTranslations?.[namespace]?.[key] || {};
   } else {
-    messageTranslations = translations[key] || {};
+    // Look up by source string (how translations.js is keyed)
+    // Fall back to key lookup for backward compatibility
+    messageTranslations = translations[source] || translations[key] || {};
   }
 
   // Build the __t prop (translations object)
@@ -651,12 +682,12 @@ function transformTransSuspense(
     // __chunk: reference to injected chunk ID
     t.jsxAttribute(
       t.jsxIdentifier('__chunk'),
-      t.jsxExpressionContainer(t.identifier('__$idiomaChunk')),
+      t.jsxExpressionContainer(t.identifier('__$idiomiChunk')),
     ),
     // __load: reference to injected loader object
     t.jsxAttribute(
       t.jsxIdentifier('__load'),
-      t.jsxExpressionContainer(t.identifier('__$idiomaLoad')),
+      t.jsxExpressionContainer(t.identifier('__$idiomiLoad')),
     ),
     // Add common props (__ns, __a, __c)
     ...buildCommonTransProps(extracted),

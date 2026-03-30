@@ -9,11 +9,25 @@ import {
   type PluralOrSelectOption,
   type SelectElement,
 } from '@formatjs/icu-messageformat-parser';
+import type { Framework } from '../framework.js';
+import { isTanStackFramework } from '../framework.js';
 import { analyzeIcuMessage, type IcuAnalysis } from '../icu/compiler.js';
 import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
+import {
+  compileRoutes,
+  extractRoutes,
+  generateRoutesModule,
+  generateRoutesTypes,
+  ROUTE_CONTEXT_PREFIX,
+} from '../routes/index.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
 import { generateChunkModules } from './generate-chunks.js';
+import {
+  generateConfigModule,
+  generateConfigTypes,
+  type DetectionOptions,
+} from './generate-config.js';
 
 /**
  * Creates a compilation lock to prevent concurrent compilations.
@@ -50,6 +64,28 @@ export function createCompileLock(): CompileLock {
   };
 }
 
+/** Routing options for Link component generation */
+export interface RoutingCompileOptions {
+  /** Whether routing is enabled */
+  enabled: boolean;
+  /** Whether localized paths are enabled (routes will be imported) */
+  localizedPaths: boolean;
+  /** Detected framework for determining which Link package to use */
+  framework: Framework;
+  /** Base URL for absolute hreflang links and canonical URLs (optional) */
+  metadataBase?: string;
+  /** Locale prefix strategy for URLs */
+  prefixStrategy?: 'always' | 'as-needed' | 'never';
+  /** Locale detection settings */
+  detection?: DetectionOptions;
+  /**
+   * Name of the route param used for locale.
+   * Used for runtime route matching in TanStack Router.
+   * @default 'locale'
+   */
+  localeParamName?: string;
+}
+
 export interface CompileOptions {
   /** Directory containing .po files */
   localeDir: string;
@@ -67,6 +103,8 @@ export interface CompileOptions {
   locales?: string[];
   /** Project root for computing chunk IDs (required when useSuspense is true) */
   projectRoot?: string;
+  /** Routing options for Link component generation */
+  routing?: RoutingCompileOptions;
 }
 
 export interface CompiledMessage {
@@ -123,6 +161,7 @@ export async function compileTranslations(
     useSuspense,
     locales,
     projectRoot,
+    routing,
   } = options;
 
   // Ensure output directories exist (don't delete - overwrite in place)
@@ -268,6 +307,58 @@ export async function compileTranslations(
   await generateTranslationsJs(generatedDir, allMessages);
   await generateTypesTs(generatedDir, allMessages, [...catalogs.keys()]);
 
+  // Generate routes if localizedPaths is enabled
+  if (routing?.localizedPaths && routing.framework && projectRoot) {
+    const extractedRoutes = await extractRoutes({
+      projectRoot,
+      framework: routing.framework,
+      localeParamName: routing.localeParamName,
+    });
+    const routeMessages = extractRouteMessagesFromCatalogs(catalogs, [
+      ...detectedLocales,
+    ]);
+    const compiledRoutes = compileRoutes(
+      extractedRoutes,
+      routeMessages,
+      [...detectedLocales],
+      routing.framework,
+    );
+
+    await fs.writeFile(
+      join(generatedDir, 'routes.js'),
+      generateRoutesModule(compiledRoutes, routing.framework),
+    );
+    await fs.writeFile(
+      join(generatedDir, 'routes.d.ts'),
+      generateRoutesTypes([...detectedLocales], routing.framework),
+    );
+  }
+
+  // Always generate config files (locales/defaultLocale are always re-exported from index.ts)
+  {
+    const allLocales = locales ?? [...detectedLocales];
+    const configOptions = {
+      locales: allLocales,
+      defaultLocale,
+      prefixStrategy: routing?.prefixStrategy,
+      detection: routing?.detection,
+      metadataBase: routing?.metadataBase,
+      localeParamName: routing?.localeParamName,
+    };
+
+    await fs.writeFile(
+      join(generatedDir, 'config.js'),
+      generateConfigModule(configOptions),
+    );
+    await fs.writeFile(
+      join(generatedDir, 'config.d.ts'),
+      generateConfigTypes(configOptions),
+    );
+  }
+
+  // Ensure we have locales for code generation
+  const allLocales = locales ?? [...detectedLocales];
+
   // Generate suspense-specific files or standard index
   if (useSuspense && locales && projectRoot) {
     // Analyze chunks from catalog references
@@ -282,14 +373,44 @@ export async function compileTranslations(
     });
 
     // Generate suspense-aware index.ts (user-facing, at outputDir root)
-    await generateIndexTsSuspense(outputDir, locales);
+    await generateIndexTsSuspense({
+      outputDir,
+      locales: allLocales,
+      defaultLocale,
+      routing,
+    });
   } else {
     // Generate standard index.ts (user-facing, at outputDir root)
-    await generateIndexTs(outputDir);
+    await generateIndexTs({
+      outputDir,
+      locales: allLocales,
+      defaultLocale,
+      routing,
+    });
   }
 
   // Generate plain.ts for imperative translation (user-facing, at outputDir root)
   await generatePlainTs(outputDir);
+}
+
+/**
+ * Extract route messages from catalogs for route compilation.
+ * Filters messages that have the route: context prefix.
+ */
+function extractRouteMessagesFromCatalogs(
+  catalogs: Map<string, Catalog>,
+  locales: string[],
+): Record<string, Message[]> {
+  const result: Record<string, Message[]> = {};
+  for (const locale of locales) {
+    const catalog = catalogs.get(locale);
+    if (catalog) {
+      result[locale] = [...catalog.messages.values()].filter((m) =>
+        m.context?.startsWith(ROUTE_CONTEXT_PREFIX),
+      );
+    }
+  }
+  return result;
 }
 
 /**
@@ -534,7 +655,7 @@ async function generateTranslationsJs(
   outputDir: string,
   messages: Map<string, CompiledMessage>,
 ): Promise<void> {
-  let content = '// Auto-generated by @idioma/core\n';
+  let content = '// Auto-generated by @idiomi/core\n';
   content += '// Do not edit directly\n\n';
   content += 'export const translations = {\n';
 
@@ -599,7 +720,7 @@ async function generateTypesTs(
   messages: Map<string, CompiledMessage>,
   locales: string[],
 ): Promise<void> {
-  let content = '// Auto-generated by @idioma/core\n';
+  let content = '// Auto-generated by @idiomi/core\n';
   content += '// Do not edit directly\n\n';
   content += "import type { ComponentType, ReactNode } from 'react';\n\n";
 
@@ -644,9 +765,9 @@ async function generateTypesTs(
   }
   content += '}\n\n';
 
-  // Generate IdiomaTypes - bundles all types for cleaner factory API
+  // Generate IdiomiTypes - bundles all types for cleaner factory API
   content += '/** Combined types for createTrans/createUseT factories */\n';
-  content += 'export interface IdiomaTypes {\n';
+  content += 'export interface IdiomiTypes {\n';
   content += '  TranslationKey: TranslationKey;\n';
   content += '  MessageValues: MessageValues;\n';
   content += '  MessageComponents: MessageComponents;\n';
@@ -665,66 +786,768 @@ function quoteIfNeeded(name: string): string {
   return JSON.stringify(name);
 }
 
-async function generateIndexTs(outputDir: string): Promise<void> {
+/**
+ * Get the package import path for Link/LocaleHead based on framework.
+ * Note: TanStack uses native Link, but we still need this for LocaleHead.
+ */
+function getLinkPackage(framework: Framework): string | null {
+  switch (framework) {
+    case 'next-app':
+      return '@idiomi/next';
+    case 'next-pages':
+      return '@idiomi/next/pages';
+    case 'tanstack':
+    case 'tanstack-start':
+      return '@idiomi/tanstack-react';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get the package import path for server-side locale handling based on framework.
+ * TanStack Start uses SSR-aware factories from /server subpath.
+ */
+function getServerPackage(framework: Framework): string | null {
+  switch (framework) {
+    case 'tanstack-start':
+      return '@idiomi/tanstack-react/server';
+    default:
+      return null;
+  }
+}
+
+/** Options for generating route-aware code */
+interface RouteAwareCodeOptions {
+  routing: RoutingCompileOptions;
+}
+
+/**
+ * Generate all route-aware code for index.ts (Link, LocaleHead, createMiddleware, etc.)
+ * Note: For TanStack Start, server-only code (handleLocale) is generated in server.ts instead.
+ */
+function generateRouteAwareCode(options: RouteAwareCodeOptions): string {
+  const { routing } = options;
+  const pkg = getLinkPackage(routing.framework);
+  if (!pkg) return '';
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+  const isNextJs =
+    routing.framework === 'next-app' || routing.framework === 'next-pages';
+  const isTanStack = isTanStackFramework(routing.framework);
+  const isTanStackStart = routing.framework === 'tanstack-start';
+  const serverPkg = getServerPackage(routing.framework);
+
+  if (routing.localizedPaths) {
+    // Next.js: All client-only code (Link, LocaleHead, Trans, useT) is in client.ts
+    // index.ts only has server-safe exports (config, types, getLocaleHead)
+    if (isNextJs) {
+      // Re-export getLocaleHead for programmatic use (it's a pure function, server-safe)
+      exports.push('');
+      exports.push(`export { getLocaleHead } from '@idiomi/react';`);
+      return exports.join('\n');
+    }
+
+    // TanStack: Import routes for LocaleHead and URL rewriting
+    // routePatterns is used for segment-level matching with dynamic params
+    imports.push(
+      `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
+    );
+    // Import config values for middleware
+    const configImports = [
+      'locales',
+      'defaultLocale',
+      'prefixStrategy',
+      'detection',
+      'localeParamName',
+    ];
+    if (routing.metadataBase) {
+      configImports.push('metadataBase');
+    }
+    imports.push(
+      `import { ${configImports.join(', ')} } from './.generated/config';`,
+    );
+
+    // TanStack: Users use TanStack's native Link with URL rewriting - no createLink
+    if (isTanStack) {
+      // TanStack uses factories for locale detection and URL rewriting
+      if (isTanStackStart && serverPkg) {
+        // TanStack Start: SSR-aware detection from /server, URL handling from main
+        imports.push(
+          `import { createLocaleHead, createUrlHandler } from '${pkg}';`,
+        );
+        imports.push(
+          `import { createIsomorphicLocaleDetector } from '${serverPkg}';`,
+        );
+      } else {
+        // TanStack SPA: All factories from main package
+        imports.push(
+          `import { createLocaleHead, createLocaleLoader, createUrlHandler } from '${pkg}';`,
+        );
+      }
+    }
+
+    exports.push('');
+
+    // Generate LocaleHead with config (TanStack only - Next.js has it in client.ts)
+    if (isTanStack) {
+      const localeHeadConfig: string[] = [];
+      if (routing.metadataBase) {
+        localeHeadConfig.push(`  metadataBase,`);
+      }
+      localeHeadConfig.push(`  locales,`);
+      localeHeadConfig.push(`  defaultLocale,`);
+      localeHeadConfig.push(`  routes,`);
+      localeHeadConfig.push(`  reverseRoutes,`);
+      localeHeadConfig.push(`  prefixStrategy,`);
+
+      exports.push(`export const LocaleHead = createLocaleHead({`);
+      exports.push(...localeHeadConfig);
+      exports.push(`});`);
+      exports.push('');
+    }
+
+    // Generate TanStack functions using factories
+    if (isTanStack) {
+      if (isTanStackStart) {
+        // TanStack Start: handleLocale is in server.ts
+        // Export SSR-aware detectLocale for components and non-localized routes
+        exports.push(
+          `export const detectLocale = createIsomorphicLocaleDetector<Locale>({`,
+        );
+        exports.push(`  locales,`);
+        exports.push(`  defaultLocale,`);
+        exports.push(`  detection,`);
+        exports.push(`});`);
+        exports.push('');
+      } else {
+        // TanStack SPA: Generate localeLoader for use in beforeLoad
+        exports.push(
+          `export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({`,
+        );
+        exports.push(`  locales,`);
+        exports.push(`  defaultLocale,`);
+        exports.push(`  prefixStrategy,`);
+        exports.push(`  detection,`);
+        exports.push(`  localeParamName,`);
+        exports.push(`});`);
+        exports.push('');
+      }
+      // URL rewriting functions for both SPA and Start
+      exports.push(
+        `export const { delocalizeUrl, localizeUrl } = createUrlHandler<Locale>({`,
+      );
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
+      exports.push(`  prefixStrategy,`);
+      exports.push(`  routes,`);
+      exports.push(`  reverseRoutes,`);
+      exports.push(`  routePatterns,`);
+      exports.push(`});`);
+      exports.push('');
+      // Export localeParamName for runtime route matching
+      exports.push(`export { localeParamName };`);
+      exports.push('');
+    }
+
+    // Re-export getLocaleHead for programmatic use
+    exports.push(`export { getLocaleHead } from '@idiomi/react';`);
+  } else {
+    // Routing enabled but no path translation - still need locale prefix support
+
+    // Next.js: All client-only code is in client.ts
+    // index.ts only has server-safe exports (config, types, getLocaleHead)
+    if (isNextJs) {
+      // Re-export getLocaleHead for programmatic use (it's a pure function, server-safe)
+      exports.push('');
+      exports.push(`export { getLocaleHead } from '@idiomi/react';`);
+      return exports.join('\n');
+    }
+
+    // TanStack: Import config values for factories
+    const configImports = [
+      'locales',
+      'defaultLocale',
+      'prefixStrategy',
+      'detection',
+      'localeParamName',
+    ];
+    if (routing.metadataBase) {
+      configImports.push('metadataBase');
+    }
+    imports.push(
+      `import { ${configImports.join(', ')} } from './.generated/config';`,
+    );
+
+    // TanStack: Users use TanStack's native Link - no createLink
+    if (isTanStack) {
+      // TanStack uses factories for locale detection and URL rewriting
+      if (isTanStackStart && serverPkg) {
+        // TanStack Start: SSR-aware detection from /server, URL handling from main
+        imports.push(
+          `import { createLocaleHead, createUrlHandler } from '${pkg}';`,
+        );
+        imports.push(
+          `import { createIsomorphicLocaleDetector } from '${serverPkg}';`,
+        );
+      } else {
+        // TanStack SPA: All factories from main package
+        imports.push(
+          `import { createLocaleHead, createLocaleLoader, createUrlHandler } from '${pkg}';`,
+        );
+      }
+    }
+
+    exports.push('');
+
+    // Generate LocaleHead with config but without routes (TanStack only - Next.js has it in client.ts)
+    if (isTanStack) {
+      const localeHeadConfig: string[] = [];
+      if (routing.metadataBase) {
+        localeHeadConfig.push(`  metadataBase,`);
+      }
+      localeHeadConfig.push(`  locales,`);
+      localeHeadConfig.push(`  defaultLocale,`);
+      localeHeadConfig.push(`  prefixStrategy,`);
+
+      exports.push(`export const LocaleHead = createLocaleHead({`);
+      exports.push(...localeHeadConfig);
+      exports.push(`});`);
+      exports.push('');
+    }
+
+    // Generate TanStack functions using factories
+    if (isTanStack) {
+      if (isTanStackStart) {
+        // TanStack Start: handleLocale is in server.ts
+        // Export SSR-aware detectLocale for components and non-localized routes
+        exports.push(
+          `export const detectLocale = createIsomorphicLocaleDetector<Locale>({`,
+        );
+        exports.push(`  locales,`);
+        exports.push(`  defaultLocale,`);
+        exports.push(`  detection,`);
+        exports.push(`});`);
+        exports.push('');
+      } else {
+        // TanStack SPA: Generate localeLoader for use in beforeLoad
+        exports.push(
+          `export const { localeLoader, detectLocale } = createLocaleLoader<Locale>({`,
+        );
+        exports.push(`  locales,`);
+        exports.push(`  defaultLocale,`);
+        exports.push(`  prefixStrategy,`);
+        exports.push(`  detection,`);
+        exports.push(`  localeParamName,`);
+        exports.push(`});`);
+        exports.push('');
+      }
+      // Prefix-only URL rewriting for both SPA and Start (no routes param = prefix-only mode)
+      exports.push(`export const { localizeUrl } = createUrlHandler<Locale>({`);
+      exports.push(`  locales,`);
+      exports.push(`  defaultLocale,`);
+      exports.push(`  prefixStrategy,`);
+      exports.push(`});`);
+      exports.push('');
+      // Export localeParamName for runtime route matching
+      exports.push(`export { localeParamName };`);
+      exports.push('');
+    }
+
+    // Re-export getLocaleHead for programmatic use
+    exports.push(`export { getLocaleHead } from '@idiomi/react';`);
+  }
+
+  // Join imports with blank lines between each, then exports
+  return [...imports.join('\n\n').split('\n'), ...exports].join('\n');
+}
+
+/**
+ * Generate server.ts for TanStack Start with server-only exports.
+ * This keeps handleLocale separate from index.ts to prevent server code
+ * from leaking into client bundles.
+ */
+function generateServerCode(options: RouteAwareCodeOptions): string {
+  const { routing } = options;
+
+  // Only generate for TanStack Start
+  if (routing.framework !== 'tanstack-start') {
+    return '';
+  }
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+
+  // Import config values - detection is always generated
+  const configImports = [
+    'locales',
+    'defaultLocale',
+    'prefixStrategy',
+    'detection',
+    'localeParamName',
+  ];
+  imports.push(
+    `import { ${configImports.join(', ')} } from './.generated/config';`,
+  );
+  imports.push(`import type { Locale } from './.generated/types';`);
+  imports.push(
+    `import { createRequestHandler } from '@idiomi/tanstack-react/server';`,
+  );
+  // Import getRouter from user's router file for route matching
+  imports.push(`import { getRouter } from '../router';`);
+
+  // Generate handleLocale with route-matching support
+  exports.push('');
+  exports.push(`export const handleLocale = createRequestHandler<Locale>({`);
+  exports.push(`  locales,`);
+  exports.push(`  defaultLocale,`);
+  exports.push(`  prefixStrategy,`);
+  exports.push(`  detection,`);
+  exports.push(`  localeParamName,`);
+  exports.push(`  getRouter,`);
+  exports.push(`});`);
+
+  return [...imports, ...exports].join('\n');
+}
+
+/** Options for generating client code */
+interface NextClientCodeOptions extends RouteAwareCodeOptions {
+  /** Whether to include suspense component exports (Trans, useT, etc.) */
+  useSuspense?: boolean;
+  locales?: string[];
+}
+
+/**
+ * Generate Next.js client.ts file with 'use client' directive.
+ * Contains all client-only components: Link, LocaleHead, Trans, useT, IdiomiProvider, useLocale.
+ * When useSuspense is true, uses suspense factories (createTransSuspense, etc.).
+ */
+function generateNextClientCode(options: NextClientCodeOptions): string {
+  const { routing, useSuspense, locales } = options;
+
+  // Only generate for Next.js
+  if (routing.framework !== 'next-app' && routing.framework !== 'next-pages') {
+    return '';
+  }
+
+  const pkg = getLinkPackage(routing.framework);
+  if (!pkg) return '';
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+
+  imports.push(`'use client';`);
+  imports.push('');
+  imports.push(`import { createLink, createLocaleHead } from '${pkg}';`);
+
+  // Import the appropriate Trans/useT factories based on suspense mode
+  if (useSuspense) {
+    imports.push(`import {`);
+    imports.push(`  createIdiomiProvider,`);
+    imports.push(`  createTransSuspense,`);
+    imports.push(`  createUseLocale,`);
+    imports.push(`  createUseTSuspense,`);
+    imports.push(`} from '@idiomi/react/runtime-suspense';`);
+  } else {
+    imports.push(`import {`);
+    imports.push(`  createIdiomiProvider,`);
+    imports.push(`  createTrans,`);
+    imports.push(`  createUseLocale,`);
+    imports.push(`  createUseT,`);
+    imports.push(`} from '@idiomi/react';`);
+  }
+  imports.push(
+    `import type { IdiomiTypes, Locale } from './.generated/types';`,
+  );
+
+  // Import config values
+  const configImports = ['locales', 'defaultLocale', 'prefixStrategy'];
+  if (routing.metadataBase) {
+    configImports.push('metadataBase');
+  }
+  imports.push(
+    `import { ${configImports.join(', ')} } from './.generated/config';`,
+  );
+
+  if (routing.localizedPaths) {
+    imports.push(
+      `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
+    );
+  }
+
+  exports.push('');
+
+  // Generate Link
+  exports.push('export const Link = createLink({');
+  if (routing.localizedPaths) {
+    exports.push('  routes,');
+    exports.push('  routePatterns,');
+  }
+  exports.push('  defaultLocale,');
+  exports.push('  prefixStrategy,');
+  exports.push('});');
+  exports.push('');
+
+  // Generate LocaleHead
+  const localeHeadConfig: string[] = [];
+  if (routing.metadataBase) {
+    localeHeadConfig.push(`  metadataBase,`);
+  }
+  localeHeadConfig.push(`  locales,`);
+  localeHeadConfig.push(`  defaultLocale,`);
+  if (routing.localizedPaths) {
+    localeHeadConfig.push(`  routes,`);
+    localeHeadConfig.push(`  reverseRoutes,`);
+    localeHeadConfig.push(`  routePatterns,`);
+  }
+  localeHeadConfig.push(`  prefixStrategy,`);
+
+  exports.push(`export const LocaleHead = createLocaleHead({`);
+  exports.push(...localeHeadConfig);
+  exports.push(`});`);
+
+  // Add Trans, useT, IdiomiProvider, useLocale exports
+  // These are always client-only for Next.js
+  exports.push('');
+  if (useSuspense && locales) {
+    exports.push(`const config = {`);
+    exports.push(`  locales: ${JSON.stringify(locales)} as const,`);
+    exports.push(`};`);
+    exports.push('');
+    exports.push(
+      `export const Trans = createTransSuspense<IdiomiTypes>(config);`,
+    );
+    exports.push('');
+    exports.push(
+      `export const useT = createUseTSuspense<IdiomiTypes>(config);`,
+    );
+  } else {
+    exports.push(`export const Trans = createTrans<IdiomiTypes>();`);
+    exports.push('');
+    exports.push(`export const useT = createUseT<IdiomiTypes>();`);
+  }
+  exports.push('');
+  exports.push(`export const IdiomiProvider = createIdiomiProvider();`);
+  exports.push('');
+  exports.push(`export const useLocale = createUseLocale<Locale>();`);
+
+  return [...imports, ...exports].join('\n');
+}
+
+/**
+ * Generate Next.js middleware.ts file for edge runtime.
+ * Contains createMiddleware which runs on edge and can't import client-only code.
+ */
+function generateNextMiddlewareCode(options: RouteAwareCodeOptions): string {
+  const { routing } = options;
+
+  // Only generate for Next.js
+  if (routing.framework !== 'next-app' && routing.framework !== 'next-pages') {
+    return '';
+  }
+
+  const imports: string[] = [];
+  const exports: string[] = [];
+
+  imports.push(
+    `import { createMiddlewareFactory } from '@idiomi/next/middleware';`,
+  );
+
+  // Import config values - always include prefixStrategy for correct routing behavior
+  imports.push(
+    `import { locales, defaultLocale, prefixStrategy } from './.generated/config';`,
+  );
+
+  if (routing.localizedPaths) {
+    imports.push(
+      `import { routes, reverseRoutes, routePatterns } from './.generated/routes';`,
+    );
+  }
+
+  exports.push('');
+  exports.push(`export const createMiddleware = createMiddlewareFactory({`);
+  exports.push(`  locales,`);
+  exports.push(`  defaultLocale,`);
+  exports.push(`  prefixStrategy,`);
+  if (routing.localizedPaths) {
+    exports.push(`  routes,`);
+    exports.push(`  reverseRoutes,`);
+    exports.push(`  routePatterns,`);
+  }
+  exports.push(`});`);
+
+  return [...imports, ...exports].join('\n');
+}
+
+/**
+ * Format TypeScript code using Prettier.
+ * Uses the user's Prettier config if found, otherwise falls back to {singleQuote: true}.
+ */
+async function formatWithPrettier(
+  code: string,
+  filePath: string,
+): Promise<string> {
+  const prettier = await import('prettier');
+  const config = await prettier.resolveConfig(filePath);
+  return prettier.format(code, {
+    // Spread user config if found, otherwise use our fallback
+    ...(config ?? { singleQuote: true }),
+    parser: 'typescript',
+    filepath: filePath,
+  });
+}
+
+interface GenerateIndexOptions {
+  outputDir: string;
+  locales: string[];
+  defaultLocale: string;
+  routing?: RoutingCompileOptions;
+}
+
+async function generateIndexTs(options: GenerateIndexOptions): Promise<void> {
+  const { outputDir, locales, routing } = options;
   // In non-suspense mode, Babel inlines translations at build time.
   // We call createTrans/createUseT without passing translations to avoid
   // importing translations.js at runtime, which enables tree shaking.
-  const content = `// Auto-generated by @idioma/core
+  const routeAwareCode =
+    routing?.enabled && routing.framework
+      ? generateRouteAwareCode({ routing })
+      : '';
+
+  const isNextJs =
+    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
+
+  // For Next.js: Client components (Trans, useT, Link, LocaleHead) are in client.ts
+  // index.ts only has server-safe exports (config, types, getLocaleHead)
+  // For other frameworks: Define components directly in index.ts
+  let content: string;
+  if (isNextJs) {
+    content = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client components (Trans, useT, Link, LocaleHead) are in client.ts
+// Import from './client' for client-side components
+
+export { locales, defaultLocale } from './.generated/config';
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
+export type { IdiomiTypes, Locale } from './.generated/types';
+`;
+  } else {
+    content = `// Auto-generated by @idiomi/core
 // Do not edit directly
 // Translations are inlined by Babel at build time
 
 import {
-  createIdiomaProvider,
+  createIdiomiProvider,
   createTrans,
   createUseLocale,
   createUseT,
-} from '@idioma/react';
-import type { IdiomaTypes, Locale } from './.generated/types';
+} from '@idiomi/react';
 
-export const Trans = createTrans<IdiomaTypes>();
-export const useT = createUseT<IdiomaTypes>();
-export const IdiomaProvider = createIdiomaProvider();
-export const useLocale = createUseLocale();
+import type { IdiomiTypes, Locale } from './.generated/types';
 
-export type { IdiomaTypes, Locale };
+export { locales, defaultLocale } from './.generated/config';
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
+export const Trans = createTrans<IdiomiTypes>();
+
+export const useT = createUseT<IdiomiTypes>();
+
+export const IdiomiProvider = createIdiomiProvider();
+
+export const useLocale = createUseLocale<Locale>();
+
+export type { IdiomiTypes, Locale };
 `;
+  }
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
+  const filePath = join(outputDir, 'index.ts');
+  const formatted = await formatWithPrettier(content, filePath);
+  await fs.writeFile(filePath, formatted, 'utf-8');
+
+  // Generate server.ts for TanStack Start (keeps server code out of client bundles)
+  if (routing?.enabled && routing.framework === 'tanstack-start') {
+    const serverCode = generateServerCode({ routing });
+    if (serverCode) {
+      const serverContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Server-only exports for TanStack Start
+
+${serverCode}
+`;
+      const serverFilePath = join(outputDir, 'server.ts');
+      const formattedServer = await formatWithPrettier(
+        serverContent,
+        serverFilePath,
+      );
+      await fs.writeFile(serverFilePath, formattedServer, 'utf-8');
+    }
+  }
+
+  // Generate client.ts and middleware.ts for Next.js (keeps client/edge code separate)
+  if (routing?.enabled && isNextJs) {
+    // Generate client.ts with 'use client' directive
+    const clientCode = generateNextClientCode({ routing, locales });
+    if (clientCode) {
+      const clientContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client-only exports for Next.js
+
+${clientCode}
+`;
+      const clientFilePath = join(outputDir, 'client.ts');
+      const formattedClient = await formatWithPrettier(
+        clientContent,
+        clientFilePath,
+      );
+      await fs.writeFile(clientFilePath, formattedClient, 'utf-8');
+    }
+
+    // Generate middleware.ts for edge runtime
+    const middlewareCode = generateNextMiddlewareCode({ routing });
+    if (middlewareCode) {
+      const middlewareContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Middleware exports for Next.js edge runtime
+
+${middlewareCode}
+`;
+      const middlewareFilePath = join(outputDir, 'middleware.ts');
+      const formattedMiddleware = await formatWithPrettier(
+        middlewareContent,
+        middlewareFilePath,
+      );
+      await fs.writeFile(middlewareFilePath, formattedMiddleware, 'utf-8');
+    }
+  }
 }
 
 async function generateIndexTsSuspense(
-  outputDir: string,
-  locales: string[],
+  options: GenerateIndexOptions,
 ): Promise<void> {
-  const content = `// Auto-generated by @idioma/core
+  const { outputDir, locales, routing } = options;
+  const routeAwareCode =
+    routing?.enabled && routing.framework
+      ? generateRouteAwareCode({ routing })
+      : '';
+
+  const isNextJs =
+    routing?.framework === 'next-app' || routing?.framework === 'next-pages';
+
+  // For Next.js: Client components (Trans, useT, Link, LocaleHead) are in client.ts
+  // index.ts only has server-safe exports (config, types, getLocaleHead)
+  // For other frameworks: Define components directly in index.ts
+  let content: string;
+  if (isNextJs) {
+    content = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client components (Trans, useT, Link, LocaleHead) are in client.ts
+// Import from './client' for client-side components
+
+export { locales, defaultLocale } from './.generated/config';
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
+export type { IdiomiTypes, Locale } from './.generated/types';
+`;
+  } else {
+    content = `// Auto-generated by @idiomi/core
 // Do not edit directly
 
 import {
-  createIdiomaProvider,
+  createIdiomiProvider,
   createTransSuspense,
   createUseLocale,
   createUseTSuspense,
-} from '@idioma/react/runtime-suspense';
-import type { IdiomaTypes, Locale } from './.generated/types';
+} from '@idiomi/react/runtime-suspense';
 
+import type { IdiomiTypes, Locale } from './.generated/types';
+
+export { locales, defaultLocale } from './.generated/config';
+${routeAwareCode ? '\n' + routeAwareCode + '\n' : ''}
 const config = {
   locales: ${JSON.stringify(locales)} as const,
 };
 
-export const Trans = createTransSuspense<IdiomaTypes>(config);
-export const useT = createUseTSuspense<IdiomaTypes>(config);
-export const IdiomaProvider = createIdiomaProvider();
-export const useLocale = createUseLocale();
+export const Trans = createTransSuspense<IdiomiTypes>(config);
 
-export type { IdiomaTypes, Locale };
+export const useT = createUseTSuspense<IdiomiTypes>(config);
+
+export const IdiomiProvider = createIdiomiProvider();
+
+export const useLocale = createUseLocale<Locale>();
+
+export type { IdiomiTypes, Locale };
 `;
+  }
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
+  const filePath = join(outputDir, 'index.ts');
+  const formatted = await formatWithPrettier(content, filePath);
+  await fs.writeFile(filePath, formatted, 'utf-8');
+
+  // Generate server.ts for TanStack Start (keeps server code out of client bundles)
+  if (routing?.enabled && routing.framework === 'tanstack-start') {
+    const serverCode = generateServerCode({ routing });
+    if (serverCode) {
+      const serverContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Server-only exports for TanStack Start
+
+${serverCode}
+`;
+      const serverFilePath = join(outputDir, 'server.ts');
+      const formattedServer = await formatWithPrettier(
+        serverContent,
+        serverFilePath,
+      );
+      await fs.writeFile(serverFilePath, formattedServer, 'utf-8');
+    }
+  }
+
+  // Generate client.ts and middleware.ts for Next.js (keeps client/edge code separate)
+  if (routing?.enabled && isNextJs) {
+    // Generate client.ts with 'use client' directive (includes suspense factories)
+    const clientCode = generateNextClientCode({
+      routing,
+      useSuspense: true,
+      locales,
+    });
+    if (clientCode) {
+      const clientContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Client-only exports for Next.js
+
+${clientCode}
+`;
+      const clientFilePath = join(outputDir, 'client.ts');
+      const formattedClient = await formatWithPrettier(
+        clientContent,
+        clientFilePath,
+      );
+      await fs.writeFile(clientFilePath, formattedClient, 'utf-8');
+    }
+
+    // Generate middleware.ts for edge runtime
+    const middlewareCode = generateNextMiddlewareCode({ routing });
+    if (middlewareCode) {
+      const middlewareContent = `// Auto-generated by @idiomi/core
+// Do not edit directly
+// Middleware exports for Next.js edge runtime
+
+${middlewareCode}
+`;
+      const middlewareFilePath = join(outputDir, 'middleware.ts');
+      const formattedMiddleware = await formatWithPrettier(
+        middlewareContent,
+        middlewareFilePath,
+      );
+      await fs.writeFile(middlewareFilePath, formattedMiddleware, 'utf-8');
+    }
+  }
 }
 
 async function generatePlainTs(outputDir: string): Promise<void> {
-  const content = `// Auto-generated by @idioma/core
-import { _createTFactory } from '@idioma/core/runtime';
+  const content = `// Auto-generated by @idiomi/core
+
+import { _createTFactory } from '@idiomi/core/runtime';
+
 import type { Locale, TranslationKey, MessageValues } from './.generated/types';
 
 export const createT = (locale: Locale) =>
@@ -733,5 +1556,7 @@ export const createT = (locale: Locale) =>
 export type { Locale, TranslationKey, MessageValues };
 `;
 
-  await fs.writeFile(join(outputDir, 'plain.ts'), content, 'utf-8');
+  const filePath = join(outputDir, 'plain.ts');
+  const formatted = await formatWithPrettier(content, filePath);
+  await fs.writeFile(filePath, formatted, 'utf-8');
 }

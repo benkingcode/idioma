@@ -1,0 +1,78 @@
+{
+  "name": "@idiomi/tanstack-react",
+  "version": "0.1.0",
+  "description": "TanStack Router integration for Idiomi i18n - SPA and SSR support",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./link": {
+      "types": "./dist/link.d.ts",
+      "import": "./dist/link.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks.d.ts",
+      "import": "./dist/hooks.js"
+    },
+    "./pattern-matching": {
+      "types": "./dist/pattern-matching.d.ts",
+      "import": "./dist/pattern-matching.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@idiomi/core": "workspace:*",
+    "@idiomi/react": "workspace:*",
+    "picomatch": "^4.0.3"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": ">=1.0.0",
+    "@tanstack/react-start": ">=1.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-start": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@rollup/plugin-babel": "^6.0.0",
+    "@tanstack/react-router": "^1.120.5",
+    "@tanstack/react-start": "^1.145.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/picomatch": "^4.0.2",
+    "@types/react": "^19.0.0",
+    "jsdom": "^26.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "keywords": [
+    "idiomi",
+    "i18n",
+    "tanstack",
+    "tanstack-router",
+    "tanstack-start",
+    "internationalization",
+    "localization",
+    "spa",
+    "ssr"
+  ],
+  "license": "MIT"
+}

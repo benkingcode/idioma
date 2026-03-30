@@ -48,7 +48,7 @@ test.describe('useT Hook - Imperative Usage', () => {
       'مرحبا من useT!',
     );
     await expect(page.getByTestId('uset-interpolation')).toContainText(
-      'أهلا وسهلا، Developer!',
+      'مرحبا، Developer!',
     );
   });
 

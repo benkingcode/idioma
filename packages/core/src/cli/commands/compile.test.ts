@@ -10,9 +10,9 @@ describe('Compile Command', () => {
   let outputDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-compile-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-compile-'));
     localeDir = join(tempDir, 'locales');
-    outputDir = join(tempDir, 'idioma');
+    outputDir = join(tempDir, 'idiomi');
     await fs.mkdir(localeDir, { recursive: true });
   });
 
@@ -182,7 +182,7 @@ msgstr "Hello"
     expect(content).toContain('export const Trans = createTrans');
     expect(content).toContain('export const useT = createUseT');
     expect(content).toContain(
-      'export const IdiomaProvider = createIdiomaProvider',
+      'export const IdiomiProvider = createIdiomiProvider',
     );
     expect(content).toContain('export type {');
     // index.ts should import types from .generated/

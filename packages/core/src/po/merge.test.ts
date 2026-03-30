@@ -158,8 +158,8 @@ msgstr ""
 "Language: es\\n"
 
 #, extracted
-msgid "idioma-message"
-msgstr "From Idioma"
+msgid "idiomi-message"
+msgstr "From Idiomi"
 
 msgid "tms-message"
 msgstr "From TMS"
@@ -177,9 +177,9 @@ msgstr ""
 
     const result = mergeCatalogs(existing, extracted, { clean: true });
 
-    // idioma-message should be removed (has extracted flag)
-    expect(result.removed).toContain('idioma-message');
-    expect(existing.messages.has('idioma-message')).toBe(false);
+    // idiomi-message should be removed (has extracted flag)
+    expect(result.removed).toContain('idiomi-message');
+    expect(existing.messages.has('idiomi-message')).toBe(false);
 
     // tms-message should be preserved (no extracted flag)
     expect(result.removed).not.toContain('tms-message');
@@ -642,8 +642,8 @@ describe('mergeFileIntoCatalog', () => {
   it('removes orphaned messages with extracted flag but keeps those without', () => {
     const existing = createCatalog('en', [
       {
-        key: 'idioma-message',
-        translation: 'From Idioma',
+        key: 'idiomi-message',
+        translation: 'From Idiomi',
         references: ['src/App.tsx'],
         flags: ['extracted'],
       },
@@ -661,9 +661,9 @@ describe('mergeFileIntoCatalog', () => {
       defaultLocale: 'en',
     });
 
-    // idioma-message should be removed (has extracted flag, no translations)
-    expect(result.removed).toContain('idioma-message');
-    expect(existing.messages.has('idioma-message')).toBe(false);
+    // idiomi-message should be removed (has extracted flag, no translations)
+    expect(result.removed).toContain('idiomi-message');
+    expect(existing.messages.has('idiomi-message')).toBe(false);
 
     // tms-message should be preserved (no extracted flag)
     expect(result.removed).not.toContain('tms-message');
@@ -769,5 +769,36 @@ describe('mergeFileIntoCatalog', () => {
     expect(existing.messages.get('shared')?.references).toEqual(['src/B.tsx']);
     // Message should still exist (not orphaned, has other reference)
     expect(existing.messages.has('shared')).toBe(true);
+  });
+
+  it('preserves messages with translations in current non-default locale even when orphaned', () => {
+    // This tests the bug fix: when processing a non-default locale (es),
+    // messages that have translations in the current locale should NOT be deleted,
+    // even if otherLocaleCatalogs only contains the default locale (en)
+    const existing = createCatalog('es', [
+      {
+        key: 'greeting',
+        translation: 'Hola',
+        references: ['src/removed.tsx'], // This reference will be removed
+        flags: ['extracted'],
+      },
+    ]);
+    const extracted = createCatalog('es', []);
+
+    // otherLocaleCatalogs only contains the default locale (en)
+    const enCatalog = createCatalog('en', [
+      { key: 'greeting', translation: 'Hello' },
+    ]);
+
+    const result = mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/removed.tsx',
+      defaultLocale: 'en',
+      otherLocaleCatalogs: [enCatalog],
+    });
+
+    // Message should NOT be removed because it has a translation in the current (es) locale
+    expect(result.removed).toHaveLength(0);
+    expect(existing.messages.has('greeting')).toBe(true);
+    expect(existing.messages.get('greeting')?.translation).toBe('Hola');
   });
 });

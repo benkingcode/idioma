@@ -13,9 +13,9 @@ loadDotenv({ quiet: true });
 
 const main = defineCommand({
   meta: {
-    name: 'idioma',
+    name: 'idiomi',
     version: '0.1.0',
-    description: 'Idioma i18n CLI - Compile-time React internationalization',
+    description: 'Idiomi i18n CLI - Compile-time React internationalization',
   },
   args: {
     'non-interactive': {

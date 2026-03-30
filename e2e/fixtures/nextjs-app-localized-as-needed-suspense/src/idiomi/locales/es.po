@@ -1,0 +1,88 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/app/[locale]/page.tsx
+#, extracted, ai-translated
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/app/[locale]/page.tsx
+#, extracted, ai-translated
+msgid "000I3ScQ"
+msgstr "Esta es una demostración de Idiomi con Next.js App Router."
+
+#: src/app/[locale]/about/page.tsx
+#, extracted, ai-translated
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/app/[locale]/about/page.tsx
+#, extracted, ai-translated
+msgid "002O6MmQ"
+msgstr "Estamos construyendo el futuro de la internacionalización."
+
+#: src/app/[locale]/blog/page.tsx
+#, extracted, ai-translated
+msgid "0039uF2j"
+msgstr "Nuestro Blog"
+
+#: src/app/[locale]/blog/page.tsx
+#, extracted, ai-translated
+msgid "003woyf5"
+msgstr "Lee nuestros últimos artículos"
+
+#: src/app/[locale]/blog/page.tsx
+#, extracted, ai-translated
+msgid "004QtLkv"
+msgstr "Publicación Hello World"
+
+#: src/app/[locale]/blog/page.tsx
+#, extracted, ai-translated
+msgid "000bv8XP"
+msgstr "Primeros pasos"
+
+#: src/app/[locale]/contact/page.tsx
+#, extracted, ai-translated
+msgid "001INXnu"
+msgstr "Contáctenos"
+
+#: src/app/[locale]/contact/page.tsx
+#, extracted, ai-translated
+msgid "003T8F3W"
+msgstr "Ponte en contacto con nuestro equipo."
+
+#: src/app/[locale]/blog/[slug]/page.tsx
+#, extracted, ai-translated
+msgid "002mrR1N"
+msgstr "Publicación de Blog"
+
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#, extracted, ai-translated
+msgid "001LdocT"
+msgstr "Documentación"
+
+#: src/app/[locale]/about/page.tsx
+#, extracted, ai-translated
+msgctxt "route:about"
+msgid "003R6yRq"
+msgstr "sobre"
+
+#: src/app/[locale]/blog/page.tsx
+#, extracted, ai-translated
+msgctxt "route:blog"
+msgid "0030YUzz"
+msgstr "articulos"
+
+#: src/app/[locale]/contact/page.tsx
+#, extracted, ai-translated
+msgctxt "route:contact"
+msgid "002dJ8dM"
+msgstr "contacto"
+
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#, extracted, ai-translated
+msgctxt "route:docs"
+msgid "001eY9Px"
+msgstr "documentacion"

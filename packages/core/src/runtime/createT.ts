@@ -43,7 +43,7 @@ function isInlinedTranslations(
  * @param translations - Optional translations object for runtime lookup of dynamic strings
  * @returns A synchronous translation function
  *
- * @internal Used by generated idioma/plain.ts — import `createT` from there instead.
+ * @internal Used by generated idiomi/plain.ts — import `createT` from there instead.
  */
 export function _createTFactory<
   TKey extends string = string,

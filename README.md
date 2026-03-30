@@ -1,16 +1,16 @@
-# Idioma
+# Idiomi
 
 **AI-first, compile-time i18n for React. Write in English, ship in every language.**
 
-~800 bytes runtime. Automatic key generation. AI-powered translation that understands your codebase and key context.
+~2KB runtime (smaller than alternatives). Automatic key generation. AI-powered translation that understands your codebase and context.
 
 Traditional i18n workflow: Write code → Extract messages → Upload to TMS → Wait for translators → Download → Test → Find bugs → Repeat.
 
-With Idioma: Write code → Run `idioma translate` → Ship.
+With Idiomi: Write code → Run `idiomi translate` → Ship.
 
 ```bash
 # Translate all missing messages with AI
-idioma translate
+idiomi translate
 
 # Extracting messages from source files...
 # Generating context from source code...
@@ -18,13 +18,13 @@ idioma translate
 # ✓ Done in 12.3s
 ```
 
-Idioma reads your source code to understand context ("checkout button", "error message in cart"), then translates with that understanding. No more uploading CSVs or waiting for translators on routine updates.
+Idiomi reads your source code to understand context ("checkout button", "error message in cart"), then translates with that understanding. No more uploading CSVs or waiting for translators on routine updates.
 
 ## Features
 
 **Performance**
 
-- **~800 bytes runtime** — Translations compile to static imports; the runtime just renders them
+- **~2-3KB runtime** — Translations compile to static imports; the runtime just renders them
 - **Tree-shaken bundles** — Only translations for components on each page ship to the client
 - **Compile-time processing** — No runtime parsing or fetching
 
@@ -33,7 +33,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - **Write natural JSX** — `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
 - **Flexible key strategy** — Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
 - **AI-powered translation** — Built-in translation with Claude or GPT, with automatic context extraction
-- **Type-safe** — Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
+- **Type-safe** — Generated TypeScript types for message keys and required values (forget `{name}` and TypeScript tells you)
 - **ICU MessageFormat** — Full support for plurals, selects, ordinals, and complex formatting
 
 **Integrations**
@@ -47,6 +47,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 
 ## Table of Contents
 
+- [Context-Aware AI Translation](#context-aware-ai-translation)
 - [Quick Start](#quick-start) — Vite setup
 - [Next.js](#nextjs)
 - [React Native](#react-native)
@@ -60,37 +61,89 @@ Idioma reads your source code to understand context ("checkout button", "error m
   - [Namespaces](#namespaces)
 - [CLI Commands](#cli-commands)
 - [Configuration](#configuration)
+- [Routing](#routing)
+- [CDN Caching](#cdn-caching-with-locale-detection)
 - [API Reference](#api-reference)
 - [How It Works](#how-it-works)
+- [Why Idiomi?](#why-idiomi)
 - [Comparison](#comparison)
+
+## Context-Aware AI Translation
+
+Most AI translation tools translate strings in isolation. "Submit" becomes "Enviar"—but is it a button label? A form title? A legal document submission? Context matters.
+
+Idiomi reads your source code to understand where each message appears:
+
+```tsx
+// src/components/Checkout.tsx
+function Checkout() {
+  return (
+    <div>
+      <h1>
+        <Trans>Review your order</Trans>
+      </h1>
+      <CartSummary />
+      <Button type="submit">
+        <Trans>Submit</Trans>
+      </Button>
+      <ErrorBoundary fallback={<Trans>Something went wrong</Trans>}>
+        <PaymentForm />
+      </ErrorBoundary>
+    </div>
+  );
+}
+```
+
+When you run `idiomi translate`, the AI analyzes your code structure and generates translator context:
+
+```po
+#. [AI Context]: Page heading shown when user reviews items before payment
+#: src/components/Checkout.tsx:8
+msgid "Review your order"
+msgstr "Revisa tu pedido"
+
+#. [AI Context]: Button label to confirm and submit the order for payment
+#: src/components/Checkout.tsx:12
+msgid "Submit"
+msgstr "Realizar pedido"
+
+#. [AI Context]: Error message shown when payment processing fails unexpectedly
+#: src/components/Checkout.tsx:13
+msgid "Something went wrong"
+msgstr "Algo salió mal"
+```
+
+Notice "Submit" becomes "Realizar pedido" (Place order), not generic "Enviar"—because the AI understood it's a checkout confirmation button.
+
+This context is saved in your PO files and reused for future translations, so you pay for context generation once per message.
 
 ## Quick Start
 
 ```bash
-npm install @idioma/core @idioma/react
+npm install @idiomi/core @idiomi/react
 ```
 
 Add the Vite plugin:
 
 ```ts
 // vite.config.ts
-import { idioma } from '@idioma/core/bundler/vite';
+import { idiomi } from '@idiomi/core/bundler/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [react(), idioma()],
+  plugins: [react(), idiomi()],
 });
 ```
 
 Create a config file:
 
 ```ts
-// idioma.config.ts
-import { defineConfig } from '@idioma/core';
+// idiomi.config.ts
+import { defineConfig } from '@idiomi/core';
 
 export default defineConfig({
-  idiomaDir: './src/idioma',
+  idiomiDir: './src/idiomi',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
 });
@@ -99,7 +152,7 @@ export default defineConfig({
 This creates a folder structure:
 
 ```
-src/idioma/
+src/idiomi/
 ├── locales/      # PO files (git tracked)
 ├── index.ts      # Trans, useT, etc. (typed wrapper)
 ├── plain.ts      # createT (non-React)
@@ -113,8 +166,8 @@ Set up a path alias for clean imports:
 {
   "compilerOptions": {
     "paths": {
-      "@/idioma": ["./src/idioma"],
-      "@/idioma/*": ["./src/idioma/*"]
+      "@/idiomi": ["./src/idiomi"],
+      "@/idiomi/*": ["./src/idiomi/*"]
     }
   }
 }
@@ -124,19 +177,19 @@ Set up the provider:
 
 ```tsx
 // main.tsx
-import { IdiomaProvider } from '@/idioma';
+import { IdiomiProvider } from '@/idiomi';
 
 createRoot(document.getElementById('root')!).render(
-  <IdiomaProvider locale="en">
+  <IdiomiProvider locale="en">
     <App />
-  </IdiomaProvider>,
+  </IdiomiProvider>,
 );
 ```
 
 Use it:
 
 ```tsx
-import { Trans } from '@/idioma';
+import { Trans } from '@/idiomi';
 
 function Greeting({ name }) {
   return <Trans>Hello {name}!</Trans>;
@@ -145,18 +198,18 @@ function Greeting({ name }) {
 
 ### Why import from generated code?
 
-Idioma generates a thin typed wrapper in your project. This gives you full autocomplete on message IDs, locales, and namespaces without macro magic:
+Idiomi generates a thin typed wrapper in your project. This gives you full autocomplete on message IDs, locales, and namespaces without macro magic:
 
 ```ts
-// Auto-generated by @idioma/core
-import { createTrans, createUseT } from '@idioma/react';
-import type { IdiomaTypes } from './.generated/types';
+// Auto-generated by @idiomi/core
+import { createTrans, createUseT } from '@idiomi/react';
+import type { IdiomiTypes } from './.generated/types';
 
-export const Trans = createTrans<IdiomaTypes>();
-export const useT = createUseT<IdiomaTypes>();
+export const Trans = createTrans<IdiomiTypes>();
+export const useT = createUseT<IdiomiTypes>();
 ```
 
-The `IdiomaTypes` generic carries your actual message keys through to the components, so `<Trans id="...">` autocompletes with your real messages.
+The `IdiomiTypes` generic carries your actual message keys through to the components, so `<Trans id="...">` autocompletes with your real messages.
 
 ## Next.js
 
@@ -164,10 +217,10 @@ Add the Next.js plugin to your config:
 
 ```js
 // next.config.mjs
-import { withIdioma } from '@idioma/core/next';
+import { withIdiomi } from '@idiomi/core/next';
 
-export default withIdioma({
-  idiomaDir: './src/idioma',
+export default withIdiomi({
+  idiomiDir: './src/idiomi',
   defaultLocale: 'en',
 })({
   // your other Next.js config
@@ -179,7 +232,7 @@ Add the Babel preset:
 ```js
 // babel.config.js
 module.exports = {
-  presets: ['next/babel', '@idioma/core/babel-preset'],
+  presets: ['next/babel', '@idiomi/core/babel-preset'],
 };
 ```
 
@@ -187,13 +240,13 @@ Set up the provider in your root layout:
 
 ```tsx
 // app/layout.tsx (App Router)
-import { IdiomaProvider } from '@/idioma';
+import { IdiomiProvider } from '@/idiomi/client';
 
 export default function RootLayout({ children }) {
   return (
     <html>
       <body>
-        <IdiomaProvider locale="en">{children}</IdiomaProvider>
+        <IdiomiProvider locale="en">{children}</IdiomiProvider>
       </body>
     </html>
   );
@@ -202,6 +255,8 @@ export default function RootLayout({ children }) {
 
 Works with both App Router and Pages Router.
 
+> **Note:** For Next.js, client components (`Trans`, `useT`, `IdiomiProvider`, `useLocale`, `Link`, `LocaleHead`) are in `client.ts`. Server-safe exports (`locales`, `defaultLocale`, `getLocaleHead`, types) remain in `index.ts`.
+
 ## React Native
 
 Add the Metro configuration wrapper:
@@ -209,12 +264,12 @@ Add the Metro configuration wrapper:
 ```js
 // metro.config.js
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
-const { withIdioma } = require('@idioma/core/metro');
+const { withIdiomi } = require('@idiomi/core/metro');
 
 const config = getDefaultConfig(__dirname);
 
-module.exports = withIdioma({
-  idiomaDir: './src/idioma',
+module.exports = withIdiomi({
+  idiomiDir: './src/idiomi',
   defaultLocale: 'en',
 })(config);
 ```
@@ -225,7 +280,7 @@ Add the Babel preset:
 // babel.config.js
 module.exports = {
   presets: ['module:@react-native/babel-preset'],
-  plugins: ['@idioma/core/babel'],
+  plugins: ['@idiomi/core/babel'],
 };
 ```
 
@@ -233,13 +288,13 @@ Set up the provider in your app root:
 
 ```tsx
 // App.tsx
-import { IdiomaProvider } from '@/idioma';
+import { IdiomiProvider } from '@/idiomi';
 
 export default function App() {
   return (
-    <IdiomaProvider locale="en">
+    <IdiomiProvider locale="en">
       <Main />
-    </IdiomaProvider>
+    </IdiomiProvider>
   );
 }
 ```
@@ -247,7 +302,7 @@ export default function App() {
 Use translations in your components:
 
 ```tsx
-import { Trans, useT } from '@/idioma';
+import { Trans, useT } from '@/idiomi';
 import { Text, View } from 'react-native';
 
 function Greeting({ name }) {
@@ -265,9 +320,9 @@ function Greeting({ name }) {
 
 The Metro plugin automatically compiles translations on startup and watches for PO file changes during development.
 
-> **Tip:** To use `@/idioma` imports in React Native, add [babel-plugin-module-resolver](https://github.com/tleunen/babel-plugin-module-resolver) to your Babel config.
+> **Tip:** To use `@/idiomi` imports in React Native, add [babel-plugin-module-resolver](https://github.com/tleunen/babel-plugin-module-resolver) to your Babel config.
 
-**Note:** Idioma compiles translations at build time. For OTA translation updates without app store releases, you'll need to integrate with a service like Expo Updates or CodePush and rebuild the JS bundle.
+**Note:** Idiomi compiles translations at build time. For OTA translation updates without app store releases, you'll need to integrate with a service like Expo Updates or CodePush and rebuild the JS bundle.
 
 ## React Server Components
 
@@ -275,7 +330,7 @@ For translations in React Server Components, use `createT` from the plain module
 
 ```tsx
 // app/page.tsx (Server Component)
-import { createT } from '@/idioma/plain';
+import { createT } from '@/idiomi/plain';
 
 export default async function Page({
   params,
@@ -316,7 +371,7 @@ For translations in utility functions, validation schemas, error messages, or an
 
 ```typescript
 // utils/validation.ts
-import { createT } from '@/idioma/plain';
+import { createT } from '@/idiomi/plain';
 
 export function createUserSchema(locale: string) {
   const t = createT(locale);
@@ -343,7 +398,7 @@ Works great for:
 
 ```typescript
 // Custom error class
-import { createT } from '@/idioma/plain';
+import { createT } from '@/idiomi/plain';
 
 export class AppError extends Error {
   constructor(code: string, locale: string, values?: Record<string, unknown>) {
@@ -414,8 +469,8 @@ Add translator context that affects key generation (same text, different context
 Use the `plural()` function inside `<Trans>` or `t()` for pluralization:
 
 ```tsx
-import { Trans } from '@/idioma';
-import { plural } from '@idioma/core/icu';
+import { Trans } from '@/idiomi';
+import { plural } from '@idiomi/core/icu';
 
 // In Trans component
 <Trans>
@@ -451,8 +506,8 @@ plural(count, {
 Use the `select()` function for exact value matching (gender, status, categories):
 
 ```tsx
-import { Trans } from '@/idioma';
-import { select } from '@idioma/core/icu';
+import { Trans } from '@/idiomi';
+import { select } from '@idiomi/core/icu';
 
 // In Trans component
 <Trans>
@@ -479,8 +534,8 @@ The `other` form is required as a fallback for unmatched values.
 Use `selectOrdinal()` for ordinal formatting (1st, 2nd, 3rd):
 
 ```tsx
-import { Trans } from '@/idioma';
-import { selectOrdinal } from '@idioma/core/icu';
+import { Trans } from '@/idiomi';
+import { selectOrdinal } from '@idiomi/core/icu';
 
 // In Trans component
 <Trans>
@@ -511,10 +566,10 @@ Ordinal rules are locale-aware via CLDR. In English:
 
 ### Number and Date Formatting
 
-For number, currency, and date formatting, use the standard `Intl` APIs alongside Idioma:
+For number, currency, and date formatting, use the standard `Intl` APIs alongside Idiomi:
 
 ```tsx
-import { Trans, useLocale } from '@/idioma';
+import { Trans, useLocale } from '@/idiomi';
 
 function Price({ amount }) {
   const locale = useLocale();
@@ -536,12 +591,12 @@ function EventDate({ date }) {
 }
 ```
 
-Idioma focuses on message translation and delegates formatting to the platform's `Intl` APIs, which handle locale-specific number, currency, and date formatting natively.
+Idiomi focuses on message translation and delegates formatting to the platform's `Intl` APIs, which handle locale-specific number, currency, and date formatting natively.
 
 ### Imperative usage with useT
 
 ```tsx
-import { useT } from '@/idioma';
+import { useT } from '@/idiomi';
 
 function SearchInput() {
   const t = useT();
@@ -569,7 +624,7 @@ function Greeting({ name }) {
 Get the current locale:
 
 ```tsx
-import { useLocale } from '@/idioma';
+import { useLocale } from '@/idiomi';
 
 function LanguageSwitcher() {
   const locale = useLocale();
@@ -595,8 +650,8 @@ t('Subscribe now', undefined, { ns: 'marketing' });
 Run via npx or your package manager:
 
 ```bash
-npx idioma <command>
-pnpm idioma <command>
+npx idiomi <command>
+pnpm idiomi <command>
 ```
 
 ### extract
@@ -604,9 +659,9 @@ pnpm idioma <command>
 Extract messages from source files to PO:
 
 ```bash
-idioma extract           # Extract all messages
-idioma extract --clean   # Remove unused messages
-idioma extract --watch   # Watch for changes
+idiomi extract           # Extract all messages
+idiomi extract --clean   # Remove unused messages
+idiomi extract --watch   # Watch for changes
 ```
 
 ### compile
@@ -614,7 +669,7 @@ idioma extract --watch   # Watch for changes
 Compile PO files to JavaScript:
 
 ```bash
-idioma compile
+idiomi compile
 ```
 
 > **Note:** The Vite, Next.js, and Metro plugins run `compile` automatically during build. You only need to run this manually if you're using a different bundler or want to inspect the generated output.
@@ -624,18 +679,19 @@ idioma compile
 AI-powered translation (requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`):
 
 ```bash
-idioma translate                    # Translate missing messages
-idioma translate --force            # Retranslate all messages
-idioma translate --dry-run          # Run without API calls or saving
-idioma translate --verbose          # Show AI prompts and responses
-idioma translate --no-auto-context  # Skip automatic context generation
+idiomi translate                    # Translate missing messages
+idiomi translate --locale es        # Translate only Spanish
+idiomi translate --force            # Retranslate all messages
+idiomi translate --dry-run          # Run without API calls or saving
+idiomi translate --verbose          # Show AI prompts and responses
+idiomi translate --no-auto-context  # Skip automatic context generation
 ```
 
 **How it works:**
 
 1. **Guidelines:** Configure `ai.guidelines` to describe your app's tone, audience, and style. These guidelines are sent to the AI during both context generation and translation, ensuring consistent results across your entire app.
 
-2. **Context generation:** Idioma reads your source files and uses AI to generate translator context for each message (e.g., "Button label in checkout form", "Error shown when payment fails"). This context is saved to the PO file.
+2. **Context generation:** Idiomi reads your source files and uses AI to generate translator context for each message (e.g., "Button label in checkout form", "Error shown when payment fails"). This context is saved to the PO file.
 
 3. **Translation:** The AI translates each message using the generated context and your project guidelines, producing more accurate results than context-free translation.
 
@@ -651,7 +707,7 @@ msgstr "Confirmar"
 **Dry run mode:** The `--dry-run` flag runs the translation pipeline without making API calls or saving files. Combined with `--verbose`, you can inspect the exact prompts that would be sent to the AI—useful for debugging your guidelines or understanding what context each message receives:
 
 ```bash
-idioma translate --dry-run --verbose
+idiomi translate --dry-run --verbose
 ```
 
 **Review workflow:** Translations are written to standard PO files that can be committed and reviewed in your normal PR process, or synced to a TMS like Phrase, Lokalise, or Crowdin for professional review.
@@ -661,8 +717,8 @@ idioma translate --dry-run --verbose
 Validate translation completeness:
 
 ```bash
-idioma check              # Check all locales
-idioma check --locale es  # Check specific locale
+idiomi check              # Check all locales
+idiomi check --locale es  # Check specific locale
 ```
 
 Exits with code 1 if translations are incomplete.
@@ -672,19 +728,19 @@ Exits with code 1 if translations are incomplete.
 Show translation statistics:
 
 ```bash
-idioma stats
+idiomi stats
 ```
 
 ## Configuration
 
 ```ts
-// idioma.config.ts
-import { defineConfig } from '@idioma/core';
+// idiomi.config.ts
+import { defineConfig } from '@idiomi/core';
 
 export default defineConfig({
-  // Base directory for all Idioma files
-  // Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default
-  idiomaDir: './src/idioma',
+  // Base directory for all Idiomi files
+  // Generated files go in {idiomiDir}/, PO files in {idiomiDir}/locales/ by default
+  idiomiDir: './src/idiomi',
 
   // Optional: Override PO file location if you have existing translations elsewhere
   // localesDir: './locales',
@@ -714,9 +770,822 @@ Use simple, friendly language. Avoid complex vocabulary.`,
 });
 ```
 
+## Routing
+
+Idiomi supports localized URLs (e.g., `/es/sobre` instead of `/es/about`) via optional framework-specific packages.
+
+### Enabling Localized Paths
+
+Add the `routing` config to enable URL localization:
+
+```ts
+// idiomi.config.ts
+export default defineConfig({
+  idiomiDir: './src/idiomi',
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'fr'],
+  routing: {
+    localizedPaths: true, // Enable path translation
+    prefixStrategy: 'as-needed', // 'always', 'as-needed' (default), or 'never'
+    metadataBase: 'https://example.com', // Optional: for absolute hreflang URLs
+    detection: {
+      order: ['cookie', 'header'], // Detection priority (header = Accept-Language on server, navigator.languages on client)
+      cookieName: 'IDIOMI_LOCALE', // Cookie name for locale preference
+      algorithm: 'best fit', // 'best fit' (language distance) or 'lookup' (strict)
+    },
+  },
+});
+```
+
+**Prefix strategies:**
+
+| Strategy      | Default locale URL | Non-default URL | Behavior                        |
+| ------------- | ------------------ | --------------- | ------------------------------- |
+| `'never'`     | `/about`           | `/about`        | No prefixes, locale from detect |
+| `'as-needed'` | `/about`           | `/es/about`     | Prefix only non-default         |
+| `'always'`    | `/en/about`        | `/es/about`     | Always prefix                   |
+
+**When to use each:**
+
+- **`'as-needed'`** (default) — Best for most apps. Clean URLs for your primary audience, explicit prefixes for others. Good SEO with proper hreflang tags.
+- **`'always'`** — Use when all locales should be equally prominent, or when you need consistent URL structure for analytics/caching.
+- **`'never'`** — Use for single-region apps where locale is user preference (like date format), not content language. Locale is stored in a cookie and detected from browser settings. Not recommended if you have translated content—search engines can't index different language versions.
+
+When `localizedPaths: true`, `idiomi extract` automatically scans your route structure and adds route segments to PO files:
+
+```po
+#: app/about/page.tsx
+msgctxt "route:about"
+msgid "xY3pQ7wR"
+msgstr "sobre"
+
+#: app/blog/[slug]/page.tsx
+msgctxt "route:blog"
+msgid "aB9cD3eF"
+msgstr "articulos"
+```
+
+Route segments are translated individually (not full paths), preventing translator errors with slashes or dynamic segments (`[slug]` in Next.js, `$slug` in TanStack).
+
+### Next.js (App Router)
+
+Install the Next.js package:
+
+```bash
+npm install @idiomi/next
+```
+
+Set up proxy (Next.js 16+) or middleware (Next.js 15) for locale detection and URL rewriting:
+
+```ts
+// proxy.ts (Next.js 16+) or middleware.ts (Next.js 15)
+import { createMiddleware } from './src/idiomi';
+
+// All config (locales, routes, etc.) is pre-baked by the compiler
+// Next.js 16+: export const proxy = createMiddleware();
+// Next.js 15:  export const middleware = createMiddleware();
+export const proxy = createMiddleware();
+
+// Or override specific options at runtime:
+// export const proxy = createMiddleware({ prefixStrategy: 'always' });
+
+export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
+```
+
+When routing is configured, the `Link` component is auto-generated in your `idiomi/client.ts`:
+
+```tsx
+// Inside IdiomiProvider tree - locale is read from context automatically
+import { Link } from '@/idiomi/client';
+
+function Navigation() {
+  return (
+    <nav>
+      <Link href="/about">About</Link>
+      {/* Language switcher */}
+      <Link href="/about" locale="es">
+        ES
+      </Link>
+    </nav>
+  );
+}
+```
+
+```tsx
+// Server Component (outside IdiomiProvider) - must pass locale prop explicitly
+import { Link } from '@/idiomi/client';
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  return (
+    <Link href="/about" locale={lang}>
+      About
+    </Link>
+  );
+}
+```
+
+Generate SEO hreflang tags using the `LocaleHead` component:
+
+```tsx
+// app/[lang]/layout.tsx (server component)
+import { LocaleHead } from '@/idiomi/client';
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  return (
+    <html lang={lang}>
+      <head>
+        {/* Server components must pass pathname and locale explicitly */}
+        <LocaleHead pathname="/about" locale={lang} />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```tsx
+// Client component (inside IdiomiProvider) - zero props needed
+'use client';
+
+import { LocaleHead } from '@/idiomi/client';
+
+function SomeClientComponent() {
+  // pathname from usePathname(), locale from context
+  return <LocaleHead />;
+}
+```
+
+For programmatic use (e.g., with Next.js Metadata API):
+
+```tsx
+// app/[lang]/about/page.tsx
+import { getLocaleHead } from '@/idiomi';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  const { lang } = await params;
+  const { links, canonical } = getLocaleHead({
+    pathname: '/about',
+    locale: lang,
+    // Config values from idiomi.config.ts
+  });
+
+  return {
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(links.map((l) => [l.hreflang, l.href])),
+    },
+  };
+}
+```
+
+### Next.js (Pages Router)
+
+Pages Router uses Next.js's built-in `i18n` config for detection and prefixes. When routing is configured, the `Link` is auto-generated:
+
+```tsx
+// pages/_app.tsx
+import { Link } from '@/idiomi/client';
+
+function Navigation() {
+  return <Link href="/about">About</Link>;
+}
+```
+
+### TanStack Router and TanStack Start
+
+Works with both TanStack Router (SPA) and TanStack Start (full-stack SSR).
+
+```bash
+npm install @idiomi/tanstack-react
+```
+
+#### TanStack Router (SPA)
+
+For client-side SPAs, set up locale detection and the provider in your locale layout route:
+
+```tsx
+// routes/{-$locale}/route.tsx
+import { detectLocale, IdiomiProvider, localeLoader } from '@/idiomi';
+import type { Locale } from '@/idiomi';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/{-$locale}')({
+  beforeLoad: localeLoader,
+  component: LocaleLayout,
+});
+
+function LocaleLayout() {
+  const { locale: urlLocale } = Route.useParams();
+  // Use URL locale if present, otherwise detect from cookie/browser
+  const locale = (urlLocale as Locale) ?? detectLocale();
+
+  return (
+    <IdiomiProvider locale={locale}>
+      <Outlet />
+    </IdiomiProvider>
+  );
+}
+```
+
+The `localeLoader` handles redirect logic based on your `prefixStrategy`:
+
+- **No prefix + non-default locale detected** → redirects to add prefix (`/` → `/es/`)
+- **No prefix + default locale detected** → stays unprefixed
+- **Default prefix + `as-needed`** → strips prefix (`/en/about` → `/about`)
+
+For manual detection outside routes:
+
+```tsx
+import { detectLocale } from '@/idiomi';
+
+const locale = detectLocale(); // From cookie or navigator.languages
+```
+
+#### TanStack Start (SSR)
+
+For full-stack apps with SSR, locale handling moves to the server entry point (`src/server.ts`). This runs **before** TanStack Router processes the request, enabling URL rewriting and redirects at the server level.
+
+The compiler generates `handleLocale` for use in your server entry:
+
+```ts
+// src/server.ts
+import {
+  createStartHandler,
+  defaultStreamHandler,
+  defineHandlerCallback,
+} from '@tanstack/react-start/server';
+import { createServerEntry } from '@tanstack/react-start/server-entry';
+import { handleLocale } from './idiomi/server';
+
+const customHandler = defineHandlerCallback(async (ctx) => {
+  const { locale, redirectResponse, localizedCtx } = handleLocale(ctx);
+  if (redirectResponse) return redirectResponse;
+  // Custom logic with locale if needed
+  return defaultStreamHandler(localizedCtx);
+});
+
+export default createServerEntry({ fetch: createStartHandler(customHandler) });
+```
+
+The route layout is simpler since locale detection happens at the server level:
+
+```tsx
+// routes/{-$locale}/route.tsx
+import { defaultLocale, IdiomiProvider } from '@/idiomi';
+import type { Locale } from '@/idiomi';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/{-$locale}')({
+  component: LocaleLayout,
+});
+
+function LocaleLayout() {
+  const { locale: urlLocale } = Route.useParams();
+  // Server handles detection; unprefixed URLs are always default locale
+  const locale = (urlLocale ?? defaultLocale) as Locale;
+
+  return (
+    <IdiomiProvider locale={locale}>
+      <Outlet />
+    </IdiomiProvider>
+  );
+}
+```
+
+**`handleLocale` provides:**
+
+- `locale` - The detected locale
+- `redirectResponse` - A 302 redirect response (return early if set)
+- `localizedCtx` - Modified context (request URL may be rewritten for internal routing)
+
+**It handles:**
+
+- **Locale detection** from `Accept-Language` headers and cookies (BCP 47-compliant matching)
+- **Redirects** based on `prefixStrategy` (e.g., strip default locale prefix with `as-needed`)
+- **URL rewriting** for `prefixStrategy: 'never'` (internal rewrite without changing browser URL)
+
+#### Mixed Routes (Localized + Non-Localized)
+
+Some routes need locale prefixes (marketing pages, blog), while others shouldn't redirect (dashboards, API routes). The compiler auto-generates `handleLocale` with `getRouter` config to detect which routes are localized:
+
+```
+routes/
+  __root.tsx                    # IdiomiProvider at root
+  {-$locale}/                   # Localized routes (have locale param)
+    about.tsx                   # /about → /es/about ✓
+    blog/$slug.tsx              # /blog/hello → /es/blog/hello ✓
+  dashboard/                    # Non-localized routes (no locale param)
+    index.tsx                   # /dashboard stays /dashboard
+    settings.tsx                # /dashboard/settings (no redirect)
+```
+
+**How it works:**
+
+1. `handleLocale` calls `router.getMatchedRoutes(pathname)` to find the matching route
+2. If the matched route's ID contains `{-$locale}`, it's treated as localized
+3. Routes without locale param skip redirect logic—locale is still detected from cookie/header, but no prefix redirects occur
+
+**Generated `idiomi/server.ts`:**
+
+```typescript
+// Auto-generated with getRouter for route detection
+import { createRequestHandler } from '@idiomi/tanstack-react/server';
+import { getRouter } from '../router';
+
+export const handleLocale = createRequestHandler<Locale>({
+  locales,
+  defaultLocale,
+  prefixStrategy,
+  detection,
+  localeParamName,
+  getRouter, // Enables auto-detection of localized vs non-localized routes
+});
+```
+
+**Behavior by route type:**
+
+| Route Type    | Example      | With Spanish Cookie         |
+| ------------- | ------------ | --------------------------- |
+| Localized     | `/about`     | Redirects to `/es/about`    |
+| Localized     | `/es/about`  | Serves Spanish content      |
+| Non-localized | `/dashboard` | No redirect, serves Spanish |
+| Non-localized | `/dashboard` | (no cookie) Serves default  |
+
+**Limitations:**
+
+- **Splat routes** (`$` without name): Treated as single-segment match. Routes like `/{-$locale}/docs/$` won't correctly match `/docs/a/b/c`.
+- **Overlapping patterns**: If a non-localized route's path (e.g., `/admin`) could match a localized pattern (e.g., `/{-$locale}/$category`), keep paths distinct to avoid conflicts.
+
+#### Localized Paths (Both SPA and SSR)
+
+If using `localizedPaths: true`, add URL rewriting to your router:
+
+```ts
+// app/router.tsx
+import { delocalizeUrl, localizeUrl } from '@/idiomi';
+import { createRouter } from '@tanstack/react-router';
+
+export const router = createRouter({
+  routeTree,
+  rewrite: {
+    // /es/sobre → /es/about (for route matching)
+    input: ({ url }) => delocalizeUrl(url),
+    // /es/about → /es/sobre (for link display)
+    output: ({ url }) => localizeUrl(url),
+  },
+});
+```
+
+> **Note:** URL rewriting handles path translation only. It does NOT change the browser URL—that's handled by `localeLoader` redirects.
+
+#### Navigation
+
+Use TanStack Router's native `<Link>` component. With optional locale params (`{-$locale}`), passing `params={{}}` inherits the current locale:
+
+```tsx
+import { useLocale } from '@/idiomi';
+import { Link } from '@tanstack/react-router';
+
+function Navigation() {
+  const locale = useLocale();
+
+  return (
+    <nav>
+      {/* Inherits current locale from URL context */}
+      <Link to="/{-$locale}/about" params={{}}>
+        About
+      </Link>
+
+      {/* Language switcher - explicit locale */}
+      <Link to="/{-$locale}/about" params={{ locale: 'es' }}>
+        ES
+      </Link>
+    </nav>
+  );
+}
+```
+
+This gives you full TanStack type safety on `to` and `params` props, including autocomplete for valid routes and compile-time validation.
+
+For SEO hreflang tags, use the `LocaleHead` component:
+
+```tsx
+import { LocaleHead } from '@/idiomi';
+
+function Head() {
+  // Inside IdiomiProvider - pathname and locale from hooks
+  return <LocaleHead />;
+}
+
+// Or with explicit props for server rendering
+function ServerHead({
+  pathname,
+  locale,
+}: {
+  pathname: string;
+  locale: string;
+}) {
+  return <LocaleHead pathname={pathname} locale={locale} />;
+}
+```
+
+### Building a Locale Switcher
+
+To persist locale preferences across sessions, set a cookie when users switch languages.
+
+**Next.js (App Router):**
+
+```tsx
+// components/LocaleSwitcher.tsx
+'use client';
+
+import type { Locale } from '@/idiomi';
+import { Link, locales, setLocalePreference, useLocale } from '@/idiomi/client';
+
+export function LocaleSwitcher() {
+  const currentLocale = useLocale();
+
+  return (
+    <div>
+      {locales.map((locale) => (
+        <Link
+          key={locale}
+          href="/" // Or usePathname() for current page
+          locale={locale}
+          onClick={() => setLocalePreference(locale)}
+          aria-current={locale === currentLocale ? 'page' : undefined}
+        >
+          {locale.toUpperCase()}
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+**TanStack Router (SPA/SSR):**
+
+```tsx
+// components/LocaleSwitcher.tsx
+import { locales, setLocalePreference, useLocale } from '@/idiomi';
+import type { Locale } from '@/idiomi';
+import { Link, useLocation } from '@tanstack/react-router';
+
+export function LocaleSwitcher() {
+  const currentLocale = useLocale();
+  const { pathname } = useLocation();
+
+  return (
+    <div>
+      {locales.map((locale) => (
+        <Link
+          key={locale}
+          to={pathname}
+          params={{ locale }}
+          onClick={() => setLocalePreference(locale)}
+          aria-current={locale === currentLocale ? 'page' : undefined}
+        >
+          {locale.toUpperCase()}
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+The `setLocalePreference` helper sets a cookie that persists the user's choice. On subsequent visits, the server reads this cookie (without setting one in the response), keeping all responses CDN-cacheable.
+
+### How Route Compilation Works
+
+1. **Extract**: `idiomi extract` scans your route structure and adds segments to PO files
+2. **Translate**: Translators (or AI) translate individual segments: `about` → `sobre`
+3. **Compile**: `idiomi compile` generates a routes map using framework-native syntax:
+
+```js
+// .generated/routes.js (Next.js)
+export const routes = {
+  en: { '/about': '/about', '/blog/[slug]': '/blog/[slug]' },
+  es: { '/about': '/sobre', '/blog/[slug]': '/articulos/[slug]' },
+};
+
+// .generated/routes.js (TanStack)
+export const routes = {
+  en: { '/about': '/about', '/blog/$slug': '/blog/$slug' },
+  es: { '/about': '/sobre', '/blog/$slug': '/articulos/$slug' },
+};
+```
+
+Dynamic segments are preserved using each framework's native syntax—only static segments are translated.
+
+## CDN Caching with Locale Detection
+
+When using CDN caching (ISR, edge caching), your prefix strategy determines cache safety:
+
+- **`'always'`** — Inherently cache-safe (every URL has locale prefix)
+- **`'as-needed'` / `'never'`** — Requires edge middleware for cache safety
+
+If you want CDN caching without edge middleware, use `prefixStrategy: 'always'`.
+
+### Why `Vary: Accept-Language` Doesn't Work
+
+You might expect to use the `Vary: Accept-Language` header, but this approach has problems:
+
+1. **Cloudflare ignores it** — Cloudflare doesn't respect `Vary` headers for cache keys (except `Accept-Encoding`)
+2. **Cache fragmentation** — Creates separate cache entries for `en-US`, `en-GB`, `en-AU`, etc., even if your site only supports `en`. This drastically reduces cache hit rates.
+
+### The Solution: Edge Middleware with URL-Based Caching
+
+For CDN-cached sites, detect and normalize the locale at the edge, then include it in the URL (which becomes the cache key).
+
+**Important:** Edge middleware and origin work together:
+
+- **Edge middleware:** Normalizes locale → adds `?_idiomi=X` to URL → creates unique cache key
+- **Origin `handleLocale`:** Reads `_idiomi` param → handles routing (no `Set-Cookie` = cacheable!)
+
+The origin reads the `_idiomi` query param and uses it for locale detection. Since the origin never sets cookies in responses, all responses are CDN-cacheable.
+
+**Detection priority in `handleLocale`:**
+
+1. URL path locale (`/es/about`)
+2. `_idiomi` query param (from edge middleware)
+3. Cookie
+4. Accept-Language header
+5. Default locale
+
+```
+User request with Accept-Language: en-US
+    ↓
+Edge Middleware (Vercel Middleware / Cloudflare Workers)
+    ↓
+detectLocale() → normalizes to 'en' (your supported locale)
+    ↓
+Redirect to /en/about (or rewrite URL)
+    ↓
+CDN caches /en/about separately from /es/about ✅
+```
+
+**Benefits:**
+
+- `en-US`, `en-GB`, `en-AU` all normalize to `en` → same cache entry, better hit rate
+- Works on ALL CDNs (URL-based caching is universal)
+- No `Vary` header complexity
+
+### Vercel Middleware Example
+
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { defaultLocale, locales, prefixStrategy } from './src/idiomi';
+
+// Cookie name (must match idiomi config)
+const COOKIE_NAME = 'IDIOMI_LOCALE';
+
+function detectLocale(request: NextRequest): string {
+  // 1. Check cookie first
+  const cookieLocale = request.cookies.get(COOKIE_NAME)?.value;
+  if (cookieLocale && locales.includes(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // 2. Parse Accept-Language header
+  const acceptLang = request.headers.get('accept-language') || '';
+  for (const part of acceptLang.split(',')) {
+    const lang = part.split(';')[0].trim().split('-')[0].toLowerCase();
+    if (locales.includes(lang)) {
+      return lang;
+    }
+  }
+
+  return defaultLocale;
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  // Skip if already has locale prefix
+  const hasLocalePrefix = locales.some(
+    (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
+  );
+  if (hasLocalePrefix) {
+    return NextResponse.next();
+  }
+
+  // Detect locale from cookie/Accept-Language
+  const locale = detectLocale(request);
+
+  // Handle based on prefix strategy
+  if (prefixStrategy === 'never') {
+    // Rewrite URL internally to add locale query param for cache keying
+    // User sees /about, CDN caches /about?_idiomi=es
+    const url = request.nextUrl.clone();
+    url.searchParams.set('_idiomi', locale);
+    return NextResponse.rewrite(url);
+  }
+
+  // 'always' or 'as-needed': redirect to add prefix
+  const needsRedirect =
+    prefixStrategy === 'always' ||
+    (prefixStrategy === 'as-needed' && locale !== defaultLocale);
+
+  if (needsRedirect) {
+    return NextResponse.redirect(
+      new URL(`/${locale}${pathname}${search}`, request.url),
+    );
+  }
+
+  return NextResponse.next();
+}
+
+export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };
+```
+
+**Note on Accept-Language matching:** The example above uses a simplified parser. Since the origin reads the `_idiomi` param, edge and origin will always agree. For more accurate user preference matching, you can import `matchLocale` from `@idiomi/core/locale` (handles quality factors like `es;q=0.5, en;q=0.9`).
+
+### Cloudflare Workers Example
+
+```typescript
+// worker.ts
+// For use as a separate Worker in front of your origin,
+// or integrated into your TanStack Start Worker
+
+const LOCALES = ['en', 'es', 'fr']; // Copy from idiomi config
+const DEFAULT_LOCALE = 'en';
+const PREFIX_STRATEGY = 'as-needed'; // 'always', 'as-needed', or 'never'
+const COOKIE_NAME = 'IDIOMI_LOCALE';
+
+function detectLocale(request: Request): string {
+  // 1. Check cookie first
+  const cookie = request.headers.get('cookie') || '';
+  const cookieMatch = cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+  const cookieLocale = cookieMatch?.[1];
+  if (cookieLocale && LOCALES.includes(cookieLocale)) {
+    return cookieLocale;
+  }
+
+  // 2. Parse Accept-Language header
+  const acceptLang = request.headers.get('accept-language') || '';
+  for (const part of acceptLang.split(',')) {
+    const lang = part.split(';')[0].trim().split('-')[0].toLowerCase();
+    if (LOCALES.includes(lang)) {
+      return lang;
+    }
+  }
+
+  return DEFAULT_LOCALE;
+}
+
+export default {
+  async fetch(request: Request, env: unknown): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Skip if already has locale prefix
+    const hasLocalePrefix = LOCALES.some(
+      (l) => url.pathname.startsWith(`/${l}/`) || url.pathname === `/${l}`,
+    );
+    if (hasLocalePrefix) {
+      return fetch(request);
+    }
+
+    const locale = detectLocale(request);
+
+    // Handle based on prefix strategy
+    if (PREFIX_STRATEGY === 'never') {
+      // Add query param for cache keying (user doesn't see this)
+      url.searchParams.set('_idiomi', locale);
+      return fetch(url.toString(), request);
+    }
+
+    // 'always' or 'as-needed': redirect to add prefix
+    const needsRedirect =
+      PREFIX_STRATEGY === 'always' ||
+      (PREFIX_STRATEGY === 'as-needed' && locale !== DEFAULT_LOCALE);
+
+    if (needsRedirect) {
+      url.pathname = `/${locale}${url.pathname}`;
+      return Response.redirect(url.toString(), 302);
+    }
+
+    return fetch(request);
+  },
+};
+```
+
+**Same note applies:** Since the origin reads `_idiomi`, consistency is guaranteed. Use `matchLocale` from `@idiomi/core/locale` for more accurate user preference matching.
+
+### Cloudflare: Cache Key Options
+
+Cloudflare ignores `Vary` headers (except `Accept-Encoding`), so you need alternative approaches for locale-based caching. See [Cloudflare's guide to serving tailored content](https://developers.cloudflare.com/cache/advanced-configuration/serve-tailored-content/).
+
+| Method                | Plan       | Best For                                     |
+| --------------------- | ---------- | -------------------------------------------- |
+| **Transform Rules**   | Free+      | Language/cookie detection (exact match only) |
+| **Snippets**          | Pro+       | Full BCP 47 normalization (`es-MX` → `es`)   |
+| **Custom Cache Keys** | Enterprise | No-code, include `lang` user field           |
+
+#### Snippets (Recommended for Pro+)
+
+[Snippets](https://developers.cloudflare.com/rules/snippets/) run JavaScript at the edge **before cache lookup**, letting you normalize Accept-Language to your supported locales and create proper cache keys:
+
+```javascript
+// Cloudflare Snippet - Locale Cache Key
+// Attach to routes: example.com/*
+
+// Your supported locales (copy from idiomi config)
+const LOCALES = ['en', 'es', 'fr'];
+const DEFAULT_LOCALE = 'en';
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    // Skip if locale already in cache key
+    if (url.searchParams.has('_idiomi')) {
+      return fetch(request);
+    }
+
+    // Detect locale from cookie first, then Accept-Language
+    const cookie = request.headers.get('cookie') || '';
+    const cookieMatch = cookie.match(/IDIOMI_LOCALE=([^;]+)/);
+    let locale = cookieMatch?.[1];
+
+    if (!locale || !LOCALES.includes(locale)) {
+      // Parse Accept-Language and find best match
+      const acceptLang = request.headers.get('accept-language') || '';
+      const preferred = acceptLang.split(',')[0]?.split('-')[0]?.toLowerCase();
+      locale = LOCALES.includes(preferred) ? preferred : DEFAULT_LOCALE;
+    }
+
+    // Add locale to URL for cache keying (user never sees this)
+    url.searchParams.set('_idiomi', locale);
+
+    // Fetch with modified URL - this becomes the cache key
+    return fetch(url.toString(), request);
+  },
+};
+```
+
+This normalizes `en-US`, `en-GB`, `en-AU` → `en` for better cache hit rates.
+
+#### Transform Rules (Free)
+
+Transform Rules can access [`http.request.accepted_languages`](https://developers.cloudflare.com/ruleset-engine/rules-language/fields/reference/http.request.accepted_languages/) - an array of language tags from Accept-Language. No code required:
+
+1. Go to **Rules → Transform Rules → URL Rewrite**
+2. Create a rule for each locale:
+   - **Condition:** `(http.request.accepted_languages[0] eq "es")`
+   - **Rewrite query string:** `_idiomi=es`
+3. Create a fallback rule (no condition) that sets `_idiomi=en`
+
+You can also combine with cookie detection using `http.cookie`:
+
+```
+(http.cookie contains "IDIOMI_LOCALE=es") or
+(not http.cookie contains "IDIOMI_LOCALE" and http.request.accepted_languages[0] eq "es")
+```
+
+**Limitation:** Transform Rules check exact matches. `http.request.accepted_languages[0] eq "es"` won't match `es-MX`. For full BCP 47 normalization (`es-MX` → `es`), use Snippets.
+
+### Prefix Strategy Compatibility
+
+| Strategy      | Without Edge Middleware        | With Edge Middleware |
+| ------------- | ------------------------------ | -------------------- |
+| `'always'`    | ✅ Cache-safe                  | ✅ Cache-safe        |
+| `'as-needed'` | ⚠️ Default locale paths unsafe | ✅ Cache-safe        |
+| `'never'`     | ❌ Not cache-safe              | ✅ Cache-safe        |
+
+**Why `'as-needed'` is unsafe without edge middleware:**
+
+```
+User A (en) visits /about → Origin serves English → CDN caches /about
+User B (es) visits /about → CDN serves cached English ❌ (should redirect to /es/about)
+```
+
+The Spanish speaker sees English content instead of being redirected. Edge middleware solves this by redirecting _before_ the cache layer.
+
+**Why `'always'` is inherently safe:** Unprefixed paths (`/about`) always redirect, and 302 redirects aren't cached by default. Each user's request to `/about` goes to origin, which detects their locale and redirects to the appropriate prefixed path (`/en/about` or `/es/about`). The prefixed pages are then cached per-locale. The only "cost" is that first visits to unprefixed URLs always hit origin for redirect detection.
+
+**Recommendation:** For CDN-cached sites, use `'always'` (simplest) or add edge middleware for `'as-needed'`/`'never'`.
+
 ## Locale Fallbacks
 
-When a translation is missing, Idioma follows a fallback chain:
+When a translation is missing, Idiomi follows a fallback chain:
 
 1. **Exact locale** (`es-MX`)
 2. **Base locale** (`es` from `es-MX`)
@@ -727,7 +1596,7 @@ This ensures your app always displays meaningful content, even with incomplete t
 
 ## Content-Addressable Keys
 
-Idioma uses content-addressable keys—the message text determines the key:
+Idiomi uses content-addressable keys—the message text determines the key:
 
 1. **Murmurhash3** generates a 32-bit hash from the source message
 2. **Base62 encoding** (0-9, A-Z, a-z) produces compact 8-character keys
@@ -758,7 +1627,7 @@ Most teams use auto keys by default and explicit IDs for checkout flows, legal t
 
 ## PO File Format
 
-Idioma uses the standard [gettext PO format](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html) with ICU MessageFormat in translations:
+Idiomi uses the standard [gettext PO format](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html) with ICU MessageFormat in translations:
 
 ```po
 # locales/es.po
@@ -772,7 +1641,7 @@ msgctxt "button"
 msgid "Submit"
 msgstr "Enviar"
 
-# With AI-generated context (from idioma translate)
+# With AI-generated context (from idiomi translate)
 #. [AI Context]: Error message when payment fails at checkout
 #: src/components/Checkout.tsx:87
 msgid "Payment failed"
@@ -791,7 +1660,7 @@ PO files work with translation management systems like Phrase, Lokalise, and Cro
 
 ## Bundle Optimization
 
-Idioma automatically tree-shakes translations at the component level. Only the translations used by components on a given page are included in that page's bundle.
+Idiomi automatically tree-shakes translations at the component level. Only the translations used by components on a given page are included in that page's bundle.
 
 **How it works:**
 
@@ -813,9 +1682,9 @@ By default, all locale variants for those keys are included (enabling instant lo
 For apps where initial load size is critical, Suspense mode takes optimization further: instead of bundling all locale variants, it loads only the active locale via dynamic imports.
 
 ```ts
-// idioma.config.ts
+// idiomi.config.ts
 export default defineConfig({
-  idiomaDir: './src/idioma',
+  idiomiDir: './src/idiomi',
   defaultLocale: 'en',
   locales: ['en', 'es', 'fr'],
   useSuspense: true, // Enable lazy loading
@@ -825,13 +1694,13 @@ export default defineConfig({
 Wrap your app with a Suspense boundary:
 
 ```tsx
-import { IdiomaProvider } from '@/idioma';
+import { IdiomiProvider } from '@/idiomi';
 
-<IdiomaProvider locale={locale}>
+<IdiomiProvider locale={locale}>
   <Suspense fallback={<Loading />}>
     <App />
   </Suspense>
-</IdiomaProvider>;
+</IdiomiProvider>;
 ```
 
 **Trade-offs:**
@@ -888,7 +1757,7 @@ t({ id: 'greeting', values: { name: 'Ben' } });
 ### createT (Plain JS)
 
 ```ts
-import { createT } from '@/idioma/plain';
+import { createT } from '@/idiomi/plain';
 
 const t = createT('es'); // Create for specific locale
 
@@ -901,7 +1770,7 @@ t({ id: 'welcome' });
 ### ICU Helpers
 
 ```ts
-import { plural, select, selectOrdinal } from '@idioma/core/icu';
+import { plural, select, selectOrdinal } from '@idiomi/core/icu';
 
 // Pluralization
 plural(count, { one: '# item', other: '# items' });
@@ -913,14 +1782,14 @@ select(gender, { male: 'He', female: 'She', other: 'They' });
 selectOrdinal(place, { one: '#st', two: '#nd', few: '#rd', other: '#th' });
 ```
 
-### IdiomaProvider
+### IdiomiProvider
 
 ```tsx
-import { IdiomaProvider, useLocale } from '@/idioma';
+import { IdiomiProvider, useLocale } from '@/idiomi';
 
-<IdiomaProvider locale="en">
+<IdiomiProvider locale="en">
   <App />
-</IdiomaProvider>;
+</IdiomiProvider>;
 
 // Get current locale
 const locale = useLocale(); // 'en'
@@ -941,28 +1810,62 @@ React context provides locale, renders translated text
 ```
 <Trans>Hello {name}</Trans>
     ↓ Babel transforms to
-<__Trans __t={__$idioma.a7Fk29} __a={{name}} />
+<__Trans __t={__$idiomi.a7Fk29} __a={{name}} />
 ```
 
 The Babel plugin extracts messages during build, generates content-addressed keys, and transforms components to use the compiled translation object.
 
+## Why Idiomi?
+
+Most i18n libraries load translation catalogs at runtime. Your app fetches a JSON file with all 2,000 messages, even if the current page only uses 100. This is the approach taken by i18next, react-intl, next-intl, and even compile-time libraries like Lingui.
+
+Idiomi takes a different approach: **translations are compiled into each component at build time**. The Babel plugin transforms `<Trans>Hello</Trans>` into `<__Trans __t={{ en: "Hello", es: "Hola" }} />`. No runtime fetch. No catalog loading. Each page's bundle contains only the translations that page actually uses.
+
+### "But doesn't that explode bundle size?"
+
+This is a common concern. If you're baking 5 locales into the bundle, isn't that 5× bigger?
+
+Here's the math for a typical app (2,000 total messages, 50 used on home page, 5 locales, ~50 bytes/message):
+
+| Approach                              | What loads                 | Size                      |
+| ------------------------------------- | -------------------------- | ------------------------- |
+| **Runtime catalog** (Lingui, i18next) | All messages, 1 locale     | 2,000 × 50B = **100KB**   |
+| **Idiomi default**                    | Page messages, all locales | 50 × 5 × 50B = **12.5KB** |
+| **Idiomi Suspense**                   | Page messages, 1 locale    | 50 × 50B = **2.5KB**      |
+
+The locale multiplier (5×) is dwarfed by component-level splitting (40×). Idiomi's "all locales" approach is still **8× smaller** than loading a full catalog for one locale.
+
+### Trade-offs
+
+**Idiomi optimizes for:**
+
+- Smallest possible per-page bundles
+- Zero runtime fetching (great for edge/static)
+- Instant rendering (no loading states for translations)
+
+**At the cost of:**
+
+- Locale switching requires the new locale to already be in the bundle (default mode) or a dynamic import (Suspense mode)
+- Slightly larger bundles if users never switch locales
+
+For apps where users stick to one language (most apps), the default mode is ideal. For apps with many locales or frequent switching, enable Suspense mode.
+
 ## Comparison
 
-| Feature                   | Idioma        | Lingui        | Paraglide    | react-intl | i18next  |
-| ------------------------- | ------------- | ------------- | ------------ | ---------- | -------- |
-| Runtime size (gzipped)    | ~800B         | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
-| Key management            | Auto + Manual | Auto + Manual | Manual       | Manual     | Manual   |
-| Extraction                | Built-in      | Built-in      | None         | CLI        | CLI      |
-| AI translation            | Built-in      | No            | No           | No         | No       |
-| Compile-time              | Yes           | Yes           | Yes          | Optional   | No       |
-| Component-level splitting | Yes           | No            | Yes          | No         | No       |
-| Lazy loading              | Opt-in        | Yes           | Experimental | Yes        | Yes      |
-| PO format                 | Yes           | Yes           | No           | No         | Plugin   |
-| Number/date formatting    | Use Intl      | Use Intl      | Use Intl     | Built-in   | Built-in |
-| SSR                       | Yes           | Yes           | Yes          | Yes        | Yes      |
-| RSC                       | Yes           | Yes           | Yes          | No         | Yes      |
+| Feature                   | Idiomi        | Lingui         | next-intl  | Paraglide     | react-intl | i18next  |
+| ------------------------- | ------------- | -------------- | ---------- | ------------- | ---------- | -------- |
+| Runtime size (gzipped)    | ~2-3KB        | ~3KB           | ~13KB      | ~2KB          | ~14KB      | ~22KB    |
+| Key management            | Auto + Manual | Auto + Manual  | Manual     | Manual        | Manual     | Manual   |
+| Extraction                | Built-in CLI  | Built-in CLI   | No         | IDE extension | CLI        | CLI      |
+| AI translation            | Built-in      | No             | No         | No            | No         | No       |
+| Compile-time              | Yes           | Yes            | No         | Yes           | Optional   | No       |
+| Component-level splitting | Yes           | Experimental\* | No         | Yes           | No         | No       |
+| Message format            | PO (ICU)      | PO (ICU)       | JSON (ICU) | JSON          | JSON (ICU) | JSON     |
+| Number/date formatting    | Use Intl      | Use Intl       | Built-in   | Use Intl      | Built-in   | Built-in |
+| SSR                       | Yes           | Yes            | Yes        | Yes           | Yes        | Yes      |
+| RSC                       | Yes           | Yes            | Yes        | Yes           | No         | Yes      |
 
-**Note on runtime size:** Idioma's ~800B runtime handles message rendering. ICU plural/select parsing adds ~2KB when you use those features. The total is still significantly smaller than alternatives because parsing happens at build time for static messages.
+\* Lingui has [experimental dependency-tree crawling](https://lingui.dev/guides/message-extraction#dependency-tree-crawling) for per-page catalog extraction, but wiring up route-to-catalog loading requires custom integration.
 
 ## Editor Support
 
@@ -974,8 +1877,10 @@ TypeScript provides full type safety via generated types:
 
 ## Packages
 
-- **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
-- **@idioma/react** — Runtime components (~800 bytes gzipped)
+- **@idiomi/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
+- **@idiomi/react** — Runtime components (~2-3KB gzipped with ICU), `getLocaleHead` for programmatic SEO
+- **@idiomi/next** — Next.js integration (middleware factory, LocaleHead component, localized Link)
+- **@idiomi/tanstack-react** — TanStack Router/Start integration for React (LocaleHead component, SPA and SSR locale detection via `createIsomorphicFn`, URL rewriting utilities)
 
 ## License
 

@@ -8,13 +8,13 @@ describe('ensureExtracted', () => {
   let tempDir: string;
   let localeDir: string;
   let srcDir: string;
-  let idiomaDir: string;
+  let idiomiDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-ensure-extracted-'));
-    localeDir = join(tempDir, 'src', 'idioma', 'locales');
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-ensure-extracted-'));
+    localeDir = join(tempDir, 'src', 'idiomi', 'locales');
     srcDir = join(tempDir, 'src');
-    idiomaDir = join(tempDir, 'src', 'idioma');
+    idiomiDir = join(tempDir, 'src', 'idiomi');
     await fs.mkdir(localeDir, { recursive: true });
     await fs.mkdir(srcDir, { recursive: true });
   });
@@ -53,7 +53,7 @@ msgstr ""
       locales: ['en', 'es'],
       cwd: tempDir,
       config: {
-        idiomaDir: 'src/idioma',
+        idiomiDir: 'src/idiomi',
         defaultLocale: 'en',
         locales: ['en', 'es'],
       },
@@ -68,14 +68,14 @@ msgstr ""
     // Create source file for extraction
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
-      `import { Trans } from './idioma'
+      `import { Trans } from './idiomi'
 export const App = () => <Trans>Hello</Trans>`,
     );
 
-    // Create idioma index file so imports resolve
+    // Create idiomi index file so imports resolve
     await fs.writeFile(
-      join(idiomaDir, 'index.ts'),
-      `export { Trans } from '@idioma/react'`,
+      join(idiomiDir, 'index.ts'),
+      `export { Trans } from '@idiomi/react'`,
     );
 
     // No PO files exist
@@ -84,7 +84,7 @@ export const App = () => <Trans>Hello</Trans>`,
       locales: ['en', 'es'],
       cwd: tempDir,
       config: {
-        idiomaDir: 'src/idioma',
+        idiomiDir: 'src/idiomi',
         defaultLocale: 'en',
         locales: ['en', 'es'],
       },
@@ -124,13 +124,13 @@ msgstr "Hello"
     // Create source file for extraction
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
-      `import { Trans } from './idioma'
+      `import { Trans } from './idiomi'
 export const App = () => <Trans>Hello</Trans>`,
     );
 
     await fs.writeFile(
-      join(idiomaDir, 'index.ts'),
-      `export { Trans } from '@idioma/react'`,
+      join(idiomiDir, 'index.ts'),
+      `export { Trans } from '@idiomi/react'`,
     );
 
     const result = await ensureExtracted({
@@ -138,7 +138,7 @@ export const App = () => <Trans>Hello</Trans>`,
       locales: ['en', 'es'],
       cwd: tempDir,
       config: {
-        idiomaDir: 'src/idioma',
+        idiomiDir: 'src/idiomi',
         defaultLocale: 'en',
         locales: ['en', 'es'],
       },
@@ -158,13 +158,13 @@ export const App = () => <Trans>Hello</Trans>`,
     // Create source file
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
-      `import { Trans } from './idioma'
+      `import { Trans } from './idiomi'
 export const App = () => <Trans>Hello</Trans>`,
     );
 
     await fs.writeFile(
-      join(idiomaDir, 'index.ts'),
-      `export { Trans } from '@idioma/react'`,
+      join(idiomiDir, 'index.ts'),
+      `export { Trans } from '@idiomi/react'`,
     );
 
     // No PO files exist
@@ -176,7 +176,7 @@ export const App = () => <Trans>Hello</Trans>`,
       locales: ['en'],
       cwd: tempDir,
       config: {
-        idiomaDir: 'src/idioma',
+        idiomiDir: 'src/idiomi',
         defaultLocale: 'en',
         locales: ['en'],
       },
@@ -213,7 +213,7 @@ msgstr ""
       locales: ['en'],
       cwd: tempDir,
       config: {
-        idiomaDir: 'src/idioma',
+        idiomiDir: 'src/idiomi',
         defaultLocale: 'en',
         locales: ['en'],
       },

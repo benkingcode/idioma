@@ -6,7 +6,7 @@ export type ColorTheme = 'light' | 'dark';
  * Detect whether the terminal has a light or dark background.
  *
  * Detection priority:
- * 1. IDIOMA_COLOR_THEME env var (explicit user preference)
+ * 1. IDIOMI_COLOR_THEME env var (explicit user preference)
  * 2. COLORFGBG env var (set by iTerm2, Konsole, rxvt-unicode)
  * 3. Default to 'dark' (most common for developers)
  *
@@ -17,7 +17,7 @@ export type ColorTheme = 'light' | 'dark';
  */
 export function getColorTheme(): ColorTheme {
   // 1. Explicit user preference via env var
-  const explicit = process.env.IDIOMA_COLOR_THEME?.toLowerCase();
+  const explicit = process.env.IDIOMI_COLOR_THEME?.toLowerCase();
   if (explicit === 'light') return 'light';
   if (explicit === 'dark') return 'dark';
 

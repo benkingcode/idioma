@@ -1,5 +1,5 @@
 {
-  "name": "idioma-monorepo",
+  "name": "idiomi-monorepo",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,9 +9,10 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean",
+    "clean:deep": "pnpm clean && rm -rf e2e/fixtures/*/.next e2e/test-results e2e/playwright-report",
     "format": "prettier --write .",
-    "test:e2e": "pnpm --filter idioma-e2e test",
-    "test:e2e:ui": "pnpm --filter idioma-e2e test:ui",
+    "test:e2e": "pnpm --filter idiomi-e2e test",
+    "test:e2e:ui": "pnpm --filter idiomi-e2e test:ui",
     "knip": "knip"
   },
   "devDependencies": {
@@ -24,7 +25,7 @@
     "typescript": "^5.9.3",
     "vitest": "^2.1.0"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "engines": {
     "node": ">=18"
   }

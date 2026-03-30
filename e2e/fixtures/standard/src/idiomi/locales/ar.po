@@ -1,0 +1,148 @@
+msgid ""
+msgstr ""
+"Language: ar\n"
+"Content-Type: text/plain\n"
+
+#: src/components/BasicTrans.tsx
+#, extracted, ai-translated
+msgid "000e6cSN"
+msgstr "مرحبا، العالم!"
+
+#: src/components/BasicTrans.tsx
+#, extracted, ai-translated
+msgid "002LT9uM"
+msgstr "مرحبا بك في تطبيقنا"
+
+#: src/components/BasicTrans.tsx
+#, extracted, ai-translated
+msgid "greeting.farewell"
+msgstr "وداعا!"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "001K244T"
+msgstr "انقر <Link>هنا</Link> للمتابعة"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "002MF83G"
+msgstr "اقرأ <Link>الشروط</Link> و<Bold>سياسة الخصوصية</Bold>"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "000OaF1m"
+msgstr "مرحبا <Bold>{name}</Bold>!"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "002eTXHM"
+msgstr "هذا <Bold>غامق</Bold>، وهذا <Italic>مائل</Italic>، وعادي"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "0013HsIP"
+msgstr "<Bold> مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "002TXdYD"
+msgstr "القيمة: [{emptyString}]"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "002Baos1"
+msgstr "العدد: {zero}"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "0043ID7R"
+msgstr "فارغ: [{nullValue}]"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "003jykkI"
+msgstr "قد لا تتم ترجمة هذه الرسالة"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "0047ZVOp"
+msgstr ""
+"هذا نص أطول يمتد على عدة كلمات ويختبر كيفية تعامل النظام مع محتوى أطول في "
+"الترجمات"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "001r7GGR"
+msgstr "خاص: & < > \"علامات اقتباس\""
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "004Dt4mI"
+msgstr "مرحبا {name}!"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "004JLiGr"
+msgstr "رموز تعبيرية: 🎉 والرموز: © ® ™"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "0024c34D"
+msgstr "مرحبا، {name}!"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "003lIRId"
+msgstr "مرحبا، {firstName} {lastName}!"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "000iXvMP"
+msgstr "قبل {name} بعد"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "002r0ybS"
+msgstr "لديك {0} عناصر"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "000w9C8y"
+msgstr "لديك {count, plural, one {# عنصر} other {# عناصر}}"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "0048f6Nc"
+msgstr "{count, plural, zero {لا توجد رسائل} one {# رسالة} other {# رسائل}}"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "002EaYd6"
+msgstr "يوجد {count, plural, one {# تفاحة} other {# تفاحات}} في السلة"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "004CDxng"
+msgstr ""
+"{count, plural, zero {# ملفات (صفر)} one {# ملف (واحد)} two {# ملفات "
+"(اثنان)} few {# ملفات (قليل)} many {# ملفات (كثير)} other {# ملفات (آخر)}}"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "002UQheH"
+msgstr "مرحبا من useT!"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "003X3cVZ"
+msgstr "مرحبا، {name}!"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "001gZ2vk"
+msgstr "{count} عناصر بواسطة {author}"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "002RXyTq"
+msgstr "ترجمة مضمنة"

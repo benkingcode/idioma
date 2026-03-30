@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from '@tanstack/react-router';
-import { Trans, useT } from '../idioma';
+import { Trans, useT } from '../idiomi';
 
 export const Route = createLazyFileRoute('/about')({
   component: AboutPage,

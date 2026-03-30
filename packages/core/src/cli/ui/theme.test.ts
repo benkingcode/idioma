@@ -23,34 +23,34 @@ describe('theme detection', () => {
 
   describe('getColorTheme', () => {
     it('returns dark by default when no env vars are set', () => {
-      delete process.env.IDIOMA_COLOR_THEME;
+      delete process.env.IDIOMI_COLOR_THEME;
       delete process.env.COLORFGBG;
 
       expect(getColorTheme()).toBe('dark');
     });
 
-    it('respects explicit IDIOMA_COLOR_THEME=light', () => {
-      process.env.IDIOMA_COLOR_THEME = 'light';
+    it('respects explicit IDIOMI_COLOR_THEME=light', () => {
+      process.env.IDIOMI_COLOR_THEME = 'light';
 
       expect(getColorTheme()).toBe('light');
     });
 
-    it('respects explicit IDIOMA_COLOR_THEME=dark', () => {
-      process.env.IDIOMA_COLOR_THEME = 'dark';
+    it('respects explicit IDIOMI_COLOR_THEME=dark', () => {
+      process.env.IDIOMI_COLOR_THEME = 'dark';
 
       expect(getColorTheme()).toBe('dark');
     });
 
-    it('handles case-insensitive IDIOMA_COLOR_THEME', () => {
-      process.env.IDIOMA_COLOR_THEME = 'LIGHT';
+    it('handles case-insensitive IDIOMI_COLOR_THEME', () => {
+      process.env.IDIOMI_COLOR_THEME = 'LIGHT';
       expect(getColorTheme()).toBe('light');
 
-      process.env.IDIOMA_COLOR_THEME = 'Dark';
+      process.env.IDIOMI_COLOR_THEME = 'Dark';
       expect(getColorTheme()).toBe('dark');
     });
 
-    it('IDIOMA_COLOR_THEME takes precedence over COLORFGBG', () => {
-      process.env.IDIOMA_COLOR_THEME = 'dark';
+    it('IDIOMI_COLOR_THEME takes precedence over COLORFGBG', () => {
+      process.env.IDIOMI_COLOR_THEME = 'dark';
       process.env.COLORFGBG = '0;15'; // Would indicate light
 
       expect(getColorTheme()).toBe('dark');
@@ -58,7 +58,7 @@ describe('theme detection', () => {
 
     describe('COLORFGBG detection', () => {
       beforeEach(() => {
-        delete process.env.IDIOMA_COLOR_THEME;
+        delete process.env.IDIOMI_COLOR_THEME;
       });
 
       it('detects light theme from COLORFGBG=0;15', () => {
@@ -111,11 +111,11 @@ describe('theme detection', () => {
 
   describe('colors', () => {
     it('returns different primary color for light vs dark theme', () => {
-      process.env.IDIOMA_COLOR_THEME = 'dark';
+      process.env.IDIOMI_COLOR_THEME = 'dark';
       resetColorsCache();
       const darkColors = colors();
 
-      process.env.IDIOMA_COLOR_THEME = 'light';
+      process.env.IDIOMI_COLOR_THEME = 'light';
       resetColorsCache();
       const lightColors = colors();
 
@@ -126,7 +126,7 @@ describe('theme detection', () => {
     });
 
     it('caches colors for performance', () => {
-      process.env.IDIOMA_COLOR_THEME = 'dark';
+      process.env.IDIOMI_COLOR_THEME = 'dark';
       resetColorsCache();
 
       const first = colors();

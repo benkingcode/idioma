@@ -35,7 +35,7 @@ test.describe('Suspense Mode - Lazy Loading', () => {
   test('switches to Arabic locale successfully', async ({ page }) => {
     await selectLocale(page, 'ar');
     await expect(page.getByTestId('basic-hello')).toContainText(
-      'مرحباً بالعالم!',
+      'مرحبا، العالم!',
     );
   });
 

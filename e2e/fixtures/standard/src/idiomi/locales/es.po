@@ -1,0 +1,149 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/components/BasicTrans.tsx
+#, extracted, ai-translated
+msgid "000e6cSN"
+msgstr "¡Hola, Mundo!"
+
+#: src/components/BasicTrans.tsx
+#, extracted, ai-translated
+msgid "002LT9uM"
+msgstr "Bienvenido a nuestra aplicación"
+
+#: src/components/BasicTrans.tsx
+#, extracted, ai-translated
+msgid "greeting.farewell"
+msgstr "¡Adiós!"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "001K244T"
+msgstr "Haz clic <Link>aquí</Link> para continuar"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "002MF83G"
+msgstr "Lee los <Link>términos</Link> y la <Bold>política de privacidad</Bold>"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "000OaF1m"
+msgstr "¡Hola <Bold>{name}</Bold>!"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "002eTXHM"
+msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal"
+
+#: src/components/ComponentTags.tsx
+#, extracted, ai-translated
+msgid "0013HsIP"
+msgstr "<Bold> Importante: <Italic>lee atentamente</Italic> </Bold>"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "002TXdYD"
+msgstr "Valor: [{emptyString}]"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "002Baos1"
+msgstr "Cantidad: {zero}"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "0043ID7R"
+msgstr "Nulo: [{nullValue}]"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "003jykkI"
+msgstr "Este mensaje podría no estar traducido"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "0047ZVOp"
+msgstr ""
+"Este es un texto más largo que abarca múltiples palabras y prueba cómo el "
+"sistema maneja contenido más extenso en traducciones"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "001r7GGR"
+msgstr "Especial: & < > \"comillas\""
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "004Dt4mI"
+msgstr "¡Hola {name}!"
+
+#: src/components/EdgeCases.tsx
+#, extracted, ai-translated
+msgid "004JLiGr"
+msgstr "Emoji: 🎉 y símbolos: © ® ™"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "0024c34D"
+msgstr "¡Hola, {name}!"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "003lIRId"
+msgstr "Bienvenido, ¡{firstName} {lastName}!"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "000iXvMP"
+msgstr "Antes {name} después"
+
+#: src/components/Interpolation.tsx
+#, extracted, ai-translated
+msgid "002r0ybS"
+msgstr "Tienes {0} elementos"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "000w9C8y"
+msgstr "Tienes {count, plural, one {# elemento} other {# elementos}}"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "0048f6Nc"
+msgstr "{count, plural, zero {Sin mensajes} one {# mensaje} other {# mensajes}}"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "002EaYd6"
+msgstr "Hay {count, plural, one {# manzana} other {# manzanas}} en la canasta"
+
+#: src/components/Plurals.tsx
+#, extracted, ai-translated
+msgid "004CDxng"
+msgstr ""
+"{count, plural, zero {# archivos (cero)} one {# archivo (uno)} two {# "
+"archivos (dos)} few {# archivos (pocos)} many {# archivos (muchos)} other "
+"{# archivos (otro)}}"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "002UQheH"
+msgstr "¡Hola desde useT!"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "003X3cVZ"
+msgstr "¡Bienvenido, {name}!"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "001gZ2vk"
+msgstr "{count} elementos por {author}"
+
+#: src/components/UseT.tsx
+#, extracted, ai-translated
+msgid "002RXyTq"
+msgstr "Traducción en línea"

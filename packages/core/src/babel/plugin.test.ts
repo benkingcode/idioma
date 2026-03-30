@@ -1,30 +1,30 @@
 import * as babel from '@babel/core';
 import { describe, expect, it } from 'vitest';
-import idiomaPlugin, { type IdiomaPluginOptions } from './plugin';
+import idiomiPlugin, { type IdiomiPluginOptions } from './plugin';
 
-// Default test configuration for idiomaDir-based detection
-const TEST_IDIOMA_DIR = '/project/src/idioma';
+// Default test configuration for idiomiDir-based detection
+const TEST_IDIOMI_DIR = '/project/src/idiomi';
 const TEST_FILENAME = '/project/src/App.tsx';
 
 function transform(
   code: string,
-  options: IdiomaPluginOptions = {},
+  options: IdiomiPluginOptions = {},
   filename = TEST_FILENAME,
 ): string {
   const result = babel.transformSync(code, {
     presets: ['@babel/preset-react', '@babel/preset-typescript'],
-    plugins: [[idiomaPlugin, options]],
+    plugins: [[idiomiPlugin, options]],
     filename,
   });
 
   return result?.code || '';
 }
 
-describe('Idioma Babel Plugin', () => {
+describe('Idiomi Babel Plugin', () => {
   describe('development mode', () => {
     it('leaves Trans component unchanged in dev mode', () => {
       const code = `
-        import { Trans } from '@idioma/react'
+        import { Trans } from '@idiomi/react'
         const x = <Trans>Hello world</Trans>
       `;
 
@@ -39,7 +39,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('leaves useT unchanged in dev mode', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         const t = useT()
       `;
 
@@ -54,13 +54,13 @@ describe('Idioma Babel Plugin', () => {
     describe('member expression handling', () => {
       it('handles member expression placeholder in __a prop', () => {
         const code = `
-          import { Trans } from './idioma'
+          import { Trans } from './idiomi'
           const x = <Trans>Hello {user.name}</Trans>
         `;
 
         const result = transform(code, {
           mode: 'inlined',
-          idiomaDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           translations: {},
         });
 
@@ -73,13 +73,13 @@ describe('Idioma Babel Plugin', () => {
 
       it('handles nested member expression', () => {
         const code = `
-          import { Trans } from './idioma'
+          import { Trans } from './idiomi'
           const x = <Trans>Value: {data.nested.value}</Trans>
         `;
 
         const result = transform(code, {
           mode: 'inlined',
-          idiomaDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           translations: {},
         });
 
@@ -90,15 +90,15 @@ describe('Idioma Babel Plugin', () => {
 
       it('handles member expression in suspense mode', () => {
         const code = `
-          import { Trans } from './idioma'
+          import { Trans } from './idiomi'
           const x = <Trans>Hello {user.name}</Trans>
         `;
 
         const result = transform(code, {
           mode: 'suspense',
-          idiomaDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           locales: ['en', 'es'],
-          outputDir: './idioma',
+          outputDir: './idiomi',
           projectRoot: '/project',
         });
 
@@ -109,13 +109,13 @@ describe('Idioma Babel Plugin', () => {
 
       it('handles array access expression', () => {
         const code = `
-          import { Trans } from './idioma'
+          import { Trans } from './idiomi'
           const x = <Trans>First item: {items[0]}</Trans>
         `;
 
         const result = transform(code, {
           mode: 'inlined',
-          idiomaDir: TEST_IDIOMA_DIR,
+          idiomiDir: TEST_IDIOMI_DIR,
           translations: {},
         });
 
@@ -127,13 +127,13 @@ describe('Idioma Babel Plugin', () => {
 
     it('transforms Trans to __Trans with translations', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '00000000': {
             // key for "Hello world"
@@ -149,13 +149,13 @@ describe('Idioma Babel Plugin', () => {
 
     it('transforms Trans with interpolation', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello {name}</Trans>
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {},
       });
 
@@ -165,13 +165,13 @@ describe('Idioma Babel Plugin', () => {
 
     it('transforms Trans with components', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Click <Link>here</Link></Trans>
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {},
       });
 
@@ -181,13 +181,13 @@ describe('Idioma Babel Plugin', () => {
 
     it('handles Trans with explicit id', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans id="greeting">Hello</Trans>
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           greeting: {
             en: 'Hello',
@@ -201,15 +201,15 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('Hola');
     });
 
-    it('transforms import from idioma folder to include runtime', () => {
+    it('transforms import from idiomi folder to include runtime', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello</Trans>
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {},
       });
 
@@ -219,13 +219,13 @@ describe('Idioma Babel Plugin', () => {
 
     it('injects __Trans import for non-suspense production mode', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '00000000': {
             en: 'Hello world',
@@ -234,8 +234,8 @@ describe('Idioma Babel Plugin', () => {
         },
       });
 
-      // Should inject import { __Trans } from '@idioma/react'
-      expect(result).toContain('import { __Trans } from "@idioma/react"');
+      // Should inject import { __Trans } from '@idiomi/react'
+      expect(result).toContain('import { __Trans } from "@idiomi/react"');
     });
 
     it('does not inject __Trans import when no Trans is used', () => {
@@ -257,13 +257,13 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -275,7 +275,7 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = (
           <div>
             <Trans>First</Trans>
@@ -286,7 +286,7 @@ describe('Idioma Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -297,26 +297,26 @@ describe('Idioma Babel Plugin', () => {
   describe('suspense mode', () => {
     const suspenseOptions = {
       mode: 'suspense' as const,
-      idiomaDir: TEST_IDIOMA_DIR,
+      idiomiDir: TEST_IDIOMI_DIR,
       locales: ['en', 'es'],
-      outputDir: './idioma',
+      outputDir: './idiomi',
       projectRoot: '/project',
     };
 
-    it('injects __$idiomaChunk constant', () => {
+    it('injects __$idiomiChunk constant', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
       const result = transform(code, suspenseOptions);
 
-      expect(result).toContain('__$idiomaChunk');
+      expect(result).toContain('__$idiomiChunk');
     });
 
-    it('injects __$idiomaLoad with dynamic imports for all locales', () => {
+    it('injects __$idiomiLoad with dynamic imports for all locales', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
@@ -325,7 +325,7 @@ describe('Idioma Babel Plugin', () => {
         locales: ['en', 'es', 'de'],
       });
 
-      expect(result).toContain('__$idiomaLoad');
+      expect(result).toContain('__$idiomiLoad');
       expect(result).toContain('import(');
       // Check that all locales are present in the loader
       expect(result).toContain('.en');
@@ -335,7 +335,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('transforms Trans to include __key, __chunk, __load props', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
@@ -349,19 +349,19 @@ describe('Idioma Babel Plugin', () => {
 
     it('imports __TransSuspense from runtime-suspense', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
       const result = transform(code, suspenseOptions);
 
-      expect(result).toContain('@idioma/react/runtime-suspense');
+      expect(result).toContain('@idiomi/react/runtime-suspense');
       expect(result).toContain('__TransSuspense');
     });
 
     it('handles multiple Trans components in same file (shared loader)', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>First</Trans>
         const y = <Trans>Second</Trans>
       `;
@@ -369,7 +369,7 @@ describe('Idioma Babel Plugin', () => {
       const result = transform(code, suspenseOptions);
 
       // Should only inject once
-      const chunkMatches = result.match(/__\$idiomaChunk/g);
+      const chunkMatches = result.match(/__\$idiomiChunk/g);
       expect(chunkMatches?.length).toBeGreaterThan(0);
 
       // Both Trans components should use the same chunk
@@ -378,7 +378,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('preserves __a for interpolation in suspense mode', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello {name}</Trans>
       `;
 
@@ -390,7 +390,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('preserves __c for components in suspense mode', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Click <Link>here</Link></Trans>
       `;
 
@@ -404,13 +404,13 @@ describe('Idioma Babel Plugin', () => {
   describe('t() call transformation', () => {
     it('leaves t() calls unchanged in dev mode', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const msg = t('Hello world')
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
       });
 
       expect(result).toContain("t('Hello world')");
@@ -420,14 +420,14 @@ describe('Idioma Babel Plugin', () => {
 
     it('inlines translations for t() calls in production mode', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const msg = t('Hello world')
       `;
 
       // Key for 'Hello world' is '003B4Ntk'
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '003B4Ntk': {
             en: 'Hello world',
@@ -442,14 +442,14 @@ describe('Idioma Babel Plugin', () => {
 
     it('preserves existing values argument', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const msg = t('Hello {name}', { name: 'Ben' })
       `;
 
       // Key for 'Hello {name}' is '000VsT4w'
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '000VsT4w': {
             en: 'Hello {name}',
@@ -467,14 +467,14 @@ describe('Idioma Babel Plugin', () => {
 
     it('skips dynamic strings (variables)', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const key = 'Hello world'
         const msg = t(key)
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '00000000': {
             en: 'Hello world',
@@ -492,13 +492,13 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const msg = t('Hello world')
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -508,7 +508,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('handles t() calls with context option', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const msg = t('Submit', undefined, { context: 'button' })
       `;
 
@@ -516,7 +516,7 @@ describe('Idioma Babel Plugin', () => {
       // For now, context support in t() is limited - the call still uses the plain key
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '000os6FO': {
             en: 'Submit',
@@ -531,18 +531,18 @@ describe('Idioma Babel Plugin', () => {
 
     it('leaves dynamic t() calls unchanged (runtime handles lookup)', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const key = getErrorKey()
         const msg = t(key)
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
-        outputDir: './idioma',
+        idiomiDir: TEST_IDIOMI_DIR,
+        outputDir: './idiomi',
       });
 
-      // Dynamic t() calls are left as-is - runtime IdiomaProvider handles lookup
+      // Dynamic t() calls are left as-is - runtime IdiomiProvider handles lookup
       expect(result).toContain('t(key)');
       // No translations injection needed - context provides translations
       expect(result).not.toContain('__$translations');
@@ -550,14 +550,14 @@ describe('Idioma Babel Plugin', () => {
 
     it('does not inject translations for static-only t() calls', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const msg = t('Hello world')
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
-        outputDir: './idioma',
+        idiomiDir: TEST_IDIOMI_DIR,
+        outputDir: './idiomi',
         translations: {
           '003B4Ntk': { en: 'Hello world', es: 'Hola mundo' },
         },
@@ -565,12 +565,12 @@ describe('Idioma Babel Plugin', () => {
 
       // Should NOT inject translations import for static-only files
       expect(result).not.toContain('__$translations');
-      expect(result).not.toContain('./idioma/.generated/translations');
+      expect(result).not.toContain('./idiomi/.generated/translations');
     });
 
     it('inlines static t() calls while leaving dynamic ones for runtime', () => {
       const code = `
-        import { t } from './idioma'
+        import { t } from './idiomi'
         const staticMsg = t('Hello world')
         const dynamicKey = getKey()
         const dynamicMsg = t(dynamicKey)
@@ -578,8 +578,8 @@ describe('Idioma Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
-        outputDir: './idioma',
+        idiomiDir: TEST_IDIOMI_DIR,
+        outputDir: './idiomi',
         translations: {
           '003B4Ntk': { en: 'Hello world', es: 'Hola mundo' },
         },
@@ -587,7 +587,7 @@ describe('Idioma Babel Plugin', () => {
 
       // Static call should be inlined
       expect(result).toContain('Hola mundo');
-      // Dynamic call left for runtime (IdiomaProvider handles lookup)
+      // Dynamic call left for runtime (IdiomiProvider handles lookup)
       expect(result).toContain('t(dynamicKey)');
       // No injection needed - context provides translations
       expect(result).not.toContain('__$translations');
@@ -599,14 +599,14 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { plural } from '@idioma/core/icu'
-        import { t } from './idioma'
+        import { plural } from '@idiomi/core/icu'
+        import { t } from './idiomi'
         const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -620,14 +620,14 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { plural } from '@idioma/core/icu'
-        import { t } from './idioma'
+        import { plural } from '@idiomi/core/icu'
+        import { t } from './idiomi'
         const msg = t(\`Hello \${name}, you have \${plural(count, { one: "# message", other: "# messages" })}\`)
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -645,14 +645,14 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { plural } from '@idioma/core/icu'
-        import { t } from './idioma'
+        import { plural } from '@idiomi/core/icu'
+        import { t } from './idiomi'
         const msg = t(\`Items: \${plural(data.count, { one: "#", other: "#" })}\`)
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -668,25 +668,25 @@ describe('Idioma Babel Plugin', () => {
 
       // Trans version
       const transCode = `
-        import { plural } from '@idioma/core/icu'
-        import { Trans } from './idioma'
+        import { plural } from '@idiomi/core/icu'
+        import { Trans } from './idiomi'
         const x = <Trans>You have {plural(count, { one: "# item", other: "# items" })} in cart</Trans>
       `;
       transform(transCode, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => transExtracted.push(msg),
       });
 
       // t() version
       const tCode = `
-        import { plural } from '@idioma/core/icu'
-        import { t } from './idioma'
+        import { plural } from '@idiomi/core/icu'
+        import { t } from './idiomi'
         const msg = t(\`You have \${plural(count, { one: "# item", other: "# items" })} in cart\`)
       `;
       transform(tCode, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => tExtracted.push(msg),
       });
 
@@ -701,14 +701,14 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ source: string }> = [];
 
       const code = `
-        import { plural } from '@idioma/core/icu'
-        import { t } from './idioma'
+        import { plural } from '@idiomi/core/icu'
+        import { t } from './idiomi'
         const msg = t(\`\${plural(n, { zero: "none", one: "one", two: "two", few: "few", many: "many", other: "other" })}\`)
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -720,13 +720,13 @@ describe('Idioma Babel Plugin', () => {
   });
 
   describe('config-based import detection', () => {
-    const idiomaDir = '/project/src/idioma';
-    // Filename must be in /project/src/ so that './idioma' resolves to idiomaDir
+    const idiomiDir = '/project/src/idiomi';
+    // Filename must be in /project/src/ so that './idiomi' resolves to idiomiDir
     const testFilename = '/project/src/App.tsx';
 
-    it('detects Trans from configured idioma path', () => {
+    it('detects Trans from configured idiomi path', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const x = <Trans>Hello world</Trans>
       `;
 
@@ -734,7 +734,7 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           translations: {},
         },
         testFilename,
@@ -745,7 +745,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('handles aliased Trans import', () => {
       const code = `
-        import { Trans as T } from './idioma'
+        import { Trans as T } from './idiomi'
         const x = <T>Hello world</T>
       `;
 
@@ -753,7 +753,7 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           translations: {},
         },
         testFilename,
@@ -764,7 +764,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('handles variable alias of Trans', () => {
       const code = `
-        import { Trans } from './idioma'
+        import { Trans } from './idiomi'
         const Message = Trans
         const x = <Message>Hello world</Message>
       `;
@@ -773,7 +773,7 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           translations: {},
         },
         testFilename,
@@ -784,7 +784,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('handles combined import and variable aliases', () => {
       const code = `
-        import { Trans as T } from './idioma'
+        import { Trans as T } from './idiomi'
         const Message = T
         const x = <Message>Hello world</Message>
       `;
@@ -793,7 +793,7 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           translations: {},
         },
         testFilename,
@@ -802,7 +802,7 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('__Trans');
     });
 
-    it('does not transform Trans from non-idioma imports', () => {
+    it('does not transform Trans from non-idiomi imports', () => {
       const code = `
         import { Trans } from 'some-other-library'
         const x = <Trans>Hello world</Trans>
@@ -812,19 +812,19 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           translations: {},
         },
         testFilename,
       );
 
-      // Should NOT be transformed since it's not from idioma path
+      // Should NOT be transformed since it's not from idiomi path
       expect(result).not.toContain('__Trans');
     });
 
     it('handles useT aliased import with config', () => {
       const code = `
-        import { useT as useTranslation } from './idioma'
+        import { useT as useTranslation } from './idiomi'
         const t = useTranslation()
       `;
 
@@ -832,9 +832,9 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'suspense',
-          idiomaDir,
+          idiomiDir,
           locales: ['en', 'es'],
-          outputDir: './idioma',
+          outputDir: './idiomi',
           projectRoot: '/project',
         },
         testFilename,
@@ -847,7 +847,7 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ source: string }> = [];
 
       const code = `
-        import { t as translate } from './idioma'
+        import { t as translate } from './idiomi'
         const msg = translate('Hello world')
       `;
 
@@ -855,7 +855,7 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           onExtract: (msg) => extracted.push(msg),
         },
         testFilename,
@@ -869,7 +869,7 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ source: string }> = [];
 
       const code = `
-        import { Trans as T } from './idioma'
+        import { Trans as T } from './idiomi'
         const x = <T>Hello world</T>
       `;
 
@@ -877,7 +877,7 @@ describe('Idioma Babel Plugin', () => {
         code,
         {
           mode: 'inlined',
-          idiomaDir,
+          idiomiDir,
           onExtract: (msg) => extracted.push(msg),
         },
         testFilename,
@@ -891,15 +891,15 @@ describe('Idioma Babel Plugin', () => {
   describe('useT suspense mode', () => {
     const suspenseOptions = {
       mode: 'suspense' as const,
-      idiomaDir: TEST_IDIOMA_DIR,
+      idiomiDir: TEST_IDIOMI_DIR,
       locales: ['en', 'es'],
-      outputDir: './idioma',
+      outputDir: './idiomi',
       projectRoot: '/project',
     };
 
     it('transforms useT() to __useTSuspense with chunk and loader in production', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         function MyComponent() {
           const t = useT()
           return t('Hello')
@@ -911,13 +911,13 @@ describe('Idioma Babel Plugin', () => {
       });
 
       expect(result).toContain('__useTSuspense');
-      expect(result).toContain('__$idiomaChunk');
-      expect(result).toContain('__$idiomaLoad');
+      expect(result).toContain('__$idiomiChunk');
+      expect(result).toContain('__$idiomiLoad');
     });
 
     it('transforms useT() to __useTSuspense in development mode too', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         function MyComponent() {
           const t = useT()
           return t('Hello')
@@ -928,13 +928,13 @@ describe('Idioma Babel Plugin', () => {
 
       // useT transforms in suspense mode
       expect(result).toContain('__useTSuspense');
-      expect(result).toContain('__$idiomaChunk');
-      expect(result).toContain('__$idiomaLoad');
+      expect(result).toContain('__$idiomiChunk');
+      expect(result).toContain('__$idiomiLoad');
     });
 
     it('imports __useTSuspense from runtime-suspense', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         const t = useT()
       `;
 
@@ -944,12 +944,12 @@ describe('Idioma Babel Plugin', () => {
 
       expect(result).toContain('import {');
       expect(result).toContain('__useTSuspense');
-      expect(result).toContain('@idioma/react/runtime-suspense');
+      expect(result).toContain('@idiomi/react/runtime-suspense');
     });
 
     it('injects chunk and loader when only useT is used (no Trans)', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         function MyComponent() {
           const t = useT()
           return t('Hello')
@@ -960,8 +960,8 @@ describe('Idioma Babel Plugin', () => {
         ...suspenseOptions,
       });
 
-      expect(result).toContain('__$idiomaChunk');
-      expect(result).toContain('__$idiomaLoad');
+      expect(result).toContain('__$idiomiChunk');
+      expect(result).toContain('__$idiomiLoad');
       expect(result).toContain('import(');
       // Dynamic imports for each locale
       expect(result).toContain('.en');
@@ -970,7 +970,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('handles multiple useT calls in same file', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         function A() { const t = useT(); return t('A') }
         function B() { const t = useT(); return t('B') }
       `;
@@ -984,13 +984,13 @@ describe('Idioma Babel Plugin', () => {
       expect(useTMatches?.length).toBe(2);
 
       // Only one chunk declaration (shared)
-      const chunkMatches = result.match(/const __\$idiomaChunk/g);
+      const chunkMatches = result.match(/const __\$idiomiChunk/g);
       expect(chunkMatches?.length).toBe(1);
     });
 
     it('handles mixed Trans and useT in same file', () => {
       const code = `
-        import { Trans, useT } from './idioma'
+        import { Trans, useT } from './idiomi'
         function MyComponent() {
           const t = useT()
           return <div><Trans>Hello</Trans>{t('World')}</div>
@@ -1004,13 +1004,13 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('__TransSuspense');
       expect(result).toContain('__useTSuspense');
       // Only one set of chunk/loader injected
-      const chunkMatches = result.match(/const __\$idiomaChunk/g);
+      const chunkMatches = result.match(/const __\$idiomiChunk/g);
       expect(chunkMatches?.length).toBe(1);
     });
 
     it('handles aliased useT import', () => {
       const code = `
-        import { useT as useTranslation } from './idioma'
+        import { useT as useTranslation } from './idiomi'
         function MyComponent() {
           const t = useTranslation()
           return t('Hello')
@@ -1026,13 +1026,13 @@ describe('Idioma Babel Plugin', () => {
 
     it('does not transform useT in inlined mode', () => {
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         const t = useT()
       `;
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
       });
 
       expect(result).toContain('useT()');
@@ -1043,7 +1043,7 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { useT } from './idioma'
+        import { useT } from './idiomi'
         function MyComponent() {
           const t = useT()
           return t('Hello from useT')
@@ -1065,14 +1065,14 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { createT } from './idioma'
+        import { createT } from './idiomi'
         const t = createT('es')
         const msg = t('Hello world')
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -1082,7 +1082,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('inlines translations for createT-derived t() calls in production', () => {
       const code = `
-        import { createT } from './idioma'
+        import { createT } from './idiomi'
         const t = createT('es')
         const msg = t('Hello world')
       `;
@@ -1090,7 +1090,7 @@ describe('Idioma Babel Plugin', () => {
       // Key for 'Hello world' is '003B4Ntk'
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         translations: {
           '003B4Ntk': {
             en: 'Hello world',
@@ -1107,14 +1107,14 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { createT as makeTranslator } from './idioma'
+        import { createT as makeTranslator } from './idiomi'
         const translate = makeTranslator('es')
         const msg = translate('Hello')
       `;
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -1126,7 +1126,7 @@ describe('Idioma Babel Plugin', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
-        import { createT } from './idioma'
+        import { createT } from './idiomi'
         const tEn = createT('en')
         const tEs = createT('es')
         const msgEn = tEn('Hello')
@@ -1135,7 +1135,7 @@ describe('Idioma Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
@@ -1146,7 +1146,7 @@ describe('Idioma Babel Plugin', () => {
 
     it('leaves dynamic t() calls unchanged (falls back to source)', () => {
       const code = `
-        import { createT } from './idioma'
+        import { createT } from './idiomi'
         const t = createT('es')
         const key = getErrorKey()
         const msg = t(key)
@@ -1154,14 +1154,14 @@ describe('Idioma Babel Plugin', () => {
 
       const result = transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
       });
 
       // Dynamic calls are left as-is
       expect(result).toContain('t(key)');
     });
 
-    it('does not track createT from non-idioma imports', () => {
+    it('does not track createT from non-idiomi imports', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
       const code = `
@@ -1172,11 +1172,11 @@ describe('Idioma Babel Plugin', () => {
 
       transform(code, {
         mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
+        idiomiDir: TEST_IDIOMI_DIR,
         onExtract: (msg) => extracted.push(msg),
       });
 
-      // Should not extract because createT is not from idioma folder
+      // Should not extract because createT is not from idiomi folder
       expect(extracted).toHaveLength(0);
     });
   });

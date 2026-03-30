@@ -1,25 +1,30 @@
+'use client';
+
 /**
- * Suspense-based runtime for @idioma/react.
+ * Suspense-based runtime for @idiomi/react.
  *
  * This module provides React components that use dynamic imports
  * and the React 19 `use()` hook for Suspense-based lazy loading.
  *
  * Requires React 19+.
  */
-
-import {
-  createContext,
-  use,
-  useContext,
-  useMemo,
-  version,
-  type ReactNode,
-} from 'react';
+import { use, useContext, version, type ReactNode } from 'react';
+// Import IdiomiContext for internal use (useContext calls)
+import { IdiomiContext } from '../context';
 import {
   interpolateValues,
   renderMessage,
   type TransComponent,
 } from '../interpolate';
+// Import shared Trans types
+import type {
+  TransInlineModeProps,
+  TransKeyOnlyModeProps,
+} from '../Trans.types';
+// ============ useT Hook ============
+
+// Import shared types from useT.types.ts (same types used by inlined mode)
+import type { BaseIdiomiConfig, TFunction } from '../useT.types';
 
 // ============ React Version Check ============
 
@@ -27,7 +32,7 @@ const majorVersion = parseInt(version.split('.')[0]!, 10);
 
 if (majorVersion < 19) {
   throw new Error(
-    `[idioma] useSuspense mode requires React 19+. ` +
+    `[idiomi] useSuspense mode requires React 19+. ` +
       `You're using React ${version}. ` +
       `Either upgrade React or set useSuspense: false.`,
   );
@@ -77,47 +82,16 @@ export function preloadTranslations(
 }
 
 // ============ Context ============
-
-export interface IdiomaContextValue {
-  locale: string;
-}
-
-export const IdiomaContext = createContext<IdiomaContextValue | null>(null);
-
-export interface IdiomaProviderProps {
-  children: ReactNode;
-  locale: string;
-}
-
-/**
- * Creates an IdiomaProvider for Suspense mode.
- * Same controlled API as the inlined runtime.
- */
-export function createIdiomaProvider() {
-  return function IdiomaProvider({ children, locale }: IdiomaProviderProps) {
-    const value = useMemo(() => ({ locale }), [locale]);
-
-    return (
-      <IdiomaContext.Provider value={value}>{children}</IdiomaContext.Provider>
-    );
-  };
-}
-
-/**
- * Creates a useLocale hook that returns the current locale.
- */
-export function createUseLocale() {
-  return function useLocale(): string {
-    const context = useContext(IdiomaContext);
-    if (!context) {
-      throw new Error(
-        '[idioma] useLocale must be used within an IdiomaProvider. ' +
-          'Make sure to wrap your app with <IdiomaProvider>.',
-      );
-    }
-    return context.locale;
-  };
-}
+// Re-export shared context from main module to ensure single context instance
+// This is critical: @idiomi/next's Link uses IdiomiContext from @idiomi/react,
+// so we must use the same context here for IdiomiProvider to work with Link
+export {
+  createIdiomiProvider,
+  createUseLocale,
+  IdiomiContext,
+  type IdiomiContextValue,
+  type IdiomiProviderProps,
+} from '../context';
 
 // ============ Trans Component ============
 
@@ -151,11 +125,11 @@ export function __TransSuspense({
   __c,
   __cn,
 }: TransSuspenseProps): ReactNode {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] Trans must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] Trans must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
 
@@ -174,42 +148,17 @@ export function __TransSuspense({
 }
 
 /**
- * Props for key-only Trans in Suspense mode.
+ * Suspense-specific extension of TransKeyOnlyModeProps.
+ * Adds __chunk and __load props required by Babel transform.
  */
-export interface TransKeyOnlyModeProps<
+type TransKeyOnlyModePropsSuspense<
   K extends string,
   MV extends Record<string, Record<string, unknown>>,
   MC extends Record<string, TransComponent[]>,
-> {
-  id: K;
-  children?: never;
-  context?: never;
-  ns?: string;
-  values?: K extends keyof MV ? MV[K] : Record<string, unknown>;
-  components?: K extends keyof MC ? MC[K] : TransComponent[];
-  // Suspense mode requires chunk/load from Babel transform
+> = TransKeyOnlyModeProps<K, MV, MC> & {
   __chunk?: string;
   __load?: Loader;
-}
-
-/**
- * Props for inline Trans in Suspense mode (dev only).
- */
-export interface TransInlineModeProps {
-  children: ReactNode;
-  id?: string;
-  context?: string;
-  ns?: string;
-}
-
-/**
- * Base interface for project-specific Idioma types (for Trans).
- */
-interface BaseIdiomaConfigForTrans {
-  TranslationKey: string;
-  MessageValues: Record<string, Record<string, unknown>>;
-  MessageComponents: Record<string, TransComponent[]>;
-}
+};
 
 /**
  * Creates a typed Trans component for Suspense mode.
@@ -218,18 +167,23 @@ interface BaseIdiomaConfigForTrans {
  * In production: Babel transforms to __TransSuspense
  */
 export function createTransSuspense<
-  C extends BaseIdiomaConfigForTrans = BaseIdiomaConfigForTrans,
+  C extends BaseIdiomiConfig = BaseIdiomiConfig,
 >(_config: SuspenseConfig) {
   type TK = C['TranslationKey'];
   type MV = C['MessageValues'];
   type MC = C['MessageComponents'];
 
+  // Type alias to ensure MC satisfies TransComponent[] constraint
+  type MCTyped = MC & Record<string, TransComponent[]>;
+
   function Trans(props: TransInlineModeProps): ReactNode;
   function Trans<K extends TK>(
-    props: TransKeyOnlyModeProps<K & string, MV, MC>,
+    props: TransKeyOnlyModePropsSuspense<K & string, MV, MCTyped>,
   ): ReactNode;
   function Trans(
-    props: TransInlineModeProps | TransKeyOnlyModeProps<TK & string, MV, MC>,
+    props:
+      | TransInlineModeProps
+      | TransKeyOnlyModePropsSuspense<TK & string, MV, MCTyped>,
   ): ReactNode {
     // Inline mode: children present - render them directly
     // In production, Babel transforms this to __TransSuspense
@@ -239,7 +193,7 @@ export function createTransSuspense<
 
     // Key-only mode in Suspense: requires __chunk and __load from Babel
     const { __chunk, __load, id, values, components } =
-      props as TransKeyOnlyModeProps<TK & string, MV, MC>;
+      props as TransKeyOnlyModePropsSuspense<TK & string, MV, MCTyped>;
 
     if (__chunk && __load) {
       return (
@@ -255,7 +209,7 @@ export function createTransSuspense<
 
     // Fallback: no loader available (shouldn't happen in production)
     throw new Error(
-      '[idioma] Key-only Trans in Suspense mode requires Babel transform. ' +
+      '[idiomi] Key-only Trans in Suspense mode requires Babel transform. ' +
         'Make sure the Babel plugin is configured correctly.',
     );
   }
@@ -263,36 +217,7 @@ export function createTransSuspense<
   return Trans;
 }
 
-// ============ useT Hook ============
-
-/**
- * Base interface for project-specific Idioma types.
- * Same as BaseIdiomaConfig from createUseT.
- */
-interface BaseIdiomaConfig {
-  TranslationKey: string;
-  MessageValues: Record<string, Record<string, unknown>>;
-  MessageComponents: Record<string, unknown[]>;
-}
-
-/**
- * Derive string-only keys from TranslationKey + MessageComponents.
- * Keys with empty component arrays [] can be used with useT.
- * Keys with non-empty component arrays [TransComponent, ...] must use Trans.
- */
-type StringOnlyKeys<TK extends string, MC extends Record<string, unknown[]>> = {
-  [K in TK & keyof MC]: MC[K] extends [] ? K : never;
-}[TK & keyof MC];
-
-export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = <
-  Key extends StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
-    string,
->(
-  key: Key,
-  values?: Key extends keyof C['MessageValues']
-    ? C['MessageValues'][Key]
-    : Record<string, unknown>,
-) => string;
+export type { TFunction };
 
 /**
  * Internal useT for Suspense mode.
@@ -302,11 +227,11 @@ export function __useTSuspense(
   _chunk: string,
   _loader: Loader,
 ): (key: string, values?: Record<string, unknown>) => string {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] useT must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] useT must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
 
@@ -320,7 +245,7 @@ export function __useTSuspense(
     // If we get here with source text, Babel didn't transform - graceful fallback
     if (process.env.NODE_ENV !== 'production') {
       console.error(
-        `Idioma: Missing translations for "${source}". ` +
+        `Idiomi: Missing translations for "${source}". ` +
           'Ensure the Babel plugin is configured.',
       );
     }
@@ -339,13 +264,13 @@ export function __useTSuspense(
  * chunk and loader information.
  */
 export function createUseTSuspense<
-  C extends BaseIdiomaConfig = BaseIdiomaConfig,
+  C extends BaseIdiomiConfig = BaseIdiomiConfig,
 >(_config: SuspenseConfig): () => TFunction<C> {
   // Return a hook that throws when called
   // In production with proper Babel setup, this would be transformed
   return function useT(): TFunction<C> {
     throw new Error(
-      '[idioma] useT in Suspense mode requires Babel transform. ' +
+      '[idiomi] useT in Suspense mode requires Babel transform. ' +
         'Make sure the Babel plugin is configured correctly.',
     );
   };

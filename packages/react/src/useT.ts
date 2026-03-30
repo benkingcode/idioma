@@ -1,5 +1,7 @@
+'use client';
+
 import { useCallback, useContext } from 'react';
-import { IdiomaContext } from './context';
+import { IdiomiContext } from './context';
 import { interpolateValues } from './interpolate';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,7 +54,7 @@ export type UseTFunction = {
 
 /**
  * Internal useT hook used by Babel-compiled output.
- * Not intended for direct use - import useT from the generated idioma/ folder instead.
+ * Not intended for direct use - import useT from the generated idiomi/ folder instead.
  *
  * Supports both source text mode and key-only mode:
  * - Source text: t('Hello world!') - hashes and looks up
@@ -60,7 +62,7 @@ export type UseTFunction = {
  *
  * @example
  * // Compiled output:
- * const t = __useT(__$idioma)
+ * const t = __useT(__$idiomi)
  * const label = t('Hello world!')
  * const greeting = t('Hello {name}', { name })
  * t('Submit', undefined, { context: 'button' })  // with options (3rd arg)
@@ -70,11 +72,11 @@ export function __useT(
   translations: Translations,
   _options?: UseTOptions,
 ): UseTFunction {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] useT must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] useT must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
 
@@ -131,7 +133,7 @@ export function __useT(
         // Babel didn't inline translations - graceful fallback
         if (process.env.NODE_ENV !== 'production') {
           console.error(
-            `Idioma: Missing translations for "${source}". ` +
+            `Idiomi: Missing translations for "${source}". ` +
               'Ensure the Babel plugin is configured.',
           );
         }

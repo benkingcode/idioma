@@ -1,22 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { createIdiomaProvider, createUseLocale } from './context';
+import { createIdiomiProvider, createUseLocale } from './context';
 
-describe('createIdiomaProvider', () => {
+describe('createIdiomiProvider', () => {
   it('creates a provider that renders children', () => {
-    const IdiomaProvider = createIdiomaProvider();
+    const IdiomiProvider = createIdiomiProvider();
 
     render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <div>Hello World</div>
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByText('Hello World')).toBeDefined();
   });
 
   it('provides locale value to context', () => {
-    const IdiomaProvider = createIdiomaProvider();
+    const IdiomiProvider = createIdiomiProvider();
     const useLocale = createUseLocale();
 
     function TestComponent() {
@@ -25,16 +25,16 @@ describe('createIdiomaProvider', () => {
     }
 
     render(
-      <IdiomaProvider locale="es">
+      <IdiomiProvider locale="es">
         <TestComponent />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('locale').textContent).toBe('es');
   });
 
   it('propagates locale changes to children', () => {
-    const IdiomaProvider = createIdiomaProvider();
+    const IdiomiProvider = createIdiomiProvider();
     const useLocale = createUseLocale();
 
     function TestComponent() {
@@ -43,17 +43,17 @@ describe('createIdiomaProvider', () => {
     }
 
     const { rerender } = render(
-      <IdiomaProvider locale="en">
+      <IdiomiProvider locale="en">
         <TestComponent />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('locale').textContent).toBe('en');
 
     rerender(
-      <IdiomaProvider locale="de">
+      <IdiomiProvider locale="de">
         <TestComponent />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('locale').textContent).toBe('de');
@@ -76,7 +76,7 @@ describe('createUseLocale', () => {
   });
 
   it('returns the current locale', () => {
-    const IdiomaProvider = createIdiomaProvider();
+    const IdiomiProvider = createIdiomiProvider();
     const useLocale = createUseLocale();
 
     function TestComponent() {
@@ -85,9 +85,9 @@ describe('createUseLocale', () => {
     }
 
     render(
-      <IdiomaProvider locale="fr">
+      <IdiomiProvider locale="fr">
         <TestComponent />
-      </IdiomaProvider>,
+      </IdiomiProvider>,
     );
 
     expect(screen.getByTestId('locale').textContent).toBe('fr');

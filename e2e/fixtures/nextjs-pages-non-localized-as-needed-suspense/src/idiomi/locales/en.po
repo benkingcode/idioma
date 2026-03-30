@@ -1,0 +1,58 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/pages/about.tsx
+#. [AI Context]: Main heading on the About page that introduces the company information section
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/pages/about.tsx
+#. [AI Context]: Subheading paragraph on the About page that invites users to learn more about the company's services
+#, extracted
+msgid "002klSky"
+msgstr "Learn more about what we do."
+
+#: src/pages/contact.tsx
+#. [AI Context]: Page heading on the contact page, displayed as the main title
+#, extracted
+msgid "000J06Wk"
+msgstr "Contact Us"
+
+#: src/pages/contact.tsx
+#. [AI Context]: Subheading/description text below the main contact page title, introduces the purpose of the contact page
+#, extracted
+msgid "003T8F3W"
+msgstr "Get in touch with our team."
+
+#: src/pages/index.tsx
+#. [AI Context]: Main page heading displayed at the top of the home page
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/pages/index.tsx
+#. [AI Context]: Introductory paragraph text displayed below the main heading on the home page
+#, extracted
+msgid "001uxLgK"
+msgstr "This is the home page content."
+
+#: src/pages/blog/[slug].tsx
+#. [AI Context]: Page heading that displays at the top of individual blog post pages, followed by the post's slug
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"
+
+#: src/pages/blog/index.tsx
+#. [AI Context]: Page heading for the blog section displaying the main title above a list of blog posts
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/pages/docs/[...slug].tsx
+#. [AI Context]: Page heading displayed at the top of the documentation section. This is the main title users see when viewing docs.
+#, extracted
+msgid "001LdocT"
+msgstr "Documentation"

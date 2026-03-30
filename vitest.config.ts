@@ -11,6 +11,9 @@ export default defineConfig({
       exclude: ['**/*.test.{ts,tsx}', '**/*.d.ts'],
     },
     // Use jsdom for React component tests
-    environmentMatchGlobs: [['packages/react/**/*.test.tsx', 'jsdom']],
+    environmentMatchGlobs: [
+      ['packages/react/**/*.test.tsx', 'jsdom'],
+      ['packages/next/**/*.test.tsx', 'jsdom'],
+    ],
   },
 });

@@ -1,0 +1,34 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/routes/about.lazy.tsx
+#, extracted, ai-translated
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/routes/about.lazy.tsx
+#, extracted, ai-translated
+msgid "004U2qa8"
+msgstr "Aprende más sobre lo que hacemos"
+
+#: src/routes/contact.lazy.tsx
+#, extracted, ai-translated
+msgid "0034rp6e"
+msgstr "Ponte en contacto con nosotros"
+
+#: src/routes/contact.lazy.tsx
+#, extracted, ai-translated
+msgid "002p8oRq"
+msgstr "Envíanos un mensaje y responderemos"
+
+#: src/routes/index.lazy.tsx
+#, extracted, ai-translated
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/routes/index.lazy.tsx
+#, extracted, ai-translated
+msgid "000SSgaT"
+msgstr "Esta es la página de inicio con traducciones únicas"

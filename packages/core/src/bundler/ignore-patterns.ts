@@ -9,7 +9,7 @@ import ignore, { type Ignore } from 'ignore';
 const BASE_IGNORE_PATTERNS = [
   'node_modules',
   '.git',
-  '.generated', // Idioma generated files - never extract from these
+  '.generated', // Idiomi generated files - never extract from these
 ];
 
 /**

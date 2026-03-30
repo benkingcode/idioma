@@ -6,14 +6,15 @@
     "dev:fixture": "vite",
     "build:fixture": "vite build",
     "preview": "vite preview",
-    "extract": "idioma extract",
-    "compile": "idioma compile",
-    "translate": "dotenv -e ../../../.env.local -- idioma translate"
+    "extract": "idiomi extract",
+    "compile": "idiomi compile",
+    "translate": "dotenv -e ../../../.env.local -- idiomi translate",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.0",
-    "@idioma/core": "workspace:*",
-    "@idioma/react": "workspace:*",
+    "@idiomi/core": "workspace:*",
+    "@idiomi/react": "workspace:*",
     "@tanstack/react-router": "^1.94.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

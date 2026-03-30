@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { createIdiomaProvider } from './context';
+import { createIdiomiProvider } from './context';
 import { createUseT } from './createUseT';
 
-const IdiomaProvider = createIdiomaProvider();
+const IdiomiProvider = createIdiomiProvider();
 const useT = createUseT();
 
 describe('createUseT', () => {
@@ -15,9 +15,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       // Without Babel transformation, returns source text as fallback
@@ -33,9 +33,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       // Interpolates values in the source text fallback
@@ -53,9 +53,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       // Falls back to interpolated source
@@ -73,9 +73,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       // Returns the id as fallback
@@ -100,9 +100,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('some.nested.key');
@@ -128,9 +128,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hola');
@@ -155,9 +155,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hola Ben');
@@ -186,9 +186,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('5 items');
@@ -207,9 +207,9 @@ describe('createUseT', () => {
       }
 
       render(
-        <IdiomaProvider locale="fr">
+        <IdiomiProvider locale="fr">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       // Falls back to first available (en)
@@ -232,17 +232,17 @@ describe('createUseT', () => {
       }
 
       const { rerender } = render(
-        <IdiomaProvider locale="en">
+        <IdiomiProvider locale="en">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hello');
 
       rerender(
-        <IdiomaProvider locale="es">
+        <IdiomiProvider locale="es">
           <TestComponent />
-        </IdiomaProvider>,
+        </IdiomiProvider>,
       );
 
       expect(screen.getByTestId('result').textContent).toBe('Hola');
@@ -258,7 +258,7 @@ describe('createUseT', () => {
 
       expect(() => {
         render(<TestComponent />);
-      }).toThrow('[idioma] useT must be used within an IdiomaProvider');
+      }).toThrow('[idiomi] useT must be used within an IdiomiProvider');
     });
   });
 });

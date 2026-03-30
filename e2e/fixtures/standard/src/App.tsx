@@ -14,7 +14,7 @@ export default function App({ locale, onLocaleChange }: AppProps) {
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
       <header style={{ marginBottom: '2rem' }}>
-        <h1>Idioma E2E Test Fixture</h1>
+        <h1>Idiomi E2E Test Fixture</h1>
         <div>
           <label>
             Locale:{' '}

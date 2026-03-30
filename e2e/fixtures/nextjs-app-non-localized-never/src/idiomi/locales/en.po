@@ -1,0 +1,76 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/app/[locale]/page.tsx
+#. [AI Context]: Main heading on the home page displayed to users when they first visit the website
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/app/[locale]/page.tsx
+#. [AI Context]: Introductory paragraph text on the home page describing the purpose of the site
+#, extracted
+msgid "000I3ScQ"
+msgstr "This is a demonstration of Idiomi with Next.js App Router."
+
+#: src/app/[locale]/about/page.tsx
+#. [AI Context]: Page heading on the About page; introduces the company information section
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/app/[locale]/about/page.tsx
+#. [AI Context]: Descriptive paragraph on the About page; explains the company's mission statement
+#, extracted
+msgid "002O6MmQ"
+msgstr "We are building the future of internationalization."
+
+#: src/app/[locale]/contact/page.tsx
+#. [AI Context]: Page heading for the contact page that introduces the main section where users can reach out to the company
+#, extracted
+msgid "001INXnu"
+msgstr "Contact us"
+
+#: src/app/[locale]/contact/page.tsx
+#. [AI Context]: Subheading text on the contact page that describes the purpose of the page and invites users to contact the team
+#, extracted
+msgid "003T8F3W"
+msgstr "Get in touch with our team."
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Main page heading displayed at the top of the blog listing page
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Subheading/description text below the main blog title that introduces the page content
+#, extracted
+msgid "003woyf5"
+msgstr "Read our latest articles"
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Link text for the first blog post in the listing; users click this to navigate to the 'Hello World' blog article
+#, extracted
+msgid "004QtLkv"
+msgstr "Hello World Post"
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Link text for the second blog post in the listing; users click this to navigate to the 'Getting Started' blog article
+#, extracted
+msgid "000bv8XP"
+msgstr "Getting Started"
+
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#. [AI Context]: Page heading for the documentation section
+#, extracted
+msgid "001LdocT"
+msgstr "Documentation"
+
+#: src/app/[locale]/blog/[slug]/page.tsx
+#. [AI Context]: Page heading displayed at the top of a blog post page
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"

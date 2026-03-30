@@ -14,7 +14,7 @@ describe('PO Parser', () => {
   let tempDir: string;
 
   beforeAll(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-test-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-test-'));
   });
 
   afterAll(async () => {

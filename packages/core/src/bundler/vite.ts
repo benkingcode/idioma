@@ -2,7 +2,11 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { loadConfig } from '../cli/config.js';
-import { createCompileLock } from '../compiler/compile.js';
+import {
+  createCompileLock,
+  type RoutingCompileOptions,
+} from '../compiler/compile.js';
+import { detectFramework } from '../framework.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
   createDebouncedExtractor,
@@ -13,16 +17,16 @@ import { extractAndMergeFile } from './incremental-extract.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export interface IdiomaViteOptions {
+export interface IdiomiViteOptions {
   /**
-   * Base directory for Idioma files.
-   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
+   * Base directory for Idiomi files.
+   * Generated files go in {idiomiDir}/, PO files in {idiomiDir}/locales/ by default.
    */
-  idiomaDir?: string;
+  idiomiDir?: string;
   /**
    * Directory containing PO files.
    * Override this if you have existing PO files elsewhere.
-   * @default '{idiomaDir}/locales'
+   * @default '{idiomiDir}/locales'
    */
   localesDir?: string;
   /** Default/source locale */
@@ -47,9 +51,9 @@ export interface IdiomaViteOptions {
 }
 
 /**
- * Vite plugin for Idioma i18n.
+ * Vite plugin for Idiomi i18n.
  *
- * Automatically loads configuration from idioma.config.ts if no options provided.
+ * Automatically loads configuration from idiomi.config.ts if no options provided.
  *
  * Features:
  * - Compiles PO files on build start
@@ -59,25 +63,26 @@ export interface IdiomaViteOptions {
  * - Supports Suspense mode for lazy loading translations
  *
  * @example
- * // Auto-load from idioma.config.ts
- * idioma()
+ * // Auto-load from idiomi.config.ts
+ * idiomi()
  *
  * // Or provide options directly
- * idioma({ idiomaDir: './src/idioma', defaultLocale: 'en' })
+ * idiomi({ idiomiDir: './src/idiomi', defaultLocale: 'en' })
  */
-export default function idiomaVitePlugin(
-  options: IdiomaViteOptions = {},
+export default function idiomiVitePlugin(
+  options: IdiomiViteOptions = {},
 ): Plugin {
   const { watch, ignorePatterns } = options;
 
   // These are populated from config in buildStart
-  let idiomaDir: string;
+  let idiomiDir: string;
   let localeDir: string;
   let outputDir: string;
   let defaultLocale: string;
   let locales: string[] | undefined;
   let useSuspense: boolean | undefined;
   let hasCustomLocalesDir = false;
+  let routingOptions: RoutingCompileOptions | undefined;
 
   let isDevMode = false;
   let projectRoot = '';
@@ -89,24 +94,37 @@ export default function idiomaVitePlugin(
   // Compile lock prevents concurrent compilations from racing
   const compileLock = createCompileLock();
 
-  async function loadIdiomaConfig() {
-    // Load config from idioma.config.ts, with options as overrides
+  async function loadIdiomiConfig() {
+    // Load config from idiomi.config.ts, with options as overrides
     const config = await loadConfig(projectRoot);
 
-    idiomaDir = options.idiomaDir ?? config.idiomaDir;
+    idiomiDir = options.idiomiDir ?? config.idiomiDir;
     localeDir =
-      options.localesDir ?? config.localesDir ?? join(idiomaDir, 'locales');
-    outputDir = idiomaDir;
+      options.localesDir ?? config.localesDir ?? join(idiomiDir, 'locales');
+    outputDir = idiomiDir;
     defaultLocale = options.defaultLocale ?? config.defaultLocale;
     locales = options.locales ?? config.locales;
     useSuspense = options.useSuspense ?? config.useSuspense;
     hasCustomLocalesDir = !!(options.localesDir ?? config.localesDir);
+
+    // Load routing options if configured
+    if (config.routing) {
+      const framework = await detectFramework(projectRoot);
+      routingOptions = {
+        enabled: true,
+        localizedPaths: config.routing.localizedPaths ?? false,
+        framework,
+        metadataBase: config.routing.metadataBase,
+        prefixStrategy: config.routing.prefixStrategy,
+        detection: config.routing.detection,
+      };
+    }
   }
 
   async function compile() {
     try {
       // Ensure .gitignore exists (skip creating locales/ if custom path provided)
-      await ensureGitignore(idiomaDir, { skipLocalesDir: hasCustomLocalesDir });
+      await ensureGitignore(idiomiDir, { skipLocalesDir: hasCustomLocalesDir });
 
       // Use compile lock to prevent concurrent compilations from racing
       await compileLock.compile({
@@ -116,14 +134,15 @@ export default function idiomaVitePlugin(
         useSuspense,
         locales,
         projectRoot,
+        routing: routingOptions,
       });
     } catch (error) {
-      console.error('[idioma] Compilation error:', error);
+      console.error('[idiomi] Compilation error:', error);
     }
   }
 
   return {
-    name: 'idioma',
+    name: 'idiomi',
     enforce: 'pre',
 
     configResolved(resolvedConfig) {
@@ -132,8 +151,8 @@ export default function idiomaVitePlugin(
     },
 
     async buildStart() {
-      // Load idioma config (from idioma.config.ts or options)
-      await loadIdiomaConfig();
+      // Load idiomi config (from idiomi.config.ts or options)
+      await loadIdiomiConfig();
 
       // Compile translations at build start
       await compile();
@@ -158,7 +177,7 @@ export default function idiomaVitePlugin(
           Object.assign(loadedTranslations, module.translations);
         } catch (error) {
           // Translations may not exist yet on first build
-          console.warn('[idioma] Could not load translations:', error);
+          console.warn('[idiomi] Could not load translations:', error);
         }
       }
 
@@ -170,7 +189,7 @@ export default function idiomaVitePlugin(
               await extractAndMergeFile({
                 filePath: file,
                 projectRoot,
-                idiomaDir: join(projectRoot, idiomaDir),
+                idiomiDir: join(projectRoot, idiomiDir),
                 localeDir: join(projectRoot, localeDir),
                 defaultLocale,
                 locales: locales ?? [defaultLocale],
@@ -182,10 +201,10 @@ export default function idiomaVitePlugin(
           {
             delay: 200,
             onComplete: ({ files }) => {
-              console.log(`[idioma] Extracted from ${files.length} file(s)`);
+              console.log(`[idiomi] Extracted from ${files.length} file(s)`);
             },
             onError: (error) => {
-              console.error('[idioma] Extraction error:', error);
+              console.error('[idiomi] Extraction error:', error);
             },
           },
         );
@@ -214,7 +233,7 @@ export default function idiomaVitePlugin(
               }
               Object.assign(loadedTranslations, module.translations);
             } catch (error) {
-              console.warn('[idioma] Could not reload translations:', error);
+              console.warn('[idiomi] Could not reload translations:', error);
             }
           }
 
@@ -234,11 +253,11 @@ export default function idiomaVitePlugin(
       // Uses .gitignore patterns automatically
       const matchesSourcePattern = /\.(tsx?|jsx?)$/.test(file);
       const isIgnored = shouldIgnorePath(file, projectRoot, ignorePatterns);
-      // Skip files inside idiomaDir (those are generated, not user source)
-      const absIdiomaDir = join(projectRoot, idiomaDir);
-      const isInsideIdiomaDir = file.startsWith(absIdiomaDir);
+      // Skip files inside idiomiDir (those are generated, not user source)
+      const absIdiomiDir = join(projectRoot, idiomiDir);
+      const isInsideIdiomiDir = file.startsWith(absIdiomiDir);
       const isSourceFile =
-        matchesSourcePattern && !isIgnored && !isInsideIdiomaDir;
+        matchesSourcePattern && !isIgnored && !isInsideIdiomiDir;
 
       if (isSourceFile && debouncedExtractor) {
         debouncedExtractor.add(file);
@@ -252,8 +271,8 @@ export default function idiomaVitePlugin(
         const pluginOptions: Record<string, unknown> = {
           // Use 'suspense' for lazy loading, 'inlined' for baked-in translations
           mode: useSuspense ? 'suspense' : 'inlined',
-          // Pass idiomaDir for robust config-based import detection
-          idiomaDir: join(projectRoot, idiomaDir),
+          // Pass idiomiDir for robust config-based import detection
+          idiomiDir: join(projectRoot, idiomiDir),
         };
 
         // Pass loaded translations for inlining (inlined mode only)

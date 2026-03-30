@@ -9,7 +9,7 @@ describe('ensureGitignore', () => {
 
   beforeEach(async () => {
     // Use OS temp directory to avoid writing inside project root
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-gitignore-test-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-gitignore-test-'));
   });
 
   afterEach(async () => {
@@ -29,7 +29,7 @@ describe('ensureGitignore', () => {
   });
 
   it('creates parent directories if they do not exist', async () => {
-    const nestedDir = join(tempDir, 'nested', 'idioma');
+    const nestedDir = join(tempDir, 'nested', 'idiomi');
 
     await ensureGitignore(nestedDir);
 
@@ -64,7 +64,7 @@ describe('ensureGitignore', () => {
   it('has the expected gitignore content', () => {
     // Verify the content ignores .generated/ only
     expect(GITIGNORE_CONTENT).toContain('.generated/');
-    expect(GITIGNORE_CONTENT).toContain('# Idioma generated files');
+    expect(GITIGNORE_CONTENT).toContain('# Idiomi generated files');
   });
 
   it('skips creating locales/ when skipLocalesDir is true', async () => {

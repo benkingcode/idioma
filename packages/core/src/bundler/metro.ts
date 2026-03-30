@@ -10,16 +10,16 @@ import {
 import { createChokidarIgnoreFilter } from './ignore-patterns.js';
 import { extractAndMergeFile } from './incremental-extract.js';
 
-export interface IdiomaMetroOptions {
+export interface IdiomiMetroOptions {
   /**
-   * Base directory for Idioma files.
-   * Generated files go in {idiomaDir}/, PO files in {idiomaDir}/locales/ by default.
+   * Base directory for Idiomi files.
+   * Generated files go in {idiomiDir}/, PO files in {idiomiDir}/locales/ by default.
    */
-  idiomaDir: string;
+  idiomiDir: string;
   /**
    * Directory containing PO files.
    * Override this if you have existing PO files elsewhere.
-   * @default '{idiomaDir}/locales'
+   * @default '{idiomiDir}/locales'
    */
   localesDir?: string;
   /** Default/source locale */
@@ -49,7 +49,7 @@ interface MetroConfig {
 }
 
 /**
- * Metro configuration helper for Idioma i18n.
+ * Metro configuration helper for Idiomi i18n.
  *
  * Features:
  * - Compiles PO files on Metro startup
@@ -59,20 +59,20 @@ interface MetroConfig {
  * @example
  * // metro.config.js
  * const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
- * const { withIdioma } = require('@idioma/core/metro');
+ * const { withIdiomi } = require('@idiomi/core/metro');
  *
  * const config = getDefaultConfig(__dirname);
  *
- * module.exports = withIdioma({
- *   idiomaDir: './src/idioma',
+ * module.exports = withIdiomi({
+ *   idiomiDir: './src/idiomi',
  *   defaultLocale: 'en',
  * })(config);
  */
-export function withIdioma(
-  options: IdiomaMetroOptions,
+export function withIdiomi(
+  options: IdiomiMetroOptions,
 ): (config: MetroConfig) => Promise<MetroConfig> {
   const {
-    idiomaDir,
+    idiomiDir,
     localesDir,
     defaultLocale,
     locales,
@@ -82,8 +82,8 @@ export function withIdioma(
   } = options;
 
   // Compute derived paths
-  const localeDir = localesDir ?? join(idiomaDir, 'locales');
-  const outputDir = idiomaDir;
+  const localeDir = localesDir ?? join(idiomiDir, 'locales');
+  const outputDir = idiomiDir;
   const hasCustomLocalesDir = !!localesDir;
 
   let poWatcher: FSWatcher | null = null;
@@ -93,10 +93,10 @@ export function withIdioma(
 
   async function compile(): Promise<void> {
     try {
-      const resolvedIdiomaDir = resolve(projectRoot, idiomaDir);
+      const resolvedIdiomiDir = resolve(projectRoot, idiomiDir);
 
       // Ensure .gitignore exists (skip creating locales/ if custom path provided)
-      await ensureGitignore(resolvedIdiomaDir, {
+      await ensureGitignore(resolvedIdiomiDir, {
         skipLocalesDir: hasCustomLocalesDir,
       });
 
@@ -108,9 +108,9 @@ export function withIdioma(
         useSuspense,
         projectRoot,
       });
-      console.log('[idioma] Translations compiled');
+      console.log('[idiomi] Translations compiled');
     } catch (error) {
-      console.error('[idioma] Compilation error:', error);
+      console.error('[idiomi] Compilation error:', error);
     }
   }
 
@@ -125,13 +125,13 @@ export function withIdioma(
   }
 
   async function handleFileChange(path: string): Promise<void> {
-    console.log(`[idioma] PO file changed: ${path}`);
+    console.log(`[idiomi] PO file changed: ${path}`);
     await compile();
     await touchOutputFile();
   }
 
   async function handleFileAdd(path: string): Promise<void> {
-    console.log(`[idioma] PO file added: ${path}`);
+    console.log(`[idiomi] PO file added: ${path}`);
     await compile();
     await touchOutputFile();
   }
@@ -162,7 +162,7 @@ export function withIdioma(
             await extractAndMergeFile({
               filePath: file,
               projectRoot,
-              idiomaDir: resolve(projectRoot, idiomaDir),
+              idiomiDir: resolve(projectRoot, idiomiDir),
               localeDir: resolve(projectRoot, localeDir),
               defaultLocale,
               locales: locales ?? [defaultLocale],
@@ -175,10 +175,10 @@ export function withIdioma(
         {
           delay: 200,
           onComplete: ({ files }) => {
-            console.log(`[idioma] Extracted from ${files.length} file(s)`);
+            console.log(`[idiomi] Extracted from ${files.length} file(s)`);
           },
           onError: (error) => {
-            console.error('[idioma] Extraction error:', error);
+            console.error('[idiomi] Extraction error:', error);
           },
         },
       );

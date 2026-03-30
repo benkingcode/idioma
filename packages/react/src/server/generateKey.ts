@@ -1,2 +1,2 @@
 // Convenience re-export from core
-export { generateKey } from '@idioma/core/keys';
+export { generateKey } from '@idiomi/core/keys';

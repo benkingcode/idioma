@@ -1,0 +1,73 @@
+msgid ""
+msgstr ""
+"Language: es\n"
+"Content-Type: text/plain\n"
+
+#: src/pages/about.tsx
+#, extracted, ai-translated
+msgid "000Emt1m"
+msgstr "Acerca de nuestra empresa"
+
+#: src/pages/about.tsx
+#, extracted, ai-translated
+msgid "002klSky"
+msgstr "Obtén más información sobre lo que hacemos."
+
+#: src/pages/contact.tsx
+#, extracted, ai-translated
+msgid "000J06Wk"
+msgstr "Contáctenos"
+
+#: src/pages/contact.tsx
+#, extracted, ai-translated
+msgid "003T8F3W"
+msgstr "Ponte en contacto con nuestro equipo."
+
+#: src/pages/index.tsx
+#, extracted, ai-translated
+msgid "0043pNTf"
+msgstr "Bienvenido a nuestro sitio web"
+
+#: src/pages/index.tsx
+#, extracted, ai-translated
+msgid "001uxLgK"
+msgstr "Este es el contenido de la página de inicio."
+
+#: src/pages/docs/[...slug].tsx
+#, extracted, ai-translated
+msgid "001LdocT"
+msgstr "Documentación"
+
+#: src/pages/blog/[slug].tsx
+#, extracted, ai-translated
+msgid "002mrR1N"
+msgstr "Entrada de Blog"
+
+#: src/pages/blog/index.tsx
+#, extracted, ai-translated
+msgid "0039uF2j"
+msgstr "Nuestro Blog"
+
+#: src/pages/about.tsx
+#, extracted, ai-translated
+msgctxt "route:about"
+msgid "003R6yRq"
+msgstr "sobre"
+
+#: src/pages/contact.tsx
+#, extracted, ai-translated
+msgctxt "route:contact"
+msgid "002dJ8dM"
+msgstr "contacto"
+
+#: src/pages/blog/[slug].tsx
+#, extracted, ai-translated
+msgctxt "route:blog"
+msgid "0030YUzz"
+msgstr "articulos"
+
+#: src/pages/docs/[...slug].tsx
+#, extracted, ai-translated
+msgctxt "route:docs"
+msgid "001eY9Px"
+msgstr "documentacion"

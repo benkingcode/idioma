@@ -66,16 +66,16 @@ export function mergeCatalogs(
   }
 
   // Handle removal of obsolete messages
-  // Only remove messages that have the 'extracted' flag (idioma-created)
+  // Only remove messages that have the 'extracted' flag (idiomi-created)
   // TMS-imported messages (without the flag) are never auto-deleted
   if (clean) {
     const keysToRemove: string[] = [];
 
     for (const [key, msg] of existing.messages) {
       if (!extractedKeys.has(key)) {
-        // Only remove if message was extracted by idioma
-        const isIdiomaExtracted = msg.flags?.includes('extracted');
-        if (isIdiomaExtracted) {
+        // Only remove if message was extracted by idiomi
+        const isIdiomiExtracted = msg.flags?.includes('extracted');
+        if (isIdiomiExtracted) {
           keysToRemove.push(key);
         }
       }
@@ -158,7 +158,7 @@ export function mergeFileIntoCatalog(
   // Step 3: Find and remove orphaned messages
   // Only auto-delete if:
   // - No references remain (orphaned)
-  // - Has 'extracted' flag (idioma-created, not TMS-imported)
+  // - Has 'extracted' flag (idiomi-created, not TMS-imported)
   // - No translations in other locales
   const keysToRemove: string[] = [];
 
@@ -168,15 +168,22 @@ export function mergeFileIntoCatalog(
       continue;
     }
 
-    // Skip if message was not extracted by idioma (e.g., TMS-imported)
+    // Skip if message was not extracted by idiomi (e.g., TMS-imported)
     // Messages without the 'extracted' flag are never auto-deleted
-    const isIdiomaExtracted = msg.flags?.includes('extracted');
-    if (!isIdiomaExtracted) {
+    const isIdiomiExtracted = msg.flags?.includes('extracted');
+    if (!isIdiomiExtracted) {
       continue;
     }
 
-    // Check if any non-default locale has a translation for this message
-    const hasTranslation = otherLocaleCatalogs.some((catalog) => {
+    // Check if any locale has a translation for this message
+    // First check the current locale's own translation
+    const currentHasTranslation =
+      existing.locale !== defaultLocale &&
+      msg.translation &&
+      msg.translation.length > 0;
+
+    // Then check other non-default locales
+    const otherHasTranslation = otherLocaleCatalogs.some((catalog) => {
       // Skip if this is the default locale catalog
       if (catalog.locale === defaultLocale) {
         return false;
@@ -186,6 +193,8 @@ export function mergeFileIntoCatalog(
         otherMsg && otherMsg.translation && otherMsg.translation.length > 0
       );
     });
+
+    const hasTranslation = currentHasTranslation || otherHasTranslation;
 
     if (!hasTranslation) {
       keysToRemove.push(key);

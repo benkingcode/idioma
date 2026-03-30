@@ -38,7 +38,7 @@ describe('Translate Command', () => {
   let localeDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-translate-'));
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(localeDir, { recursive: true });
   });
@@ -48,7 +48,7 @@ describe('Translate Command', () => {
   });
 
   it('translates using source text from default locale when msgid is a hash', async () => {
-    // This test verifies the core Idioma hash-based key system:
+    // This test verifies the core Idiomi hash-based key system:
     // - msgid is a content-addressable hash (e.g., "abc123")
     // - msgstr in default locale contains the actual source text
     // - msgstr in target locale should be the translation
@@ -402,7 +402,7 @@ describe('Translate with Verbose Logging', () => {
   let localeDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-verbose-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-translate-verbose-'));
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(localeDir, { recursive: true });
   });
@@ -602,14 +602,14 @@ msgstr ""
 
 describe('Translate with Auto-Context', () => {
   let tempDir: string;
-  let idiomaDir: string;
+  let idiomiDir: string;
   let localeDir: string;
   let srcDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-ctx-'));
-    idiomaDir = join(tempDir, 'idioma');
-    localeDir = join(idiomaDir, 'locales');
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-translate-ctx-'));
+    idiomiDir = join(tempDir, 'idiomi');
+    localeDir = join(idiomiDir, 'locales');
     srcDir = join(tempDir, 'src');
     await fs.mkdir(localeDir, { recursive: true });
     await fs.mkdir(srcDir, { recursive: true });
@@ -698,7 +698,7 @@ msgstr ""
       autoContext: true,
       contextProvider,
       projectRoot: tempDir,
-      idiomaDir,
+      idiomiDir,
     });
 
     // Context provider should have been called
@@ -962,7 +962,7 @@ msgstr ""
       autoContext: true,
       contextProvider,
       projectRoot: tempDir,
-      idiomaDir,
+      idiomiDir,
     });
 
     // AI context should be written to SOURCE locale (en.po), not target
@@ -1048,7 +1048,7 @@ describe('runTranslateAll', () => {
   let localeDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-translate-all-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-translate-all-'));
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(localeDir, { recursive: true });
   });

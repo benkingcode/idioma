@@ -1,0 +1,176 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/components/BasicTrans.tsx
+#. [AI Context]: Simple greeting text displayed in a paragraph element on the page
+#, extracted
+msgid "000e6cSN"
+msgstr "Hello, World!"
+
+#: src/components/BasicTrans.tsx
+#. [AI Context]: Welcome message text displayed in a paragraph element, introducing the application to users
+#, extracted
+msgid "002LT9uM"
+msgstr "Welcome to our application"
+
+#: src/components/BasicTrans.tsx
+#. [AI Context]: Farewell/goodbye message displayed in a paragraph element, shown when users leave or close the application
+#, extracted
+msgid "greeting.farewell"
+msgstr "Goodbye!"
+
+#: src/components/ComponentTags.tsx
+#. [AI Context]: Clickable link text in a paragraph. The <Link> tag wraps 'here' as an interactive element that users click to proceed. Keep text concise.
+#, extracted
+msgid "001K244T"
+msgstr "Click <Link>here</Link> to continue"
+
+#: src/components/ComponentTags.tsx
+#. [AI Context]: Paragraph with two embedded links: one for 'terms' and another for 'privacy policy' wrapped in bold formatting. Both are clickable navigation elements.
+#, extracted
+msgid "002MF83G"
+msgstr "Read the <Link>terms</Link> and <Bold>privacy policy</Bold>"
+
+#: src/components/ComponentTags.tsx
+#. [AI Context]: Greeting message with a variable name in bold. The {name} placeholder dynamically inserts a user's name within bold formatting.
+#, extracted
+msgid "000OaF1m"
+msgstr "Hello <Bold>{name}</Bold>!"
+
+#: src/components/ComponentTags.tsx
+#. [AI Context]: Instructional text demonstrating text formatting options. Contains bold and italic styled words as examples, interspersed with regular text.
+#, extracted
+msgid "002eTXHM"
+msgstr "This is <Bold>bold</Bold>, this is <Italic>italic</Italic>, and normal"
+
+#: src/components/ComponentTags.tsx
+#. [AI Context]: Emphasized warning or important notice. Text is fully wrapped in bold formatting, with an italic phrase nested inside for additional emphasis.
+#, extracted
+msgid "0013HsIP"
+msgstr "<Bold> Important: <Italic>read carefully</Italic> </Bold>"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Display text showing an empty string value in brackets; tests how the system renders falsy values in translations
+#, extracted
+msgid "002TXdYD"
+msgstr "Value: [{emptyString}]"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Display text showing a numeric count with zero value; tests rendering of the number 0 (falsy but valid) in translations
+#, extracted
+msgid "002Baos1"
+msgstr "Count: {zero}"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Display text showing a null value in brackets; tests how the system handles null/undefined values in translations
+#, extracted
+msgid "0043ID7R"
+msgstr "Null: [{nullValue}]"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Fallback text displayed when translation is missing; tests the system's fallback behavior
+#, extracted
+msgid "003jykkI"
+msgstr "This message might not be translated"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Long-form paragraph text spanning multiple lines; tests how the translation system handles extended content
+#, extracted
+msgid "0047ZVOp"
+msgstr ""
+"This is a longer piece of text that spans multiple words and tests how the "
+"system handles longer content in translations"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Text containing special HTML characters (ampersand, angle brackets) and quoted text; tests proper escaping and character encoding
+#, extracted
+msgid "001r7GGR"
+msgstr "Special: & < > \"quotes\""
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Greeting message with placeholder {name}; tests dynamic variable substitution in translations
+#, extracted
+msgid "004Dt4mI"
+msgstr "Hello {name}!"
+
+#: src/components/EdgeCases.tsx
+#. [AI Context]: Text containing emoji and trademark/copyright symbols; tests Unicode and special symbol rendering in translations
+#, extracted
+msgid "004JLiGr"
+msgstr "Emoji: 🎉 and symbols: © ® ™"
+
+#: src/components/Interpolation.tsx
+#. [AI Context]: Greeting message with a single dynamic name placeholder; displayed in a paragraph
+#, extracted
+msgid "0024c34D"
+msgstr "Hello, {name}!"
+
+#: src/components/Interpolation.tsx
+#. [AI Context]: Welcome message with two dynamic placeholders for first and last name; displayed in a paragraph
+#, extracted
+msgid "003lIRId"
+msgstr "Welcome, {firstName} {lastName}!"
+
+#: src/components/Interpolation.tsx
+#. [AI Context]: Message with a name placeholder surrounded by static text before and after; displayed in a paragraph
+#, extracted
+msgid "000iXvMP"
+msgstr "Before {name} after"
+
+#: src/components/Interpolation.tsx
+#. [AI Context]: Item count message with a numeric placeholder; displayed in a paragraph
+#, extracted
+msgid "002r0ybS"
+msgstr "You have {0} items"
+
+#: src/components/Plurals.tsx
+#. [AI Context]: Pluralized text showing item count. 'one' form displays when count is exactly 1, 'other' form for 0 or 2+. The '#' symbol represents the numeric count value.
+#, extracted
+msgid "000w9C8y"
+msgstr "You have {count, plural, one {# item} other {# items}}"
+
+#: src/components/Plurals.tsx
+#. [AI Context]: Message count display with three plural forms. 'zero' shows when count is 0 (displays 'No messages'), 'one' for exactly 1, 'other' for 2+. The '#' symbol is replaced by the count.
+#, extracted
+msgid "0048f6Nc"
+msgstr "{count, plural, zero {No messages} one {# message} other {# messages}}"
+
+#: src/components/Plurals.tsx
+#. [AI Context]: Pluralized sentence fragment about apples in a basket. 'one' form (count=1) uses 'is #', 'other' form (count=0 or 2+) uses 'are #'. Note the grammatical agreement with the singular/plural verb form.
+#, extracted
+msgid "002EaYd6"
+msgstr "There {count, plural, one {is # apple} other {are # apples}} in the basket"
+
+#: src/components/Plurals.tsx
+#. [AI Context]: File count display using all six CLDR plural forms: 'zero' (0), 'one' (1), 'two' (2), 'few', 'many', and 'other' (2+). This is for testing languages with complex plural rules like Arabic. The '#' symbol represents the count.
+#, extracted
+msgid "004CDxng"
+msgstr ""
+"{count, plural, zero {# files (zero)} one {# file (one)} two {# files "
+"(two)} few {# files (few)} many {# files (many)} other {# files (other)}}"
+
+#: src/components/UseT.tsx
+#. [AI Context]: Simple greeting message displayed as a paragraph in the UseT component demo
+#, extracted
+msgid "002UQheH"
+msgstr "Hello from useT!"
+
+#: src/components/UseT.tsx
+#. [AI Context]: Welcome message with a {name} placeholder for personalization, displayed as a paragraph
+#, extracted
+msgid "003X3cVZ"
+msgstr "Welcome, {name}!"
+
+#: src/components/UseT.tsx
+#. [AI Context]: Message with two placeholders: {count} for a number and {author} for a name/identifier, displayed as a paragraph
+#, extracted
+msgid "001gZ2vk"
+msgstr "{count} items by {author}"
+
+#: src/components/UseT.tsx
+#. [AI Context]: Inline translation text displayed as a paragraph, demonstrates direct t() call usage
+#, extracted
+msgid "002RXyTq"
+msgstr "Inline translation"

@@ -1,6 +1,6 @@
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
 import { useState } from 'react';
-import { IdiomaProvider } from '../idioma';
+import { IdiomiProvider } from '../idiomi';
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -10,7 +10,7 @@ function RootComponent() {
   const [locale, setLocale] = useState<'en' | 'es'>('en');
 
   return (
-    <IdiomaProvider locale={locale}>
+    <IdiomiProvider locale={locale}>
       <div style={{ padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
         <nav
           data-testid="navigation"
@@ -42,6 +42,6 @@ function RootComponent() {
         </nav>
         <Outlet />
       </div>
-    </IdiomaProvider>
+    </IdiomiProvider>
   );
 }

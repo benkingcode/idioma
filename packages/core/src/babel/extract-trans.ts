@@ -100,7 +100,7 @@ function isTransComponent(
     return name.name === 'Trans';
   }
   if (t.isJSXMemberExpression(name)) {
-    // Handle Idioma.Trans or similar
+    // Handle Idiomi.Trans or similar
     return t.isJSXIdentifier(name.property) && name.property.name === 'Trans';
   }
   return false;

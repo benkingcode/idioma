@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { compileTranslations } from '../compiler/compile';
-import { withIdioma, type IdiomaNextOptions } from './next';
+import { withIdiomi, type IdiomiNextOptions } from './next';
 
 // Mock compileTranslations and ensureGitignore
 vi.mock('../compiler/compile', () => ({
@@ -13,25 +13,25 @@ vi.mock('../utils/gitignore', () => ({
 
 const mockCompileTranslations = compileTranslations as Mock;
 
-describe('withIdioma', () => {
-  const defaultOptions: IdiomaNextOptions = {
-    idiomaDir: './src/idioma',
+describe('withIdiomi', () => {
+  const defaultOptions: IdiomiNextOptions = {
+    idiomiDir: './src/idiomi',
     defaultLocale: 'en',
   };
 
   it('returns a function', () => {
-    const plugin = withIdioma(defaultOptions);
+    const plugin = withIdiomi(defaultOptions);
     expect(typeof plugin).toBe('function');
   });
 
   it('the returned function accepts a Next.js config and returns a config', () => {
-    const plugin = withIdioma(defaultOptions);
+    const plugin = withIdiomi(defaultOptions);
     const config = plugin({});
     expect(typeof config).toBe('object');
   });
 
   it('preserves existing Next.js config properties', () => {
-    const plugin = withIdioma(defaultOptions);
+    const plugin = withIdiomi(defaultOptions);
     const config = plugin({
       reactStrictMode: true,
       poweredByHeader: false,
@@ -42,7 +42,7 @@ describe('withIdioma', () => {
   });
 
   it('adds a webpack function to the config', () => {
-    const plugin = withIdioma(defaultOptions);
+    const plugin = withIdiomi(defaultOptions);
     const config = plugin({});
 
     expect(typeof config.webpack).toBe('function');
@@ -54,7 +54,7 @@ describe('withIdioma', () => {
       return config;
     });
 
-    const plugin = withIdioma(defaultOptions);
+    const plugin = withIdiomi(defaultOptions);
     const config = plugin({ webpack: existingWebpack });
 
     const mockConfig = { plugins: [] };
@@ -73,22 +73,22 @@ describe('withIdioma', () => {
   });
 
   it('accepts all configuration options', () => {
-    const options: IdiomaNextOptions = {
-      idiomaDir: './src/idioma',
+    const options: IdiomiNextOptions = {
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
       locales: ['en', 'es', 'fr'],
       useSuspense: true,
     };
 
-    const plugin = withIdioma(options);
+    const plugin = withIdiomi(options);
     const config = plugin({});
 
     expect(config.webpack).toBeDefined();
   });
 
   describe('webpack plugin', () => {
-    it('adds IdiomaWebpackPlugin to plugins array', () => {
-      const plugin = withIdioma(defaultOptions);
+    it('adds IdiomiWebpackPlugin to plugins array', () => {
+      const plugin = withIdiomi(defaultOptions);
       const config = plugin({});
 
       const mockConfig = { plugins: [] as any[] };
@@ -104,12 +104,12 @@ describe('withIdioma', () => {
 
       expect(mockConfig.plugins.length).toBeGreaterThan(0);
       expect(mockConfig.plugins[0].constructor.name).toBe(
-        'IdiomaWebpackPlugin',
+        'IdiomiWebpackPlugin',
       );
     });
 
     it('only adds plugin once across multiple webpack calls', () => {
-      const plugin = withIdioma(defaultOptions);
+      const plugin = withIdiomi(defaultOptions);
       const config = plugin({});
 
       const mockConfig = { plugins: [] as any[] };
@@ -132,14 +132,14 @@ describe('withIdioma', () => {
   });
 });
 
-describe('IdiomaWebpackPlugin', () => {
+describe('IdiomiWebpackPlugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('compiles translations on beforeCompile hook', async () => {
-    const plugin = withIdioma({
-      idiomaDir: './src/idioma',
+    const plugin = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -180,8 +180,8 @@ describe('IdiomaWebpackPlugin', () => {
     await beforeCompileCallback({}, callback);
 
     expect(mockCompileTranslations).toHaveBeenCalledWith({
-      localeDir: 'src/idioma/locales',
-      outputDir: './src/idioma',
+      localeDir: 'src/idiomi/locales',
+      outputDir: './src/idiomi',
       defaultLocale: 'en',
       locales: undefined,
       useSuspense: undefined,
@@ -191,8 +191,8 @@ describe('IdiomaWebpackPlugin', () => {
   });
 
   it('only compiles once per build', async () => {
-    const plugin = withIdioma({
-      idiomaDir: './src/idioma',
+    const plugin = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -233,8 +233,8 @@ describe('IdiomaWebpackPlugin', () => {
   });
 
   it('sets up watchRun hook in dev mode', () => {
-    const plugin = withIdioma({
-      idiomaDir: './src/idioma',
+    const plugin = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -264,8 +264,8 @@ describe('IdiomaWebpackPlugin', () => {
   });
 
   it('recompiles when PO files change in dev mode', async () => {
-    const plugin = withIdioma({
-      idiomaDir: './src/idioma',
+    const plugin = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
     const config = plugin({});
@@ -291,6 +291,12 @@ describe('IdiomaWebpackPlugin', () => {
 
     webpackPlugin.apply(mockCompiler);
 
+    // First call beforeCompile to initialize the resolved config
+    const [, beforeCompileCallback] = (
+      mockCompiler.hooks.beforeCompile.tapAsync as Mock
+    ).mock.calls[0];
+    await beforeCompileCallback({}, vi.fn());
+
     const [, watchRunCallback] = (mockCompiler.hooks.watchRun.tapAsync as Mock)
       .mock.calls[0];
 
@@ -299,7 +305,7 @@ describe('IdiomaWebpackPlugin', () => {
 
     // Simulate watching with PO file change
     const mockWatching = {
-      modifiedFiles: new Set(['./src/idioma/locales/en.po']),
+      modifiedFiles: new Set(['./src/idiomi/locales/en.po']),
     };
 
     const callback = vi.fn();
@@ -310,8 +316,8 @@ describe('IdiomaWebpackPlugin', () => {
   });
 
   it('does not recompile when non-PO files change', async () => {
-    const plugin = withIdioma({
-      idiomaDir: './src/idioma',
+    const plugin = withIdiomi({
+      idiomiDir: './src/idiomi',
       defaultLocale: 'en',
     });
     const config = plugin({});

@@ -1,4 +1,4 @@
-import { Trans, useT } from '../idioma';
+import { Trans, useT } from '../idiomi';
 
 export function EdgeCases() {
   const t = useT();

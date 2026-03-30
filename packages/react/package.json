@@ -1,5 +1,5 @@
 {
-  "name": "@idioma/react",
+  "name": "@idiomi/react",
   "version": "0.1.0",
   "description": "Compile-time React i18n - runtime package",
   "type": "module",
@@ -52,6 +52,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@idioma/core": "workspace:*"
+    "@idiomi/core": "workspace:*"
   }
 }

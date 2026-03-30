@@ -12,7 +12,7 @@ describe('ignore-patterns', () => {
   let tempDir: string;
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'idioma-ignore-test-'));
+    tempDir = mkdtempSync(join(tmpdir(), 'idiomi-ignore-test-'));
   });
 
   afterEach(() => {

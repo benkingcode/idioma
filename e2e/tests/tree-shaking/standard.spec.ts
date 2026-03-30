@@ -86,17 +86,7 @@ test.describe('Tree Shaking - Standard Mode', () => {
     // This enables tree shaking at the KEY level - each route's bundle should
     // only contain the translation keys used by that route.
 
-    let files: string[];
-    try {
-      files = readdirSync(DIST_DIR);
-    } catch {
-      test.skip(
-        true,
-        'Production build not available - run build:fixture first',
-      );
-      return;
-    }
-
+    const files = readdirSync(DIST_DIR);
     const jsFiles = files.filter((f) => f.endsWith('.js'));
 
     // Unique translation strings that identify each page:
@@ -150,17 +140,7 @@ test.describe('Tree Shaking - Standard Mode', () => {
 
   test('each translation key includes all locales inline', async () => {
     // Read the production build output
-    let files: string[];
-    try {
-      files = readdirSync(DIST_DIR);
-    } catch {
-      test.skip(
-        true,
-        'Production build not available - run build:fixture first',
-      );
-      return;
-    }
-
+    const files = readdirSync(DIST_DIR);
     const jsFiles = files.filter((f) => f.endsWith('.js'));
 
     // Find a chunk with translations and verify it has all locales

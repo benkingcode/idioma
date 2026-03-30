@@ -9,8 +9,15 @@ import { generateKey } from '../../keys/generator.js';
 import { mergeCatalogs } from '../../po/merge.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import type { Catalog, Message } from '../../po/types.js';
+import {
+  extractNextjsRoutes,
+  extractTanStackRoutes,
+  getTranslatableSegments,
+  ROUTE_CONTEXT_PREFIX,
+} from '../../routes/index.js';
+import type { ExtractedRoute, Framework } from '../../routes/index.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
+import { getIdiomiPaths, loadConfig, type IdiomiConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 
 export interface ExtractedMessage {
@@ -32,13 +39,17 @@ export interface ExtractOptions {
   defaultLocale: string;
   locales?: string[];
   clean?: boolean;
-  /** Absolute path to idioma folder for robust import detection */
-  idiomaDir?: string;
+  /** Absolute path to idiomi folder for robust import detection */
+  idiomiDir?: string;
+  /** Routing configuration for extracting localized paths */
+  routing?: IdiomiConfig['routing'];
 }
 
 export interface ExtractResult {
   messages: ExtractedMessage[];
   files: number;
+  /** Number of route segments extracted (when localizedPaths enabled) */
+  routeSegments?: number;
 }
 
 /**
@@ -54,7 +65,8 @@ export async function extractMessages(
     defaultLocale,
     locales,
     clean,
-    idiomaDir,
+    idiomiDir,
+    routing,
   } = options;
 
   // Find all source files
@@ -75,9 +87,17 @@ export async function extractMessages(
       content,
       file,
       relativePath,
-      idiomaDir,
+      idiomiDir,
     );
     messages.push(...fileMessages);
+  }
+
+  // Extract routes if localizedPaths is enabled
+  let routeSegments = 0;
+  if (routing?.localizedPaths) {
+    const routeMessages = await extractRouteMessages(cwd, routing);
+    routeSegments = routeMessages.length;
+    messages.push(...routeMessages);
   }
 
   // Ensure locale directory exists
@@ -147,7 +167,7 @@ export async function extractMessages(
     }
   }
 
-  return { messages, files: files.length };
+  return { messages, files: files.length, routeSegments };
 }
 
 /**
@@ -156,24 +176,24 @@ export async function extractMessages(
  * @param code - Source code content
  * @param absolutePath - Absolute file path (for resolving imports)
  * @param displayPath - Path to display in locations (relative)
- * @param idiomaDir - Optional absolute path to idioma folder for robust import detection
+ * @param idiomiDir - Optional absolute path to idiomi folder for robust import detection
  */
 export async function extractFromFile(
   code: string,
   absolutePath: string,
   displayPath: string,
-  idiomaDir?: string,
+  idiomiDir?: string,
 ): Promise<ExtractedMessage[]> {
   const messages: ExtractedMessage[] = [];
 
-  // Track bindings from idioma imports
+  // Track bindings from idiomi imports
   const translatableBindings = new Map<
     string,
     'Trans' | 'useT' | 't' | 'createT'
   >();
 
-  // idiomaDir is required for extraction
-  if (!idiomaDir) {
+  // idiomiDir is required for extraction
+  if (!idiomiDir) {
     return messages;
   }
 
@@ -191,15 +211,34 @@ export async function extractFromFile(
               ImportDeclaration(path) {
                 const source = path.node.source.value;
 
-                // Check if this import is from the idioma folder
-                let isIdiomaImport = false;
+                // Check if this import is from the idiomi folder
+                let isIdiomiImport = false;
+
+                // Handle relative imports (e.g., './idiomi', '../idiomi/client')
                 if (source.startsWith('.')) {
                   const fileDir = dirname(absolutePath);
                   const resolvedImport = resolve(fileDir, source);
-                  isIdiomaImport = resolvedImport.startsWith(idiomaDir);
+                  isIdiomiImport = resolvedImport.startsWith(idiomiDir);
                 }
 
-                if (!isIdiomaImport) return;
+                // Handle path aliases (e.g., '@/idiomi/client', '~/idiomi/client')
+                // Extract the idiomi folder name from idiomiDir and check if source contains it
+                if (!isIdiomiImport) {
+                  const idiomiFolderName = idiomiDir.split('/').pop();
+                  // Check for common alias patterns: @/idiomi, ~/idiomi, #/idiomi, etc.
+                  const aliasPatterns = [
+                    `@/${idiomiFolderName}`,
+                    `~/${idiomiFolderName}`,
+                    `#/${idiomiFolderName}`,
+                    `@src/${idiomiFolderName}`,
+                  ];
+                  isIdiomiImport = aliasPatterns.some(
+                    (pattern) =>
+                      source === pattern || source.startsWith(`${pattern}/`),
+                  );
+                }
+
+                if (!isIdiomiImport) return;
 
                 // Track translatable imports
                 for (const specifier of path.node.specifiers) {
@@ -371,6 +410,10 @@ function parseTransElement(element: t.JSXElement): {
   return { id, context, comment, namespace, source };
 }
 
+// Context separator used in PO files (ASCII end-of-transmission)
+// Must match the separator used in parser.ts for key consistency
+const CONTEXT_SEPARATOR = '\u0004';
+
 export function messagesToCatalog(
   messages: ExtractedMessage[],
   locale: string,
@@ -397,23 +440,130 @@ export function messagesToCatalog(
       namespace: msg.namespace,
       // Convert comment prop to PO extracted comment
       comments: msg.comment ? [msg.comment] : undefined,
-      // Mark as extracted by idioma (used to distinguish from TMS-imported messages)
+      // Mark as extracted by idiomi (used to distinguish from TMS-imported messages)
       flags: ['extracted'],
     };
 
+    // Use context-aware map key to match parser.ts format
+    // This ensures extracted messages match existing messages during merge
+    const mapKey = msg.context
+      ? `${msg.context}${CONTEXT_SEPARATOR}${msg.key}`
+      : msg.key;
+
     // If message with same key exists, merge references (deduplicated)
-    const existing = catalog.messages.get(msg.key);
+    const existing = catalog.messages.get(mapKey);
     if (existing) {
       // Only add if not already present (same file)
       if (!existing.references?.includes(msg.location)) {
         existing.references = [...(existing.references ?? []), msg.location];
       }
     } else {
-      catalog.messages.set(msg.key, message);
+      catalog.messages.set(mapKey, message);
     }
   }
 
   return catalog;
+}
+
+/**
+ * Detect the framework being used based on package.json dependencies.
+ */
+async function detectFramework(cwd: string): Promise<Framework | null> {
+  try {
+    const pkgPath = join(cwd, 'package.json');
+    const content = await fs.readFile(pkgPath, 'utf-8');
+    const pkg = JSON.parse(content) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+
+    const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+    // Check for TanStack Router first (more specific)
+    if (allDeps['@tanstack/react-router'] || allDeps['@tanstack/router']) {
+      return 'tanstack';
+    }
+
+    // Check for Next.js
+    if (allDeps['next']) {
+      // Determine App vs Pages router by checking for app/ directory
+      const hasAppDir =
+        (await directoryExists(join(cwd, 'app'))) ||
+        (await directoryExists(join(cwd, 'src', 'app')));
+      return hasAppDir ? 'next-app' : 'next-pages';
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function directoryExists(dir: string): Promise<boolean> {
+  try {
+    const stat = await fs.stat(dir);
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract routes and convert to messages for PO files.
+ */
+async function extractRouteMessages(
+  cwd: string,
+  routing: NonNullable<IdiomiConfig['routing']>,
+): Promise<ExtractedMessage[]> {
+  const framework = await detectFramework(cwd);
+  if (!framework) {
+    console.warn(
+      '[idiomi] Could not detect framework for route extraction. ' +
+        'Skipping route extraction.',
+    );
+    return [];
+  }
+
+  // Extract routes based on framework
+  let routes: ExtractedRoute[];
+  const exclude = routing.exclude ?? ['api/**', '_next/**'];
+
+  if (framework === 'tanstack' || framework === 'tanstack-start') {
+    routes = await extractTanStackRoutes({ projectRoot: cwd, exclude });
+  } else {
+    routes = await extractNextjsRoutes({ projectRoot: cwd, exclude });
+  }
+
+  // Convert routes to messages (one per unique translatable segment)
+  const messages: ExtractedMessage[] = [];
+  const seenSegments = new Set<string>();
+
+  for (const route of routes) {
+    const translatableSegments = getTranslatableSegments(
+      route.segments,
+      framework,
+    );
+
+    for (const segment of translatableSegments) {
+      // Skip if we've already added this segment
+      if (seenSegments.has(segment)) continue;
+      seenSegments.add(segment);
+
+      // Context is "route:{segment}" to identify as a route segment
+      const context = `${ROUTE_CONTEXT_PREFIX}${segment}`;
+      const key = generateKey(segment, context);
+
+      messages.push({
+        key,
+        source: segment,
+        location: route.source,
+        line: 0, // Routes don't have line numbers
+        context,
+      });
+    }
+  }
+
+  return messages;
 }
 
 export const extractCommand = defineCommand({
@@ -436,10 +586,10 @@ export const extractCommand = defineCommand({
   async run({ args }) {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
-    const { localeDir } = getIdiomaPaths(config);
+    const { localeDir } = getIdiomiPaths(config);
 
-    // Ensure .gitignore exists in the idioma directory
-    await ensureGitignore(config.idiomaDir);
+    // Ensure .gitignore exists in the idiomi directory
+    await ensureGitignore(config.idiomiDir);
 
     const spinner = createSpinner();
     spinner.start('Extracting messages...');
@@ -452,13 +602,18 @@ export const extractCommand = defineCommand({
         defaultLocale: config.defaultLocale,
         locales: config.locales,
         clean: args.clean,
-        // Pass absolute idiomaDir for robust import detection
-        idiomaDir: resolve(cwd, config.idiomaDir),
+        // Pass absolute idiomiDir for robust import detection
+        idiomiDir: resolve(cwd, config.idiomiDir),
+        // Pass routing config for route extraction
+        routing: config.routing,
       });
 
-      spinner.succeed(
-        `Extracted ${result.messages.length} messages from ${result.files} files`,
-      );
+      // Build success message
+      let successMsg = `Extracted ${result.messages.length} messages from ${result.files} files`;
+      if (result.routeSegments && result.routeSegments > 0) {
+        successMsg += ` (including ${result.routeSegments} route segments)`;
+      }
+      spinner.succeed(successMsg);
 
       if (args.watch) {
         console.log('Watching for changes...');

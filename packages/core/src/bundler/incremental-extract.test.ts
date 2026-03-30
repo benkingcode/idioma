@@ -31,8 +31,8 @@ const mockReadFile = vi.mocked(fs.readFile);
 describe('extractAndMergeFile', () => {
   const baseOptions = {
     projectRoot: '/project',
-    idiomaDir: '/project/src/idioma',
-    localeDir: '/project/src/idioma/locales',
+    idiomiDir: '/project/src/idiomi',
+    localeDir: '/project/src/idiomi/locales',
     defaultLocale: 'en',
     locales: ['en', 'es'],
   };
@@ -74,10 +74,10 @@ describe('extractAndMergeFile', () => {
 
   it('extracts messages from a file and adds to PO catalogs', async () => {
     // Mock file content with a Trans component
-    // Import path must resolve to idiomaDir (/project/src/idioma)
-    // From /project/src/App.tsx, "./idioma" resolves to /project/src/idioma
+    // Import path must resolve to idiomiDir (/project/src/idiomi)
+    // From /project/src/App.tsx, "./idiomi" resolves to /project/src/idiomi
     const fileContent = `
-      import { Trans } from './idioma';
+      import { Trans } from './idiomi';
       export function App() {
         return <Trans>Hello world</Trans>;
       }
@@ -175,7 +175,7 @@ describe('extractAndMergeFile', () => {
 
   it('uses file-only references (no line numbers)', async () => {
     const fileContent = `
-      import { Trans } from './idioma';
+      import { Trans } from './idiomi';
       export function App() {
         return <Trans>Hello</Trans>;
       }

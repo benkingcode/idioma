@@ -1,0 +1,76 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain\n"
+
+#: src/app/[locale]/page.tsx
+#. [AI Context]: Main heading on the home page that greets users when they visit the website
+#, extracted
+msgid "0043pNTf"
+msgstr "Welcome to our website"
+
+#: src/app/[locale]/page.tsx
+#. [AI Context]: Descriptive paragraph below the main heading explaining the purpose of the page
+#, extracted
+msgid "000I3ScQ"
+msgstr "This is a demonstration of Idiomi with Next.js App Router."
+
+#: src/app/[locale]/about/page.tsx
+#. [AI Context]: Main heading on the About page describing the company information section
+#, extracted
+msgid "000Emt1m"
+msgstr "About our company"
+
+#: src/app/[locale]/about/page.tsx
+#. [AI Context]: Descriptive paragraph on the About page explaining the company's mission and focus
+#, extracted
+msgid "002O6MmQ"
+msgstr "We are building the future of internationalization."
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Page heading for the blog section
+#, extracted
+msgid "0039uF2j"
+msgstr "Our Blog"
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Subtitle description on the blog page introducing the content
+#, extracted
+msgid "003woyf5"
+msgstr "Read our latest articles"
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Link text for the first blog post in the blog listing
+#, extracted
+msgid "004QtLkv"
+msgstr "Hello World Post"
+
+#: src/app/[locale]/blog/page.tsx
+#. [AI Context]: Link text for the second blog post in the blog listing
+#, extracted
+msgid "000bv8XP"
+msgstr "Getting Started"
+
+#: src/app/[locale]/contact/page.tsx
+#. [AI Context]: Page heading for the contact page where users can find information about reaching the team
+#, extracted
+msgid "001INXnu"
+msgstr "Contact us"
+
+#: src/app/[locale]/contact/page.tsx
+#. [AI Context]: Subtitle/descriptive text on the contact page introducing the purpose of the page
+#, extracted
+msgid "003T8F3W"
+msgstr "Get in touch with our team."
+
+#: src/app/[locale]/blog/[slug]/page.tsx
+#. [AI Context]: Page heading for a blog post article
+#, extracted
+msgid "002mrR1N"
+msgstr "Blog Post"
+
+#: src/app/[locale]/docs/[...slug]/page.tsx
+#. [AI Context]: Page heading for the documentation section
+#, extracted
+msgid "001LdocT"
+msgstr "Documentation"

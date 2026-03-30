@@ -15,8 +15,8 @@ describe('compileTranslations', () => {
   let poDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-compile-'));
-    outputDir = join(tempDir, 'idioma');
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-compile-'));
+    outputDir = join(tempDir, 'idiomi');
     poDir = join(tempDir, 'locales');
     await fs.mkdir(poDir, { recursive: true });
   });
@@ -426,7 +426,508 @@ msgstr "Hello"
         join(outputDir, 'index.ts'),
         'utf-8',
       );
-      expect(indexContent).toContain('@idioma/react/runtime-suspense');
+      expect(indexContent).toContain('@idiomi/react/runtime-suspense');
+    });
+  });
+
+  describe('routing compilation', () => {
+    it('generates routes.js when routing.localizedPaths is enabled', async () => {
+      // Create Next.js app structure for route extraction
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.mkdir(join(appDir, 'contact'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+      await fs.writeFile(
+        join(appDir, 'contact', 'page.tsx'),
+        'export default function Contact() {}',
+      );
+
+      // Create PO files with route translations
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+
+#. Route segment
+msgctxt "route:contact"
+msgid "m2RsT5wY"
+msgstr "contact"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+
+#. Route segment
+msgctxt "route:contact"
+msgid "m2RsT5wY"
+msgstr "contacto"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      // Verify routes.js was generated
+      const routesPath = join(outputDir, '.generated', 'routes.js');
+      const content = await fs.readFile(routesPath, 'utf-8');
+
+      expect(content).toContain('export const routes');
+      expect(content).toContain('export const reverseRoutes');
+      // Full paths in routes (not segments)
+      expect(content).toContain('"/sobre"');
+      expect(content).toContain('"/contacto"');
+    });
+
+    it('generates routes.d.ts with type declarations', async () => {
+      // Create minimal app structure
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      // Verify routes.d.ts was generated
+      const typesPath = join(outputDir, '.generated', 'routes.d.ts');
+      const content = await fs.readFile(typesPath, 'utf-8');
+
+      expect(content).toContain('export type Locale');
+      expect(content).toContain('export declare const routes');
+      // Next.js doesn't include pattern matching functions (only static maps)
+      expect(content).not.toContain('export declare function getLocalizedPath');
+    });
+
+    it('does not generate routes when routing.localizedPaths is false', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: false,
+          framework: 'next-app',
+        },
+      });
+
+      // routes.js should not exist
+      const routesPath = join(outputDir, '.generated', 'routes.js');
+      await expect(fs.access(routesPath)).rejects.toThrow();
+    });
+
+    it('generates LocaleHead export when routing is enabled', async () => {
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en', 'es'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+          metadataBase: 'https://example.com',
+          prefixStrategy: 'as-needed',
+        },
+      });
+
+      // For Next.js, LocaleHead is in client.ts (separate from middleware)
+      const clientPath = join(outputDir, 'client.ts');
+      const content = await fs.readFile(clientPath, 'utf-8');
+
+      // Should export LocaleHead
+      expect(content).toContain('export const LocaleHead');
+      expect(content).toContain("from '@idiomi/next'");
+      // Should use variable references from .generated/config (not inlined values)
+      expect(content).toContain('metadataBase,');
+      expect(content).toContain('prefixStrategy,');
+    });
+
+    it('generates createMiddleware export when routing is enabled', async () => {
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      // For Next.js, createMiddleware is in middleware.ts (edge runtime)
+      const middlewarePath = join(outputDir, 'middleware.ts');
+      const content = await fs.readFile(middlewarePath, 'utf-8');
+
+      // Should export createMiddleware factory
+      expect(content).toContain('export const createMiddleware');
+      expect(content).toContain("from '@idiomi/next/middleware'");
+    });
+
+    it('re-exports getLocaleHead from @idiomi/react', async () => {
+      const appDir = join(tempDir, 'app');
+      await fs.mkdir(appDir, { recursive: true });
+      await fs.mkdir(join(appDir, 'about'), { recursive: true });
+      await fs.writeFile(
+        join(appDir, 'about', 'page.tsx'),
+        'export default function About() {}',
+      );
+
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'next-app',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should re-export getLocaleHead for programmatic use
+      expect(content).toContain(
+        "export { getLocaleHead } from '@idiomi/react'",
+      );
+    });
+
+    it('generates TanStack-specific exports for tanstack framework', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "Hello"
+msgstr "Hello"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: false,
+          framework: 'tanstack',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should import from TanStack package
+      expect(content).toContain("from '@idiomi/tanstack-react'");
+    });
+
+    it('generates delocalizeUrl and localizeUrl for TanStack with localizedPaths', async () => {
+      // Create TanStack app structure with routeTree.gen.ts
+      const srcDir = join(tempDir, 'src');
+      await fs.mkdir(srcDir, { recursive: true });
+
+      // Create the generated routeTree file that TanStack Router produces
+      await fs.writeFile(
+        join(srcDir, 'routeTree.gen.ts'),
+        `// Generated by TanStack Router
+export interface FileRoutesByFullPath {
+  '/': typeof import('./routes/index')
+  '/{-$locale}': typeof import('./routes/{-$locale}/index')
+  '/{-$locale}/about': typeof import('./routes/{-$locale}/about')
+}
+`,
+      );
+
+      // Create PO files with route translations
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "about"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+#. Route segment
+msgctxt "route:about"
+msgid "vK3nP8xQ"
+msgstr "sobre"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en', 'es'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'tanstack',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should export delocalizeUrl and localizeUrl via factory
+      expect(content).toContain('createUrlHandler');
+      expect(content).toContain('delocalizeUrl');
+      expect(content).toContain('localizeUrl');
+      // Should import routes, reverseRoutes, and routePatterns
+      expect(content).toContain('reverseRoutes');
+      expect(content).toContain('routes');
+      expect(content).toContain('routePatterns');
+    });
+
+    it('generates pattern-matching rewrite functions for dynamic routes', async () => {
+      // Create TanStack app structure with dynamic route
+      const srcDir = join(tempDir, 'src');
+      await fs.mkdir(srcDir, { recursive: true });
+
+      // Create routeTree with dynamic segments
+      await fs.writeFile(
+        join(srcDir, 'routeTree.gen.ts'),
+        `// Generated by TanStack Router
+export interface FileRoutesByFullPath {
+  '/': typeof import('./routes/index')
+  '/{-$locale}': typeof import('./routes/{-$locale}/index')
+  '/{-$locale}/users/$userId': typeof import('./routes/{-$locale}/users.$userId')
+  '/{-$locale}/users/$userId/posts': typeof import('./routes/{-$locale}/users.$userId.posts')
+}
+`,
+      );
+
+      // Create PO files with route translations
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgctxt "route:users"
+msgid "abc123"
+msgstr "users"
+
+msgctxt "route:posts"
+msgid "def456"
+msgstr "posts"
+`,
+      );
+
+      await createPoFile(
+        'es',
+        `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgctxt "route:users"
+msgid "abc123"
+msgstr "usuarios"
+
+msgctxt "route:posts"
+msgid "def456"
+msgstr "publicaciones"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+        locales: ['en', 'es'],
+        projectRoot: tempDir,
+        routing: {
+          enabled: true,
+          localizedPaths: true,
+          framework: 'tanstack',
+        },
+      });
+
+      const indexPath = join(outputDir, 'index.ts');
+      const content = await fs.readFile(indexPath, 'utf-8');
+
+      // Should import routePatterns for segment-level matching
+      expect(content).toContain('routePatterns');
+
+      // Should use createUrlHandler factory with routePatterns
+      // Pattern matching logic is now inside the factory
+      expect(content).toContain('createUrlHandler');
+      expect(content).toContain('delocalizeUrl');
+      expect(content).toContain('localizeUrl');
     });
   });
 

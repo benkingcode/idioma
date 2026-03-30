@@ -1,0 +1,34 @@
+{
+  "name": "e2e-fixture-tanstack-start-localized-paths",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:fixture": "vite --force",
+    "build:fixture": "vite build",
+    "preview": "vite preview",
+    "extract": "idiomi extract",
+    "compile": "idiomi compile",
+    "translate": "dotenv -e ../../../.env.local -- idiomi translate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@idiomi/core": "workspace:*",
+    "@idiomi/react": "workspace:*",
+    "@idiomi/tanstack-react": "workspace:*",
+    "@tanstack/react-router": "^1.144.0",
+    "@tanstack/react-start": "^1.145.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "dotenv-cli": "^8.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^7.0.0",
+    "vite-tsconfig-paths": "^5.0.0"
+  }
+}

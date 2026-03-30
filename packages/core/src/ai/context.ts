@@ -391,8 +391,8 @@ export interface ContextFileProgress {
 export interface ContextGenerationOptions {
   /** Root directory for resolving source file paths */
   projectRoot: string;
-  /** Absolute path to idioma directory (for extracting line numbers) */
-  idiomaDir?: string;
+  /** Absolute path to idiomi directory (for extracting line numbers) */
+  idiomiDir?: string;
   /** Catalog to generate context for */
   catalog: Catalog;
   /** Context provider to use */
@@ -429,7 +429,7 @@ export async function generateContextForCatalog(
 ): Promise<ContextGenerationResult> {
   const {
     projectRoot,
-    idiomaDir,
+    idiomiDir,
     catalog,
     provider,
     sourceTextByKey,
@@ -482,16 +482,16 @@ export async function generateContextForCatalog(
       continue;
     }
 
-    // Update messages with accurate line numbers if idiomaDir is provided
+    // Update messages with accurate line numbers if idiomiDir is provided
     let messagesWithLines = messages;
-    if (idiomaDir) {
+    if (idiomiDir) {
       // Extract from this file to get accurate line numbers
       // (PO references are file-only, so we re-extract for line info)
       const extractedMessages = await extractFromFile(
         fileContent,
         fullPath,
         filePath,
-        idiomaDir,
+        idiomiDir,
       );
 
       // Build a lookup map from key -> line number

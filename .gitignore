@@ -3,6 +3,8 @@ node_modules/
 
 # Build outputs
 dist/
+.playwright-mcp/
+*.tsbuildinfo
 
 # IDE
 .idea/

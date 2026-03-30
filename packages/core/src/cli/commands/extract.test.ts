@@ -2,21 +2,22 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { generateKey } from '../../keys/generator.js';
 import { extractMessages } from './extract';
 
 describe('Extract Command', () => {
   let tempDir: string;
   let srcDir: string;
-  let idiomaDir: string;
+  let idiomiDir: string;
   let localeDir: string;
 
   beforeEach(async () => {
-    tempDir = await fs.mkdtemp(join(tmpdir(), 'idioma-extract-'));
+    tempDir = await fs.mkdtemp(join(tmpdir(), 'idiomi-extract-'));
     srcDir = join(tempDir, 'src');
-    idiomaDir = join(srcDir, 'idioma');
+    idiomiDir = join(srcDir, 'idiomi');
     localeDir = join(tempDir, 'locales');
     await fs.mkdir(srcDir, { recursive: true });
-    await fs.mkdir(idiomaDir, { recursive: true });
+    await fs.mkdir(idiomiDir, { recursive: true });
     await fs.mkdir(localeDir, { recursive: true });
   });
 
@@ -28,7 +29,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -40,7 +41,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -51,7 +52,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'Greeting.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function Greeting({ name }) {
         return <Trans>Hello {name}</Trans>
       }
@@ -63,7 +64,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -74,7 +75,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'Page.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function Page() {
         return <Trans id="welcome.message">Welcome to our app</Trans>
       }
@@ -86,7 +87,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -98,14 +99,14 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'A.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export const A = () => <Trans>Message A</Trans>
       `,
     );
     await fs.writeFile(
       join(srcDir, 'B.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export const B = () => <Trans>Message B</Trans>
       `,
     );
@@ -115,7 +116,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(2);
@@ -128,7 +129,7 @@ describe('Extract Command', () => {
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -140,7 +141,7 @@ describe('Extract Command', () => {
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     const poPath = join(localeDir, 'en.po');
@@ -168,7 +169,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -181,7 +182,7 @@ msgstr "Hola mundo"
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
-      idiomaDir,
+      idiomiDir,
     });
 
     const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
@@ -194,7 +195,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -206,7 +207,7 @@ msgstr "Hola mundo"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     const poPath = join(localeDir, 'en.po');
@@ -219,7 +220,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -231,7 +232,7 @@ msgstr "Hola mundo"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     // Key should be a hash, not the source text
@@ -254,7 +255,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'Page.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function Page() {
         return <Trans id="welcome.message">Welcome to our app</Trans>
       }
@@ -266,7 +267,7 @@ msgstr "Hola mundo"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     const poPath = join(localeDir, 'en.po');
@@ -282,7 +283,7 @@ msgstr "Hola mundo"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>Hello world</Trans>
       }
@@ -295,7 +296,7 @@ msgstr "Hola mundo"
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
-      idiomaDir,
+      idiomiDir,
     });
 
     // Default locale should have source text as msgstr
@@ -330,7 +331,7 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'App.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function App() {
         return <Trans>New message</Trans>
       }
@@ -343,7 +344,7 @@ msgstr "Old message"
       localeDir,
       defaultLocale: 'en',
       clean: true,
-      idiomaDir,
+      idiomiDir,
     });
 
     const content = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
@@ -359,14 +360,14 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'server.ts'),
       `
-      import { createT } from './idioma/plain'
+      import { createT } from './idiomi/plain'
       const t = createT('es')
       export const msg = t('Hello from server')
       `,
     );
 
-    // Create the idioma/plain directory structure
-    const plainDir = join(idiomaDir, 'plain');
+    // Create the idiomi/plain directory structure
+    const plainDir = join(idiomiDir, 'plain');
     await fs.mkdir(plainDir, { recursive: true });
 
     const result = await extractMessages({
@@ -374,7 +375,7 @@ msgstr "Old message"
       sourcePatterns: ['src/**/*.ts'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -385,13 +386,13 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'utils.ts'),
       `
-      import { createT as makeT } from './idioma/plain'
+      import { createT as makeT } from './idiomi/plain'
       const translate = makeT('fr')
       export const greeting = translate('Welcome')
       `,
     );
 
-    const plainDir = join(idiomaDir, 'plain');
+    const plainDir = join(idiomiDir, 'plain');
     await fs.mkdir(plainDir, { recursive: true });
 
     const result = await extractMessages({
@@ -399,7 +400,7 @@ msgstr "Old message"
       sourcePatterns: ['src/**/*.ts'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -410,7 +411,7 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'handler.ts'),
       `
-      import { createT } from './idioma/plain'
+      import { createT } from './idiomi/plain'
 
       export function handler(locale: string) {
         const t = createT(locale as any)
@@ -422,7 +423,7 @@ msgstr "Old message"
       `,
     );
 
-    const plainDir = join(idiomaDir, 'plain');
+    const plainDir = join(idiomiDir, 'plain');
     await fs.mkdir(plainDir, { recursive: true });
 
     const result = await extractMessages({
@@ -430,7 +431,7 @@ msgstr "Old message"
       sourcePatterns: ['src/**/*.ts'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(2);
@@ -442,7 +443,7 @@ msgstr "Old message"
     await fs.writeFile(
       join(srcDir, 'Button.tsx'),
       `
-      import { Trans } from './idioma'
+      import { Trans } from './idiomi'
       export function Button() {
         return <Trans comment="Primary action button for form submission">Submit</Trans>
       }
@@ -454,7 +455,7 @@ msgstr "Old message"
       sourcePatterns: ['src/**/*.tsx'],
       localeDir,
       defaultLocale: 'en',
-      idiomaDir,
+      idiomiDir,
     });
 
     expect(result.messages.length).toBe(1);
@@ -466,5 +467,54 @@ msgstr "Old message"
     const poPath = join(localeDir, 'en.po');
     const content = await fs.readFile(poPath, 'utf-8');
     expect(content).toContain('#. Primary action button for form submission');
+  });
+
+  it('preserves translations for messages with context', async () => {
+    // Generate the key for a message with context (same as extraction does)
+    const context = 'route:about';
+    const source = 'about';
+    const key = generateKey(source, context);
+
+    // Create source file with Trans using context prop
+    await fs.writeFile(
+      join(srcDir, 'Routes.tsx'),
+      `
+      import { Trans } from './idiomi'
+      export function Routes() {
+        return <Trans context="${context}">${source}</Trans>
+      }
+      `,
+    );
+
+    // Create existing PO with Spanish translation for this contexted message
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `msgid ""
+msgstr ""
+"Language: es\\n"
+
+#, extracted
+msgctxt "${context}"
+msgid "${key}"
+msgstr "sobre"
+`,
+    );
+
+    // Run extraction
+    await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      locales: ['en', 'es'],
+      idiomiDir,
+    });
+
+    // Verify Spanish translation is preserved (not overwritten with empty string)
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain('msgstr "sobre"');
+    // Should NOT have an empty msgstr for this message
+    // Note: header always has msgstr "", so we check the contexted message specifically
+    expect(esContent).toMatch(/msgctxt "route:about"[\s\S]*msgstr "sobre"/);
   });
 });

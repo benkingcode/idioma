@@ -1,5 +1,5 @@
 {
-  "name": "@idioma/core",
+  "name": "@idiomi/core",
   "version": "0.1.0",
   "description": "Compile-time React i18n - build tools and CLI",
   "type": "module",
@@ -13,11 +13,15 @@
     },
     "./babel": {
       "types": "./dist/babel/plugin.d.mts",
-      "import": "./dist/babel/plugin.mjs"
+      "import": "./dist/babel/plugin.mjs",
+      "require": "./dist/babel/plugin.mjs",
+      "default": "./dist/babel/plugin.mjs"
     },
     "./babel-preset": {
       "types": "./dist/babel/preset.d.mts",
-      "import": "./dist/babel/preset.mjs"
+      "import": "./dist/babel/preset.mjs",
+      "require": "./dist/babel/preset.mjs",
+      "default": "./dist/babel/preset.mjs"
     },
     "./vite": {
       "types": "./dist/bundler/vite.d.mts",
@@ -25,7 +29,9 @@
     },
     "./next": {
       "types": "./dist/bundler/next.d.mts",
-      "import": "./dist/bundler/next.mjs"
+      "import": "./dist/bundler/next.mjs",
+      "require": "./dist/bundler/next.mjs",
+      "default": "./dist/bundler/next.mjs"
     },
     "./metro": {
       "types": "./dist/bundler/metro.d.mts",
@@ -42,10 +48,22 @@
     "./keys": {
       "types": "./dist/keys/generator.d.mts",
       "import": "./dist/keys/generator.mjs"
+    },
+    "./locale": {
+      "types": "./dist/locale/index.d.mts",
+      "import": "./dist/locale/index.mjs"
+    },
+    "./routes": {
+      "types": "./dist/routes/index.d.mts",
+      "import": "./dist/routes/index.mjs"
+    },
+    "./routes/pattern-matching": {
+      "types": "./dist/routes/pattern-matching.d.mts",
+      "import": "./dist/routes/pattern-matching.mjs"
     }
   },
   "bin": {
-    "idioma": "./bin/idioma.mjs"
+    "idiomi": "./bin/idiomi.mjs"
   },
   "files": [
     "dist",
@@ -59,6 +77,8 @@
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "^2.11.4",
+    "prettier": "^3.7.4",
+    "@formatjs/intl-localematcher": "^0.6.0",
     "ai": "^6.0.0",
     "chalk": "^5.6.2",
     "chokidar": "^3.6.0",

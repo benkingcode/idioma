@@ -1,5 +1,7 @@
+'use client';
+
 import { useContext, type ReactNode } from 'react';
-import { IdiomaContext } from './context';
+import { IdiomiContext } from './context';
 import { renderMessage, type TransComponent } from './interpolate';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,11 +23,11 @@ export interface TransProps {
 
 /**
  * Internal Trans component used by Babel-compiled output.
- * Not intended for direct use - import Trans from the generated idioma/ folder instead.
+ * Not intended for direct use - import Trans from the generated idiomi/ folder instead.
  *
  * @example
  * // Compiled output:
- * <__Trans __t={__$idioma["key"]} __a={{ name }} __c={[Link]} />
+ * <__Trans __t={__$idiomi["key"]} __a={{ name }} __c={[Link]} />
  */
 export function __Trans({
   __t,
@@ -34,11 +36,11 @@ export function __Trans({
   __cn,
   children,
 }: TransProps): ReactNode {
-  const context = useContext(IdiomaContext);
+  const context = useContext(IdiomiContext);
   if (!context) {
     throw new Error(
-      '[idioma] Trans must be used within an IdiomaProvider. ' +
-        'Make sure to wrap your app with <IdiomaProvider>.',
+      '[idiomi] Trans must be used within an IdiomiProvider. ' +
+        'Make sure to wrap your app with <IdiomiProvider>.',
     );
   }
 
@@ -46,7 +48,7 @@ export function __Trans({
   if (!__t) {
     if (process.env.NODE_ENV !== 'production') {
       console.error(
-        'Idioma: Missing translations. Ensure the Babel plugin is configured.',
+        'Idiomi: Missing translations. Ensure the Babel plugin is configured.',
       );
     }
     return children ?? null;

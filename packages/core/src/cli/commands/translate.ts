@@ -19,10 +19,35 @@ import {
   type TranslationProvider,
 } from '../../ai/provider.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
+import { ROUTE_CONTEXT_PREFIX } from '../../routes/compile.js';
+import { getIdiomiPaths, loadConfig } from '../config.js';
 import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
 import { colors } from '../ui/theme.js';
 import { ensureExtracted } from './ensure-extracted.js';
+
+/**
+ * Slugify a route segment for URL-safe usage.
+ * Removes accents, converts to lowercase, replaces spaces with hyphens.
+ */
+function slugifyRouteSegment(text: string): string {
+  return (
+    text
+      // Normalize Unicode to decomposed form (separate base + combining marks)
+      .normalize('NFD')
+      // Remove combining diacritical marks (accents)
+      .replace(/[\u0300-\u036f]/g, '')
+      // Convert to lowercase
+      .toLowerCase()
+      // Replace spaces with hyphens
+      .replace(/\s+/g, '-')
+      // Remove any remaining non-URL-safe characters (keep alphanumeric, hyphens)
+      .replace(/[^a-z0-9-]/g, '')
+      // Collapse multiple hyphens
+      .replace(/-+/g, '-')
+      // Trim leading/trailing hyphens
+      .replace(/^-+|-+$/g, '')
+  );
+}
 
 export interface TranslateResult {
   translated: number;
@@ -65,8 +90,8 @@ export interface TranslateOptions {
   contextProvider?: ContextProvider;
   /** Project root for resolving source file paths (required if autoContext is true) */
   projectRoot?: string;
-  /** Absolute path to idioma directory (required if autoContext is true) */
-  idiomaDir?: string;
+  /** Absolute path to idiomi directory (required if autoContext is true) */
+  idiomiDir?: string;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
   /** Called when we know how many messages need translation */
@@ -103,7 +128,7 @@ export async function runTranslate(
     autoContext = false,
     contextProvider,
     projectRoot,
-    idiomaDir,
+    idiomiDir,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -119,7 +144,7 @@ export async function runTranslate(
   // Build lookup: key -> source text from default locale's msgstr
   const sourceTextByKey = new Map<string, string>();
   for (const [key, message] of defaultCatalog.messages) {
-    // In Idioma's hash-based system, msgid is the hash and msgstr is the source text
+    // In Idiomi's hash-based system, msgid is the hash and msgstr is the source text
     sourceTextByKey.set(key, message.translation || message.source);
   }
 
@@ -129,10 +154,10 @@ export async function runTranslate(
 
   // Generate AI context for messages that need it
   // Context is stored in the default (source) locale so it's available for all target locales
-  if (autoContext && contextProvider && projectRoot && idiomaDir) {
+  if (autoContext && contextProvider && projectRoot && idiomiDir) {
     const contextResult = await generateContextForCatalog({
       projectRoot,
-      idiomaDir,
+      idiomiDir,
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
@@ -160,10 +185,21 @@ export async function runTranslate(
       const sourceText = sourceTextByKey.get(key) || message.source;
       // Read context from default (source) locale, not target locale
       const defaultMessage = defaultCatalog.messages.get(key);
+
+      // Build context string
+      let context = defaultMessage?.comments?.join(' ');
+
+      // Add special context for route segments
+      if (message.context?.startsWith('route:')) {
+        const routeContext =
+          'URL path segment - must be URL-safe (no spaces, use hyphens if needed)';
+        context = context ? `${routeContext}. ${context}` : routeContext;
+      }
+
       messagesToTranslate.push({
         key,
         source: sourceText,
-        context: defaultMessage?.comments?.join(' '),
+        context,
       });
     } else {
       skippedKeys.add(key);
@@ -231,7 +267,13 @@ export async function runTranslate(
     for (const [key, translation] of translatedMessages) {
       const message = catalog.messages.get(key);
       if (message) {
-        message.translation = translation;
+        // Slugify route translations to ensure URL-safe values
+        const finalTranslation = message.context?.startsWith(
+          ROUTE_CONTEXT_PREFIX,
+        )
+          ? slugifyRouteSegment(translation)
+          : translation;
+        message.translation = finalTranslation;
 
         if (markAI) {
           message.flags = message.flags || [];
@@ -283,7 +325,7 @@ export async function runTranslateAll(
     autoContext,
     contextProvider,
     projectRoot,
-    idiomaDir,
+    idiomiDir,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -299,7 +341,7 @@ export async function runTranslateAll(
 
   // Generate AI context ONCE before translating any locales
   // Context is stored in the default (source) locale and shared across all target locales
-  if (autoContext && contextProvider && projectRoot && idiomaDir) {
+  if (autoContext && contextProvider && projectRoot && idiomiDir) {
     const defaultPoPath = join(localeDir, `${defaultLocale}.po`);
     const defaultCatalog = await loadPoFile(defaultPoPath, defaultLocale);
 
@@ -311,7 +353,7 @@ export async function runTranslateAll(
 
     const contextResult = await generateContextForCatalog({
       projectRoot,
-      idiomaDir,
+      idiomiDir,
       catalog: defaultCatalog,
       provider: contextProvider,
       sourceTextByKey,
@@ -427,7 +469,7 @@ export const translateCommand = defineCommand({
       // Require explicit model configuration
       if (!model) {
         console.error('Error: AI model not configured.\n');
-        console.error('Add to idioma.config.ts:');
+        console.error('Add to idiomi.config.ts:');
         console.error('');
         console.error('  import { anthropic } from "@ai-sdk/anthropic";');
         console.error('');
@@ -473,7 +515,7 @@ export const translateCommand = defineCommand({
       }
     }
 
-    const { localeDir } = getIdiomaPaths(config);
+    const { localeDir } = getIdiomiPaths(config);
 
     // Determine target locales
     const targetLocales = args.locale
@@ -483,7 +525,7 @@ export const translateCommand = defineCommand({
     if (targetLocales.length === 0) {
       console.error('Error: No target locales to translate');
       console.error(
-        'Either specify a locale or configure locales in idioma.config.ts',
+        'Either specify a locale or configure locales in idiomi.config.ts',
       );
       process.exitCode = 1;
       return;
@@ -500,7 +542,7 @@ export const translateCommand = defineCommand({
 
     const header = createAnimatedHeader();
     header.start({
-      title: 'idioma translate',
+      title: 'idiomi translate',
       autoContext,
       provider: args['dry-run'] ? 'dry-run' : (modelInfo?.provider ?? 'ai-sdk'),
       model: modelInfo?.modelId,
@@ -541,7 +583,7 @@ export const translateCommand = defineCommand({
       autoContext: autoContext && !!contextProvider,
       contextProvider,
       projectRoot: cwd,
-      idiomaDir: resolve(cwd, config.idiomaDir),
+      idiomiDir: resolve(cwd, config.idiomiDir),
       onVerbose,
       onContextFileCountKnown: (count) => {
         if (count > 0) {
