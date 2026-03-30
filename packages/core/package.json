@@ -4,6 +4,9 @@
   "description": "Compile-time React i18n - build tools and CLI",
   "type": "module",
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "exports": {
