@@ -40,8 +40,8 @@ msgstr "This is <Bold>bold</Bold>, this is <Italic>italic</Italic>, and normal"
 
 #: src/components/ComponentTags.tsx
 #. [AI Context]: Instruction with nested components: italic text nested inside bold formatting. Translators should preserve both the outer <Bold> tags and inner <Italic> tags in their nested structure.
-msgid "0013HsIP"
-msgstr "<Bold> Important: <Italic>read carefully</Italic> </Bold>"
+msgid "001bSvpG"
+msgstr "<Bold>Important: <Italic>read carefully</Italic></Bold>"
 
 #: src/components/EdgeCases.tsx
 #. [AI Context]: Paragraph displaying an empty string value in brackets; tests edge case handling of empty content
@@ -159,5 +159,5 @@ msgstr "Welcome, {name}!"
 
 #: src/components/ComponentTags.tsx
 #, extracted
-msgid "002De7Tm"
-msgstr "Built with{0} <span> open source </span>{1} tools"
+msgid "001e7GnR"
+msgstr "Built with <span>open source</span> tools"

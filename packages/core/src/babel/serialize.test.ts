@@ -159,6 +159,58 @@ describe('serializeJsxChildren', () => {
     // Fragment content should be flattened
     expect(result.message).toBe('fragment content');
   });
+
+  it('trims whitespace inside multiline component tags', () => {
+    const children = getChildren(`<Trans>
+      <Text>
+        Dancefloor Pro
+      </Text>
+    </Trans>`);
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe('<Text>Dancefloor Pro</Text>');
+  });
+
+  it('handles component with explicit whitespace and punctuation', () => {
+    // Matches the reproduction case from GitHub issue #4
+    const children = getChildren(`<Trans>
+  Promote your next club night with{' '}
+  <Text>Dancefloor Pro</Text>, the all-in-one
+  ticketing platform.
+</Trans>`);
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      'Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one ticketing platform.',
+    );
+  });
+
+  it('handles expression containers adjacent to multiline components', () => {
+    const children = getChildren(`<Trans>
+      Built with{' '}
+      <span>
+        open source
+      </span>{' '}
+      tools
+    </Trans>`);
+    const result = serializeJsxChildren(children);
+
+    // {' '} string literals become inline spaces (not placeholders)
+    expect(result.message).toBe('Built with <span>open source</span> tools');
+  });
+
+  it('handles nested multiline components', () => {
+    const children = getChildren(`<Trans>
+      <Bold>
+        Important: <Italic>read carefully</Italic>
+      </Bold>
+    </Trans>`);
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).toBe(
+      '<Bold>Important: <Italic>read carefully</Italic></Bold>',
+    );
+  });
 });
 
 describe('serializeJsxChildren with plural()', () => {

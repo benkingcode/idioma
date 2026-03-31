@@ -40,8 +40,8 @@ msgstr "هذا <Bold>عريض</Bold>، وهذا <Italic>مائل</Italic>، وع
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
-msgid "0013HsIP"
-msgstr "<Bold> مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
+msgid "001bSvpG"
+msgstr "<Bold>مهم: <Italic>اقرأ بعناية</Italic></Bold>"
 
 #: src/components/IntrinsicElements.tsx
 msgid "intrinsic.span"
@@ -172,5 +172,5 @@ msgstr "مرحبًا، {name}!"
 
 #: src/components/ComponentTags.tsx
 #, extracted
-msgid "002De7Tm"
-msgstr ""
+msgid "001e7GnR"
+msgstr "مصنوع باستخدام <span>مفتوح المصدر</span> أدوات"

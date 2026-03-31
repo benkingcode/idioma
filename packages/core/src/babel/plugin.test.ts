@@ -345,6 +345,35 @@ describe('Idioma Babel Plugin', () => {
       expect(extracted[0].source).toBe('Hello world');
     });
 
+    it('extracts correct whitespace from multiline component tags', () => {
+      const extracted: Array<{ key: string; source: string }> = [];
+
+      const code = `
+        import { Trans } from './idioma'
+        const x = (
+          <Trans>
+            Built with{' '}
+            <span style={{ fontWeight: 500 }}>
+              open source
+            </span>{' '}
+            tools
+          </Trans>
+        )
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      // No extra spaces inside <span> tags
+      expect(extracted[0].source).toBe(
+        'Built with <span>open source</span> tools',
+      );
+    });
+
     it('extracts multiple messages', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 

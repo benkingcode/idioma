@@ -28,13 +28,16 @@ export interface SerializeResult {
 /**
  * Serialize JSX children to a PO-compatible message string.
  *
+ * Uses Babel's `react.buildChildren` to apply proper JSX whitespace rules
+ * (matching what React actually renders), then serializes the cleaned nodes.
+ *
  * Converts:
- * - Text → as-is
+ * - Text → as-is (with JSX whitespace normalization)
  * - {identifier} → {identifier}
  * - {member.expression} → {member.expression}
  * - {complex()} → {0}, {1}, etc. with comments
- * - <Component>...</Component> → <0>...</0>, <1>...</1>, etc.
- * - <Component /> → <0/>, <1/>, etc.
+ * - <Component>...</Component> → <Component>...</Component>
+ * - <Component /> → <Component/>
  */
 export function serializeJsxChildren(
   children: t.JSXElement['children'],
@@ -45,61 +48,61 @@ export function serializeJsxChildren(
   const comments: string[] = [];
   let complexExpressionIndex = 0;
 
+  /**
+   * Apply Babel's JSX whitespace cleaning to children, then serialize.
+   * This delegates to `t.react.buildChildren` which applies the same
+   * `cleanJSXElementLiteralChild` algorithm used by the JSX transform.
+   */
+  function cleanAndSerialize(children: t.JSXElement['children']): string {
+    const fragment = t.jsxFragment(
+      t.jsxOpeningFragment(),
+      t.jsxClosingFragment(),
+      children,
+    );
+    const cleaned = t.react.buildChildren(fragment);
+    return cleaned.map(serializeNode).join('');
+  }
+
   function serializeNode(node: t.Node): string {
-    if (t.isJSXText(node)) {
-      // Normalize whitespace: collapse multiple spaces, trim edges
-      return node.value.replace(/\s+/g, ' ');
+    // StringLiteral: cleaned text from JSXText or literal string expression
+    if (t.isStringLiteral(node)) {
+      return node.value;
     }
 
-    if (t.isJSXExpressionContainer(node)) {
-      const expr = node.expression;
+    // Identifier: {name}
+    if (t.isIdentifier(node)) {
+      placeholders[node.name] = node.name;
+      return `{${node.name}}`;
+    }
 
-      if (t.isJSXEmptyExpression(expr)) {
-        return '';
+    // Member expression: {user.name}
+    if (t.isMemberExpression(node)) {
+      const code = generate(node).code;
+      placeholders[code] = code;
+      return `{${code}}`;
+    }
+
+    // Check for plural(), select(), selectOrdinal() function calls → ICU format
+    if (t.isCallExpression(node) && t.isIdentifier(node.callee)) {
+      const calleeName = node.callee.name;
+
+      if (calleeName === 'plural') {
+        const { icu, variable } = serializePluralCallToIcu(node);
+        placeholders[variable] = variable;
+        return icu;
       }
 
-      if (t.isIdentifier(expr)) {
-        // Simple identifier: {name}
-        placeholders[expr.name] = expr.name;
-        return `{${expr.name}}`;
+      if (calleeName === 'select') {
+        const { icu, variable } = serializeSelectCallToIcu(node);
+        placeholders[variable] = variable;
+        return icu;
       }
 
-      if (t.isMemberExpression(expr)) {
-        // Member expression: {user.name}
-        const code = generate(expr).code;
-        placeholders[code] = code;
-        return `{${code}}`;
+      if (calleeName === 'selectOrdinal') {
+        const { icu, variable } = serializeSelectOrdinalCallToIcu(node);
+        placeholders[variable] = variable;
+        return icu;
       }
-
-      // Check for plural(), select(), selectOrdinal() function calls - convert to ICU format
-      if (t.isCallExpression(expr) && t.isIdentifier(expr.callee)) {
-        const calleeName = expr.callee.name;
-
-        if (calleeName === 'plural') {
-          const { icu, variable } = serializePluralCallToIcu(expr);
-          placeholders[variable] = variable;
-          return icu;
-        }
-
-        if (calleeName === 'select') {
-          const { icu, variable } = serializeSelectCallToIcu(expr);
-          placeholders[variable] = variable;
-          return icu;
-        }
-
-        if (calleeName === 'selectOrdinal') {
-          const { icu, variable } = serializeSelectOrdinalCallToIcu(expr);
-          placeholders[variable] = variable;
-          return icu;
-        }
-      }
-
-      // Complex expression: {fn()}, {a + b}, etc.
-      const code = generate(expr).code;
-      const index = complexExpressionIndex++;
-      placeholders[String(index)] = code;
-      comments.push(`{${index}} = ${code}`);
-      return `{${index}}`;
     }
 
     if (t.isJSXElement(node)) {
@@ -127,13 +130,21 @@ export function serializeJsxChildren(
         return `<${componentName}/>`;
       }
 
-      const childContent = node.children.map(serializeNode).join('');
+      const childContent = cleanAndSerialize(node.children);
       return `<${componentName}>${childContent}</${componentName}>`;
     }
 
     if (t.isJSXFragment(node)) {
-      // Flatten fragment content
-      return node.children.map(serializeNode).join('');
+      return cleanAndSerialize(node.children);
+    }
+
+    // Complex expression: {fn()}, {a + b}, etc.
+    if (t.isExpression(node)) {
+      const code = generate(node).code;
+      const index = complexExpressionIndex++;
+      placeholders[String(index)] = code;
+      comments.push(`{${index}} = ${code}`);
+      return `{${index}}`;
     }
 
     return '';
@@ -154,10 +165,10 @@ export function serializeJsxChildren(
     return 'unknown';
   }
 
-  const rawMessage = children.map(serializeNode).join('');
+  const rawMessage = cleanAndSerialize(children);
 
-  // Normalize whitespace: trim and collapse multiple spaces
-  const message = rawMessage.trim().replace(/\s+/g, ' ');
+  // Trim edges and collapse runs of multiple spaces
+  const message = rawMessage.trim().replace(/ {2,}/g, ' ');
 
   const result: SerializeResult = {
     message,

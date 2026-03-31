@@ -40,8 +40,8 @@ msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal
 
 #: src/components/ComponentTags.tsx
 #, ai-translated
-msgid "0013HsIP"
-msgstr "<Bold> Importante: <Italic>lee cuidadosamente</Italic> </Bold>"
+msgid "001bSvpG"
+msgstr "<Bold>Importante: <Italic>lee cuidadosamente</Italic></Bold>"
 
 #: src/components/EdgeCases.tsx
 #, ai-translated
@@ -160,5 +160,5 @@ msgstr "¡Bienvenido, {name}!"
 
 #: src/components/ComponentTags.tsx
 #, extracted
-msgid "002De7Tm"
-msgstr ""
+msgid "001e7GnR"
+msgstr "Construido con <span>código abierto</span> herramientas"

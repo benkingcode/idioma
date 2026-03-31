@@ -40,11 +40,10 @@ test.describe('Interpolation - Component Tags', () => {
 
   test('renders nested component tags', async ({ page }) => {
     const container = page.getByTestId('comp-nested');
-    await expect(container).toContainText('Important: read carefully');
+    // Exact text match — no leading/trailing spaces inside <Bold> (issue #4)
+    await expect(container).toHaveText('Important: read carefully');
     // Verify nesting structure: strong contains em
-    await expect(container.locator('strong > em')).toContainText(
-      'read carefully',
-    );
+    await expect(container.locator('strong > em')).toHaveText('read carefully');
   });
 
   test('component tags work in Spanish', async ({ page }) => {
@@ -73,7 +72,8 @@ test.describe('Interpolation - Component Tags', () => {
 
   test('preserves component props from source JSX', async ({ page }) => {
     const container = page.getByTestId('comp-with-props');
-    await expect(container).toContainText('Built with');
+    // Verify no extra whitespace around component content (issue #4)
+    await expect(container).toHaveText('Built with open source tools');
     const span = container.locator('span');
     await expect(span).toHaveText('open source');
     await expect(span).toHaveCSS('font-weight', '500');
