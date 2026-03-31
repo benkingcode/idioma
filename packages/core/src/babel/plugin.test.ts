@@ -1,6 +1,7 @@
 import { join } from 'path';
 import * as babel from '@babel/core';
 import { describe, expect, it } from 'vitest';
+import { generateKey } from '../keys/generator.js';
 import type { PathsMatcher } from '../utils/resolve-tsconfig-paths';
 import type { ExtractedMessage } from './extract-trans';
 import idiomaPlugin, { type IdiomaPluginOptions } from './plugin';
@@ -1159,6 +1160,111 @@ describe('Idioma Babel Plugin', () => {
 
       expect(extracted).toHaveLength(1);
       expect(extracted[0].source).toBe('Hello from useT');
+    });
+
+    describe('t() calls in suspense mode', () => {
+      it('replaces source text with hash key for string form', () => {
+        const code = `
+          import { useT } from './idioma'
+          function MyComponent() {
+            const t = useT()
+            return t('Hello')
+          }
+        `;
+
+        const result = transform(code, suspenseOptions);
+
+        const expectedKey = generateKey('Hello');
+        expect(result).toContain(`"${expectedKey}"`);
+        // Source text should not appear as a string literal arg
+        expect(result).not.toMatch(/t\(\s*["']Hello["']\s*\)/);
+      });
+
+      it('preserves values arg when replacing source with key', () => {
+        const code = `
+          import { useT } from './idioma'
+          function MyComponent() {
+            const t = useT()
+            const name = 'Ben'
+            return t('Welcome, {name}!', { name })
+          }
+        `;
+
+        const result = transform(code, suspenseOptions);
+
+        const expectedKey = generateKey('Welcome, {name}!');
+        expect(result).toContain(`"${expectedKey}"`);
+        // Values arg should still be present
+        expect(result).toContain('name');
+      });
+
+      it('uses id as key for object form with source', () => {
+        const code = `
+          import { useT } from './idioma'
+          function MyComponent() {
+            const t = useT()
+            return t({ id: 'uset.greeting', source: 'Hello from object form!' })
+          }
+        `;
+
+        const result = transform(code, suspenseOptions);
+
+        expect(result).toContain('"uset.greeting"');
+        // Source text should not appear as a string literal arg
+        expect(result).not.toContain('"Hello from object form!"');
+      });
+
+      it('uses id as key for object form with values', () => {
+        const code = `
+          import { useT } from './idioma'
+          function MyComponent() {
+            const t = useT()
+            const name = 'Tester'
+            return t({ id: 'uset.welcome', source: 'Welcome, {name}!', values: { name } })
+          }
+        `;
+
+        const result = transform(code, suspenseOptions);
+
+        expect(result).toContain('"uset.welcome"');
+        // Values should be preserved as second arg
+        expect(result).toContain('name');
+      });
+
+      it('uses id as key for object form without source', () => {
+        const code = `
+          import { useT } from './idioma'
+          function MyComponent() {
+            const t = useT()
+            return t({ id: 'uset.idOnly' })
+          }
+        `;
+
+        const result = transform(code, suspenseOptions);
+
+        expect(result).toContain('"uset.idOnly"');
+      });
+
+      it('still extracts with original source text', () => {
+        const extracted: Array<{ key: string; source: string }> = [];
+
+        const code = `
+          import { useT } from './idioma'
+          function MyComponent() {
+            const t = useT()
+            return t('Hello')
+          }
+        `;
+
+        transform(code, {
+          ...suspenseOptions,
+          onExtract: (msg) => extracted.push(msg),
+        });
+
+        expect(extracted).toHaveLength(1);
+        expect(extracted[0].source).toBe('Hello');
+        expect(extracted[0].key).toBe(generateKey('Hello'));
+      });
     });
   });
 

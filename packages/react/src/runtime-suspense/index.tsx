@@ -299,8 +299,8 @@ export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = <
  * Requires chunk and loader from Babel transform.
  */
 export function __useTSuspense(
-  _chunk: string,
-  _loader: Loader,
+  chunk: string,
+  loader: Loader,
 ): (key: string, values?: Record<string, unknown>) => string {
   const context = useContext(IdiomaContext);
   if (!context) {
@@ -310,25 +310,31 @@ export function __useTSuspense(
     );
   }
 
-  const { locale: _locale } = context;
+  const { locale } = context;
 
-  // Note: In properly transformed code, Babel provides the key directly.
-  // This function is a fallback when Babel didn't transform.
+  // Suspend until chunk loads (same pattern as __TransSuspense)
+  const translations = use(getTranslations(locale, chunk, loader));
 
-  return (source: string, values?: Record<string, unknown>) => {
-    // In Suspense mode, Babel should transform useT calls to include the key
-    // If we get here with source text, Babel didn't transform - graceful fallback
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(
-        `Idioma: Missing translations for "${source}". ` +
-          'Ensure the Babel plugin is configured.',
-      );
+  return (key: string, values?: Record<string, unknown>) => {
+    const msg = translations[key];
+
+    if (msg === undefined) {
+      if (values && Object.keys(values).length > 0) {
+        return interpolateValues(key, values);
+      }
+      return key;
     }
-    // Fallback: return source with values interpolated if possible
+
+    // Compiled ICU function (plural/select)
+    if (typeof msg === 'function') {
+      return String(msg(values || {}));
+    }
+
+    // Plain string with optional value interpolation
     if (values && Object.keys(values).length > 0) {
-      return interpolateValues(source, values);
+      return interpolateValues(msg, values);
     }
-    return source;
+    return msg;
   };
 }
 

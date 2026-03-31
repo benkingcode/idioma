@@ -450,6 +450,15 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
             opts.onExtract(extracted);
           }
 
+          // In suspense mode, use id as the chunk lookup key
+          if (opts.mode === 'suspense') {
+            state.idiomaUsed = true;
+            const newArgs: t.Expression[] = [t.stringLiteral(id)];
+            if (valuesNode) newArgs.push(valuesNode);
+            path.node.arguments = newArgs;
+            return;
+          }
+
           // Determine the first arg: source if available, else id as fallback
           const firstArg = source || id;
 
@@ -539,6 +548,13 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
             components: [],
             references: [`${filename}:${line}`],
           });
+        }
+
+        // In suspense mode, replace source with hash key for chunk lookup
+        if (opts.mode === 'suspense') {
+          state.idiomaUsed = true;
+          args[0] = t.stringLiteral(key);
+          return;
         }
 
         // Inline translations
