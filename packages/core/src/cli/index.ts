@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { defineCommand, runMain } from 'citty';
 import { config as loadDotenv } from 'dotenv';
 import { checkCommand } from './commands/check.js';
@@ -9,13 +10,16 @@ import { statsCommand } from './commands/stats.js';
 import { translateCommand } from './commands/translate.js';
 import { setNonInteractive } from './ui/index.js';
 
+const require = createRequire(import.meta.url);
+const { version } = require('../../package.json') as { version: string };
+
 // Load .env file from current working directory
 loadDotenv({ quiet: true });
 
 const main = defineCommand({
   meta: {
     name: 'idioma',
-    version: '0.1.0',
+    version,
     description: 'Idioma i18n CLI - Compile-time React internationalization',
   },
   args: {
