@@ -186,6 +186,32 @@ describe('serializeJsxChildren', () => {
     expect(result.placeholders).toEqual({});
   });
 
+  it('inlines {" "} in multiline Trans with components (issue #5 exact reproduction)', () => {
+    // Exact formatting from benkingcode/dancefloor-mono PR #320
+    const children = getChildren(`<Trans id="promotersPage.hero.subtitle">
+                Go beyond just selling tickets. Promote your next club night
+                with{' '}
+                <Text
+                  size="inherit"
+                  component="span"
+                  fw={500}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Dancefloor Pro
+                </Text>
+                , the all-in-one ticketing and marketing platform built for
+                dance music. Reach the right audience, build your community, and
+                reward your superfans.
+              </Trans>`);
+    const result = serializeJsxChildren(children);
+
+    expect(result.message).not.toContain('{0}');
+    expect(result.message).toBe(
+      'Go beyond just selling tickets. Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one ticketing and marketing platform built for dance music. Reach the right audience, build your community, and reward your superfans.',
+    );
+    expect(result.placeholders).toEqual({});
+  });
+
   it('trims whitespace inside multiline component tags', () => {
     const children = getChildren(`<Trans>
       <Text>

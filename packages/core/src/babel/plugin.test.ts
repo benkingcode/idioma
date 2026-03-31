@@ -345,6 +345,48 @@ describe('Idioma Babel Plugin', () => {
       expect(extracted[0].source).toBe('Hello world');
     });
 
+    it('does not create {0} placeholder for {" "} expression (issue #5)', () => {
+      const extracted: Array<{
+        key: string;
+        source: string;
+        placeholders: Record<string, string>;
+      }> = [];
+
+      // Exact formatting from benkingcode/dancefloor-mono PR #320
+      const code = `
+        import { Trans, Text } from './idioma'
+        const x = (
+          <Trans id="promotersPage.hero.subtitle">
+            Go beyond just selling tickets. Promote your next club night
+            with{' '}
+            <Text
+              size="inherit"
+              component="span"
+              fw={500}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              Dancefloor Pro
+            </Text>
+            , the all-in-one ticketing and marketing platform built for
+            dance music.
+          </Trans>
+        )
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].source).not.toContain('{0}');
+      expect(extracted[0].source).toBe(
+        'Go beyond just selling tickets. Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one ticketing and marketing platform built for dance music.',
+      );
+      expect(extracted[0].placeholders).toEqual({});
+    });
+
     it('extracts correct whitespace from multiline component tags', () => {
       const extracted: Array<{ key: string; source: string }> = [];
 
