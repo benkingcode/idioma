@@ -160,6 +160,32 @@ describe('serializeJsxChildren', () => {
     expect(result.message).toBe('fragment content');
   });
 
+  it('does not create placeholder for whitespace between text and component (issue #5)', () => {
+    const children = getChildren(
+      '<Trans>Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one platform.</Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    // Space between "with" and <Text> should be literal, not {0}
+    expect(result.message).toBe(
+      'Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one platform.',
+    );
+    expect(result.placeholders).toEqual({});
+  });
+
+  it('inlines {" "} expression as literal space, not placeholder (issue #5)', () => {
+    const children = getChildren(
+      `<Trans>Promote your next club night with{' '}<Text>Dancefloor Pro</Text>, the all-in-one platform.</Trans>`,
+    );
+    const result = serializeJsxChildren(children);
+
+    // {' '} should become a literal space, not {0}
+    expect(result.message).toBe(
+      'Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one platform.',
+    );
+    expect(result.placeholders).toEqual({});
+  });
+
   it('trims whitespace inside multiline component tags', () => {
     const children = getChildren(`<Trans>
       <Text>
