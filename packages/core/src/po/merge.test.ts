@@ -426,6 +426,73 @@ msgstr ""
     expect(msg?.translation).toBe('Enviar');
   });
 
+  it('updates default locale translation when source text changes', () => {
+    // Simulates: old extraction produced "with{0} <Text>..." (buggy)
+    // New extraction produces "with <Text>..." (fixed)
+    // Both use the same explicit ID key, so merge must update the translation
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+#, extracted
+msgid "hero.subtitle"
+msgstr "Promote with{0} <Text>Pro</Text>"
+`,
+      'en',
+    );
+
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+
+#, extracted
+msgid "hero.subtitle"
+msgstr "Promote with <Text>Pro</Text>"
+`,
+      'en',
+    );
+
+    mergeCatalogs(existing, extracted);
+
+    // Default locale translation should be updated to the new source text
+    expect(existing.messages.get('hero.subtitle')!.translation).toBe(
+      'Promote with <Text>Pro</Text>',
+    );
+  });
+
+  it('does not overwrite non-default locale translations', () => {
+    const existing = parsePoString(
+      `
+msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "Hello"
+msgstr "Hola"
+`,
+      'es',
+    );
+
+    const extracted = parsePoString(
+      `
+msgid ""
+msgstr ""
+
+msgid "Hello"
+msgstr ""
+`,
+      'es',
+    );
+
+    mergeCatalogs(existing, extracted);
+
+    // Non-default locale translation should be preserved (extracted has empty translation)
+    expect(existing.messages.get('Hello')!.translation).toBe('Hola');
+  });
+
   it('updates context property when merging existing messages', () => {
     // Simulate a case where existing message has stale/missing context property
     // but the extracted message has the correct context

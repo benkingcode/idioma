@@ -60,6 +60,13 @@ export function mergeCatalogs(
       }
       existingMsg.context = extractedMsg.context;
 
+      // Update translation for the default locale when source text changes.
+      // For the default locale, extractedMsg.translation contains the new source
+      // text; for other locales it's empty (preserving existing translations).
+      if (extractedMsg.translation) {
+        existingMsg.translation = extractedMsg.translation;
+      }
+
       // Track as updated if references changed
       result.updated.push(key);
     }
