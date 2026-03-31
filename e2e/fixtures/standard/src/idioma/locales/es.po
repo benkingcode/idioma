@@ -43,6 +43,14 @@ msgstr "Esto es <Bold>negrita</Bold>, esto es <Italic>cursiva</Italic>, y normal
 msgid "0013HsIP"
 msgstr "<Bold> Importante: <Italic>léelo cuidadosamente</Italic> </Bold>"
 
+#: src/components/IntrinsicElements.tsx
+msgid "intrinsic.span"
+msgstr "Cobramos una tarifa del 10% <span>(£1 mínimo)</span> por boleto"
+
+#: src/components/IntrinsicElements.tsx
+msgid "intrinsic.mixed"
+msgstr "Haz clic <Link>aquí</Link> o <span>allí</span>"
+
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "002TXdYD"

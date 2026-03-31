@@ -43,6 +43,14 @@ msgstr "This is <Bold>bold</Bold>, this is <Italic>italic</Italic>, and normal"
 msgid "0013HsIP"
 msgstr "<Bold> Important: <Italic>read carefully</Italic> </Bold>"
 
+#: src/components/IntrinsicElements.tsx
+msgid "intrinsic.span"
+msgstr "We charge a 10% fee <span>(£1 minimum)</span> per ticket"
+
+#: src/components/IntrinsicElements.tsx
+msgid "intrinsic.mixed"
+msgstr "Click <Link>here</Link> or <span>there</span>"
+
 #: src/components/EdgeCases.tsx
 #. [AI Context]: Test text displaying an empty string value in brackets; part of edge case testing for empty content handling
 msgid "002TXdYD"

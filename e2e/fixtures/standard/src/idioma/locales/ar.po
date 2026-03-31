@@ -43,6 +43,14 @@ msgstr "هذا <Bold>عريض</Bold>، وهذا <Italic>مائل</Italic>، وع
 msgid "0013HsIP"
 msgstr "<Bold> مهم: <Italic>اقرأ بعناية</Italic> </Bold>"
 
+#: src/components/IntrinsicElements.tsx
+msgid "intrinsic.span"
+msgstr "نحن نتقاضى رسوم 10% <span>(£1 كحد أدنى)</span> لكل تذكرة"
+
+#: src/components/IntrinsicElements.tsx
+msgid "intrinsic.mixed"
+msgstr "انقر <Link>هنا</Link> أو <span>هناك</span>"
+
 #: src/components/EdgeCases.tsx
 #, ai-translated
 msgid "002TXdYD"

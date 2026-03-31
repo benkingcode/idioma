@@ -700,7 +700,9 @@ function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
 
   // Add __c (component array) and __cn (component names) if there are components
   if (components.length > 0) {
-    const componentElements = components.map((name) => t.identifier(name));
+    const componentElements = components.map((name) =>
+      /^[a-z]/.test(name) ? t.stringLiteral(name) : t.identifier(name),
+    );
     const componentNameStrings = components.map((name) =>
       t.stringLiteral(name),
     );

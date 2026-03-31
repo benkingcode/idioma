@@ -2,6 +2,7 @@ import { BasicTrans } from './components/BasicTrans';
 import { ComponentTags } from './components/ComponentTags';
 import { EdgeCases } from './components/EdgeCases';
 import { Interpolation } from './components/Interpolation';
+import { IntrinsicElements } from './components/IntrinsicElements';
 import { Plurals } from './components/Plurals';
 import { UseT } from './components/UseT';
 import { UseTObjectForm } from './components/UseTObjectForm';
@@ -67,6 +68,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="uset-object-form-section">
           <h2>useT Object Form</h2>
           <UseTObjectForm />
+        </section>
+
+        <section data-testid="intrinsic-elements-section">
+          <h2>Intrinsic Elements</h2>
+          <IntrinsicElements />
         </section>
 
         <section data-testid="edge-cases-section">

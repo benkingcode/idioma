@@ -183,6 +183,39 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('__c');
     });
 
+    it('uses string literals for intrinsic HTML elements in __c', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans>Text with <span>inline</span> content</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {},
+      });
+
+      // __c should contain "span" as a string literal, not span as an identifier
+      // A bare identifier would cause ReferenceError: span is not defined
+      expect(result).toMatch(/__c:\s*\["span"\]/);
+    });
+
+    it('uses identifiers for custom components but strings for intrinsic elements', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans>Click <Link>here</Link> or <span>there</span></Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {},
+      });
+
+      // __c should have Link as identifier and "span" as string literal
+      expect(result).toMatch(/__c:\s*\[Link, "span"\]/);
+    });
+
     it('handles Trans with explicit id', () => {
       const code = `
         import { Trans } from './idioma'
