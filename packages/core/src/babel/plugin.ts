@@ -61,6 +61,54 @@ function parseExpressionToAst(expr: string): t.Expression {
   return t.identifier(firstPart);
 }
 
+/**
+ * Extract static string properties from a t() object argument.
+ * Returns null if the object doesn't have a static `id` property.
+ *
+ * Handles: t({ id: 'key', source: 'text', context: 'ctx', ns: 'ns', values: {...} })
+ */
+function extractTObjectArg(node: t.ObjectExpression): {
+  id: string;
+  source: string;
+  context?: string;
+  ns?: string;
+  valuesNode?: t.Expression;
+} | null {
+  let id: string | undefined;
+  let source: string | undefined;
+  let context: string | undefined;
+  let ns: string | undefined;
+  let valuesNode: t.Expression | undefined;
+
+  for (const prop of node.properties) {
+    if (!t.isObjectProperty(prop) || prop.computed) continue;
+
+    const keyName = t.isIdentifier(prop.key)
+      ? prop.key.name
+      : t.isStringLiteral(prop.key)
+        ? prop.key.value
+        : undefined;
+
+    if (!keyName) continue;
+
+    if (keyName === 'id' && t.isStringLiteral(prop.value)) {
+      id = prop.value.value;
+    } else if (keyName === 'source' && t.isStringLiteral(prop.value)) {
+      source = prop.value.value;
+    } else if (keyName === 'context' && t.isStringLiteral(prop.value)) {
+      context = prop.value.value;
+    } else if (keyName === 'ns' && t.isStringLiteral(prop.value)) {
+      ns = prop.value.value;
+    } else if (keyName === 'values' && t.isExpression(prop.value)) {
+      valuesNode = prop.value;
+    }
+  }
+
+  if (!id) return null;
+
+  return { id, source: source ?? '', context, ns, valuesNode };
+}
+
 export interface IdiomaPluginOptions {
   /**
    * Plugin mode:
@@ -376,6 +424,99 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           }
 
           // Template literals are handled at runtime (no inlining)
+          return;
+        }
+
+        // Handle object form: t({ id: 'key', source: 'text', values: {...} })
+        if (t.isObjectExpression(sourceArg)) {
+          const objArg = extractTObjectArg(sourceArg);
+          if (!objArg) return; // No static id found, skip
+
+          const { id, source, context, ns, valuesNode } = objArg;
+          const key = id; // Explicit id IS the key (no hashing)
+
+          // Extract message if callback provided
+          if (opts.onExtract) {
+            const line = path.node.loc?.start.line || 0;
+            const extracted: ExtractedMessage = {
+              key,
+              source,
+              placeholders: {},
+              components: [],
+              references: [`${filename}:${line}`],
+            };
+            if (context) extracted.context = context;
+            if (ns) extracted.namespace = ns;
+            opts.onExtract(extracted);
+          }
+
+          // Determine the first arg: source if available, else id as fallback
+          const firstArg = source || id;
+
+          // Look up translations using explicit id
+          const translations = opts.translations || {};
+          let localeMessages: Record<
+            string,
+            string | ((args: Record<string, unknown>) => string)
+          > = {};
+          if (ns) {
+            const nsTranslations = (
+              translations as unknown as {
+                __ns?: Record<
+                  string,
+                  Record<
+                    string,
+                    Record<
+                      string,
+                      string | ((args: Record<string, unknown>) => string)
+                    >
+                  >
+                >;
+              }
+            ).__ns;
+            localeMessages = nsTranslations?.[ns]?.[key] || {};
+          } else {
+            localeMessages = translations[key] || {};
+          }
+
+          if (Object.keys(localeMessages).length > 0) {
+            // Build inlined translations object
+            const translationEntries = Object.entries(localeMessages).map(
+              ([locale, msg]) =>
+                t.objectProperty(
+                  t.stringLiteral(locale),
+                  typeof msg === 'string'
+                    ? t.stringLiteral(msg)
+                    : parseFunctionToAst(String(msg)),
+                ),
+            );
+
+            const inlinedObject = t.objectExpression([
+              t.objectProperty(
+                t.stringLiteral(key),
+                t.objectExpression(translationEntries),
+              ),
+            ]);
+
+            // Build new args: t(firstArg, inlinedTranslations, values?)
+            const newArgs: t.Expression[] = [
+              t.stringLiteral(firstArg),
+              inlinedObject,
+            ];
+            if (valuesNode) {
+              newArgs.push(valuesNode);
+            }
+
+            path.node.arguments = newArgs;
+          } else {
+            // No translations found — still normalize to string form
+            const newArgs: t.Expression[] = [t.stringLiteral(firstArg)];
+            if (valuesNode) {
+              newArgs.push(valuesNode);
+            }
+            path.node.arguments = newArgs;
+          }
+
           return;
         }
 

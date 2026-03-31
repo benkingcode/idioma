@@ -584,4 +584,109 @@ msgstr "Old message"
       expect(messages[0].source).toBe('Hello');
     });
   });
+
+  describe('t() with object form', () => {
+    it('extracts t({ id }) with empty source', async () => {
+      await fs.writeFile(
+        join(srcDir, 'Page.tsx'),
+        `
+        import { useT } from './idioma'
+        function Page() {
+          const t = useT()
+          return t({ id: 'home.title' })
+        }
+        `,
+      );
+
+      const result = await extractMessages({
+        cwd: tempDir,
+        sourcePatterns: ['src/**/*.tsx'],
+        localeDir,
+        defaultLocale: 'en',
+        idiomaDir,
+      });
+
+      expect(result.messages.length).toBe(1);
+      expect(result.messages[0].key).toBe('home.title');
+      expect(result.messages[0].source).toBe('');
+    });
+
+    it('extracts t({ id, source }) with source text', async () => {
+      await fs.writeFile(
+        join(srcDir, 'Page.tsx'),
+        `
+        import { useT } from './idioma'
+        function Page() {
+          const t = useT()
+          return t({ id: 'home.title', source: 'Discover events' })
+        }
+        `,
+      );
+
+      const result = await extractMessages({
+        cwd: tempDir,
+        sourcePatterns: ['src/**/*.tsx'],
+        localeDir,
+        defaultLocale: 'en',
+        idiomaDir,
+      });
+
+      expect(result.messages.length).toBe(1);
+      expect(result.messages[0].key).toBe('home.title');
+      expect(result.messages[0].source).toBe('Discover events');
+    });
+
+    it('writes t({ id, source }) to PO file correctly', async () => {
+      await fs.writeFile(
+        join(srcDir, 'Page.tsx'),
+        `
+        import { useT } from './idioma'
+        function Page() {
+          const t = useT()
+          return t({ id: 'greeting', source: 'Hello' })
+        }
+        `,
+      );
+
+      const result = await extractMessages({
+        cwd: tempDir,
+        sourcePatterns: ['src/**/*.tsx'],
+        localeDir,
+        defaultLocale: 'en',
+        idiomaDir,
+        locales: ['en'],
+      });
+
+      expect(result.messages.length).toBe(1);
+
+      const enPath = join(localeDir, 'en.po');
+      const content = await fs.readFile(enPath, 'utf-8');
+      expect(content).toContain('msgid "greeting"');
+      expect(content).toContain('msgstr "Hello"');
+    });
+
+    it('skips t() with dynamic id', async () => {
+      await fs.writeFile(
+        join(srcDir, 'Page.tsx'),
+        `
+        import { useT } from './idioma'
+        function Page() {
+          const t = useT()
+          const key = 'dynamic'
+          return t({ id: key })
+        }
+        `,
+      );
+
+      const result = await extractMessages({
+        cwd: tempDir,
+        sourcePatterns: ['src/**/*.tsx'],
+        localeDir,
+        defaultLocale: 'en',
+        idiomaDir,
+      });
+
+      expect(result.messages.length).toBe(0);
+    });
+  });
 });

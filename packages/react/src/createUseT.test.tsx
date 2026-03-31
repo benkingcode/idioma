@@ -249,6 +249,71 @@ describe('createUseT', () => {
     });
   });
 
+  describe('object form fallback (without Babel transformation)', () => {
+    it('returns id as fallback when no source', () => {
+      function TestComponent() {
+        const t = useT();
+        return <div data-testid="result">{t({ id: 'greeting' })}</div>;
+      }
+
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('greeting');
+      vi.restoreAllMocks();
+    });
+
+    it('returns source as fallback when provided', () => {
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div data-testid="result">
+            {t({ id: 'greeting', source: 'Hello!' })}
+          </div>
+        );
+      }
+
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello!');
+      vi.restoreAllMocks();
+    });
+
+    it('interpolates values into source fallback', () => {
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div data-testid="result">
+            {t({
+              id: 'greeting',
+              source: 'Hello {name}!',
+              values: { name: 'Ben' },
+            })}
+          </div>
+        );
+      }
+
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('Hello Ben!');
+      vi.restoreAllMocks();
+    });
+  });
+
   describe('error handling', () => {
     it('throws when used outside provider', () => {
       function TestComponent() {

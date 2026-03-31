@@ -305,7 +305,7 @@ t('Hello {name}', { name: 'Ben' });
 
 // Key-only mode (like <Trans id="...">)
 t({ id: 'welcome' });
-t({ id: 'greeting', values: { name: 'Ben' } });
+t({ id: 'greeting', source: 'Hello {name}', values: { name: 'Ben' } });
 ```
 
 The client-side `useT` hook uses the same API, so you can share translation patterns between server and client components.
@@ -881,9 +881,11 @@ t('Submit', undefined, { context: 'button' }); // With context
 t('Save', undefined, { ns: 'common' }); // With namespace
 
 // ID-based
-t({ id: 'welcome' });
-t({ id: 'greeting', values: { name: 'Ben' } });
+t({ id: 'welcome' }); // Key only (translation must exist in PO)
+t({ id: 'greeting', source: 'Hello {name}', values: { name: 'Ben' } }); // With source text + values
 ```
+
+The `source` field provides default locale text for extraction (like children in `<Trans id="...">Source text</Trans>`). Without `source`, the PO entry gets an empty `msgstr` and you must add translations manually.
 
 ### createT (Plain JS)
 
@@ -896,6 +898,7 @@ const t = createT('es'); // Create for specific locale
 t('Hello world');
 t('Hello {name}', { name: 'Ben' });
 t({ id: 'welcome' });
+t({ id: 'greeting', source: 'Hello {name}', values: { name: 'Ben' } });
 ```
 
 ### ICU Helpers

@@ -147,3 +147,18 @@ msgstr "{count} elementos por {author}"
 #, ai-translated
 msgid "002RXyTq"
 msgstr "Traducción en línea"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.idOnly"
+msgstr "Mensaje solo con ID"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.greeting"
+msgstr "¡Hola desde formulario objeto!"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.welcome"
+msgstr "¡Bienvenido, {name}!"

@@ -4,6 +4,7 @@ import { EdgeCases } from './components/EdgeCases';
 import { Interpolation } from './components/Interpolation';
 import { Plurals } from './components/Plurals';
 import { UseT } from './components/UseT';
+import { UseTObjectForm } from './components/UseTObjectForm';
 
 interface AppProps {
   locale: string;
@@ -66,6 +67,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="uset-section">
           <h2>useT Hook</h2>
           <UseT />
+        </section>
+
+        <section data-testid="uset-object-form-section">
+          <h2>useT Object Form</h2>
+          <UseTObjectForm />
         </section>
       </main>
     </div>

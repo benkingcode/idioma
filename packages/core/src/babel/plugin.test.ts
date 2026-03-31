@@ -2,6 +2,7 @@ import { join } from 'path';
 import * as babel from '@babel/core';
 import { describe, expect, it } from 'vitest';
 import type { PathsMatcher } from '../utils/resolve-tsconfig-paths';
+import type { ExtractedMessage } from './extract-trans';
 import idiomaPlugin, { type IdiomaPluginOptions } from './plugin';
 
 // Default test configuration for idiomaDir-based detection
@@ -1279,6 +1280,234 @@ describe('Idioma Babel Plugin', () => {
 
       // Should not extract because createT is not from idioma folder
       expect(extracted).toHaveLength(0);
+    });
+  });
+
+  describe('t() with object form', () => {
+    // --- Extraction tests ---
+
+    it('extracts t({ id }) with empty source', () => {
+      const extracted: ExtractedMessage[] = [];
+
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ id: 'home.title' })
+        }
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].key).toBe('home.title');
+      expect(extracted[0].source).toBe('');
+    });
+
+    it('extracts t({ id, source }) with source text', () => {
+      const extracted: ExtractedMessage[] = [];
+
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ id: 'home.title', source: 'Discover events' })
+        }
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].key).toBe('home.title');
+      expect(extracted[0].source).toBe('Discover events');
+    });
+
+    it('extracts t({ id, context, ns })', () => {
+      const extracted: ExtractedMessage[] = [];
+
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ id: 'submit', context: 'button', ns: 'auth' })
+        }
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].key).toBe('submit');
+      expect(extracted[0].context).toBe('button');
+      expect(extracted[0].namespace).toBe('auth');
+    });
+
+    it('skips t() with dynamic id', () => {
+      const extracted: ExtractedMessage[] = [];
+
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          const key = 'dynamic'
+          return t({ id: key })
+        }
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(0);
+    });
+
+    it('skips t() with object missing id', () => {
+      const extracted: ExtractedMessage[] = [];
+
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ source: 'text' })
+        }
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(0);
+    });
+
+    // --- Transformation tests ---
+
+    it('inlines translations for t({ id, source })', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ id: 'greeting', source: 'Hello' })
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {
+          greeting: {
+            en: 'Hello',
+            es: 'Hola',
+          },
+        },
+      });
+
+      // Should transform to string form with inlined translations
+      expect(result).toContain('"Hello"');
+      expect(result).toContain('"Hola"');
+      expect(result).toContain('"greeting"');
+      // Should not contain the object form anymore
+      expect(result).not.toContain('id:');
+    });
+
+    it('inlines translations with values', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          const name = 'Ben'
+          return t({ id: 'greet', source: 'Hi {name}', values: { name } })
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {
+          greet: {
+            en: 'Hi {name}',
+            es: 'Hola {name}',
+          },
+        },
+      });
+
+      // Should have 3 args: source string, inlined translations, values
+      expect(result).toContain('"Hi {name}"');
+      expect(result).toContain('"Hola {name}"');
+      expect(result).toContain('name');
+      expect(result).not.toContain('id:');
+    });
+
+    it('normalizes to string form when no translations found (with source)', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ id: 'missing', source: 'Hello' })
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+      });
+
+      // Should normalize to t('Hello') - source as first arg
+      expect(result).toContain('t("Hello")');
+      expect(result).not.toContain('id:');
+    });
+
+    it('normalizes to string form when no translations and no source', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp() {
+          const t = useT()
+          return t({ id: 'missing' })
+        }
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+      });
+
+      // Should normalize to t('missing') - id as fallback first arg
+      expect(result).toContain('t("missing")');
+      expect(result).not.toContain('id:');
+    });
+
+    it('works with createT-derived t() binding', () => {
+      const extracted: ExtractedMessage[] = [];
+
+      const code = `
+        import { createT } from './idioma'
+        const t = createT('en')
+        const msg = t({ id: 'server.greeting', source: 'Hello from server' })
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].key).toBe('server.greeting');
+      expect(extracted[0].source).toBe('Hello from server');
     });
   });
 });

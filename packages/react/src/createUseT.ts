@@ -111,12 +111,25 @@ export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = {
       string,
   >(
     args: K extends KeysWithValues<C['MessageValues']>
-      ? { id: K; values: C['MessageValues'][K]; context?: string; ns?: string }
+      ? {
+          id: K;
+          values: C['MessageValues'][K];
+          source?: string;
+          context?: string;
+          ns?: string;
+        }
       : K extends KeysWithoutValues<C['MessageValues']>
-        ? { id: K; values?: never; context?: string; ns?: string }
+        ? {
+            id: K;
+            values?: never;
+            source?: string;
+            context?: string;
+            ns?: string;
+          }
         : {
             id: K;
             values?: Record<string, unknown>;
+            source?: string;
             context?: string;
             ns?: string;
           },
@@ -169,6 +182,7 @@ export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = {
 // Internal runtime type for key-only args (untyped at runtime)
 interface KeyOnlyArgsRuntime {
   id: string;
+  source?: string;
   values?: Record<string, unknown>;
   context?: string;
   ns?: string;
@@ -200,15 +214,19 @@ export function createUseT<
         values?: Record<string, unknown>,
         options?: SourceTextOptions,
       ): string => {
-        // Key-only mode: t({ id: 'welcome', values: { name }, ns: 'common' })
-        // Babel should transform this, but if not, return the id as fallback
+        // Key-only mode: t({ id: 'welcome', source: 'Hello', values: { name }, ns: 'common' })
+        // Babel should transform this, but if not, use source as fallback text
         if (typeof sourceOrArgs === 'object') {
-          const { id } = sourceOrArgs;
+          const { id, source, values: objValues } = sourceOrArgs;
           console.warn(
             `[idioma] t({ id: "${id}" }) was not transformed by Babel. ` +
               'Make sure @idioma/core Babel plugin is configured.',
           );
-          return id;
+          const fallbackText = source || id;
+          if (objValues && Object.keys(objValues).length > 0) {
+            return interpolateValues(fallbackText, objValues);
+          }
+          return fallbackText;
         }
 
         // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button' })

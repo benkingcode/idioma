@@ -139,4 +139,31 @@ describe('_createTFactory', () => {
       expect(t('Hello world')).toBe('Hello world');
     });
   });
+
+  describe('object form fallback (Babel not configured)', () => {
+    it('returns id when no source provided', () => {
+      const t = _createTFactory('en');
+      const result = t({ id: 'greeting' } as unknown as string);
+      expect(result).toBe('greeting');
+    });
+
+    it('returns source when provided', () => {
+      const t = _createTFactory('en');
+      const result = t({
+        id: 'greeting',
+        source: 'Hello!',
+      } as unknown as string);
+      expect(result).toBe('Hello!');
+    });
+
+    it('interpolates values into source fallback', () => {
+      const t = _createTFactory('en');
+      const result = t({
+        id: 'greeting',
+        source: 'Hello {name}!',
+        values: { name: 'Ben' },
+      } as unknown as string);
+      expect(result).toBe('Hello Ben!');
+    });
+  });
 });

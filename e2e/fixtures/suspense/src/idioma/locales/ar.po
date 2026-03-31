@@ -141,3 +141,18 @@ msgstr "{count} عنصر بواسطة {author}"
 #, ai-translated
 msgid "002RXyTq"
 msgstr "الترجمة المضمنة"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.idOnly"
+msgstr "رسالة معرّف فقط"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.greeting"
+msgstr "مرحبًا من نموذج الكائن!"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.welcome"
+msgstr "مرحبًا، {name}!"

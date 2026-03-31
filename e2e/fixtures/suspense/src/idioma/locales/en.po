@@ -141,3 +141,18 @@ msgstr "{count} items by {author}"
 #. [AI Context]: Inline translation text displayed directly in a paragraph element. Used as an example of inline useT hook usage.
 msgid "002RXyTq"
 msgstr "Inline translation"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.idOnly"
+msgstr "ID-only message"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.greeting"
+msgstr "Hello from object form!"
+
+#: src/components/UseTObjectForm.tsx
+#, extracted
+msgid "uset.welcome"
+msgstr "Welcome, {name}!"

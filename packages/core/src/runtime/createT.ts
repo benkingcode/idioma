@@ -61,6 +61,21 @@ export function _createTFactory<
     inlinedOrValues?: Record<string, unknown>,
     values?: TValues,
   ): string => {
+    // Case 0: Object form fallback (Babel didn't transform)
+    // Shape: { id: 'key', source: 'Hello', values: { name } }
+    if (typeof source === 'object' && source !== null) {
+      const obj = source as unknown as {
+        id: string;
+        source?: string;
+        values?: Record<string, unknown>;
+      };
+      const fallbackText = obj.source || obj.id;
+      if (obj.values && Object.keys(obj.values).length > 0) {
+        return interpolateValues(fallbackText, obj.values);
+      }
+      return fallbackText;
+    }
+
     // Case 1: Inlined translations from Babel (highest priority)
     // Shape: { key: { en: 'Hello', es: 'Hola' } }
     if (inlinedOrValues && isInlinedTranslations(inlinedOrValues)) {

@@ -317,8 +317,65 @@ export async function extractFromFile(
                 const args = path.node.arguments;
                 const sourceArg = args[0];
 
+                if (!sourceArg) return;
+
+                // Handle object form: t({ id: 'key', source: 'text' })
+                if (sourceArg.type === 'ObjectExpression') {
+                  let id: string | undefined;
+                  let source: string | undefined;
+                  let context: string | undefined;
+                  let namespace: string | undefined;
+
+                  for (const prop of sourceArg.properties) {
+                    if (prop.type !== 'ObjectProperty' || prop.computed)
+                      continue;
+                    const keyName =
+                      prop.key.type === 'Identifier'
+                        ? prop.key.name
+                        : prop.key.type === 'StringLiteral'
+                          ? prop.key.value
+                          : undefined;
+                    if (!keyName) continue;
+
+                    if (
+                      keyName === 'id' &&
+                      prop.value.type === 'StringLiteral'
+                    ) {
+                      id = prop.value.value;
+                    } else if (
+                      keyName === 'source' &&
+                      prop.value.type === 'StringLiteral'
+                    ) {
+                      source = prop.value.value;
+                    } else if (
+                      keyName === 'context' &&
+                      prop.value.type === 'StringLiteral'
+                    ) {
+                      context = prop.value.value;
+                    } else if (
+                      keyName === 'ns' &&
+                      prop.value.type === 'StringLiteral'
+                    ) {
+                      namespace = prop.value.value;
+                    }
+                  }
+
+                  if (!id) return; // No static id, skip
+
+                  const line = path.node.loc?.start.line ?? 0;
+                  messages.push({
+                    key: id,
+                    source: source ?? '',
+                    location: displayPath,
+                    line,
+                    context,
+                    namespace,
+                  });
+                  return;
+                }
+
                 // Only extract string literal sources
-                if (!sourceArg || sourceArg.type !== 'StringLiteral') return;
+                if (sourceArg.type !== 'StringLiteral') return;
 
                 const source = sourceArg.value;
                 const key = generateKey(source);

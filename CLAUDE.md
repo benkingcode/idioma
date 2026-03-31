@@ -198,12 +198,21 @@ Transforms components to internal versions with pre-compiled translations baked 
 For `useT()`:
 
 ```tsx
-// Before
+// Before (source text mode)
 const t = useT();
 t('Hello {name}', { name: 'Ben' });
 
 // After (Babel inlines translations as 2nd arg)
 t('Hello {name}', { key123: { en: '...', es: '...' } }, { name: 'Ben' });
+```
+
+```tsx
+// Before (object form with explicit id)
+t({ id: 'greeting', source: 'Hello {name}', values: { name: 'Ben' } });
+
+// After (Babel normalizes to string form + inlines translations)
+t('Hello {name}', { greeting: { en: '...', es: '...' } }, { name: 'Ben' });
+// Without source: t({ id: 'key' }) → t('key', { key: { en: '...', es: '...' } })
 ```
 
 #### Suspense Mode (`mode: 'suspense'`) — For lazy loading (React 19+)
