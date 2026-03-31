@@ -670,7 +670,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
  * Extracts the duplicated logic for namespace, placeholders, and components.
  */
 function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
-  const { placeholders, components, namespace } = extracted;
+  const { placeholders, components, componentNodes, namespace } = extracted;
   const props: t.JSXAttribute[] = [];
 
   // Add __ns if there is a namespace
@@ -700,9 +700,17 @@ function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
 
   // Add __c (component array) and __cn (component names) if there are components
   if (components.length > 0) {
-    const componentElements = components.map((name) =>
-      /^[a-z]/.test(name) ? t.stringLiteral(name) : t.identifier(name),
-    );
+    // Use original JSX element nodes (with preserved props) when available.
+    // The React preset transforms these to createElement() calls, so at runtime
+    // __c contains ReactElements that can be cloned with translated children.
+    let componentElements: t.Expression[];
+    if (componentNodes && componentNodes.length === components.length) {
+      componentElements = componentNodes;
+    } else {
+      componentElements = components.map((name) =>
+        /^[a-z]/.test(name) ? t.stringLiteral(name) : t.identifier(name),
+      );
+    }
     const componentNameStrings = components.map((name) =>
       t.stringLiteral(name),
     );

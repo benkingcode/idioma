@@ -247,3 +247,74 @@ describe('serializeJsxChildren with plural()', () => {
     expect(result.message).toContain("one {'{count}' item}");
   });
 });
+
+describe('serializeJsxChildren componentNodes', () => {
+  it('stores componentNodes parallel to components', () => {
+    const children = getChildren(
+      '<Trans>Click <Link>here</Link> or <Bold>this</Bold></Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.componentNodes).toHaveLength(2);
+    expect(result.components).toEqual(['Link', 'Bold']);
+  });
+
+  it('preserves JSX attributes on componentNodes', () => {
+    const children = getChildren(
+      '<Trans>Style <Text size="inherit" fw={500}>content</Text> here</Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.componentNodes).toHaveLength(1);
+    const node = result.componentNodes[0]!;
+    // Should be self-closing
+    expect(node.openingElement.selfClosing).toBe(true);
+    expect(node.children).toHaveLength(0);
+    // Should have 2 attributes preserved
+    expect(node.openingElement.attributes).toHaveLength(2);
+  });
+
+  it('preserves attributes on intrinsic elements', () => {
+    const children = getChildren(
+      '<Trans>Go <span style={{ fontWeight: 500 }}>bold</span></Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    expect(result.componentNodes).toHaveLength(1);
+    const node = result.componentNodes[0]!;
+    expect(node.openingElement.attributes).toHaveLength(1);
+    // Name should be span
+    expect(
+      t.isJSXIdentifier(node.openingElement.name) &&
+        node.openingElement.name.name,
+    ).toBe('span');
+  });
+
+  it('creates self-closing nodes even for elements with children', () => {
+    const children = getChildren(
+      '<Trans><Link href="/test">click me</Link></Trans>',
+    );
+    const result = serializeJsxChildren(children);
+
+    const node = result.componentNodes[0]!;
+    expect(node.openingElement.selfClosing).toBe(true);
+    expect(node.children).toHaveLength(0);
+    // Should preserve the href attribute
+    expect(node.openingElement.attributes).toHaveLength(1);
+  });
+
+  it('handles self-closing JSX elements', () => {
+    const children = getChildren('<Trans>Line<br/>break</Trans>');
+    const result = serializeJsxChildren(children);
+
+    expect(result.componentNodes).toHaveLength(1);
+    expect(result.componentNodes[0]!.openingElement.selfClosing).toBe(true);
+  });
+
+  it('returns empty componentNodes when no components', () => {
+    const children = getChildren('<Trans>Hello {name}</Trans>');
+    const result = serializeJsxChildren(children);
+
+    expect(result.componentNodes).toEqual([]);
+  });
+});

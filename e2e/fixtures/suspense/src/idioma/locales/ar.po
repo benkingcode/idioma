@@ -156,3 +156,8 @@ msgstr "مرحبًا من نموذج الكائن!"
 #, extracted
 msgid "uset.welcome"
 msgstr "مرحبًا، {name}!"
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "002De7Tm"
+msgstr ""

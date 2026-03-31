@@ -19,6 +19,8 @@ export interface SerializeResult {
   placeholders: Record<string, string>;
   /** List of component names in order of appearance */
   components: string[];
+  /** Original JSX element nodes (self-closing, with attributes preserved) parallel to components */
+  componentNodes: t.JSXElement[];
   /** Comments for complex expressions */
   comments?: string[];
 }
@@ -39,6 +41,7 @@ export function serializeJsxChildren(
 ): SerializeResult {
   const placeholders: Record<string, string> = {};
   const components: string[] = [];
+  const componentNodes: t.JSXElement[] = [];
   const comments: string[] = [];
   let complexExpressionIndex = 0;
 
@@ -104,6 +107,20 @@ export function serializeJsxChildren(
       const componentName = getElementName(opening.name);
       components.push(componentName);
 
+      // Store a self-closing clone of the element with all attributes preserved.
+      // Children are omitted — they come from the translated string at runtime.
+      const selfClosingNode = t.jsxElement(
+        t.jsxOpeningElement(
+          t.cloneNode(opening.name),
+          opening.attributes.map((attr) => t.cloneNode(attr)),
+          true,
+        ),
+        null,
+        [],
+        true,
+      );
+      componentNodes.push(selfClosingNode);
+
       // Use named tags for better translator readability
       // e.g., <Link>click here</Link> instead of <0>click here</0>
       if (node.openingElement.selfClosing) {
@@ -146,6 +163,7 @@ export function serializeJsxChildren(
     message,
     placeholders,
     components,
+    componentNodes,
   };
 
   if (comments.length > 0) {
@@ -236,6 +254,7 @@ export function serializeTemplateLiteral(
     message,
     placeholders,
     components: [], // Template literals don't have JSX components
+    componentNodes: [],
   };
 
   if (comments.length > 0) {

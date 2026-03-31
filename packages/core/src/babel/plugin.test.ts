@@ -183,7 +183,7 @@ describe('Idioma Babel Plugin', () => {
       expect(result).toContain('__c');
     });
 
-    it('uses string literals for intrinsic HTML elements in __c', () => {
+    it('emits intrinsic HTML elements as JSX elements in __c', () => {
       const code = `
         import { Trans } from './idioma'
         const x = <Trans>Text with <span>inline</span> content</Trans>
@@ -195,12 +195,13 @@ describe('Idioma Babel Plugin', () => {
         translations: {},
       });
 
-      // __c should contain "span" as a string literal, not span as an identifier
-      // A bare identifier would cause ReferenceError: span is not defined
-      expect(result).toMatch(/__c:\s*\["span"\]/);
+      // __c should contain a createElement("span", ...) call (from JSX element)
+      expect(result).toMatch(/createElement\("span"/);
+      // __cn should still have "span" as a string
+      expect(result).toMatch(/__cn:\s*\["span"\]/);
     });
 
-    it('uses identifiers for custom components but strings for intrinsic elements', () => {
+    it('emits both custom and intrinsic elements as JSX elements in __c', () => {
       const code = `
         import { Trans } from './idioma'
         const x = <Trans>Click <Link>here</Link> or <span>there</span></Trans>
@@ -212,8 +213,44 @@ describe('Idioma Babel Plugin', () => {
         translations: {},
       });
 
-      // __c should have Link as identifier and "span" as string literal
-      expect(result).toMatch(/__c:\s*\[Link, "span"\]/);
+      // __c should have createElement calls for both Link and "span"
+      expect(result).toMatch(/createElement\(Link/);
+      expect(result).toMatch(/createElement\("span"/);
+      // __cn should still have string names
+      expect(result).toMatch(/__cn:\s*\["Link", "span"\]/);
+    });
+
+    it('preserves component props in __c', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans>Style <Text size="inherit" fw={500}>content</Text> here</Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {},
+      });
+
+      // Props should appear in the createElement call inside __c
+      expect(result).toContain('size: "inherit"');
+      expect(result).toContain('fw: 500');
+    });
+
+    it('preserves intrinsic element props in __c', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans>Go <span style={{ fontWeight: 500 }}>bold</span></Trans>
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations: {},
+      });
+
+      // Style prop should be preserved in the span's createElement
+      expect(result).toContain('fontWeight: 500');
     });
 
     it('handles Trans with explicit id', () => {

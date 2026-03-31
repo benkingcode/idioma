@@ -156,3 +156,8 @@ msgstr "Hello from object form!"
 #, extracted
 msgid "uset.welcome"
 msgstr "Welcome, {name}!"
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "002De7Tm"
+msgstr "Built with{0} <span> open source </span>{1} tools"

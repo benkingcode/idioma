@@ -71,6 +71,15 @@ test.describe('Interpolation - Component Tags', () => {
     await expect(multipleTags).toContainText('اقرأ الشروط وسياسة الخصوصية');
   });
 
+  test('preserves component props from source JSX', async ({ page }) => {
+    const container = page.getByTestId('comp-with-props');
+    await expect(container).toContainText('Built with');
+    const span = container.locator('span');
+    await expect(span).toHaveText('open source');
+    await expect(span).toHaveCSS('font-weight', '500');
+    await expect(span).toHaveCSS('white-space', 'nowrap');
+  });
+
   test('component tags persist through locale switches', async ({ page }) => {
     const container = page.getByTestId('comp-single');
 

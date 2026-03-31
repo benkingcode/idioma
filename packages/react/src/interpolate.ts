@@ -1,7 +1,10 @@
 import {
+  cloneElement,
   createElement,
   Fragment,
+  isValidElement,
   type ComponentType,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 
@@ -31,7 +34,9 @@ export function interpolateValues(
   });
 }
 
-export type TransComponent = ComponentType<{ children?: ReactNode }>;
+export type TransComponent =
+  | ComponentType<{ children?: ReactNode }>
+  | ReactElement;
 
 /**
  * Interpolates tags in a translated string with React components.
@@ -177,12 +182,22 @@ function parseAndRender(
 
       const Component = components[tagIndex];
       if (Component) {
-        parts.push(
-          createElement(Component, {
-            key: `${tagIdentifier}-${i}`,
-            children: innerResult.result,
-          }),
-        );
+        if (isValidElement(Component)) {
+          parts.push(
+            cloneElement(
+              Component,
+              { key: `${tagIdentifier}-${i}` },
+              innerResult.result,
+            ),
+          );
+        } else {
+          parts.push(
+            createElement(Component, {
+              key: `${tagIdentifier}-${i}`,
+              children: innerResult.result,
+            }),
+          );
+        }
       } else {
         // Fallback: just include the inner content without wrapper
         parts.push(innerResult.result);
@@ -221,9 +236,15 @@ function parseAndRender(
 
         const Component = components[tagIndex];
         if (Component) {
-          parts.push(
-            createElement(Component, { key: `${tagIdentifier}-${i}` }),
-          );
+          if (isValidElement(Component)) {
+            parts.push(
+              cloneElement(Component, { key: `${tagIdentifier}-${i}` }),
+            );
+          } else {
+            parts.push(
+              createElement(Component, { key: `${tagIdentifier}-${i}` }),
+            );
+          }
         }
 
         i += selfCloseMatch[0].length;

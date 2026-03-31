@@ -58,6 +58,17 @@ export function ComponentTags() {
           </Bold>
         </Trans>
       </p>
+
+      {/* Component with preserved props */}
+      <p data-testid="comp-with-props">
+        <Trans>
+          Built with{' '}
+          <span style={{ fontWeight: 500, whiteSpace: 'nowrap' as const }}>
+            open source
+          </span>{' '}
+          tools
+        </Trans>
+      </p>
     </div>
   );
 }

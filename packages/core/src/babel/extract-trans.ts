@@ -16,6 +16,8 @@ export interface ExtractedMessage {
   placeholders: Record<string, string>;
   /** Component names */
   components: string[];
+  /** Original JSX element nodes (self-closing, with attributes preserved) parallel to components */
+  componentNodes?: t.JSXElement[];
   /** File:line references */
   references: string[];
   /** Comments for complex expressions */
@@ -72,6 +74,7 @@ export function extractTransMessage(
     source: serialized.message,
     placeholders: serialized.placeholders,
     components: serialized.components,
+    componentNodes: serialized.componentNodes,
     references: [`${filename}:${line}`],
   };
 

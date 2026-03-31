@@ -200,4 +200,70 @@ describe('interpolateTags', () => {
 
     expect(result).toBeDefined();
   });
+
+  it('preserves props when component is a React element', () => {
+    // Simulate what the Babel plugin will emit: a pre-created React element with props
+    const element = createElement('span', {
+      style: { fontWeight: 500, whiteSpace: 'nowrap' },
+      className: 'highlight',
+    });
+
+    const result = interpolateTags(
+      'Built with <span>open source</span> tools',
+      [element as any],
+      undefined,
+      ['span'],
+    );
+
+    // The result should contain the span element with preserved props
+    // Walk the tree to find the span
+    const rendered = result as React.ReactElement;
+    // Result is a Fragment with children
+    const spanChild = Array.isArray(rendered.props?.children)
+      ? rendered.props.children.find(
+          (c: any) => c?.type === 'span' || c?.props?.style,
+        )
+      : rendered.type === 'span'
+        ? rendered
+        : null;
+
+    expect(spanChild).toBeDefined();
+    expect(spanChild.props.style).toEqual({
+      fontWeight: 500,
+      whiteSpace: 'nowrap',
+    });
+    expect(spanChild.props.className).toBe('highlight');
+    // children should be the translated text
+    expect(spanChild.props.children).toBe('open source');
+  });
+
+  it('preserves props on self-closing React elements', () => {
+    const element = createElement('hr', { className: 'divider' });
+
+    const result = interpolateTags(
+      'Before<hr/>After',
+      [element as any],
+      undefined,
+      ['hr'],
+    );
+
+    const rendered = result as React.ReactElement;
+    const hrChild = rendered.props?.children?.find?.(
+      (c: any) => c?.type === 'hr',
+    );
+
+    expect(hrChild).toBeDefined();
+    expect(hrChild.props.className).toBe('divider');
+  });
+
+  it('still works with component types (backward compat)', () => {
+    const Bold = ({ children }: { children?: React.ReactNode }) =>
+      createElement('strong', null, children);
+
+    const result = interpolateTags('<Bold>text</Bold>', [Bold], undefined, [
+      'Bold',
+    ]);
+
+    expect(result).toBeDefined();
+  });
 });

@@ -157,3 +157,8 @@ msgstr "¡Hola desde formulario objeto!"
 #, extracted
 msgid "uset.welcome"
 msgstr "¡Bienvenido, {name}!"
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "002De7Tm"
+msgstr ""
