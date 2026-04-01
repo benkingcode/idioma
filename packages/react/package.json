@@ -1,6 +1,6 @@
 {
   "name": "@idioma/react",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Compile-time React i18n - runtime package",
   "type": "module",
   "sideEffects": false,
