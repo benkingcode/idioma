@@ -41,14 +41,14 @@ describe('__useT', () => {
 
   describe('Babel-inlined mode', () => {
     it('translates using Babel-inlined translations', () => {
-      // Babel transforms: t('source', { key: { en: '...', es: '...' } })
+      // Babel transforms: t('source', { __m: { en: '...', es: '...' } })
       function TestComponent() {
         const t = __useT(translations);
-        // Second arg is Babel-inlined: { key: { locale: translation } }
+        // Second arg is Babel-inlined: { __m: { locale: translation } }
         return (
           <div data-testid="result">
             {t('Hello world!', {
-              [generateKey('Hello world!')]: {
+              __m: {
                 en: 'Hello world!',
                 es: '¡Hola mundo!',
               },
@@ -67,7 +67,7 @@ describe('__useT', () => {
     });
 
     it('interpolates values with Babel-inlined translations', () => {
-      // Babel transforms: t('source', { key: { en: '...', es: '...' } }, { values })
+      // Babel transforms: t('source', { __m: { en: '...', es: '...' } }, { values })
       function TestComponent() {
         const t = __useT(translations);
         return (
@@ -75,7 +75,7 @@ describe('__useT', () => {
             {t(
               'Hello {name}',
               {
-                [generateKey('Hello {name}')]: {
+                __m: {
                   en: 'Hello {name}',
                   es: 'Hola {name}',
                 },
@@ -103,7 +103,7 @@ describe('__useT', () => {
             {t(
               '{count} items',
               {
-                someKey: {
+                __m: {
                   en: ({ count }: { count: number }) =>
                     count === 1 ? '1 item' : `${count} items`,
                   es: ({ count }: { count: number }) =>

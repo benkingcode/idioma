@@ -502,7 +502,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
             const inlinedObject = t.objectExpression([
               t.objectProperty(
-                t.stringLiteral(key),
+                t.stringLiteral('__m'),
                 t.objectExpression(translationEntries),
               ),
             ]);
@@ -566,7 +566,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           return;
         }
 
-        // Build the inlined translations object: { [key]: { en: '...', es: '...' } }
+        // Build the inlined translations object: { __m: { en: '...', es: '...' } }
         const translationEntries = Object.entries(localeMessages).map(
           ([locale, msg]) =>
             t.objectProperty(
@@ -579,7 +579,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
         const inlinedObject = t.objectExpression([
           t.objectProperty(
-            t.stringLiteral(key),
+            t.stringLiteral('__m'),
             t.objectExpression(translationEntries),
           ),
         ]);

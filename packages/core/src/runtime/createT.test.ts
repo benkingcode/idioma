@@ -18,9 +18,9 @@ describe('_createTFactory', () => {
   describe('with inlined translations (from Babel)', () => {
     it('returns translated text for matching locale', () => {
       const t = _createTFactory('es');
-      // Simulates what Babel injects: t('source', { key: { locale: translation } })
+      // Simulates what Babel injects: t('source', { __m: { locale: translation } })
       const result = t('Hello world', {
-        abc123: { en: 'Hello world', es: 'Hola mundo' },
+        __m: { en: 'Hello world', es: 'Hola mundo' },
       });
       expect(result).toBe('Hola mundo');
     });
@@ -28,7 +28,7 @@ describe('_createTFactory', () => {
     it('falls back to source when locale not found in inlined translations', () => {
       const t = _createTFactory('fr');
       const result = t('Hello world', {
-        abc123: { en: 'Hello world', es: 'Hola mundo' },
+        __m: { en: 'Hello world', es: 'Hola mundo' },
       });
       expect(result).toBe('Hello world');
     });
@@ -36,7 +36,7 @@ describe('_createTFactory', () => {
     it('uses first available locale as fallback when source not available', () => {
       const t = _createTFactory('de');
       const result = t('Hello world', {
-        abc123: { es: 'Hola mundo', fr: 'Bonjour monde' },
+        __m: { es: 'Hola mundo', fr: 'Bonjour monde' },
       });
       // Falls back to first locale in the object
       expect(result).toBe('Hola mundo');
@@ -54,7 +54,7 @@ describe('_createTFactory', () => {
       const t = _createTFactory('es');
       const result = t(
         'Hello {name}',
-        { abc123: { en: 'Hello {name}', es: 'Hola {name}' } },
+        { __m: { en: 'Hello {name}', es: 'Hola {name}' } },
         { name: 'Ben' },
       );
       expect(result).toBe('Hola Ben');
@@ -90,11 +90,21 @@ describe('_createTFactory', () => {
       expect(result).toBe('Hello Ben');
     });
 
-    it('treats nested objects as inlined translations', () => {
+    it('treats __m marker as inlined translations', () => {
       const t = _createTFactory('es');
-      // When second arg has object values, it's inlined translations from Babel
-      const result = t('Hello', { abc123: { en: 'Hello', es: 'Hola' } });
+      // When second arg has __m marker, it's inlined translations from Babel
+      const result = t('Hello', { __m: { en: 'Hello', es: 'Hola' } });
       expect(result).toBe('Hola');
+    });
+
+    it('does not false-positive on nested objects without __m marker', () => {
+      const t = _createTFactory('en');
+      // Nested object values without __m should be treated as interpolation values
+      const result = t('Data: {info}', { info: { en: 'value' } } as Record<
+        string,
+        unknown
+      >);
+      expect(result).toBe('Data: [object Object]');
     });
   });
 
@@ -126,7 +136,7 @@ describe('_createTFactory', () => {
       const t = _createTFactory('es', translations);
       // When Babel inlines translations, those take precedence
       const result = t('Hello world', {
-        [generateKey('Hello world')]: {
+        __m: {
           en: 'Hello world',
           es: 'Babel-inlined',
         },

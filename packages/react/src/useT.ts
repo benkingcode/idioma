@@ -99,33 +99,19 @@ export function __useT(
       }
 
       // Source text mode: t('Hello {name}', { name: 'Ben' }, { context: 'button' })
-      // OR after Babel transformation: t('Hello {name}', { en: '...', es: '...' }, { name: 'Ben' })
+      // OR after Babel transformation: t('Hello {name}', { __m: { en: '...', es: '...' } }, { name: 'Ben' })
       const source = sourceOrArgs;
 
-      // Detect if Babel has inlined translations in arg 2
-      // Babel transforms: t('src', { key: { en: '...', es: '...' } }, { actualValues })
-      // The inlined object has ONE key (the message key) whose value has locale keys
+      // Detect if Babel has inlined translations via __m marker
       let actualValues = values;
       let localeMessages: Record<string, string | MessageFunction> | undefined;
 
-      const valuesKeys = values ? Object.keys(values) : [];
-      const firstKey = valuesKeys[0];
-      const firstValue =
-        firstKey && values
-          ? (values as Record<string, unknown>)[firstKey]
-          : undefined;
-
-      // Check if this looks like Babel-inlined translations:
-      // - Has exactly one key (the message key)
-      // - That key's value is an object with locale as a property
-      if (
-        valuesKeys.length === 1 &&
-        firstValue &&
-        typeof firstValue === 'object' &&
-        typeof (firstValue as Record<string, unknown>)[locale] !== 'undefined'
-      ) {
-        // Babel transformed: arg 2 is { messageKey: { en: '...', es: '...' } }
-        localeMessages = firstValue as Record<string, string | MessageFunction>;
+      if (values && typeof values === 'object' && '__m' in values) {
+        // Babel transformed: arg 2 is { __m: { en: '...', es: '...' } }
+        localeMessages = (values as Record<string, unknown>).__m as Record<
+          string,
+          string | MessageFunction
+        >;
         actualValues = options as unknown as Record<string, unknown>;
       } else {
         // Babel didn't inline translations - graceful fallback

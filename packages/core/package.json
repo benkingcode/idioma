@@ -1,6 +1,6 @@
 {
   "name": "@idioma/core",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Compile-time React i18n - build tools and CLI",
   "type": "module",
   "sideEffects": false,

@@ -32,18 +32,23 @@ export interface BaseIdiomaConfig {
 
 // --- Key-only mode helpers ---
 
-/** Keys in MessageValues that have at least one required value */
-export type KeysWithValues<MV extends Record<string, Record<string, unknown>>> =
-  {
-    [K in keyof MV]: MV[K] extends Record<string, never> ? never : K;
-  }[keyof MV];
+/** Keys in MessageValues that have at least one required value.
+ *  TK filters to specific TranslationKey union, excluding index signature keys. */
+export type KeysWithValues<
+  MV extends Record<string, Record<string, unknown>>,
+  TK extends string = Extract<keyof MV, string>,
+> = {
+  [K in TK & keyof MV]: MV[K] extends Record<string, never> ? never : K;
+}[TK & keyof MV];
 
-/** Keys in MessageValues that have no required values */
+/** Keys in MessageValues that have no required values.
+ *  TK filters to specific TranslationKey union, excluding index signature keys. */
 export type KeysWithoutValues<
   MV extends Record<string, Record<string, unknown>>,
+  TK extends string = Extract<keyof MV, string>,
 > = {
-  [K in keyof MV]: MV[K] extends Record<string, never> ? K : never;
-}[keyof MV];
+  [K in TK & keyof MV]: MV[K] extends Record<string, never> ? K : never;
+}[TK & keyof MV];
 
 /**
  * Derive string-only keys from TranslationKey + MessageComponents.
@@ -107,33 +112,29 @@ export type TFunction<C extends BaseIdiomaConfig = BaseIdiomaConfig> = {
 
   // Keys that require values (only string-only keys allowed)
   <
-    K extends StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
+    K extends KeysWithValues<C['MessageValues'], C['TranslationKey']> &
+      StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
       string,
-  >(
-    args: K extends KeysWithValues<C['MessageValues']>
-      ? {
-          id: K;
-          values: C['MessageValues'][K];
-          source?: string;
-          context?: string;
-          ns?: string;
-        }
-      : K extends KeysWithoutValues<C['MessageValues']>
-        ? {
-            id: K;
-            values?: never;
-            source?: string;
-            context?: string;
-            ns?: string;
-          }
-        : {
-            id: K;
-            values?: Record<string, unknown>;
-            source?: string;
-            context?: string;
-            ns?: string;
-          },
-  ): string;
+  >(args: {
+    id: K;
+    values: C['MessageValues'][K];
+    source?: string;
+    context?: string;
+    ns?: string;
+  }): string;
+
+  // Keys that don't require values (only string-only keys allowed)
+  <
+    K extends KeysWithoutValues<C['MessageValues'], C['TranslationKey']> &
+      StringOnlyKeys<C['TranslationKey'], C['MessageComponents']> &
+      string,
+  >(args: {
+    id: K;
+    values?: never;
+    source?: string;
+    context?: string;
+    ns?: string;
+  }): string;
 
   // === Source text mode ===
 
@@ -234,31 +235,16 @@ export function createUseT<
         const source = sourceOrArgs;
 
         // Detect if Babel has inlined translations in arg 2
-        // Babel transforms: t('src', { key: { en: '...', es: '...' } }, { actualValues })
-        // The inlined object has ONE key (the message key) whose value has locale keys
+        // Babel transforms: t('src', { __m: { en: '...', es: '...' } }, { actualValues })
         let actualValues = values;
         let localeMessages:
           | Record<string, string | MessageFunction>
           | undefined;
 
-        const valuesKeys = values ? Object.keys(values) : [];
-        const firstKey = valuesKeys[0];
-        const firstValue =
-          firstKey && values
-            ? (values as Record<string, unknown>)[firstKey]
-            : undefined;
-
-        // Check if this looks like Babel-inlined translations:
-        // - Has exactly one key (the message key)
-        // - That key's value is an object with locale as a property
-        if (
-          valuesKeys.length === 1 &&
-          firstValue &&
-          typeof firstValue === 'object' &&
-          typeof (firstValue as Record<string, unknown>)[locale] !== 'undefined'
-        ) {
-          // Babel transformed: arg 2 is { messageKey: { en: '...', es: '...' } }
-          localeMessages = firstValue as Record<
+        // Check if Babel has inlined translations via __m marker
+        if (values && typeof values === 'object' && '__m' in values) {
+          // Babel transformed: arg 2 is { __m: { en: '...', es: '...' } }
+          localeMessages = (values as Record<string, unknown>).__m as Record<
             string,
             string | MessageFunction
           >;

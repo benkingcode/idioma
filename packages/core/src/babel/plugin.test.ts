@@ -1666,7 +1666,7 @@ describe('Idioma Babel Plugin', () => {
       // Should transform to string form with inlined translations
       expect(result).toContain('"Hello"');
       expect(result).toContain('"Hola"');
-      expect(result).toContain('"greeting"');
+      expect(result).toContain('"__m"');
       // Should not contain the object form anymore
       expect(result).not.toContain('id:');
     });

@@ -20,15 +20,13 @@ function interpolateValues(
 
 /**
  * Check if a value is an inlined translations object (from Babel).
- * Inlined translations have the shape: { key: { locale: translation } }
- * Regular values have the shape: { name: "Ben", count: 5 }
+ * Inlined translations have the shape: { __m: { locale: translation } }
  */
 function isInlinedTranslations(
   value: unknown,
-): value is Record<string, Record<string, string>> {
+): value is { __m: Record<string, string> } {
   if (typeof value !== 'object' || value === null) return false;
-  const firstValue = Object.values(value)[0];
-  return typeof firstValue === 'object' && firstValue !== null;
+  return '__m' in value;
 }
 
 /**
@@ -77,13 +75,9 @@ export function _createTFactory<
     }
 
     // Case 1: Inlined translations from Babel (highest priority)
-    // Shape: { key: { en: 'Hello', es: 'Hola' } }
+    // Shape: { __m: { en: 'Hello', es: 'Hola' } }
     if (inlinedOrValues && isInlinedTranslations(inlinedOrValues)) {
-      const inlined = inlinedOrValues;
-      const key = Object.keys(inlined)[0];
-      if (!key) return source;
-
-      const localeMessages = inlined[key];
+      const localeMessages = inlinedOrValues.__m;
       if (!localeMessages) return source;
 
       // Try to get message for requested locale, fall back to first available

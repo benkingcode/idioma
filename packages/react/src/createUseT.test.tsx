@@ -116,12 +116,11 @@ describe('createUseT', () => {
       function TestComponent() {
         const t = useT();
         // Simulate what Babel produces:
-        // t('Hello', { key: { en: 'Hello', es: 'Hola' } })
-        // where 'key' is the message key hash
+        // t('Hello', { __m: { en: 'Hello', es: 'Hola' } })
         return (
           <div data-testid="result">
             {t('Hello', {
-              abc123: { en: 'Hello', es: 'Hola' },
+              __m: { en: 'Hello', es: 'Hola' },
             } as unknown as Record<string, unknown>)}
           </div>
         );
@@ -140,13 +139,13 @@ describe('createUseT', () => {
       function TestComponent() {
         const t = useT();
         // Simulate Babel-transformed call with values in 3rd arg:
-        // t('Hello {name}', { key: { en: '...', es: '...' } }, { name: 'Ben' })
+        // t('Hello {name}', { __m: { en: '...', es: '...' } }, { name: 'Ben' })
         return (
           <div data-testid="result">
             {t(
               'Hello {name}',
               {
-                abc123: { en: 'Hello {name}', es: 'Hola {name}' },
+                __m: { en: 'Hello {name}', es: 'Hola {name}' },
               } as unknown as Record<string, unknown>,
               { name: 'Ben' } as unknown as undefined,
             )}
@@ -172,7 +171,7 @@ describe('createUseT', () => {
             {t(
               '{count} items',
               {
-                abc123: {
+                __m: {
                   en: (args: { count: number }) =>
                     args.count === 1 ? '1 item' : `${args.count} items`,
                   es: (args: { count: number }) =>
@@ -200,7 +199,7 @@ describe('createUseT', () => {
         return (
           <div data-testid="result">
             {t('Hello', {
-              abc123: { en: 'Hello', es: 'Hola' },
+              __m: { en: 'Hello', es: 'Hola' },
             } as unknown as Record<string, unknown>)}
           </div>
         );
@@ -225,7 +224,7 @@ describe('createUseT', () => {
         return (
           <div data-testid="result">
             {t('Hello', {
-              abc123: { en: 'Hello', es: 'Hola' },
+              __m: { en: 'Hello', es: 'Hola' },
             } as unknown as Record<string, unknown>)}
           </div>
         );
