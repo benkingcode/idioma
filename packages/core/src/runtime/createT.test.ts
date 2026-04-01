@@ -153,7 +153,7 @@ describe('_createTFactory', () => {
   describe('object form fallback (Babel not configured)', () => {
     it('returns id when no source provided', () => {
       const t = _createTFactory('en');
-      const result = t({ id: 'greeting' } as unknown as string);
+      const result = t({ id: 'greeting' });
       expect(result).toBe('greeting');
     });
 
@@ -162,7 +162,7 @@ describe('_createTFactory', () => {
       const result = t({
         id: 'greeting',
         source: 'Hello!',
-      } as unknown as string);
+      });
       expect(result).toBe('Hello!');
     });
 
@@ -172,7 +172,7 @@ describe('_createTFactory', () => {
         id: 'greeting',
         source: 'Hello {name}!',
         values: { name: 'Ben' },
-      } as unknown as string);
+      });
       expect(result).toBe('Hello Ben!');
     });
   });

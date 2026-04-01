@@ -3,6 +3,70 @@ import { generateKey } from '../keys/generator.js';
 /** Translations object shape from compiler */
 type TranslationsMap = Record<string, Record<string, string>>;
 
+// =============================================================================
+// Helper types for typed overloads
+// =============================================================================
+
+/** Keys in MessageValues that have at least one required value.
+ *  TK filters to specific TranslationKey union, excluding index signature keys. */
+type KeysWithValues<
+  MV extends Record<string, Record<string, unknown>>,
+  TK extends string = Extract<keyof MV, string>,
+> = {
+  [K in TK & keyof MV]: MV[K] extends Record<string, never> ? never : K;
+}[TK & keyof MV];
+
+/** Keys in MessageValues that have no required values.
+ *  TK filters to specific TranslationKey union, excluding index signature keys. */
+type KeysWithoutValues<
+  MV extends Record<string, Record<string, unknown>>,
+  TK extends string = Extract<keyof MV, string>,
+> = {
+  [K in TK & keyof MV]: MV[K] extends Record<string, never> ? K : never;
+}[TK & keyof MV];
+
+/**
+ * Type for the t function returned by createT.
+ * Supports both source text mode and key-only mode.
+ */
+export type PlainTFunction<
+  TK extends string = string,
+  MV extends Record<string, Record<string, unknown>> = Record<
+    string,
+    Record<string, unknown>
+  >,
+> = {
+  // === Key-only mode ===
+
+  // Keys that require values
+  <K extends KeysWithValues<MV, TK> & string>(args: {
+    id: K;
+    values: MV[K];
+    source?: string;
+    context?: string;
+    ns?: string;
+  }): string;
+
+  // Keys that don't require values
+  <K extends KeysWithoutValues<MV, TK> & string>(args: {
+    id: K;
+    values?: never;
+    source?: string;
+    context?: string;
+    ns?: string;
+  }): string;
+
+  // === Source text mode ===
+
+  (source: string): string;
+  (source: string, values: Record<string, unknown>): string;
+  (
+    source: string,
+    inlinedOrValues: Record<string, unknown>,
+    values: Record<string, unknown>,
+  ): string;
+};
+
 /**
  * Interpolate placeholder values in a message string.
  * Replaces {key} with the corresponding value from args.
@@ -45,31 +109,24 @@ function isInlinedTranslations(
  */
 export function _createTFactory<
   TKey extends string = string,
-  TValues extends Record<string, unknown> = Record<string, unknown>,
->(
-  locale: string,
-  translations?: TranslationsMap,
-): (
-  source: TKey,
-  inlinedOrValues?: Record<string, unknown>,
-  values?: TValues,
-) => string {
-  return (
-    source: TKey,
+  MV extends Record<string, Record<string, unknown>> = Record<
+    string,
+    Record<string, unknown>
+  >,
+>(locale: string, translations?: TranslationsMap): PlainTFunction<TKey, MV> {
+  return ((
+    source:
+      | string
+      | { id: string; source?: string; values?: Record<string, unknown> },
     inlinedOrValues?: Record<string, unknown>,
-    values?: TValues,
+    values?: Record<string, unknown>,
   ): string => {
     // Case 0: Object form fallback (Babel didn't transform)
     // Shape: { id: 'key', source: 'Hello', values: { name } }
     if (typeof source === 'object' && source !== null) {
-      const obj = source as unknown as {
-        id: string;
-        source?: string;
-        values?: Record<string, unknown>;
-      };
-      const fallbackText = obj.source || obj.id;
-      if (obj.values && Object.keys(obj.values).length > 0) {
-        return interpolateValues(fallbackText, obj.values);
+      const fallbackText = source.source || source.id;
+      if (source.values && Object.keys(source.values).length > 0) {
+        return interpolateValues(fallbackText, source.values);
       }
       return fallbackText;
     }
@@ -116,6 +173,6 @@ export function _createTFactory<
     }
 
     // Case 4: No translations, no values - return source as-is
-    return source;
-  };
+    return source as string;
+  }) as PlainTFunction<TKey, MV>;
 }
