@@ -29,10 +29,15 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install
+
+      # Clean .npmrc so OIDC auth is used instead of a (missing) token.
+      # setup-node's registry-url would write _authToken=${NODE_AUTH_TOKEN}
+      # which breaks trusted publishers when no token secret exists.
+      - name: Configure npm registry
+        run: echo "registry=https://registry.npmjs.org/" > ~/.npmrc
 
       - name: Build packages
         run: pnpm build
@@ -61,18 +66,11 @@ jobs:
           fi
           echo "All versions match: $TAG_VERSION"
 
-      # Auth via npm Trusted Publishers (OIDC) — no NPM_TOKEN needed.
-      # Configure at: npmjs.com/package/@idioma/core/access (and @idioma/react)
-      # Fallback: set NPM_TOKEN secret and uncomment env blocks below.
       - name: Publish @idioma/core
         run: pnpm --filter @idioma/core publish --no-git-checks --provenance --access public
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @idioma/react
         run: pnpm --filter @idioma/react publish --no-git-checks --provenance --access public
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
