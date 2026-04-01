@@ -1,0 +1,80 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Verify version consistency
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          CORE_VERSION=$(node -p "require('./packages/core/package.json').version")
+          REACT_VERSION=$(node -p "require('./packages/react/package.json').version")
+
+          if [ "$CORE_VERSION" != "$TAG_VERSION" ] || [ "$REACT_VERSION" != "$TAG_VERSION" ]; then
+            echo "Version mismatch!"
+            echo "  Tag:           $TAG_VERSION"
+            echo "  @idioma/core:  $CORE_VERSION"
+            echo "  @idioma/react: $REACT_VERSION"
+            exit 1
+          fi
+          echo "All versions match: $TAG_VERSION"
+
+      # Auth via npm Trusted Publishers (OIDC) — no NPM_TOKEN needed.
+      # Configure at: npmjs.com/package/@idioma/core/access (and @idioma/react)
+      # Fallback: set NPM_TOKEN secret and uncomment env blocks below.
+      - name: Publish @idioma/core
+        run: pnpm --filter @idioma/core publish --no-git-checks --provenance --access public
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @idioma/react
+        run: pnpm --filter @idioma/react publish --no-git-checks --provenance --access public
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
