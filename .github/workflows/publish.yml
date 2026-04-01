@@ -37,6 +37,9 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      - name: Compile translations
+        run: pnpm -r --if-present compile
+
       - name: Typecheck
         run: pnpm typecheck
 
