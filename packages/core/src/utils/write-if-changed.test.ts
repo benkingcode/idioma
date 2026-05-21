@@ -55,4 +55,30 @@ describe('writeIfChanged', () => {
     expect(await writeIfChanged(filePath, 'x')).toBe(false);
     expect(await writeIfChanged(filePath, 'x')).toBe(false);
   });
+
+  it('skips the write when existing content differs only by trailing whitespace', async () => {
+    // Simulates a formatter (Prettier, EditorConfig) appending a final newline
+    // to a generated file. We should treat it as unchanged.
+    const filePath = join(tempDir, 'formatted.ts');
+    await fs.writeFile(filePath, 'export const x = 1;\n\n', 'utf-8');
+    const before = await fs.stat(filePath);
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const wrote = await writeIfChanged(filePath, 'export const x = 1;\n');
+    const after = await fs.stat(filePath);
+
+    expect(wrote).toBe(false);
+    expect(after.mtimeMs).toBe(before.mtimeMs);
+  });
+
+  it('still writes when content differs in non-whitespace ways', async () => {
+    const filePath = join(tempDir, 'substantive.ts');
+    await fs.writeFile(filePath, 'export const x = 1;\n', 'utf-8');
+
+    const wrote = await writeIfChanged(filePath, 'export const x = 2;\n');
+
+    expect(wrote).toBe(true);
+    expect(await fs.readFile(filePath, 'utf-8')).toBe('export const x = 2;\n');
+  });
 });

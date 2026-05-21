@@ -6,6 +6,10 @@ import { promises as fs } from 'fs';
  *
  * Useful for build outputs whose timestamps drive file watchers — skipping
  * unchanged writes prevents downstream tools from reacting to no-op rebuilds.
+ *
+ * Equality is checked after trimming leading/trailing whitespace so that
+ * formatters (Prettier, EditorConfig "insert_final_newline", etc.) touching
+ * the file don't force a rewrite on every build.
  */
 export async function writeIfChanged(
   filePath: string,
@@ -13,7 +17,7 @@ export async function writeIfChanged(
 ): Promise<boolean> {
   try {
     const existing = await fs.readFile(filePath, 'utf-8');
-    if (existing === content) return false;
+    if (existing.trim() === content.trim()) return false;
   } catch {
     // File doesn't exist (or isn't readable) — fall through to write
   }
