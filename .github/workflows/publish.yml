@@ -25,13 +25,14 @@ jobs:
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
+        # Node 24 ships with npm 11 (required for trusted publisher OIDC).
+        # Node 22.22.2 bundles a broken npm 10 — its arborist is missing
+        # promise-retry, so any `npm install -g` triggers MODULE_NOT_FOUND
+        # before it can self-upgrade.
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'pnpm'
-
-      - name: Install npm 11
-        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: pnpm install
