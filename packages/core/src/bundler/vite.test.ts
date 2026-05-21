@@ -48,4 +48,18 @@ describe('Idioma Vite Plugin', () => {
 
     expect(plugin.enforce).toBe('pre');
   });
+
+  it('exposes an async handleHotUpdate so it can await Vite read()', () => {
+    // Regression guard: the source-file short-circuit reads file content via
+    // Vite's HmrContext.read(), which is async. If handleHotUpdate is ever
+    // made sync again, the await would silently turn into Promise<true> and
+    // every file would pass the import check.
+    const plugin = idiomaVitePlugin({
+      idiomaDir: './src/idioma',
+      defaultLocale: 'en',
+    });
+
+    expect(plugin.handleHotUpdate).toBeTypeOf('function');
+    expect(plugin.handleHotUpdate?.constructor.name).toBe('AsyncFunction');
+  });
 });

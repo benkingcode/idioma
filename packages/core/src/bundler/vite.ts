@@ -13,6 +13,7 @@ import {
   type DebouncedExtractor,
 } from './debounce.js';
 import { shouldIgnorePath } from './ignore-patterns.js';
+import { fileImportsIdioma } from './import-detect.js';
 import { extractAndMergeFile } from './incremental-extract.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -202,7 +203,7 @@ export default function idiomaVitePlugin(
     },
 
     // Handle HMR for PO files and source files
-    handleHotUpdate({ file, server }) {
+    async handleHotUpdate({ file, server, read }) {
       // Handle PO file changes - recompile translations
       if (file.endsWith('.po') && file.includes(localeDir)) {
         compile().then(async () => {
@@ -248,11 +249,16 @@ export default function idiomaVitePlugin(
       const isInsideIdiomaDir = file.startsWith(absIdiomaDir);
       const isSourceFile =
         matchesSourcePattern && !isIgnored && !isInsideIdiomaDir;
+      if (!isSourceFile || !debouncedExtractor) return;
 
-      if (isSourceFile && debouncedExtractor) {
-        debouncedExtractor.add(file);
-        // Don't block HMR - extraction happens async
-      }
+      // Skip extraction for files that don't import from idiomaDir. This
+      // avoids the HMR cascade when editing files unrelated to i18n —
+      // babel would have extracted nothing from them anyway.
+      const content = await read();
+      if (!fileImportsIdioma(content, file, absIdiomaDir, pathsMatcher)) return;
+
+      debouncedExtractor.add(file);
+      // Don't block HMR - extraction happens async
     },
 
     // Inject Babel plugin for all builds (dev and production)

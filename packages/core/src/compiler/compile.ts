@@ -12,6 +12,7 @@ import {
 import { analyzeIcuMessage, type IcuAnalysis } from '../icu/compiler.js';
 import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
+import { writeIfChanged } from '../utils/write-if-changed.js';
 import { analyzeChunksFromCatalogs } from './chunk-analysis.js';
 import { generateChunkModules } from './generate-chunks.js';
 
@@ -591,7 +592,7 @@ async function generateTranslationsJs(
 
   // Write .js for runtime/bundler (Vite loads this at build time for Babel)
   // No .d.ts needed since user code doesn't import translations.js directly
-  await fs.writeFile(join(outputDir, 'translations.js'), content, 'utf-8');
+  await writeIfChanged(join(outputDir, 'translations.js'), content);
 }
 
 async function generateTypesTs(
@@ -652,7 +653,7 @@ async function generateTypesTs(
   content += '  MessageComponents: MessageComponents;\n';
   content += '}\n';
 
-  await fs.writeFile(join(outputDir, 'types.d.ts'), content, 'utf-8');
+  await writeIfChanged(join(outputDir, 'types.d.ts'), content);
 }
 
 /**
@@ -689,7 +690,7 @@ export const useLocale = createUseLocale();
 export type { IdiomaTypes, Locale };
 `;
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
+  await writeIfChanged(join(outputDir, 'index.ts'), content);
 }
 
 async function generateIndexTsSuspense(
@@ -719,7 +720,7 @@ export const useLocale = createUseLocale();
 export type { IdiomaTypes, Locale };
 `;
 
-  await fs.writeFile(join(outputDir, 'index.ts'), content, 'utf-8');
+  await writeIfChanged(join(outputDir, 'index.ts'), content);
 }
 
 async function generatePlainTs(outputDir: string): Promise<void> {
@@ -733,5 +734,5 @@ export const createT = (locale: Locale) =>
 export type { Locale, TranslationKey, MessageValues };
 `;
 
-  await fs.writeFile(join(outputDir, 'plain.ts'), content, 'utf-8');
+  await writeIfChanged(join(outputDir, 'plain.ts'), content);
 }
