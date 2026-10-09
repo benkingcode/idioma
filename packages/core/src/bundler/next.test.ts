@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { compileTranslations } from '../compiler/compile';
+import { extractAndMergeFile } from './incremental-extract';
 import { withIdioma, type IdiomaNextOptions } from './next';
 
 // Mock compileTranslations and ensureGitignore
@@ -9,6 +10,12 @@ vi.mock('../compiler/compile', () => ({
 
 vi.mock('../utils/gitignore', () => ({
   ensureGitignore: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('./incremental-extract', () => ({
+  extractAndMergeFile: vi
+    .fn()
+    .mockResolvedValue({ added: 0, updated: 0, removed: 0 }),
 }));
 
 const mockCompileTranslations = compileTranslations as Mock;
@@ -307,6 +314,52 @@ describe('IdiomaWebpackPlugin', () => {
 
     expect(mockCompileTranslations).toHaveBeenCalled();
     expect(callback).toHaveBeenCalled();
+  });
+
+  it('passes po options to dev-mode extraction', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const plugin = withIdioma({
+      idiomaDir: './src/idioma',
+      defaultLocale: 'en',
+      po: { foldLength: 0 },
+    });
+    const config = plugin({});
+
+    const mockConfig = { plugins: [] as any[] };
+    const mockContext = {
+      dev: true,
+      isServer: true,
+      webpack: {},
+      buildId: 'test',
+      dir: '/test',
+    };
+
+    config.webpack!(mockConfig as any, mockContext as any);
+
+    const webpackPlugin = mockConfig.plugins[0];
+    const mockCompiler = {
+      hooks: {
+        beforeCompile: { tapAsync: vi.fn() },
+        watchRun: { tapAsync: vi.fn() },
+      },
+    };
+
+    webpackPlugin.apply(mockCompiler);
+
+    const [, watchRunCallback] = (mockCompiler.hooks.watchRun.tapAsync as Mock)
+      .mock.calls[0];
+
+    // Simulate watching with a source file change
+    const mockWatching = {
+      modifiedFiles: new Set([`${process.cwd()}/src/App.tsx`]),
+    };
+    await watchRunCallback(mockWatching, vi.fn());
+
+    await vi.waitFor(() =>
+      expect(extractAndMergeFile).toHaveBeenCalledWith(
+        expect.objectContaining({ po: { foldLength: 0 } }),
+      ),
+    );
   });
 
   it('does not recompile when non-PO files change', async () => {

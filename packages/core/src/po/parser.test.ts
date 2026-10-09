@@ -189,6 +189,31 @@ msgstr "Translation"
       expect(roundTripped!.translation).toBe(original!.translation);
       expect(roundTripped!.context).toBe(original!.context);
     });
+
+    const longMsgstr =
+      "Downloading activates this ticket. Once activated, it can't be transferred to anyone else.";
+    const longPo = `msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "tickets.confirm"
+msgstr "${longMsgstr}"
+`;
+
+    it('folds lines longer than 76 columns by default', () => {
+      const serialized = serializePoString(parsePoString(longPo, 'en'));
+
+      expect(serialized).not.toContain(`msgstr "${longMsgstr}"`);
+      expect(serialized).toContain('msgstr ""\n"Downloading');
+    });
+
+    it('keeps long lines whole with foldLength: 0', () => {
+      const serialized = serializePoString(parsePoString(longPo, 'en'), {
+        foldLength: 0,
+      });
+
+      expect(serialized).toContain(`msgstr "${longMsgstr}"`);
+    });
   });
 
   describe('loadPoFile', () => {

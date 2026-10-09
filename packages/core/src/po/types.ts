@@ -35,6 +35,17 @@ export interface Catalog {
 }
 
 /**
+ * Options for how PO files are written
+ */
+export interface PoFormatOptions {
+  /**
+   * Column at which long msgid/msgstr lines are folded. 0 disables folding.
+   * @default 76
+   */
+  foldLength?: number;
+}
+
+/**
  * Options for merging catalogs
  */
 export interface MergeOptions {

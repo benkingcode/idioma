@@ -2,6 +2,7 @@ import { utimes } from 'fs/promises';
 import { watch, type FSWatcher } from 'chokidar';
 import { join, resolve } from 'pathe';
 import { compileTranslations } from '../compiler/compile.js';
+import type { PoFormatOptions } from '../po/types.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
   createDebouncedExtractor,
@@ -40,6 +41,12 @@ export interface IdiomaMetroOptions {
    * Use this to add extra patterns beyond what's in .gitignore.
    */
   ignorePatterns?: string[];
+  /**
+   * How PO files are written during dev-mode extraction.
+   * `foldLength` sets the column at which long lines are folded (0 disables
+   * folding, default 76).
+   */
+  po?: PoFormatOptions;
 }
 
 interface MetroConfig {
@@ -79,6 +86,7 @@ export function withIdioma(
     watch: enableWatch = true,
     useSuspense,
     ignorePatterns,
+    po,
   } = options;
 
   // Compute derived paths
@@ -166,6 +174,7 @@ export function withIdioma(
               localeDir: resolve(projectRoot, localeDir),
               defaultLocale,
               locales: locales ?? [defaultLocale],
+              po,
             });
           }
           // Recompile after extraction

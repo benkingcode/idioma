@@ -47,6 +47,43 @@ describe('Translate Command', () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
+  it('writes long translations unfolded with po.foldLength: 0', async () => {
+    const longSource =
+      "Downloading activates this ticket. Once activated, it can't be transferred to anyone else.";
+    const longEs =
+      'Al descargarla se activa esta entrada. Una vez activada, no se puede transferir a nadie más.';
+    await fs.writeFile(
+      join(localeDir, 'en.po'),
+      `msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "abc123"
+msgstr "${longSource}"
+`,
+    );
+    await fs.writeFile(
+      join(localeDir, 'es.po'),
+      `msgid ""
+msgstr ""
+"Language: es\\n"
+
+msgid "abc123"
+msgstr ""
+`,
+    );
+
+    await runTranslateAll({
+      localeDir,
+      defaultLocale: 'en',
+      targetLocales: ['es'],
+      provider: createMockProvider({ [longSource]: longEs }),
+      po: { foldLength: 0 },
+    });
+
+    const esContent = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(esContent).toContain(`msgstr "${longEs}"`);
+  });
   it('translates using source text from default locale when msgid is a hash', async () => {
     // This test verifies the core Idioma hash-based key system:
     // - msgid is a content-addressable hash (e.g., "abc123")

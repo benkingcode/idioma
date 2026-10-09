@@ -217,6 +217,21 @@ describe('CLI Config', () => {
       );
     });
 
+    it('accepts po.foldLength in config', async () => {
+      const configContent = `
+        export default {
+          idiomaDir: './src/idioma',
+          defaultLocale: 'en',
+          po: { foldLength: 0 },
+        }
+      `;
+      await fs.writeFile(join(tempDir, 'idioma.config.ts'), configContent);
+
+      const config = await loadConfig(tempDir);
+
+      expect(config.po?.foldLength).toBe(0);
+    });
+
     describe('validation', () => {
       it('throws on missing idiomaDir', async () => {
         await fs.writeFile(
@@ -259,6 +274,19 @@ describe('CLI Config', () => {
         );
 
         await expect(loadConfig(tempDir)).rejects.toThrow('locales');
+      });
+
+      it('throws on negative po.foldLength', async () => {
+        await fs.writeFile(
+          join(tempDir, 'idioma.config.ts'),
+          `export default {
+            idiomaDir: './src/idioma',
+            defaultLocale: 'en',
+            po: { foldLength: -1 },
+          }`,
+        );
+
+        await expect(loadConfig(tempDir)).rejects.toThrow('po.foldLength');
       });
 
       it('warns when defaultLocale not in locales', async () => {

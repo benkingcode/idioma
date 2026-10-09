@@ -8,7 +8,7 @@ import { serializeJsxChildren } from '../../babel/serialize.js';
 import { generateKey } from '../../keys/generator.js';
 import { mergeCatalogs } from '../../po/merge.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
-import type { Catalog, Message } from '../../po/types.js';
+import type { Catalog, Message, PoFormatOptions } from '../../po/types.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
 import {
   isAliasedIdiomaImport,
@@ -41,6 +41,8 @@ export interface ExtractOptions {
   idiomaDir?: string;
   /** Matcher for resolving TypeScript path aliases to file paths */
   pathsMatcher?: PathsMatcher;
+  /** How PO files are written (e.g. line folding) */
+  po?: PoFormatOptions;
 }
 
 export interface ExtractResult {
@@ -63,6 +65,7 @@ export async function extractMessages(
     clean,
     idiomaDir,
     pathsMatcher,
+    po,
   } = options;
 
   // Find all source files
@@ -152,7 +155,7 @@ export async function extractMessages(
         clean: clean ?? false,
       });
 
-      await writePoFile(poPath, existingCatalog);
+      await writePoFile(poPath, existingCatalog, po);
     }
   }
 
@@ -531,6 +534,7 @@ export const extractCommand = defineCommand({
         // Pass absolute idiomaDir for robust import detection
         idiomaDir: resolve(cwd, config.idiomaDir),
         pathsMatcher: pathsMatcher ?? undefined,
+        po: config.po,
       });
 
       spinner.succeed(

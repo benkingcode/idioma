@@ -3,7 +3,7 @@ import { join, relative } from 'path';
 import { extractFromFile, messagesToCatalog } from '../cli/commands/extract.js';
 import { mergeFileIntoCatalog } from '../po/merge.js';
 import { loadPoFile, writePoFile } from '../po/parser.js';
-import type { Catalog } from '../po/types.js';
+import type { Catalog, PoFormatOptions } from '../po/types.js';
 import type { PathsMatcher } from '../utils/resolve-tsconfig-paths.js';
 
 /**
@@ -24,6 +24,8 @@ export interface IncrementalExtractOptions {
   locales: string[];
   /** Matcher for resolving TypeScript path aliases to file paths */
   pathsMatcher?: PathsMatcher;
+  /** How PO files are written (e.g. line folding) */
+  po?: PoFormatOptions;
 }
 
 /**
@@ -68,6 +70,7 @@ export async function extractAndMergeFile(
     defaultLocale,
     locales,
     pathsMatcher,
+    po,
   } = options;
 
   // Compute relative path for references (file-only, no line numbers)
@@ -149,7 +152,7 @@ export async function extractAndMergeFile(
 
     // Write updated catalog (skipped when nothing changed)
     const poPath = join(localeDir, `${locale}.po`);
-    await writePoFile(poPath, catalog);
+    await writePoFile(poPath, catalog, po);
   }
 
   return result;

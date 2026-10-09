@@ -58,6 +58,18 @@ const IdiomaConfigSchema = z.object({
    * @default false
    */
   useSuspense: z.boolean().optional(),
+  /** How PO files are written */
+  po: z
+    .object({
+      /**
+       * Column at which long msgid/msgstr lines are folded.
+       * Set to 0 to keep each string on one line, e.g. to match a TMS export.
+       * Applies when a file is next written; unchanged files are not rewritten.
+       * @default 76
+       */
+      foldLength: z.number().int().min(0).optional(),
+    })
+    .optional(),
   /**
    * AI translation provider configuration.
    * Uses the Vercel AI SDK - install your preferred provider package (e.g., @ai-sdk/anthropic).

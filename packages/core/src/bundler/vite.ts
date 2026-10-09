@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { loadConfig } from '../cli/config.js';
 import { createCompileLock } from '../compiler/compile.js';
+import type { PoFormatOptions } from '../po/types.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
   loadPathsMatcher,
@@ -49,6 +50,12 @@ export interface IdiomaViteOptions {
    * Use this to add extra patterns beyond what's in .gitignore.
    */
   ignorePatterns?: string[];
+  /**
+   * How PO files are written during dev-mode extraction.
+   * `foldLength` sets the column at which long lines are folded (0 disables
+   * folding, default 76). Overrides `po` from idioma.config.ts.
+   */
+  po?: PoFormatOptions;
 }
 
 /**
@@ -82,6 +89,7 @@ export default function idiomaVitePlugin(
   let defaultLocale: string;
   let locales: string[] | undefined;
   let useSuspense: boolean | undefined;
+  let po: PoFormatOptions | undefined;
   let hasCustomLocalesDir = false;
 
   let isDevMode = false;
@@ -106,6 +114,7 @@ export default function idiomaVitePlugin(
     defaultLocale = options.defaultLocale ?? config.defaultLocale;
     locales = options.locales ?? config.locales;
     useSuspense = options.useSuspense ?? config.useSuspense;
+    po = options.po ?? config.po;
     hasCustomLocalesDir = !!(options.localesDir ?? config.localesDir);
   }
 
@@ -184,6 +193,7 @@ export default function idiomaVitePlugin(
                 defaultLocale,
                 locales: locales ?? [defaultLocale],
                 pathsMatcher: pathsMatcher ?? undefined,
+                po,
               });
             }
             // Recompile after extraction

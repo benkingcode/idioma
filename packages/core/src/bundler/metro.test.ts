@@ -8,6 +8,7 @@ import {
   type Mock,
 } from 'vitest';
 import { compileTranslations } from '../compiler/compile';
+import { extractAndMergeFile } from './incremental-extract';
 import { withIdioma, type IdiomaMetroOptions } from './metro';
 
 // Mock compileTranslations
@@ -28,6 +29,12 @@ const mockWatcher = {
 
 vi.mock('chokidar', () => ({
   watch: vi.fn(() => mockWatcher),
+}));
+
+vi.mock('./incremental-extract', () => ({
+  extractAndMergeFile: vi
+    .fn()
+    .mockResolvedValue({ added: 0, updated: 0, removed: 0 }),
 }));
 
 // Mock fs.promises.utimes for touch
@@ -199,6 +206,26 @@ describe('Metro watcher', () => {
     await changeHandler('/test/src/idioma/locales/es.po');
 
     expect(mockCompileTranslations).toHaveBeenCalled();
+  });
+
+  it('passes po options to source-file extraction', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const wrapper = withIdioma({ ...defaultOptions, po: { foldLength: 0 } });
+    await wrapper({ projectRoot: '/test' });
+
+    // The PO watcher registers its 'change' handler first, then the source
+    // watcher (both use the same mock watcher)
+    const changeHandlers = mockWatcher.on.mock.calls
+      .filter(([event]) => event === 'change')
+      .map(([, handler]) => handler);
+    expect(changeHandlers).toHaveLength(2);
+    changeHandlers[1]('/test/src/App.tsx');
+
+    await vi.waitFor(() =>
+      expect(extractAndMergeFile).toHaveBeenCalledWith(
+        expect.objectContaining({ po: { foldLength: 0 } }),
+      ),
+    );
   });
 
   it('recompiles when PO files are added', async () => {

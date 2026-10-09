@@ -469,6 +469,32 @@ msgstr "Old message"
     expect(content).toContain('#. Primary action button for form submission');
   });
 
+  it('writes long lines unfolded with po.foldLength: 0', async () => {
+    const long =
+      "Downloading activates this ticket. Once activated, it can't be transferred to anyone else.";
+    await fs.writeFile(
+      join(srcDir, 'Tickets.tsx'),
+      `
+      import { Trans } from './idioma'
+      export function Tickets() {
+        return <Trans id="tickets.confirm">${long}</Trans>
+      }
+      `,
+    );
+
+    await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+      po: { foldLength: 0 },
+    });
+
+    const en = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
+    expect(en).toContain(`msgstr "${long}"`);
+  });
+
   describe('path alias support', () => {
     it('extracts from aliased imports when pathsMatcher is provided', async () => {
       // Simulate: import { Trans } from '@dancefloor-start/idioma'

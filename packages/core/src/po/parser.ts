@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import * as gettextParser from 'gettext-parser';
-import type { Catalog, Message } from './types.js';
+import type { Catalog, Message, PoFormatOptions } from './types.js';
 
 // Context separator used in PO files (ASCII end-of-transmission)
 const CONTEXT_SEPARATOR = '\u0004';
@@ -70,7 +70,10 @@ export function parsePoString(content: string, locale: string): Catalog {
 /**
  * Serialize a Catalog to PO format string
  */
-export function serializePoString(catalog: Catalog): string {
+export function serializePoString(
+  catalog: Catalog,
+  options: PoFormatOptions = {},
+): string {
   // Build the translations object for gettext-parser
   const translations: Record<
     string,
@@ -140,7 +143,12 @@ export function serializePoString(catalog: Catalog): string {
     translations,
   };
 
-  return gettextParser.po.compile(data).toString('utf-8');
+  // gettext-parser checks `'foldLength' in options`, so only pass the key when
+  // it's set: an explicit undefined would disable folding.
+  const compileOptions =
+    options.foldLength === undefined ? {} : { foldLength: options.foldLength };
+
+  return gettextParser.po.compile(data, compileOptions).toString('utf-8');
 }
 
 /**
@@ -166,12 +174,13 @@ export async function loadPoFile(
 export async function writePoFile(
   path: string,
   catalog: Catalog,
+  options: PoFormatOptions = {},
 ): Promise<boolean> {
-  const content = serializePoString(catalog);
+  const content = serializePoString(catalog, options);
   try {
     const existing = await fs.readFile(path, 'utf-8');
     const existingCatalog = parsePoString(existing, catalog.locale);
-    if (serializePoString(existingCatalog) === content) return false;
+    if (serializePoString(existingCatalog, options) === content) return false;
   } catch {
     // File doesn't exist or can't be parsed: fall through to write
   }
