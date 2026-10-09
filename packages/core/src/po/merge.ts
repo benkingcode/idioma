@@ -101,8 +101,9 @@ export function mergeCatalogs(
  * Merge messages from a single file into existing catalog.
  *
  * Unlike mergeCatalogs(), this function:
- * 1. First removes filePath from references of all existing messages
- * 2. Then adds filePath to references of extracted messages (appending, not replacing)
+ * 1. First removes filePath from references of messages the file no longer uses
+ * 2. Then adds filePath to references of extracted messages (appending only if
+ *    absent, so existing reference order is kept)
  * 3. Removes orphaned messages (no references) only if they have no translations in other locales
  *
  * This enables incremental extraction where only one file is processed at a time.
@@ -125,18 +126,18 @@ export function mergeFileIntoCatalog(
     removed: [],
   };
 
-  // Step 1: Remove filePath from references of all existing messages
+  // Step 1: Remove filePath from references of messages the file no longer
+  // uses. Messages it still uses keep their reference order, so re-extracting
+  // an unchanged file doesn't reorder #: lines and rewrite the PO file.
+  const extractedKeys = new Set(extracted.messages.keys());
   for (const [key, msg] of existing.messages) {
-    if (msg.references) {
+    if (msg.references && !extractedKeys.has(key)) {
       msg.references = msg.references.filter((ref) => ref !== filePath);
     }
   }
 
   // Step 2: Process extracted messages - add or update
-  const extractedKeys = new Set<string>();
   for (const [key, extractedMsg] of extracted.messages) {
-    extractedKeys.add(key);
-
     const existingMsg = existing.messages.get(key);
 
     if (!existingMsg) {

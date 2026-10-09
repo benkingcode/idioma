@@ -94,4 +94,16 @@ describe('extractAndMergeFile (real file system)', () => {
 
     await expectUntouched(files);
   });
+
+  it('leaves PO files untouched when a shared message is re-extracted', async () => {
+    // A message used by two files: saving the first one must not reorder
+    // its #: references.
+    await fs.writeFile(join(projectRoot, 'src/A.tsx'), component('A'));
+    await fs.writeFile(join(projectRoot, 'src/B.tsx'), component('B'));
+    const files = await writeCatalogs(['src/A.tsx', 'src/B.tsx']);
+
+    await extract('src/A.tsx');
+
+    await expectUntouched(files);
+  });
 });
