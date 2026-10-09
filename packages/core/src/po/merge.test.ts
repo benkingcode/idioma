@@ -597,6 +597,31 @@ describe('mergeFileIntoCatalog', () => {
     ]);
   });
 
+  it('keeps reference order when the file still uses the message', () => {
+    // Re-extracting src/A.tsx must not move it after src/B.tsx, or every
+    // save of A would reorder the #: lines and rewrite the PO file.
+    const existing = createCatalog('es', [
+      {
+        key: 'hello',
+        translation: 'Hola',
+        references: ['src/A.tsx', 'src/B.tsx'],
+      },
+    ]);
+    const extracted = createCatalog('es', [
+      { key: 'hello', translation: '', references: ['src/A.tsx'] },
+    ]);
+
+    mergeFileIntoCatalog(existing, extracted, {
+      filePath: 'src/A.tsx',
+      defaultLocale: 'en',
+    });
+
+    expect(existing.messages.get('hello')?.references).toEqual([
+      'src/A.tsx',
+      'src/B.tsx',
+    ]);
+  });
+
   it('removes orphaned untranslated messages when no references remain (with extracted flag)', () => {
     const existing = createCatalog('es', [
       {
