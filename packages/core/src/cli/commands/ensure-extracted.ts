@@ -55,6 +55,7 @@ export async function ensureExtracted(
     defaultLocale: config.defaultLocale,
     locales: config.locales,
     idiomaDir: resolve(cwd, config.idiomaDir),
+    po: config.po,
   });
 
   onExtractComplete?.({

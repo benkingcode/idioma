@@ -107,6 +107,36 @@ export const App = () => <Trans>Hello</Trans>`,
     expect(esExists).toBe(true);
   });
 
+  it('passes po.foldLength from config to extraction', async () => {
+    const long =
+      "Downloading activates this ticket. Once activated, it can't be transferred to anyone else.";
+    await fs.writeFile(
+      join(srcDir, 'App.tsx'),
+      `import { Trans } from './idioma'
+export const App = () => <Trans id="tickets.confirm">${long}</Trans>`,
+    );
+    await fs.writeFile(
+      join(idiomaDir, 'index.ts'),
+      `export { Trans } from '@idioma/react'`,
+    );
+
+    await ensureExtracted({
+      localeDir,
+      locales: ['en'],
+      cwd: tempDir,
+      config: {
+        idiomaDir: 'src/idioma',
+        defaultLocale: 'en',
+        locales: ['en'],
+        sourcePatterns: ['src/**/*.tsx'],
+        po: { foldLength: 0 },
+      },
+    });
+
+    const en = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
+    expect(en).toContain(`msgstr "${long}"`);
+  });
+
   it('runs extract when target locale PO file is missing', async () => {
     // Default locale exists, but target doesn't
     await fs.writeFile(
