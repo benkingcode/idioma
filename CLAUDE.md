@@ -439,12 +439,17 @@ interface Message {
 **Incremental File Merge** (`mergeFileIntoCatalog`):
 For dev mode incremental extraction:
 
-1. Remove file path from all message references
-2. Add file path to extracted message references
+1. Remove file path from references of messages the file no longer uses
+2. Add file path to extracted message references (append only if absent, so reference order stays stable)
 3. Find orphaned messages (no references)
 4. Only remove if: has `extracted` flag AND no translations in other locales
 
 This prevents auto-deletion of TMS-imported messages.
+
+#### Writing (`writePoFile`)
+
+- Skips the write when the catalog is unchanged. The existing file is parsed and re-serialized first, so formatting differences (line folding, header normalisation) do not count as changes. This keeps hand-formatted catalogs intact and stops Vite's `.po` handler from sending a full reload after a no-op extraction.
+- Line folding follows `po.foldLength` in `idioma.config.ts` (default 76, `0` disables folding). The Next.js and Metro plugins take `po` as a `withIdioma()` option.
 
 #### Flag System
 
