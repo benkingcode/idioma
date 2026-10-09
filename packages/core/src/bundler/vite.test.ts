@@ -1,9 +1,30 @@
 import { describe, expect, it, vi } from 'vitest';
+import { loadConfig, type IdiomaConfig } from '../cli/config';
+import { extractAndMergeFile } from './incremental-extract';
 import idiomaVitePlugin, { type IdiomaViteOptions } from './vite';
 
 // Mock ensureGitignore
 vi.mock('../utils/gitignore', () => ({
   ensureGitignore: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mocks for driving buildStart and handleHotUpdate in dev mode
+vi.mock('../cli/config', () => ({
+  loadConfig: vi.fn(),
+}));
+
+vi.mock('../compiler/compile', () => ({
+  createCompileLock: () => ({ compile: vi.fn().mockResolvedValue(undefined) }),
+}));
+
+vi.mock('./incremental-extract', () => ({
+  extractAndMergeFile: vi
+    .fn()
+    .mockResolvedValue({ added: 0, updated: 0, removed: 0 }),
+}));
+
+vi.mock('./import-detect', () => ({
+  fileImportsIdioma: () => true,
 }));
 
 describe('Idioma Vite Plugin', () => {
@@ -61,5 +82,53 @@ describe('Idioma Vite Plugin', () => {
 
     expect(plugin.handleHotUpdate).toBeTypeOf('function');
     expect(plugin.handleHotUpdate?.constructor.name).toBe('AsyncFunction');
+  });
+
+  describe('dev-mode extraction', () => {
+    async function saveSourceFile(options?: IdiomaViteOptions) {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      const plugin = idiomaVitePlugin(options) as any;
+      plugin.configResolved({ command: 'serve', root: '/project' });
+      await plugin.buildStart.call({});
+      await plugin.handleHotUpdate({
+        file: '/project/src/App.tsx',
+        read: async () => '',
+        server: {},
+      });
+    }
+
+    it('passes po options from idioma.config.ts to extraction', async () => {
+      vi.mocked(loadConfig).mockResolvedValue({
+        idiomaDir: './src/idioma',
+        defaultLocale: 'en',
+        po: { foldLength: 0 },
+      } as IdiomaConfig);
+
+      await saveSourceFile();
+
+      await vi.waitFor(() =>
+        expect(extractAndMergeFile).toHaveBeenCalledWith(
+          expect.objectContaining({ po: { foldLength: 0 } }),
+        ),
+      );
+    });
+
+    it('lets plugin options override po from idioma.config.ts', async () => {
+      vi.mocked(extractAndMergeFile).mockClear();
+      vi.mocked(loadConfig).mockResolvedValue({
+        idiomaDir: './src/idioma',
+        defaultLocale: 'en',
+        po: { foldLength: 0 },
+      } as IdiomaConfig);
+
+      await saveSourceFile({ po: { foldLength: 120 } });
+
+      await vi.waitFor(() =>
+        expect(extractAndMergeFile).toHaveBeenCalledWith(
+          expect.objectContaining({ po: { foldLength: 120 } }),
+        ),
+      );
+    });
   });
 });

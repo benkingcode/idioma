@@ -19,6 +19,7 @@ import {
   type TranslationProvider,
 } from '../../ai/provider.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
+import type { PoFormatOptions } from '../../po/types.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
 import { colors } from '../ui/theme.js';
@@ -67,6 +68,8 @@ export interface TranslateOptions {
   projectRoot?: string;
   /** Absolute path to idioma directory (required if autoContext is true) */
   idiomaDir?: string;
+  /** How PO files are written (e.g. line folding) */
+  po?: PoFormatOptions;
   /** Callback for verbose logging */
   onVerbose?: (message: string) => void;
   /** Called when we know how many messages need translation */
@@ -104,6 +107,7 @@ export async function runTranslate(
     contextProvider,
     projectRoot,
     idiomaDir,
+    po,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -143,7 +147,7 @@ export async function runTranslate(
 
     // Save default catalog if context was generated (skip in dry run mode)
     if (contextResult.generated > 0 && !dryRun) {
-      await writePoFile(defaultPoPath, defaultCatalog);
+      await writePoFile(defaultPoPath, defaultCatalog, po);
     }
   }
 
@@ -242,7 +246,7 @@ export async function runTranslate(
       }
     }
 
-    await writePoFile(poPath, catalog);
+    await writePoFile(poPath, catalog, po);
   }
 
   return {
@@ -284,6 +288,7 @@ export async function runTranslateAll(
     contextProvider,
     projectRoot,
     idiomaDir,
+    po,
     onVerbose,
     onMessageCountKnown,
     onBatchComplete,
@@ -322,7 +327,7 @@ export async function runTranslateAll(
 
     // Save default catalog if context was generated (skip in dry run mode)
     if (contextResult.generated > 0 && !dryRun) {
-      await writePoFile(defaultPoPath, defaultCatalog);
+      await writePoFile(defaultPoPath, defaultCatalog, po);
     }
   }
 
@@ -342,6 +347,7 @@ export async function runTranslateAll(
         batchSize,
         // Context already generated above, don't do it again per-locale
         autoContext: false,
+        po,
         onVerbose,
         onMessageCountKnown,
         onBatchComplete,
@@ -542,6 +548,7 @@ export const translateCommand = defineCommand({
       contextProvider,
       projectRoot: cwd,
       idiomaDir: resolve(cwd, config.idiomaDir),
+      po: config.po,
       onVerbose,
       onContextFileCountKnown: (count) => {
         if (count > 0) {

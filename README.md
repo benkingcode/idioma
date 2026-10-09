@@ -701,6 +701,9 @@ export default defineConfig({
   // Files to scan for messages (default: ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'])
   sourcePatterns: ['src/**/*.tsx', 'src/**/*.jsx'],
 
+  // PO file output: keep each string on one line (default: fold at 76 columns)
+  po: { foldLength: 0 },
+
   // AI translation config (uses Vercel AI SDK)
   // Install your preferred provider: pnpm add @ai-sdk/anthropic
   ai: {
@@ -788,6 +791,8 @@ msgstr "Lee nuestros <Link>términos de servicio</Link> y <Link>política de pri
 ```
 
 PO files work with translation management systems like Phrase, Lokalise, and Crowdin.
+
+Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, lines longer than 76 columns are folded. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Next.js and Metro plugins don't read `idioma.config.ts`, so pass the same `po` option to their `withIdioma()`.
 
 ## Bundle Optimization
 

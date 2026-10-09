@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { PoFormatOptions } from '../po/types';
 import { extractAndMergeFile } from './incremental-extract';
 
 // Uses the real file system, unlike incremental-extract.test.ts, which mocks
@@ -62,7 +63,7 @@ describe('extractAndMergeFile (real file system)', () => {
     return files;
   }
 
-  async function extract(relativePath: string) {
+  async function extract(relativePath: string, po?: PoFormatOptions) {
     return extractAndMergeFile({
       filePath: join(projectRoot, relativePath),
       projectRoot,
@@ -70,6 +71,7 @@ describe('extractAndMergeFile (real file system)', () => {
       localeDir,
       defaultLocale: 'en',
       locales: ['en', 'es'],
+      po,
     });
   }
 
@@ -105,5 +107,33 @@ describe('extractAndMergeFile (real file system)', () => {
     await extract('src/A.tsx');
 
     await expectUntouched(files);
+  });
+
+  it('keeps long lines unfolded with po.foldLength: 0 when it writes', async () => {
+    // A real change (a new message) forces a write. With folding off, the
+    // hand-written long lines must stay on one line.
+    await fs.writeFile(
+      join(projectRoot, 'src/Tickets.tsx'),
+      `import { Trans } from './idioma';
+
+export function Tickets() {
+  return (
+    <>
+      <Trans id="tickets.confirm">${LONG_SOURCE}</Trans>
+      <Trans id="tickets.new">New message</Trans>
+    </>
+  );
+}
+`,
+    );
+    await writeCatalogs(['src/Tickets.tsx']);
+
+    await extract('src/Tickets.tsx', { foldLength: 0 });
+
+    const en = await fs.readFile(join(localeDir, 'en.po'), 'utf-8');
+    const es = await fs.readFile(join(localeDir, 'es.po'), 'utf-8');
+    expect(en).toContain('msgid "tickets.new"');
+    expect(en).toContain(`msgstr "${LONG_SOURCE}"`);
+    expect(es).toContain(`msgstr "${LONG_ES}"`);
   });
 });
