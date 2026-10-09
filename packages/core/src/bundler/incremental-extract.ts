@@ -46,12 +46,13 @@ export interface IncrementalExtractResult {
  * 2. Extract messages using Babel
  * 3. Load existing PO catalogs for all locales
  * 4. Merge extracted messages with reference-aware cleanup
- * 5. Write updated PO files
+ * 5. Write PO files whose catalog changed
  *
  * Key behaviors:
  * - Uses file-only references (no line numbers) to avoid noisy git diffs
  * - Removes orphaned messages only if they have no translations in any locale
  * - Preserves existing translations
+ * - Leaves PO files untouched when nothing changed (no HMR reload)
  *
  * @param options - Extraction options including file path and locale config
  * @returns Result with counts of added, updated, and removed messages
@@ -146,7 +147,7 @@ export async function extractAndMergeFile(
       result.removed = mergeResult.removed.length;
     }
 
-    // Write updated catalog
+    // Write updated catalog (skipped when nothing changed)
     const poPath = join(localeDir, `${locale}.po`);
     await writePoFile(poPath, catalog);
   }

@@ -155,14 +155,28 @@ export async function loadPoFile(
 }
 
 /**
- * Write a Catalog to a PO file
+ * Write a Catalog to a PO file, unless the file already holds the same catalog.
+ * Returns true if the file was written, false if it was left untouched.
+ *
+ * The existing file is parsed and re-serialized before the comparison, so
+ * formatting the serializer would change (line folding, header order) does not
+ * count as a change. Skipping unchanged writes keeps hand-formatted catalogs
+ * intact and stops file watchers from reacting to no-op extractions.
  */
 export async function writePoFile(
   path: string,
   catalog: Catalog,
-): Promise<void> {
+): Promise<boolean> {
   const content = serializePoString(catalog);
+  try {
+    const existing = await fs.readFile(path, 'utf-8');
+    const existingCatalog = parsePoString(existing, catalog.locale);
+    if (serializePoString(existingCatalog) === content) return false;
+  } catch {
+    // File doesn't exist or can't be parsed: fall through to write
+  }
   await fs.writeFile(path, content, 'utf-8');
+  return true;
 }
 
 /**

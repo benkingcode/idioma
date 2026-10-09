@@ -230,6 +230,56 @@ msgstr "Speichern"
       expect(written).toContain('msgid "Save"');
       expect(written).toContain('msgstr "Speichern"');
     });
+
+    // A msgstr longer than gettext-parser's 76-column fold, on one line.
+    // The serializer would split it, so a byte comparison never matches.
+    const unfoldedPo = `msgid ""
+msgstr ""
+"Language: es\\n"
+
+#: src/Tickets.tsx
+msgid "tickets.confirm"
+msgstr "{count, plural, one {Downloading activates this ticket. Once activated, it can't be transferred.} other {Downloading activates these {count} tickets.}}"
+`;
+
+    it('skips the write when the catalog has not changed', async () => {
+      const filePath = join(tempDir, 'unchanged.po');
+      await fs.writeFile(filePath, unfoldedPo, 'utf-8');
+      const past = new Date('2020-01-01T00:00:00Z');
+      await fs.utimes(filePath, past, past);
+
+      const catalog = await loadPoFile(filePath, 'es');
+      const wrote = await writePoFile(filePath, catalog);
+
+      expect(wrote).toBe(false);
+      expect(await fs.readFile(filePath, 'utf-8')).toBe(unfoldedPo);
+      expect((await fs.stat(filePath)).mtimeMs).toBe(past.getTime());
+    });
+
+    it('writes when a message has changed', async () => {
+      const filePath = join(tempDir, 'changed.po');
+      await fs.writeFile(filePath, unfoldedPo, 'utf-8');
+
+      const catalog = await loadPoFile(filePath, 'es');
+      catalog.messages.get('tickets.confirm')!.translation = 'Nuevo';
+      const wrote = await writePoFile(filePath, catalog);
+
+      expect(wrote).toBe(true);
+      expect(await fs.readFile(filePath, 'utf-8')).toContain('msgstr "Nuevo"');
+    });
+
+    it('writes when the existing file cannot be parsed', async () => {
+      const filePath = join(tempDir, 'corrupt.po');
+      await fs.writeFile(filePath, 'garbage !!! not po', 'utf-8');
+
+      const catalog = parsePoString(unfoldedPo, 'es');
+      const wrote = await writePoFile(filePath, catalog);
+
+      expect(wrote).toBe(true);
+      expect(await fs.readFile(filePath, 'utf-8')).toContain(
+        'msgid "tickets.confirm"',
+      );
+    });
   });
 
   describe('loadLocaleCatalogs', () => {
