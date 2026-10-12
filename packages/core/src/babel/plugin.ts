@@ -109,6 +109,84 @@ function extractTObjectArg(node: t.ObjectExpression): {
   return { id, source: source ?? '', context, ns, valuesNode };
 }
 
+// Errors for calls that cannot be inlined (issue #14). Each one would render
+// its id at runtime, and typecheck, compile and tests all stay green, so the
+// build is the only place left to catch it.
+const UNRESOLVED_T_ID_MESSAGE =
+  '[idioma] t() needs an id that is a string literal, so Idioma can inline ' +
+  'it at build time. Without inlining, the page renders the id. ' +
+  "Write t({ id: 'some.key' }), or one t() call per key.";
+
+const UNRESOLVED_TRANS_ID_MESSAGE =
+  '[idioma] <Trans> needs an id that is a string literal, so Idioma can ' +
+  'inline it at build time. Without inlining, the page renders the id, or ' +
+  'the English text in every locale. Write id="some.key", or one <Trans> ' +
+  'per key.';
+
+const UNIMPORTED_TRANS_MESSAGE =
+  '[idioma] This <Trans> with an id is not imported from the idioma folder, ' +
+  'so Idioma cannot inline it, and the page renders its id. Import Trans ' +
+  'from your generated idioma module.';
+
+/**
+ * Throw if this call passes a catalogue key to a function that is not a t()
+ * created by useT() or createT() in this file, for example a t passed in as a
+ * parameter. Such a call is never inlined and renders its id.
+ *
+ * Only catalogue keys count: findUser({ id: 'abc' }) is not a translation
+ * call. Suspense mode has no catalogue here, so it is not checked. In dev,
+ * a transform that runs before the catalogue loads sees no keys and skips
+ * the check; the build always has them.
+ */
+function throwIfUncreatedTCall(
+  path: NodePath<t.CallExpression>,
+  opts: IdiomaPluginOptions,
+): void {
+  const arg = path.node.arguments[0];
+  if (!opts.translations || !t.isObjectExpression(arg)) return;
+
+  const objArg = extractTObjectArg(arg);
+  if (!objArg) return;
+
+  const { id, ns } = objArg;
+  const translations = opts.translations as Record<string, unknown> & {
+    __ns?: Record<string, Record<string, unknown>>;
+  };
+  const isCatalogueKey = ns
+    ? translations.__ns?.[ns]?.[id] !== undefined
+    : translations[id] !== undefined;
+  if (!isCatalogueKey) return;
+
+  throw path.buildCodeFrameError(
+    `[idioma] t({ id: '${id}' }) is called on a function that was not ` +
+      'created by useT() or createT() in this file, so Idioma cannot inline ' +
+      `it, and the page renders "${id}". Call useT() or createT(locale) in ` +
+      'this file instead of passing t in.',
+  );
+}
+
+/**
+ * The id={...} or id="..." attribute of a JSX element, if it has one.
+ */
+function getIdAttribute(
+  opening: t.JSXOpeningElement,
+): t.JSXAttribute | undefined {
+  return opening.attributes.find(
+    (attr): attr is t.JSXAttribute =>
+      t.isJSXAttribute(attr) && t.isJSXIdentifier(attr.name, { name: 'id' }),
+  );
+}
+
+/**
+ * Whether a JSX attribute value is a string literal: id="x" or id={'x'}.
+ */
+function isLiteralJsxAttributeValue(value: t.JSXAttribute['value']): boolean {
+  return (
+    t.isStringLiteral(value) ||
+    (t.isJSXExpressionContainer(value) && t.isStringLiteral(value.expression))
+  );
+}
+
 export interface IdiomaPluginOptions {
   /**
    * Plugin mode:
@@ -368,12 +446,14 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           state;
         const callee = path.node.callee;
 
-        if (!t.isIdentifier(callee)) {
+        // Skip if idiomaDir not configured
+        if (!resolvedIdiomaDir) {
           return;
         }
 
-        // Skip if idiomaDir not configured
-        if (!resolvedIdiomaDir) {
+        if (!t.isIdentifier(callee)) {
+          // props.t({ id }), this.t({ id }) and the like are never inlined
+          throwIfUncreatedTCall(path, opts);
           return;
         }
 
@@ -397,6 +477,7 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
         // Check if this is a t() call from idioma
         if (bindingType !== 't') {
+          throwIfUncreatedTCall(path, opts);
           return;
         }
 
@@ -430,7 +511,11 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         // Handle object form: t({ id: 'key', source: 'text', values: {...} })
         if (t.isObjectExpression(sourceArg)) {
           const objArg = extractTObjectArg(sourceArg);
-          if (!objArg) return; // No static id found, skip
+          if (!objArg) {
+            // A non-literal id, a missing id or a spread: the call cannot be
+            // inlined, and renders its id at runtime (issue #14).
+            throw path.buildCodeFrameError(UNRESOLVED_T_ID_MESSAGE);
+          }
 
           const { id, source, context, ns, valuesNode } = objArg;
           const key = id; // Explicit id IS the key (no hashing)
@@ -633,8 +718,21 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
         // Check if this is a Trans component using binding tracking
         const isTrans = translatableBindings.get(componentName) === 'Trans';
+        const idAttribute = getIdAttribute(opening);
         if (!isTrans) {
+          // A Trans with an id that does not come from the idioma folder is
+          // never inlined, and renders its id (issue #14).
+          if (
+            idAttribute &&
+            t.isJSXIdentifier(elementName, { name: 'Trans' })
+          ) {
+            throw path.buildCodeFrameError(UNIMPORTED_TRANS_MESSAGE);
+          }
           return;
+        }
+
+        if (idAttribute && !isLiteralJsxAttributeValue(idAttribute.value)) {
+          throw path.buildCodeFrameError(UNRESOLVED_TRANS_ID_MESSAGE);
         }
 
         // Extract the message (skip name check since we verified via binding tracking)
