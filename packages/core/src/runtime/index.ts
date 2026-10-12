@@ -8,3 +8,4 @@
  */
 
 export { _createTFactory } from './createT.js';
+export { _warnNotInlined } from './warn.js';

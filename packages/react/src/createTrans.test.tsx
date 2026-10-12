@@ -67,6 +67,39 @@ describe('createTrans', () => {
 
       warnSpy.mockRestore();
     });
+
+    // Issue #14: the warning is for development, once per id; production
+    // renders the same fallback without it.
+    it('warns once per id across renders in development', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      render(
+        <IdiomaProvider locale="en">
+          <Trans id="once.trans" />
+          <Trans id="once.trans" />
+          <Trans id="once.trans.other" />
+        </IdiomaProvider>,
+      );
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn in production', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      render(
+        <IdiomaProvider locale="en">
+          <Trans id="prod.trans" />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByText('prod.trans')).toBeDefined();
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+      vi.unstubAllEnvs();
+    });
   });
 
   describe('error handling', () => {
