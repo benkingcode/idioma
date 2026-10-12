@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { generateKey } from '../keys/generator';
 import { _createTFactory } from './createT';
 
@@ -174,6 +174,40 @@ describe('_createTFactory', () => {
         values: { name: 'Ben' },
       });
       expect(result).toBe('Hello Ben!');
+    });
+  });
+
+  // Issue #14: an object call that Babel did not inline renders its id. In
+  // development it now warns, once per id; it used to be silent.
+  describe('object form that was not inlined', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+      vi.unstubAllEnvs();
+    });
+
+    it('warns once per id in development', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const t = _createTFactory('en');
+
+      expect(t({ id: 'once.plain' })).toBe('once.plain');
+      t({ id: 'once.plain' });
+      t({ id: 'once.plain.other' });
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          't({ id: "once.plain" }) was not transformed by Babel',
+        ),
+      );
+    });
+
+    it('does not warn in production', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const t = _createTFactory('en');
+
+      expect(t({ id: 'prod.plain' })).toBe('prod.plain');
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 });

@@ -109,6 +109,52 @@ describe('createUseT', () => {
 
       warnSpy.mockRestore();
     });
+
+    // Issue #14: development only, once per id.
+    it('warns once per id across calls in development', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div>
+            {t({ id: 'once.t' })}
+            {t({ id: 'once.t' })}
+            {t({ id: 'once.t.other' })}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn in production', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      function TestComponent() {
+        const t = useT();
+        return <div data-testid="result">{t({ id: 'prod.t' })}</div>;
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+
+      expect(screen.getByTestId('result').textContent).toBe('prod.t');
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+      vi.unstubAllEnvs();
+    });
   });
 
   describe('Babel-transformed behavior (simulated)', () => {

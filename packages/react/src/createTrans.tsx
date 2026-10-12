@@ -1,3 +1,4 @@
+import { _warnNotInlined } from '@idioma/core/runtime';
 import { useContext, type ReactNode } from 'react';
 import { IdiomaContext } from './context';
 import { type BaseIdiomaConfig } from './createUseT';
@@ -136,7 +137,8 @@ export function createTrans<C extends BaseIdiomaConfig = BaseIdiomaConfig>() {
       MC & Record<string, TransComponent[]>
     >;
     if (id) {
-      console.warn(
+      _warnNotInlined(
+        `Trans:${id}`,
         `[idioma] Trans with id="${id}" was not transformed by Babel. ` +
           'Make sure @idioma/core Babel plugin is configured.',
       );

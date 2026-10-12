@@ -1,4 +1,5 @@
 import { generateKey } from '../keys/generator.js';
+import { _warnNotInlined } from './warn.js';
 
 /** Translations object shape from compiler */
 type TranslationsMap = Record<string, Record<string, string>>;
@@ -124,6 +125,13 @@ export function _createTFactory<
     // Case 0: Object form fallback (Babel didn't transform)
     // Shape: { id: 'key', source: 'Hello', values: { name } }
     if (typeof source === 'object' && source !== null) {
+      _warnNotInlined(
+        `t:${source.id}`,
+        `[idioma] t({ id: "${source.id}" }) was not transformed by Babel, ` +
+          'so it renders its fallback text. Make sure the @idioma/core Babel ' +
+          'plugin is configured, and that t comes from useT() or createT() ' +
+          'in the same file.',
+      );
       const fallbackText = source.source || source.id;
       if (source.values && Object.keys(source.values).length > 0) {
         return interpolateValues(fallbackText, source.values);

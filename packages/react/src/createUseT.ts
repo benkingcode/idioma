@@ -1,3 +1,4 @@
+import { _warnNotInlined } from '@idioma/core/runtime';
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';
@@ -219,7 +220,8 @@ export function createUseT<
         // Babel should transform this, but if not, use source as fallback text
         if (typeof sourceOrArgs === 'object') {
           const { id, source, values: objValues } = sourceOrArgs;
-          console.warn(
+          _warnNotInlined(
+            `t:${id}`,
             `[idioma] t({ id: "${id}" }) was not transformed by Babel. ` +
               'Make sure @idioma/core Babel plugin is configured.',
           );
