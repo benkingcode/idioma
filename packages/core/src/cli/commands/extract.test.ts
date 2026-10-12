@@ -95,6 +95,37 @@ describe('Extract Command', () => {
     expect(result.messages[0].source).toBe('Welcome to our app');
   });
 
+  // Issue #14: a conditional of string literals is a static id; every branch
+  // is extracted. A plain identifier id is still skipped.
+  it('extracts every branch of a conditional id', async () => {
+    await fs.writeFile(
+      join(srcDir, 'Page.tsx'),
+      `
+      import { Trans, useT } from './idioma'
+      export function Page({ live }) {
+        const t = useT()
+        const title = t({ id: live ? 'page.live' : 'page.past' })
+        return <Trans id={live ? 'hero.live' : 'hero.past'} />
+      }
+      `,
+    );
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+    });
+
+    expect(result.messages.map((m) => m.key).sort()).toEqual([
+      'hero.live',
+      'hero.past',
+      'page.live',
+      'page.past',
+    ]);
+  });
+
   // Issue #17: a key-only Trans has no children, and used to be skipped.
   it('extracts key-only Trans with an empty source', async () => {
     await fs.writeFile(

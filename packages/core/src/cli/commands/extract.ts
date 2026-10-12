@@ -5,6 +5,7 @@ import * as babel from '@babel/core';
 import type * as t from '@babel/types';
 import { defineCommand } from 'citty';
 import fg from 'fast-glob';
+import { literalIdLeaves } from '../../babel/literal-id.js';
 import { serializeJsxChildren } from '../../babel/serialize.js';
 import { generateKey } from '../../keys/generator.js';
 import { mergeCatalogs } from '../../po/merge.js';
@@ -300,25 +301,31 @@ export async function extractFromFile(
                   translatableBindings.get(componentName) === 'Trans';
                 if (!isTrans) return;
 
-                const { id, context, comment, namespace, source } =
+                const { ids, context, comment, namespace, source } =
                   parseTransElement(path.node);
                 // A key-only Trans (issue #17) has an id and no source.
-                if (!source && !id) return;
+                if (!source && ids.length === 0) return;
 
-                // Use explicit id or generate hash key from source
-                // With no id, the early return above guarantees a source.
-                const key = id || generateKey(source ?? '', context, namespace);
+                // Explicit ids (one per branch of a conditional id), or a
+                // hash key from the source. With no id, the early return
+                // above guarantees a source.
+                const keys =
+                  ids.length > 0
+                    ? ids
+                    : [generateKey(source ?? '', context, namespace)];
                 const line = path.node.loc?.start.line ?? 0;
 
-                messages.push({
-                  key,
-                  source: source ?? '',
-                  location: displayPath,
-                  line,
-                  context,
-                  comment,
-                  namespace,
-                });
+                for (const key of keys) {
+                  messages.push({
+                    key,
+                    source: source ?? '',
+                    location: displayPath,
+                    line,
+                    context,
+                    comment,
+                    namespace,
+                  });
+                }
               },
 
               // Extract t() calls from useT hook
@@ -338,7 +345,7 @@ export async function extractFromFile(
 
                 // Handle object form: t({ id: 'key', source: 'text' })
                 if (sourceArg.type === 'ObjectExpression') {
-                  let id: string | undefined;
+                  let ids: string[] | null = null;
                   let source: string | undefined;
                   let context: string | undefined;
                   let namespace: string | undefined;
@@ -354,11 +361,9 @@ export async function extractFromFile(
                           : undefined;
                     if (!keyName) continue;
 
-                    if (
-                      keyName === 'id' &&
-                      prop.value.type === 'StringLiteral'
-                    ) {
-                      id = prop.value.value;
+                    if (keyName === 'id') {
+                      // A string literal, or a conditional of them (issue #14)
+                      ids = literalIdLeaves(prop.value);
                     } else if (
                       keyName === 'source' &&
                       prop.value.type === 'StringLiteral'
@@ -377,17 +382,22 @@ export async function extractFromFile(
                     }
                   }
 
-                  if (!id) return; // No static id, skip
+                  // No static id, skip. The Babel plugin fails the build for
+                  // such a call; extraction stays lenient so a file being
+                  // edited in dev mode is not lost from the catalogue.
+                  if (!ids) return;
 
                   const line = path.node.loc?.start.line ?? 0;
-                  messages.push({
-                    key: id,
-                    source: source ?? '',
-                    location: displayPath,
-                    line,
-                    context,
-                    namespace,
-                  });
+                  for (const key of ids) {
+                    messages.push({
+                      key,
+                      source: source ?? '',
+                      location: displayPath,
+                      line,
+                      context,
+                      namespace,
+                    });
+                  }
                   return;
                 }
 
@@ -422,14 +432,15 @@ export async function extractFromFile(
 }
 
 function parseTransElement(element: t.JSXElement): {
-  id?: string;
+  /** The explicit id, or one per branch of a conditional id; empty if none */
+  ids: string[];
   context?: string;
   comment?: string;
   namespace?: string;
   source?: string;
 } {
   const opening = element.openingElement;
-  let id: string | undefined;
+  let ids: string[] = [];
   let context: string | undefined;
   let comment: string | undefined;
   let namespace: string | undefined;
@@ -440,16 +451,14 @@ function parseTransElement(element: t.JSXElement): {
     if (attr.name.type !== 'JSXIdentifier') continue;
 
     const name = attr.name.name;
-    if (name === 'id' && attr.value?.type === 'StringLiteral') {
-      id = attr.value.value;
-    }
-    // id={'key'}, which the Babel plugin also accepts
-    if (
-      name === 'id' &&
-      attr.value?.type === 'JSXExpressionContainer' &&
-      attr.value.expression.type === 'StringLiteral'
-    ) {
-      id = attr.value.expression.value;
+    // id="key", id={'key'} or id={live ? 'a' : 'b'}, as the Babel plugin
+    // accepts (issue #14)
+    if (name === 'id') {
+      const value =
+        attr.value?.type === 'JSXExpressionContainer'
+          ? attr.value.expression
+          : attr.value;
+      ids = literalIdLeaves(value) ?? [];
     }
     if (name === 'context' && attr.value?.type === 'StringLiteral') {
       context = attr.value.value;
@@ -466,7 +475,7 @@ function parseTransElement(element: t.JSXElement): {
   // that handles plural(), component tags, and other expressions correctly
   const { message: source } = serializeJsxChildren(element.children);
 
-  return { id, context, comment, namespace, source };
+  return { ids, context, comment, namespace, source };
 }
 
 export function messagesToCatalog(
