@@ -33,7 +33,7 @@ function normalizePath(filePath: string): string {
  *
  * This automatically excludes the same files that git ignores, which typically includes:
  * - node_modules
- * - Build outputs (dist, build, .next, etc.)
+ * - Build outputs (dist, build, etc.)
  * - Generated files
  * - Platform-specific directories (android, ios, .expo)
  *

@@ -107,7 +107,7 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 **@idioma/core** (`packages/core/`) - Build tools and CLI
 
 - `babel/` - Babel plugin that transforms `<Trans>` components and extracts messages
-- `bundler/` - Vite, Next.js, and Metro plugins for build integration
+- `bundler/` - Vite and Metro plugins for build integration
 - `cli/` - CLI commands: `extract`, `compile`, `check`, `stats`, `translate`
 - `compiler/` - Compiles PO files to JS/TS with typed exports
 - `icu/` - ICU MessageFormat parser and compiler
@@ -451,7 +451,7 @@ This prevents auto-deletion of TMS-imported messages.
 #### Writing (`writePoFile`)
 
 - Skips the write when the catalog is unchanged. The existing file is parsed and re-serialized first, so formatting differences (line folding, header normalisation) do not count as changes. This keeps hand-formatted catalogs intact and stops Vite's `.po` handler from sending a full reload after a no-op extraction.
-- Line folding follows `po.foldLength` in `idioma.config.ts` (default 76, `0` disables folding). The Next.js and Metro plugins take `po` as a `withIdioma()` option.
+- Line folding follows `po.foldLength` in `idioma.config.ts` (default 76, `0` disables folding). The Metro plugin takes `po` as a `withIdioma()` option.
 
 #### Flag System
 
@@ -548,13 +548,6 @@ babelConfig.plugins.push([
 - Debounced (200ms) to batch rapid changes
 - File-only references (no line numbers to avoid noisy git diffs)
 - Per-file extraction with reference-aware cleanup
-
-#### Next.js Plugin (`packages/core/src/bundler/next.ts`)
-
-- Custom Webpack plugin instead of Babel config approach
-- Hooks: `beforeCompile`, `watchRun`
-- No HMR (relies on Next.js refresh)
-- Same Babel plugin, different integration point
 
 #### Metro Plugin (`packages/core/src/bundler/metro.ts`)
 
