@@ -10,9 +10,11 @@ const warned = new Set<string>();
  * @internal Used by @idioma/react and the plain createT.
  */
 export function _warnNotInlined(key: string, message: string): void {
-  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
-    return;
-  }
+  // Bare process.env.NODE_ENV, as in Trans.tsx and useT.ts: bundlers replace
+  // it with a string, so production builds drop this branch. A
+  // `typeof process` guard would stay in the bundle, and in a browser (no
+  // process) it would let the warning run in production.
+  if (process.env.NODE_ENV === 'production') return;
   if (warned.has(key)) return;
   warned.add(key);
   console.warn(message);
