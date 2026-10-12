@@ -83,8 +83,6 @@ export interface CompiledMessage {
   componentCount: number;
   /** Optional namespace */
   namespace?: string;
-  /** Cached ICU analysis (avoids re-parsing) */
-  icuAnalysis?: IcuAnalysis;
 }
 
 /**
@@ -190,76 +188,79 @@ export async function compileTranslations(
   // Key format: {namespace}:{key} or just {key} for non-namespaced
   const allMessages = new Map<string, CompiledMessage>();
 
-  for (const [locale, nsCatalogs] of allCatalogs) {
+  // A key's types (variables, component count) come from its first non-empty
+  // translation, reading the default locale first. They used to come from
+  // whichever catalogue the directory listed first, even when its msgstr was
+  // empty, so a new key typed as taking no values (issue #13).
+  const typedKeys = new Set<string>();
+  const localeOrder = [...allCatalogs.keys()].sort(
+    (a, b) => Number(b === defaultLocale) - Number(a === defaultLocale),
+  );
+
+  for (const locale of localeOrder) {
+    const nsCatalogs = allCatalogs.get(locale)!;
     for (const [namespace, catalog] of nsCatalogs) {
       for (const [key, message] of catalog.messages) {
         // Create a unique composite key for internal tracking
         const compositeKey = namespace ? `${namespace}:${key}` : key;
+        // Use the translation (not source which is just a hash key) for analysis
+        const translationText = message.translation || '';
+        // Skip ICU analysis if message has component tags (they break the ICU parser)
+        const hasComponentTags = /<\d+>/.test(translationText);
 
-        if (!allMessages.has(compositeKey)) {
-          // Use the translation (not source which is just a hash key) for analysis
-          const translationText = message.translation || '';
-          const hasComponentTags = /<\d+>/.test(translationText);
-
-          // Skip ICU analysis if message has component tags (they break the ICU parser)
-          let analysis: IcuAnalysis = {
-            hasPlaceholders: false,
-            hasPlural: false,
-            hasSelect: false,
-            variables: [],
-          };
-          if (!hasComponentTags && translationText) {
-            try {
-              analysis = analyzeIcuMessage(translationText);
-            } catch {
-              // If parsing fails, treat as non-ICU message
-            }
+        // Analyse this locale's own text: translations of one key can differ
+        // in ICU shape, e.g. a plain "{count} sets" source and a plural in
+        // another locale (issue #13).
+        let analysis: IcuAnalysis | undefined;
+        if (translationText && !hasComponentTags) {
+          try {
+            analysis = analyzeIcuMessage(translationText);
+          } catch {
+            // If parsing fails, treat as non-ICU message
           }
-
-          allMessages.set(compositeKey, {
-            key,
-            translations: {},
-            isIcu: analysis.hasPlural || analysis.hasSelect,
-            variables: analysis.variables,
-            componentCount: countComponentTags(translationText),
-            namespace,
-            // Cache analysis for reuse across locales
-            icuAnalysis:
-              !hasComponentTags && translationText ? analysis : undefined,
-          });
         }
 
-        const compiled = allMessages.get(compositeKey)!;
+        let compiled = allMessages.get(compositeKey);
+        if (!compiled) {
+          compiled = {
+            key,
+            translations: {},
+            isIcu: false,
+            variables: [],
+            componentCount: 0,
+            namespace,
+          };
+          allMessages.set(compositeKey, compiled);
+        }
 
-        // Compile the translation
-        if (message.translation) {
-          // Skip ICU analysis for messages with component tags (they break the parser)
-          const hasComponentTags = /<\d+>/.test(message.translation);
+        if (translationText && !typedKeys.has(compositeKey)) {
+          typedKeys.add(compositeKey);
+          compiled.variables = analysis?.variables ?? [];
+          compiled.componentCount = countComponentTags(translationText);
+        }
 
-          if (hasComponentTags) {
-            // Messages with component tags are handled differently - just store as string
-            compiled.translations[locale] = message.translation;
-          } else {
-            // Use cached analysis if available, otherwise analyze
-            const analysis =
-              compiled.icuAnalysis ?? analyzeIcuMessage(message.translation);
-            const hasIcu =
-              analysis.hasPlural ||
-              analysis.hasSelect ||
-              message.flags?.includes('icu-format');
+        if (!translationText) continue;
 
-            if (hasIcu) {
-              // Compile ICU to function string, passing cached analysis
-              compiled.translations[locale] = compileIcuToFunctionString(
-                message.translation,
-                locale,
-                analysis,
-              );
-              compiled.isIcu = true;
-            } else {
-              compiled.translations[locale] = message.translation;
-            }
-          }
+        if (hasComponentTags) {
+          // Messages with component tags are handled differently - just store as string
+          compiled.translations[locale] = translationText;
+          continue;
+        }
+
+        const hasIcu =
+          analysis?.hasPlural ||
+          analysis?.hasSelect ||
+          message.flags?.includes('icu-format');
+
+        if (hasIcu) {
+          compiled.translations[locale] = compileIcuToFunctionString(
+            translationText,
+            locale,
+            analysis,
+          );
+          compiled.isIcu = true;
+        } else {
+          compiled.translations[locale] = translationText;
         }
       }
     }

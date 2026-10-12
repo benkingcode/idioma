@@ -525,4 +525,79 @@ msgstr "Hello"
       }
     });
   });
+
+  // Issue #13: a key's analysis used to come from the first catalogue read
+  // (directory order), even when its msgstr there was empty, and was then
+  // reused to compile every other locale.
+  describe('ICU analysis across locales', () => {
+    const header = (locale: string) => `
+msgid ""
+msgstr ""
+"Language: ${locale}\\n"
+`;
+
+    it('types values from the default locale when other catalogues are still empty', async () => {
+      await createPoFile(
+        'en',
+        `${header('en')}
+msgid "sets.count"
+msgstr "{count, plural, one {# set} other {# sets}}"
+`,
+      );
+      // Several locales that sort before "en", so whatever order the
+      // directory is read in, an empty msgstr is likely to come first.
+      for (const locale of ['aa', 'ab', 'ca']) {
+        await createPoFile(
+          locale,
+          `${header(locale)}
+msgid "sets.count"
+msgstr ""
+`,
+        );
+      }
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+      });
+
+      const types = await fs.readFile(
+        join(outputDir, '.generated', 'types.d.ts'),
+        'utf-8',
+      );
+      expect(types).toContain('"sets.count": { count: string | number };');
+    });
+
+    it('compiles each locale with its own ICU analysis', async () => {
+      // The default locale is a plain placeholder; the translation is a plural.
+      await createPoFile(
+        'en',
+        `${header('en')}
+msgid "sets.count"
+msgstr "{count} sets"
+`,
+      );
+      await createPoFile(
+        'fr',
+        `${header('fr')}
+msgid "sets.count"
+msgstr "{count, plural, one {# set} other {# sets}}"
+`,
+      );
+
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+      });
+
+      const translations = await fs.readFile(
+        join(outputDir, '.generated', 'translations.js'),
+        'utf-8',
+      );
+      expect(translations).toContain('Intl.PluralRules');
+      expect(translations).not.toContain('{count, plural');
+    });
+  });
 });
