@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs';
+import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'path';
 import * as babel from '@babel/core';
 import type * as t from '@babel/types';
@@ -17,6 +18,15 @@ import {
 } from '../../utils/resolve-tsconfig-paths.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
+
+// Resolve the presets from this package, not by bare name. Babel resolves a
+// bare name from the consumer's cwd, so an app that does not install
+// @babel/preset-react itself got "Cannot find package" for every file and
+// extract reported 0 messages (issue #11). Resolving here also makes a
+// missing preset fail when the module loads, instead of once per file.
+const require = createRequire(import.meta.url);
+const presetReact = require.resolve('@babel/preset-react');
+const presetTypescript = require.resolve('@babel/preset-typescript');
 
 export interface ExtractedMessage {
   key: string;
@@ -193,10 +203,7 @@ export async function extractFromFile(
   try {
     await babel.transformAsync(code, {
       filename: absolutePath,
-      presets: [
-        ['@babel/preset-react', { runtime: 'automatic' }],
-        '@babel/preset-typescript',
-      ],
+      presets: [[presetReact, { runtime: 'automatic' }], presetTypescript],
       plugins: [
         function extractorPlugin(): babel.PluginObj {
           return {

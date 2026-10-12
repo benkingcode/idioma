@@ -235,6 +235,12 @@ importers:
 
   packages/core:
     dependencies:
+      '@babel/preset-react':
+        specifier: ^7.28.5
+        version: 7.28.5(@babel/core@7.28.5)
+      '@babel/preset-typescript':
+        specifier: ^7.28.5
+        version: 7.28.5(@babel/core@7.28.5)
       '@formatjs/icu-messageformat-parser':
         specifier: ^2.11.4
         version: 2.11.4
@@ -302,12 +308,6 @@ importers:
       '@babel/parser':
         specifier: ^7.28.5
         version: 7.28.5
-      '@babel/preset-react':
-        specifier: ^7.28.5
-        version: 7.28.5(@babel/core@7.28.5)
-      '@babel/preset-typescript':
-        specifier: ^7.28.5
-        version: 7.28.5(@babel/core@7.28.5)
       '@babel/traverse':
         specifier: ^7.28.5
         version: 7.28.5
