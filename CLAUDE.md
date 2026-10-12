@@ -432,7 +432,7 @@ interface Message {
 **Full Catalog Merge** (`mergeCatalogs`):
 
 - Adds new messages with source text as initial translation
-- Updates references and comments for existing messages
+- Updates references and comments for existing messages. `extractMessages` sorts the files it visits, so a message's references are in path order and a no-op extract writes the same bytes every run (fast-glob's own order is not stable). The first extract after this change reorders multi-file references once.
 - Preserves existing translations
 - Clean mode: removes orphaned messages **only if** they have `extracted` flag
 
