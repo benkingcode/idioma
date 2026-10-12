@@ -1600,9 +1600,8 @@ describe('Idioma Babel Plugin', () => {
       expect(extracted[0].namespace).toBe('auth');
     });
 
-    it('skips t() with dynamic id', () => {
-      const extracted: ExtractedMessage[] = [];
-
+    // Issue #14: these used to be skipped silently, and rendered the id.
+    it('fails the build for t() with dynamic id', () => {
       const code = `
         import { useT } from './idioma'
         function Comp() {
@@ -1612,18 +1611,12 @@ describe('Idioma Babel Plugin', () => {
         }
       `;
 
-      transform(code, {
-        mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
-        onExtract: (msg) => extracted.push(msg),
-      });
-
-      expect(extracted).toHaveLength(0);
+      expect(() =>
+        transform(code, { mode: 'inlined', idiomaDir: TEST_IDIOMA_DIR }),
+      ).toThrow(/t\(\) needs an id that is a string literal/);
     });
 
-    it('skips t() with object missing id', () => {
-      const extracted: ExtractedMessage[] = [];
-
+    it('fails the build for t() with object missing id', () => {
       const code = `
         import { useT } from './idioma'
         function Comp() {
@@ -1632,13 +1625,9 @@ describe('Idioma Babel Plugin', () => {
         }
       `;
 
-      transform(code, {
-        mode: 'inlined',
-        idiomaDir: TEST_IDIOMA_DIR,
-        onExtract: (msg) => extracted.push(msg),
-      });
-
-      expect(extracted).toHaveLength(0);
+      expect(() =>
+        transform(code, { mode: 'inlined', idiomaDir: TEST_IDIOMA_DIR }),
+      ).toThrow(/t\(\) needs an id that is a string literal/);
     });
 
     // --- Transformation tests ---
@@ -1850,6 +1839,129 @@ describe('Idioma Babel Plugin', () => {
 
       expect(result).toContain('__TransSuspense');
       expect(result).toContain('__key: "welcome.hero"');
+    });
+  });
+
+  // Issue #14: a call that cannot be inlined renders its id at runtime, and
+  // nothing else catches it, so it fails the build (always, no setting).
+  describe('calls that cannot be inlined', () => {
+    const translations = {
+      'set.title': { en: 'Set', es: 'Set' },
+      'welcome.hero': { en: 'Welcome', es: 'Bienvenido' },
+    };
+    const inlined = {
+      mode: 'inlined' as const,
+      idiomaDir: TEST_IDIOMA_DIR,
+      translations,
+    };
+
+    it('fails for t() with a spread instead of a literal id', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp(args) {
+          const t = useT()
+          return t({ ...args })
+        }
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /t\(\) needs an id that is a string literal/,
+      );
+    });
+
+    it('fails for a catalogue key called on a t passed in as a parameter', () => {
+      const code = `
+        import { createT } from './idioma/plain'
+        export function describe(t: ReturnType<typeof createT>) {
+          return t({ id: 'set.title' })
+        }
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /not created by useT\(\) or createT\(\) in this file/,
+      );
+    });
+
+    it('fails for a catalogue key called on a member expression', () => {
+      const code = `
+        export function Title(props) {
+          return props.t({ id: 'set.title' })
+        }
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /not created by useT\(\) or createT\(\) in this file/,
+      );
+    });
+
+    it('ignores an object call whose id is not a catalogue key', () => {
+      const code = `
+        export const user = findUser({ id: 'abc' })
+      `;
+      expect(() => transform(code, inlined)).not.toThrow();
+    });
+
+    it('does not check untracked callees in suspense mode, which has no catalogue', () => {
+      const code = `
+        export function describe(t) {
+          return t({ id: 'set.title' })
+        }
+      `;
+      expect(() =>
+        transform(code, {
+          mode: 'suspense',
+          idiomaDir: TEST_IDIOMA_DIR,
+          locales: ['en', 'es'],
+          outputDir: '/project/src/idioma',
+          projectRoot: '/project',
+        }),
+      ).not.toThrow();
+    });
+
+    it('keeps dynamic string-form t() legal (runtime lookup)', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp(message) {
+          const t = useT()
+          return t(message)
+        }
+      `;
+      expect(() => transform(code, inlined)).not.toThrow();
+    });
+
+    it('fails for a Trans with children and a non-literal id', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id={key}>Hello</Trans>
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /<Trans> needs an id that is a string literal/,
+      );
+    });
+
+    it('fails for a key-only Trans with a non-literal id', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id={key} />
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /<Trans> needs an id that is a string literal/,
+      );
+    });
+
+    it('fails for a Trans with an id that is not imported from the idioma folder', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans id="welcome.hero" />
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /is not imported from the idioma folder/,
+      );
+    });
+
+    it('ignores a Trans without an id from another import', () => {
+      const code = `
+        import { Trans } from '@idioma/react'
+        const x = <Trans>Hello</Trans>
+      `;
+      expect(() => transform(code, inlined)).not.toThrow();
     });
   });
 });
