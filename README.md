@@ -349,6 +349,41 @@ Use explicit IDs for translations that need to survive source text refactoring:
 
 This is useful for checkout flows, legal text, or any message that goes through formal translation review. See [Choosing Your Key Strategy](#choosing-your-key-strategy) for guidance.
 
+### Static ids (checked at build time)
+
+Idioma inlines translations at build time, so an id must be known at build time. A call it cannot inline would render the id itself, so **the build fails** instead, with a code frame pointing at the call:
+
+```tsx
+// ✅ A string literal
+t({ id: 'set.title' });
+<Trans id="set.title" />;
+
+// ✅ A conditional of string literals: compiles to one call per branch
+t({ id: live ? 'set.live' : 'set.past' });
+<Trans id={live ? 'set.live' : 'set.past'} />;
+
+// ❌ Fails the build: the id is only known at runtime
+t({ id: key });
+<Trans id={key} />;
+```
+
+`t` must come from `useT()` or `createT()` in the same file as the call. Passing `t` into a helper fails the build when the helper uses a key from your catalogue; pass the locale instead and call `createT` inside the helper:
+
+```ts
+// ❌ Fails the build
+function describe(t: ReturnType<typeof createT>) {
+  return t({ id: 'set.title' });
+}
+
+// ✅
+function describe(locale: string) {
+  const t = createT(locale);
+  return t({ id: 'set.title' });
+}
+```
+
+`Trans` must be imported from your generated idioma module, not from `@idioma/react`. A dynamic source string, `t(message)`, is still allowed: `createT` looks it up at runtime.
+
 ### Context
 
 Add translator context that affects key generation (same text, different context = different key):
