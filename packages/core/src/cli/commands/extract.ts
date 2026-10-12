@@ -78,12 +78,17 @@ export async function extractMessages(
     po,
   } = options;
 
-  // Find all source files
-  const files = await fg(sourcePatterns, {
-    cwd,
-    absolute: true,
-    ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts'],
-  });
+  // Find all source files. Sorted because fast-glob's order is not stable, and
+  // references are added in the order files are visited: unsorted, a key used
+  // in two files got its #: lines in a different order from run to run, so a
+  // no-op extract rewrote the catalogues (issue #12).
+  const files = (
+    await fg(sourcePatterns, {
+      cwd,
+      absolute: true,
+      ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts'],
+    })
+  ).sort();
 
   const messages: ExtractedMessage[] = [];
 
