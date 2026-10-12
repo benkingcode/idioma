@@ -95,6 +95,37 @@ describe('Extract Command', () => {
     expect(result.messages[0].source).toBe('Welcome to our app');
   });
 
+  // Issue #17: a key-only Trans has no children, and used to be skipped.
+  it('extracts key-only Trans with an empty source', async () => {
+    await fs.writeFile(
+      join(srcDir, 'Page.tsx'),
+      `
+      import { Trans } from './idioma'
+      export function Page() {
+        return <>
+          <Trans id="welcome.hero" />
+          <Trans id={'welcome.sub'}></Trans>
+        </>
+      }
+      `,
+    );
+
+    const result = await extractMessages({
+      cwd: tempDir,
+      sourcePatterns: ['src/**/*.tsx'],
+      localeDir,
+      defaultLocale: 'en',
+      idiomaDir,
+    });
+
+    expect(
+      result.messages.map((m) => ({ key: m.key, source: m.source })),
+    ).toEqual([
+      { key: 'welcome.hero', source: '' },
+      { key: 'welcome.sub', source: '' },
+    ]);
+  });
+
   it('extracts messages from multiple files', async () => {
     await fs.writeFile(
       join(srcDir, 'A.tsx'),

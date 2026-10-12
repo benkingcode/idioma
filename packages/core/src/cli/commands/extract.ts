@@ -302,15 +302,17 @@ export async function extractFromFile(
 
                 const { id, context, comment, namespace, source } =
                   parseTransElement(path.node);
-                if (!source) return;
+                // A key-only Trans (issue #17) has an id and no source.
+                if (!source && !id) return;
 
                 // Use explicit id or generate hash key from source
-                const key = id || generateKey(source, context, namespace);
+                // With no id, the early return above guarantees a source.
+                const key = id || generateKey(source ?? '', context, namespace);
                 const line = path.node.loc?.start.line ?? 0;
 
                 messages.push({
                   key,
-                  source,
+                  source: source ?? '',
                   location: displayPath,
                   line,
                   context,
@@ -440,6 +442,14 @@ function parseTransElement(element: t.JSXElement): {
     const name = attr.name.name;
     if (name === 'id' && attr.value?.type === 'StringLiteral') {
       id = attr.value.value;
+    }
+    // id={'key'}, which the Babel plugin also accepts
+    if (
+      name === 'id' &&
+      attr.value?.type === 'JSXExpressionContainer' &&
+      attr.value.expression.type === 'StringLiteral'
+    ) {
+      id = attr.value.expression.value;
     }
     if (name === 'context' && attr.value?.type === 'StringLiteral') {
       context = attr.value.value;

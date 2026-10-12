@@ -79,10 +79,21 @@ describe('extractTransMessage', () => {
     expect(messages[0].components).toEqual(['Link']);
   });
 
-  it('skips key-only Trans (no children)', () => {
+  it('extracts key-only Trans (no children) with an empty source', () => {
     const messages = extractFromCode(`
       import { Trans } from '@idioma/react'
       const x = <Trans id="greeting" />
+    `);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].key).toBe('greeting');
+    expect(messages[0].source).toBe('');
+  });
+
+  it('skips a key-only Trans without an id', () => {
+    const messages = extractFromCode(`
+      import { Trans } from '@idioma/react'
+      const x = <Trans />
     `);
 
     expect(messages).toHaveLength(0);
