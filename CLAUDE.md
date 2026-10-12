@@ -215,6 +215,36 @@ t('Hello {name}', { __m: { en: '...', es: '...' } }, { name: 'Ben' });
 // Without source: t({ id: 'key' }) → t('key', { __m: { en: '...', es: '...' } })
 ```
 
+A key-only `Trans` (no children) is inlined from the catalogue by its id; its `values` prop becomes `__a`, and the id is the `__source` fallback when the key has no translations:
+
+```tsx
+<Trans id="greeting" values={{ name }} />
+// becomes:
+<__Trans __t={{ en: 'Hello {name}', es: 'Hola {name}', __source: 'greeting' }} __a={{ name }} />
+```
+
+An id that is a conditional of string literals is split into one call or element per branch before anything else, so each branch is inlined and extracted like a literal id (`babel/literal-id.ts` decides what counts, for the plugin and the CLI extractor alike):
+
+```tsx
+t({ id: live ? 'set.live' : 'set.past', values });
+// becomes:
+live ? t({ id: 'set.live', values }) : t({ id: 'set.past', values });
+// then each branch is inlined as above
+```
+
+#### Calls that cannot be inlined fail the build
+
+A call that is not inlined renders its id at runtime, and typecheck, compile and tests all stay green. So the plugin throws a code-frame error (always; there is no setting) for:
+
+- `t({ ... })` whose id is not a string literal or a conditional of them, is missing, or comes from a spread
+- `t({ id: '<catalogue key>' })` on a callee that is not a `t` from `useT()`/`createT()` in this file (a parameter, `props.t`). Only catalogue keys count, so `findUser({ id: 'abc' })` passes; suspense mode has no catalogue in the plugin and is not checked
+- `<Trans id={...}>` whose id is not a string literal or a conditional of them
+- `<Trans id>` that is not imported from the idioma folder
+
+Dynamic string-form calls, `t(message)`, stay legal: `createT` looks them up at runtime. **Extraction is deliberately lenient where the plugin is strict:** the CLI and dev-mode extractors skip a non-literal id instead of failing, so a file being edited is not lost from the catalogue. The plugin is the gate; do not make one match the other.
+
+A call that still reaches the runtime un-inlined (a file Babel never saw) warns once per id in development (`_warnNotInlined` in `packages/core/src/runtime/warn.ts`).
+
 #### Suspense Mode (`mode: 'suspense'`) — For lazy loading (React 19+)
 
 Uses dynamic imports with React 19's `use()` hook for lazy loading:
