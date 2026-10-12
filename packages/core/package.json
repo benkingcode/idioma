@@ -31,10 +31,6 @@
       "types": "./dist/bundler/vite.d.mts",
       "import": "./dist/bundler/vite.mjs"
     },
-    "./next": {
-      "types": "./dist/bundler/next.d.mts",
-      "import": "./dist/bundler/next.mjs"
-    },
     "./metro": {
       "types": "./dist/bundler/metro.d.mts",
       "import": "./dist/bundler/metro.mjs"
@@ -88,14 +84,10 @@
   },
   "peerDependencies": {
     "@babel/core": "^7.0.0",
-    "metro-config": ">=0.80.0",
-    "next": ">=13.0.0"
+    "metro-config": ">=0.80.0"
   },
   "peerDependenciesMeta": {
     "metro-config": {
-      "optional": true
-    },
-    "next": {
       "optional": true
     }
   },
@@ -114,9 +106,7 @@
     "@types/murmurhash-js": "^1.0.6",
     "dotenv": "^17.2.3",
     "ignore": "^7.0.5",
-    "next": "^16.1.1",
-    "vite": "^5.4.21",
-    "webpack": "^5.104.1"
+    "vite": "^5.4.21"
   },
   "keywords": [
     "i18n",

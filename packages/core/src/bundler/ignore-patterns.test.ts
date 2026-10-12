@@ -125,21 +125,21 @@ ios/
       expect(ig.ignores('src/App.tsx')).toBe(false);
     });
 
-    it('handles Next.js project gitignore', () => {
+    it('handles Vite project gitignore', () => {
       writeFileSync(
         join(tempDir, '.gitignore'),
         `
 node_modules
-.next
-out
-.vercel
+dist
+.vite
+coverage
 `,
       );
 
       const ig = createIgnoreFilter(tempDir);
-      expect(ig.ignores('.next/static/chunks/main.js')).toBe(true);
-      expect(ig.ignores('out/index.html')).toBe(true);
-      expect(ig.ignores('pages/index.tsx')).toBe(false);
+      expect(ig.ignores('dist/assets/index.js')).toBe(true);
+      expect(ig.ignores('coverage/lcov.info')).toBe(true);
+      expect(ig.ignores('src/main.tsx')).toBe(false);
     });
 
     it('handles comment lines and empty lines', () => {

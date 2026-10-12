@@ -15,9 +15,7 @@ export default defineConfig({
     // Peer dependencies & babel ecosystem
     /^@babel\//,
     'metro-config',
-    'next',
     'vite',
-    'webpack',
     // Regular dependencies (don't bundle)
     '@formatjs/icu-messageformat-parser',
     'chokidar',

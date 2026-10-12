@@ -37,7 +37,7 @@ interface PresetResult {
  *
  * module.exports = {
  *   presets: [
- *     'next/babel',
+ *     'module:@react-native/babel-preset',
  *     ['@idioma/core/babel-preset', {
  *       // Enable robust import detection (handles aliased imports)
  *       idiomaDir: path.resolve(__dirname, './src/idioma'),

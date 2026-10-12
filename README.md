@@ -39,7 +39,6 @@ Idioma reads your source code to understand context ("checkout button", "error m
 **Integrations**
 
 - **Vite plugin** — HMR for translations, zero config
-- **Next.js plugin** — Works with App Router and Pages Router
 - **React Native / Metro** — First-class React Native support with Metro bundler
 - **React Server Components** — Compile-time inlined translations work seamlessly in RSC
 - **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
@@ -48,7 +47,6 @@ Idioma reads your source code to understand context ("checkout button", "error m
 ## Table of Contents
 
 - [Quick Start](#quick-start) — Vite setup
-- [Next.js](#nextjs)
 - [React Native](#react-native)
 - [React Server Components](#react-server-components)
 - [Plain JavaScript](#plain-javascript-outside-react)
@@ -158,50 +156,6 @@ export const useT = createUseT<IdiomaTypes>();
 
 The `IdiomaTypes` generic carries your actual message keys through to the components, so `<Trans id="...">` autocompletes with your real messages.
 
-## Next.js
-
-Add the Next.js plugin to your config:
-
-```js
-// next.config.mjs
-import { withIdioma } from '@idioma/core/next';
-
-export default withIdioma({
-  idiomaDir: './src/idioma',
-  defaultLocale: 'en',
-})({
-  // your other Next.js config
-});
-```
-
-Add the Babel preset:
-
-```js
-// babel.config.js
-module.exports = {
-  presets: ['next/babel', '@idioma/core/babel-preset'],
-};
-```
-
-Set up the provider in your root layout:
-
-```tsx
-// app/layout.tsx (App Router)
-import { IdiomaProvider } from '@/idioma';
-
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        <IdiomaProvider locale="en">{children}</IdiomaProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-Works with both App Router and Pages Router.
-
 ## React Native
 
 Add the Metro configuration wrapper:
@@ -274,15 +228,10 @@ The Metro plugin automatically compiles translations on startup and watches for 
 For translations in React Server Components, use `createT` from the plain module:
 
 ```tsx
-// app/page.tsx (Server Component)
+// Page.tsx (Server Component)
 import { createT } from '@/idioma/plain';
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
+export default async function Page({ locale }: { locale: string }) {
   const t = createT(locale);
 
   return (
@@ -652,7 +601,7 @@ Compile PO files to JavaScript:
 idioma compile
 ```
 
-> **Note:** The Vite, Next.js, and Metro plugins run `compile` automatically during build. You only need to run this manually if you're using a different bundler or want to inspect the generated output.
+> **Note:** The Vite and Metro plugins run `compile` automatically during build. You only need to run this manually if you're using a different bundler or want to inspect the generated output.
 
 ### translate
 
@@ -827,7 +776,7 @@ msgstr "Lee nuestros <Link>términos de servicio</Link> y <Link>política de pri
 
 PO files work with translation management systems like Phrase, Lokalise, and Crowdin.
 
-Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, lines longer than 76 columns are folded. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Next.js and Metro plugins don't read `idioma.config.ts`, so pass the same `po` option to their `withIdioma()`.
+Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, lines longer than 76 columns are folded. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Metro plugin doesn't read `idioma.config.ts`, so pass the same `po` option to its `withIdioma()`.
 
 ## Bundle Optimization
 
@@ -1017,7 +966,7 @@ TypeScript provides full type safety via generated types:
 
 ## Packages
 
-- **@idioma/core** — Babel plugin, Vite plugin, Next.js plugin, Metro plugin, CLI, PO compiler
+- **@idioma/core** — Babel plugin, Vite plugin, Metro plugin, CLI, PO compiler
 - **@idioma/react** — Runtime components (~800 bytes gzipped)
 
 ## License
