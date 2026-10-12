@@ -330,6 +330,8 @@ msgstr "{count, plural, one {# item} other {# items}}"
 };
 ```
 
+Each locale's translation is analysed on its own text, so one locale can be a plural while another is a plain `{count} items`. A key's generated types (`MessageValues` variables, `MessageComponents` count) come from its first non-empty translation, reading the default locale first. An empty msgstr in another catalogue does not count.
+
 #### Runtime ICU Helpers (source code only)
 
 `packages/core/src/icu/index.ts` provides `plural()`, `select()`, and `selectOrdinal()` helpers that developers use in source code:
