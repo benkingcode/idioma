@@ -1757,4 +1757,99 @@ describe('Idioma Babel Plugin', () => {
       expect(extracted[0].source).toBe('Hello from server');
     });
   });
+
+  // Issue #17: <Trans id="x" /> with no children was never transformed, so
+  // the runtime fallback rendered the id.
+  describe('key-only Trans', () => {
+    const translations = {
+      'welcome.hero': { en: 'Welcome', es: 'Bienvenido' },
+      greeting: { en: 'Hello {name}', es: 'Hola {name}' },
+    };
+
+    it('inlines a self-closing Trans from the catalogue by its id', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id="welcome.hero" />
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations,
+      });
+
+      expect(result).toContain('__Trans');
+      expect(result).toContain('Bienvenido');
+      expect(result).not.toMatch(/createElement\(Trans\b/);
+    });
+
+    it('passes the values prop through as __a', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id="greeting" values={{ name }} />
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations,
+      });
+
+      expect(result).toContain('Hola {name}');
+      expect(result).toMatch(/__a: \{\s*name\s*\}/);
+    });
+
+    it('falls back to the id when the key has no translations', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id="missing.key" />
+      `;
+
+      const result = transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations,
+      });
+
+      expect(result).toContain('__Trans');
+      expect(result).toContain('"__source": "missing.key"');
+    });
+
+    it('extracts a key-only Trans with an empty source', () => {
+      const extracted: ExtractedMessage[] = [];
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id="welcome.hero" />
+      `;
+
+      transform(code, {
+        mode: 'inlined',
+        idiomaDir: TEST_IDIOMA_DIR,
+        translations,
+        onExtract: (msg) => extracted.push(msg),
+      });
+
+      expect(extracted).toHaveLength(1);
+      expect(extracted[0].key).toBe('welcome.hero');
+      expect(extracted[0].source).toBe('');
+    });
+
+    it('uses the id as the chunk key in suspense mode', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id="welcome.hero" />
+      `;
+
+      const result = transform(code, {
+        mode: 'suspense',
+        idiomaDir: TEST_IDIOMA_DIR,
+        locales: ['en', 'es'],
+        outputDir: '/project/src/idioma',
+        projectRoot: '/project',
+      });
+
+      expect(result).toContain('__TransSuspense');
+      expect(result).toContain('__key: "welcome.hero"');
+    });
+  });
 });

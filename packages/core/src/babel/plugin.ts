@@ -654,11 +654,23 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
         state.idiomaUsed = true;
         state.idiomaKeys.add(extracted.key);
 
+        // A key-only Trans takes its values from the values prop; a Trans with
+        // children gets them from the placeholders in its children.
+        const valuesNode =
+          path.node.children.length === 0 || opening.selfClosing
+            ? getValuesExpression(opening)
+            : undefined;
+
         // Transform based on mode
         if (opts.mode === 'suspense') {
-          transformTransSuspense(path, extracted);
+          transformTransSuspense(path, extracted, valuesNode);
         } else {
-          transformTransComponent(path, extracted, opts.translations || {});
+          transformTransComponent(
+            path,
+            extracted,
+            opts.translations || {},
+            valuesNode,
+          );
         }
       },
     },
@@ -666,10 +678,33 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 }
 
 /**
+ * The expression in a Trans element's values={...} prop, if it has one.
+ */
+function getValuesExpression(
+  opening: t.JSXOpeningElement,
+): t.Expression | undefined {
+  for (const attr of opening.attributes) {
+    if (
+      t.isJSXAttribute(attr) &&
+      t.isJSXIdentifier(attr.name, { name: 'values' }) &&
+      t.isJSXExpressionContainer(attr.value) &&
+      t.isExpression(attr.value.expression)
+    ) {
+      return attr.value.expression;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Build common props (__ns, __a, __c) shared by both Trans and TransSuspense transforms.
  * Extracts the duplicated logic for namespace, placeholders, and components.
+ * A key-only Trans has no placeholders, so its values prop becomes __a.
  */
-function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
+function buildCommonTransProps(
+  extracted: ExtractedMessage,
+  valuesNode?: t.Expression,
+): t.JSXAttribute[] {
   const { placeholders, components, componentNodes, namespace } = extracted;
   const props: t.JSXAttribute[] = [];
 
@@ -694,6 +729,13 @@ function buildCommonTransProps(extracted: ExtractedMessage): t.JSXAttribute[] {
       t.jsxAttribute(
         t.jsxIdentifier('__a'),
         t.jsxExpressionContainer(t.objectExpression(aEntries)),
+      ),
+    );
+  } else if (valuesNode) {
+    props.push(
+      t.jsxAttribute(
+        t.jsxIdentifier('__a'),
+        t.jsxExpressionContainer(valuesNode),
       ),
     );
   }
@@ -745,8 +787,9 @@ function transformTransComponent(
     string,
     Record<string, string | ((args: Record<string, unknown>) => string)>
   >,
+  valuesNode?: t.Expression,
 ): void {
-  const { key, source, placeholders, components, namespace } = extracted;
+  const { key, source, namespace } = extracted;
 
   // Get translations for this message using the key (hash or explicit id)
   let messageTranslations: Record<
@@ -788,10 +831,14 @@ function transformTransComponent(
     }
   }
 
-  // Add source as fallback under a special key
+  // Add source as fallback under a special key. A key-only Trans has no
+  // source, so it falls back to its id, as t({ id }) does.
   if (!messageTranslations['__source']) {
     tEntries.push(
-      t.objectProperty(t.stringLiteral('__source'), t.stringLiteral(source)),
+      t.objectProperty(
+        t.stringLiteral('__source'),
+        t.stringLiteral(source || key),
+      ),
     );
   }
 
@@ -803,7 +850,7 @@ function transformTransComponent(
       t.jsxExpressionContainer(t.objectExpression(tEntries)),
     ),
     // Add common props (__ns, __a, __c)
-    ...buildCommonTransProps(extracted),
+    ...buildCommonTransProps(extracted, valuesNode),
   ];
 
   // Create the new __Trans element
@@ -823,6 +870,7 @@ function transformTransComponent(
 function transformTransSuspense(
   path: NodePath<t.JSXElement>,
   extracted: ExtractedMessage,
+  valuesNode?: t.Expression,
 ): void {
   const { key } = extracted;
 
@@ -841,7 +889,7 @@ function transformTransSuspense(
       t.jsxExpressionContainer(t.identifier('__$idiomaLoad')),
     ),
     // Add common props (__ns, __a, __c)
-    ...buildCommonTransProps(extracted),
+    ...buildCommonTransProps(extracted, valuesNode),
   ];
 
   // Create the new __TransSuspense element

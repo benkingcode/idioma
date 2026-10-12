@@ -49,10 +49,24 @@ export function extractTransMessage(
   const contextProp = getStringProp(opening, 'context');
   const nsProp = getStringProp(opening, 'ns');
 
-  // Skip key-only Trans (self-closing or empty)
+  // Key-only Trans (self-closing or empty): the message comes from the
+  // catalogue by its id and has no source text. It used to be skipped, so it
+  // was never inlined and rendered its id (issue #17).
   const children = path.node.children;
   if (children.length === 0 || opening.selfClosing) {
-    return null;
+    if (!idProp) {
+      return null;
+    }
+    const keyOnly: ExtractedMessage = {
+      key: idProp,
+      source: '',
+      placeholders: {},
+      components: [],
+      references: [`${filename}:${path.node.loc?.start.line || 0}`],
+    };
+    if (contextProp) keyOnly.context = contextProp;
+    if (nsProp) keyOnly.namespace = nsProp;
+    return keyOnly;
   }
 
   // Serialize children to message
