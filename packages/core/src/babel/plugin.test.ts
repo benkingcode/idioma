@@ -1964,4 +1964,110 @@ describe('Idioma Babel Plugin', () => {
       expect(() => transform(code, inlined)).not.toThrow();
     });
   });
+
+  // Issue #14: an id that is a conditional of string literals compiles to one
+  // inlined call or element per branch, instead of failing the build.
+  describe('conditional ids of string literals', () => {
+    // ASCII only: Babel's generator escapes other characters in its output.
+    const translations = {
+      'set.title': { en: 'Set', es: 'Sesion ES' },
+      'welcome.hero': { en: 'Welcome', es: 'Bienvenido' },
+      'promo.title': { en: 'Promo', es: 'Promocion ES' },
+    };
+    const inlined = {
+      mode: 'inlined' as const,
+      idiomaDir: TEST_IDIOMA_DIR,
+      translations,
+    };
+    const count = (text: string, needle: string) =>
+      text.split(needle).length - 1;
+
+    it('compiles t({ id: c ? a : b }) to one inlined call per branch', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp({ live }) {
+          const t = useT()
+          return t({ id: live ? 'set.title' : 'welcome.hero', values: { n } })
+        }
+      `;
+      const result = transform(code, inlined);
+
+      expect(result).toMatch(/live \?/);
+      expect(result).toContain('Sesion ES');
+      expect(result).toContain('Bienvenido');
+      expect(count(result, '__m')).toBe(2);
+      // values reach both calls: live ? t('set.title', {__m}, { n }) : t(…)
+      expect(result.match(/\{\s*n\s*\}/g) ?? []).toHaveLength(2);
+      expect(result).not.toContain('id:');
+    });
+
+    it('compiles nested conditionals', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp({ a, b }) {
+          const t = useT()
+          return t({ id: a ? 'set.title' : b ? 'welcome.hero' : 'promo.title' })
+        }
+      `;
+      const result = transform(code, inlined);
+
+      expect(count(result, '__m')).toBe(3);
+      expect(result).toContain('Promocion ES');
+    });
+
+    it('still fails when a branch is not a string literal', () => {
+      const code = `
+        import { useT } from './idioma'
+        function Comp({ live, key }) {
+          const t = useT()
+          return t({ id: live ? 'set.title' : key })
+        }
+      `;
+      expect(() => transform(code, inlined)).toThrow(
+        /t\(\) needs an id that is a string literal/,
+      );
+    });
+
+    it('extracts every branch of a conditional t() id', () => {
+      const extracted: ExtractedMessage[] = [];
+      const code = `
+        import { useT } from './idioma'
+        function Comp({ live }) {
+          const t = useT()
+          return t({ id: live ? 'set.title' : 'welcome.hero' })
+        }
+      `;
+      transform(code, { ...inlined, onExtract: (m) => extracted.push(m) });
+
+      expect(extracted.map((m) => m.key).sort()).toEqual([
+        'set.title',
+        'welcome.hero',
+      ]);
+    });
+
+    it('compiles a key-only Trans with a conditional id as a JSX child', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <h1><Trans id={live ? 'set.title' : 'welcome.hero'} /></h1>
+      `;
+      const result = transform(code, inlined);
+
+      expect(result).toMatch(/live \?/);
+      expect(count(result, 'createElement(__Trans')).toBe(2);
+      expect(result).toContain('Sesion ES');
+      expect(result).toContain('Bienvenido');
+    });
+
+    it('compiles a Trans with children and a conditional id in expression position', () => {
+      const code = `
+        import { Trans } from './idioma'
+        const x = <Trans id={live ? 'set.title' : 'welcome.hero'}>Hello</Trans>
+      `;
+      const result = transform(code, inlined);
+
+      expect(count(result, 'createElement(__Trans')).toBe(2);
+      expect(result).toContain('Sesion ES');
+      expect(result).toContain('Bienvenido');
+    });
+  });
 });

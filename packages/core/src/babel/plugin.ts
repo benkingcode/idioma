@@ -9,6 +9,7 @@ import {
   type PathsMatcher,
 } from '../utils/resolve-tsconfig-paths.js';
 import { extractTransMessage, type ExtractedMessage } from './extract-trans.js';
+import { literalIdLeaves } from './literal-id.js';
 import { serializeJsxChildren, serializeTemplateLiteral } from './serialize.js';
 
 /**
@@ -115,13 +116,14 @@ function extractTObjectArg(node: t.ObjectExpression): {
 const UNRESOLVED_T_ID_MESSAGE =
   '[idioma] t() needs an id that is a string literal, so Idioma can inline ' +
   'it at build time. Without inlining, the page renders the id. ' +
-  "Write t({ id: 'some.key' }), or one t() call per key.";
+  "Write t({ id: 'some.key' }), or a conditional of string literals: " +
+  "t({ id: live ? 'a.key' : 'b.key' }).";
 
 const UNRESOLVED_TRANS_ID_MESSAGE =
   '[idioma] <Trans> needs an id that is a string literal, so Idioma can ' +
   'inline it at build time. Without inlining, the page renders the id, or ' +
-  'the English text in every locale. Write id="some.key", or one <Trans> ' +
-  'per key.';
+  'the English text in every locale. Write id="some.key", or a conditional ' +
+  "of string literals: id={live ? 'a.key' : 'b.key'}.";
 
 const UNIMPORTED_TRANS_MESSAGE =
   '[idioma] This <Trans> with an id is not imported from the idioma folder, ' +
@@ -145,23 +147,92 @@ function throwIfUncreatedTCall(
   const arg = path.node.arguments[0];
   if (!opts.translations || !t.isObjectExpression(arg)) return;
 
-  const objArg = extractTObjectArg(arg);
-  if (!objArg) return;
+  const ids = literalIdLeaves(findObjectProperty(arg, 'id')?.value);
+  if (!ids) return;
 
-  const { id, ns } = objArg;
+  const nsValue = findObjectProperty(arg, 'ns')?.value;
+  const ns = t.isStringLiteral(nsValue) ? nsValue.value : undefined;
   const translations = opts.translations as Record<string, unknown> & {
     __ns?: Record<string, Record<string, unknown>>;
   };
-  const isCatalogueKey = ns
-    ? translations.__ns?.[ns]?.[id] !== undefined
-    : translations[id] !== undefined;
-  if (!isCatalogueKey) return;
+  const id = ids.find((key) =>
+    ns
+      ? translations.__ns?.[ns]?.[key] !== undefined
+      : translations[key] !== undefined,
+  );
+  if (!id) return;
 
   throw path.buildCodeFrameError(
     `[idioma] t({ id: '${id}' }) is called on a function that was not ` +
       'created by useT() or createT() in this file, so Idioma cannot inline ' +
       `it, and the page renders "${id}". Call useT() or createT(locale) in ` +
       'this file instead of passing t in.',
+  );
+}
+
+/**
+ * A non-computed property of an object literal, by key name.
+ */
+function findObjectProperty(
+  node: t.ObjectExpression,
+  name: string,
+): t.ObjectProperty | undefined {
+  return node.properties.find(
+    (prop): prop is t.ObjectProperty =>
+      t.isObjectProperty(prop) &&
+      !prop.computed &&
+      (t.isIdentifier(prop.key, { name }) ||
+        t.isStringLiteral(prop.key, { value: name })),
+  );
+}
+
+/**
+ * t({ id: c ? 'a' : 'b', ...rest }) becomes
+ * c ? t({ id: 'a', ...rest }) : t({ id: 'b', ...rest }). Each new call is
+ * visited again, so a nested conditional splits on the next pass and every
+ * leaf is inlined and extracted like a literal id.
+ */
+function splitConditionalTCall(
+  call: t.CallExpression,
+  conditional: t.ConditionalExpression,
+): t.ConditionalExpression {
+  const branch = (id: t.Expression) => {
+    const clone = t.cloneNode(call, true);
+    const idProp = findObjectProperty(
+      clone.arguments[0] as t.ObjectExpression,
+      'id',
+    )!;
+    idProp.value = t.cloneNode(id, true);
+    return clone;
+  };
+  return t.conditionalExpression(
+    conditional.test,
+    branch(conditional.consequent),
+    branch(conditional.alternate),
+  );
+}
+
+/**
+ * <Trans id={c ? 'a' : 'b'} ...> becomes
+ * c ? <Trans id="a" ...> : <Trans id="b" ...>, the same split as
+ * splitConditionalTCall.
+ */
+function splitConditionalTrans(
+  element: t.JSXElement,
+  conditional: t.ConditionalExpression,
+): t.ConditionalExpression {
+  const branch = (id: t.Expression) => {
+    const clone = t.cloneNode(element, true);
+    const idAttribute = getIdAttribute(clone.openingElement)!;
+    idAttribute.value = t.isStringLiteral(id)
+      ? t.stringLiteral(id.value)
+      : t.jsxExpressionContainer(t.cloneNode(id, true));
+    return clone;
+  };
+  return t.conditionalExpression(
+    conditional.test,
+    branch(conditional.consequent),
+    branch(conditional.alternate),
   );
 }
 
@@ -510,6 +581,12 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
 
         // Handle object form: t({ id: 'key', source: 'text', values: {...} })
         if (t.isObjectExpression(sourceArg)) {
+          const idValue = findObjectProperty(sourceArg, 'id')?.value;
+          if (t.isConditionalExpression(idValue) && literalIdLeaves(idValue)) {
+            path.replaceWith(splitConditionalTCall(path.node, idValue));
+            return;
+          }
+
           const objArg = extractTObjectArg(sourceArg);
           if (!objArg) {
             // A non-literal id, a missing id or a spread: the call cannot be
@@ -728,6 +805,23 @@ export default function idiomaPlugin(): PluginObj<PluginState> {
           ) {
             throw path.buildCodeFrameError(UNIMPORTED_TRANS_MESSAGE);
           }
+          return;
+        }
+
+        const idExpression = t.isJSXExpressionContainer(idAttribute?.value)
+          ? idAttribute.value.expression
+          : undefined;
+        if (
+          t.isConditionalExpression(idExpression) &&
+          literalIdLeaves(idExpression)
+        ) {
+          const split = splitConditionalTrans(path.node, idExpression);
+          // A JSX child or attribute value needs braces around an expression
+          const inJsx =
+            path.parentPath.isJSXElement() ||
+            path.parentPath.isJSXFragment() ||
+            path.parentPath.isJSXAttribute();
+          path.replaceWith(inJsx ? t.jsxExpressionContainer(split) : split);
           return;
         }
 
