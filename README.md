@@ -81,6 +81,8 @@ export default defineConfig({
 });
 ```
 
+The plugin needs Vite 8 or later. It transforms each module with Oxc in its own `pre` transform, before `@vitejs/plugin-react` sees it, so it works with plugin-react 6 and its React Compiler (`react({ compiler: true })`). It needs no Babel.
+
 Create a config file:
 
 ```ts
@@ -173,15 +175,7 @@ module.exports = withIdioma({
 })(config);
 ```
 
-Add the Babel preset:
-
-```js
-// babel.config.js
-module.exports = {
-  presets: ['module:@react-native/babel-preset'],
-  plugins: ['@idioma/core/babel'],
-};
-```
+There is no Babel plugin to add. `withIdioma` sets Metro's `babelTransformerPath` to Idioma's transformer, which transforms each module with Oxc and then hands it to your app's own transformer (Expo's or React Native's), so `babel.config.js` stays as it is. If your config already sets a custom `babelTransformerPath`, Idioma wraps that one.
 
 Set up the provider in your app root:
 
@@ -309,7 +303,7 @@ export function formatApiError(code: string, locale: string) {
 }
 ```
 
-**Bundle splitting:** In production, Babel inlines translations at each call site. Static strings (`t('literal')`) get optimal tree-shaking. Dynamic strings (`t(variable)`) trigger an automatic translations import for runtime lookup—Babel injects this only in files that need it.
+**Bundle splitting:** In production, the Idioma transform inlines translations at each call site. Static strings (`t('literal')`) get optimal tree-shaking. Dynamic strings (`t(variable)`) trigger an automatic translations import for runtime lookup, which the transform injects only in files that need it.
 
 ## Usage
 
@@ -784,7 +778,7 @@ Idioma automatically tree-shakes translations at the component level. Only the t
 
 **How it works:**
 
-1. The Babel plugin transforms each `<Trans>` to reference specific translation keys
+1. The Idioma transform turns each `<Trans>` into a reference to specific translation keys
 2. Each source file's translations are compiled to a separate chunk
 3. The bundler includes only the chunks imported by components on each route
 
@@ -932,11 +926,11 @@ React context provides locale, renders translated text
 
 ```
 <Trans>Hello {name}</Trans>
-    ↓ Babel transforms to
+    ↓ Idioma transforms to
 <__Trans __t={__$idioma.a7Fk29} __a={{name}} />
 ```
 
-The Babel plugin extracts messages during build, generates content-addressed keys, and transforms components to use the compiled translation object.
+The transform, built on the Oxc parser, extracts messages during build, generates content-addressed keys, and transforms components to use the compiled translation object.
 
 ## Comparison
 
@@ -966,8 +960,8 @@ TypeScript provides full type safety via generated types:
 
 ## Packages
 
-- **@idioma/core** — Babel plugin, Vite plugin, Metro plugin, CLI, PO compiler
-- **@idioma/react** — Runtime components (~800 bytes gzipped)
+- **@idioma/core**: Oxc transform, Vite plugin, Metro plugin, CLI, PO compiler
+- **@idioma/react**: Runtime components (~800 bytes gzipped)
 
 ## License
 
