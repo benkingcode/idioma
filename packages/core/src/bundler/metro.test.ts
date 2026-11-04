@@ -10,6 +10,11 @@ import {
 import { compileTranslations } from '../compiler/compile';
 import { extractAndMergeFile } from './incremental-extract';
 import { withIdioma, type IdiomaMetroOptions } from './metro';
+import {
+  OPTIONS_ENV,
+  transformerPath,
+  UPSTREAM_ENV,
+} from './metro-transformer';
 
 // Mock compileTranslations
 vi.mock('../compiler/compile', () => ({
@@ -53,6 +58,32 @@ describe('withIdioma', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockWatcher.on.mockReturnThis();
+  });
+
+  it("installs Idioma's transformer around the app's own (#20)", async () => {
+    const config = await withIdioma(defaultOptions)({
+      projectRoot: '/project',
+      transformer: { babelTransformerPath: '/project/upstream.js' },
+    });
+
+    expect(
+      (config.transformer as { babelTransformerPath: string })
+        .babelTransformerPath,
+    ).toBe(transformerPath);
+    expect(process.env[UPSTREAM_ENV]).toBe('/project/upstream.js');
+    expect(JSON.parse(process.env[OPTIONS_ENV]!)).toMatchObject({
+      idiomaDir: './src/idioma',
+    });
+  });
+
+  it('warns, and leaves the transformer alone, when there is none to wrap', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const config = await withIdioma(defaultOptions)({ projectRoot: '/project' });
+
+    expect(config.transformer).toBeUndefined();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('babelTransformerPath'),
+    );
   });
 
   it('returns a function', () => {

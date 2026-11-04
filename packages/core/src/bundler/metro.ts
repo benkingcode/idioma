@@ -10,6 +10,12 @@ import {
 } from './debounce.js';
 import { createChokidarIgnoreFilter } from './ignore-patterns.js';
 import { extractAndMergeFile } from './incremental-extract.js';
+import {
+  OPTIONS_ENV,
+  transformerPath,
+  UPSTREAM_ENV,
+  type MetroTransformerOptions,
+} from './metro-transformer.js';
 
 export interface IdiomaMetroOptions {
   /**
@@ -235,10 +241,36 @@ export function withIdioma(
     // Ensure output directory is in watchFolders for Metro
     const resolvedOutputDir = resolve(projectRoot, outputDir);
     const existingWatchFolders = metroConfig.watchFolders || [];
-
-    return {
+    const config: MetroConfig = {
       ...metroConfig,
       watchFolders: [...existingWatchFolders, resolvedOutputDir],
+    };
+
+    // Idioma's transformer runs before the app's own Babel transformer
+    // (#20). Metro gives a transformer only the module, so what it needs goes
+    // through the environment, which Metro's workers inherit.
+    const transformer = metroConfig.transformer as
+      | { babelTransformerPath?: string; [key: string]: unknown }
+      | undefined;
+    const upstreamPath = transformer?.babelTransformerPath;
+    if (!upstreamPath) {
+      console.warn(
+        '[idioma] The Metro config has no transformer.babelTransformerPath to ' +
+          'wrap, so Trans and t() are not transformed. Wrap the config from ' +
+          "Expo's or React Native's getDefaultConfig().",
+      );
+      return config;
+    }
+    const transformerOptions: MetroTransformerOptions = {
+      idiomaDir,
+      useSuspense,
+      locales,
+    };
+    process.env[UPSTREAM_ENV] = upstreamPath;
+    process.env[OPTIONS_ENV] = JSON.stringify(transformerOptions);
+    return {
+      ...config,
+      transformer: { ...transformer, babelTransformerPath: transformerPath },
     };
   };
 }
