@@ -211,7 +211,7 @@ function Greeting({ name }) {
 }
 ```
 
-The Metro plugin automatically compiles translations on startup and watches for PO file changes during development.
+The Metro plugin automatically compiles translations on startup and watches for PO file changes during development. Translations are inlined into each module, and Metro caches transformed modules, so restart Metro to see a PO edit in the app.
 
 > **Tip:** To use `@/idioma` imports in React Native, add [babel-plugin-module-resolver](https://github.com/tleunen/babel-plugin-module-resolver) to your Babel config.
 
