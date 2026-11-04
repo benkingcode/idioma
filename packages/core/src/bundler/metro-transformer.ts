@@ -27,6 +27,12 @@ export const transformerPath = fileURLToPath(import.meta.url);
 export interface MetroTransformerOptions {
   /** The idioma folder, relative to the project root */
   idiomaDir: string;
+  /**
+   * The project root `withIdioma` compiled the catalogue in. Metro may call
+   * `getCacheKey` with no project root, and then a cwd-relative path would
+   * hash a missing catalogue and serve stale copy after a restart.
+   */
+  projectRoot?: string;
   useSuspense?: boolean;
   locales?: string[];
 }
@@ -137,7 +143,8 @@ export async function transform(args: BabelTransformerArgs): Promise<unknown> {
 export function getCacheKey(...args: unknown[]): string {
   const first = args[0] as { projectRoot?: string } | undefined;
   const options = readOptions();
-  const file = translationsFile(first?.projectRoot ?? '', options.idiomaDir);
+  const projectRoot = options.projectRoot ?? first?.projectRoot ?? '';
+  const file = translationsFile(projectRoot, options.idiomaDir);
   const catalogue = existsSync(file) ? readFileSync(file) : '';
   const hash = createHash('sha256')
     .update(catalogue)

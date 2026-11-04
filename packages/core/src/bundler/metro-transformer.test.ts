@@ -29,7 +29,10 @@ beforeAll(() => {
       ' getCacheKey: () => "upstream" };\n',
   );
   process.env[UPSTREAM_ENV] = upstream;
-  process.env[OPTIONS_ENV] = JSON.stringify({ idiomaDir: 'src/idioma' });
+  process.env[OPTIONS_ENV] = JSON.stringify({
+    idiomaDir: 'src/idioma',
+    projectRoot,
+  });
 });
 
 const app = `
@@ -61,12 +64,14 @@ describe('Idioma Metro transformer', () => {
   });
 
   it('changes its cache key when the catalogue changes', () => {
-    const before = getCacheKey({ projectRoot });
+    // Metro may pass no project root; the key must still hash the catalogue
+    // withIdioma compiled, not a path relative to the cwd
+    const before = getCacheKey({ projectRoot: undefined });
     writeFileSync(
       translationsPath,
       'export const translations = { greeting: { en: "Hi", es: "Hola" } };\n',
     );
-    const after = getCacheKey({ projectRoot });
+    const after = getCacheKey({ projectRoot: undefined });
 
     expect(before).toContain('upstream');
     expect(after).not.toBe(before);

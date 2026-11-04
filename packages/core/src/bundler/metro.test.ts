@@ -42,9 +42,11 @@ vi.mock('./incremental-extract', () => ({
     .mockResolvedValue({ added: 0, updated: 0, removed: 0 }),
 }));
 
-// Mock fs.promises.utimes for touch
+// Mock fs.promises: utimes for touch, readFile for the source watcher's
+// import check (a file that imports from the idioma folder)
 vi.mock('fs/promises', () => ({
   utimes: vi.fn().mockResolvedValue(undefined),
+  readFile: vi.fn().mockResolvedValue("import { Trans } from './idioma';"),
 }));
 
 const mockCompileTranslations = compileTranslations as Mock;
@@ -257,6 +259,36 @@ describe('Metro watcher', () => {
         expect.objectContaining({ po: { foldLength: 0 } }),
       ),
     );
+  });
+
+  // The source watcher's 'change' handler (the PO watcher registers first)
+  async function sourceChangeHandler(): Promise<(path: string) => unknown> {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    await withIdioma(defaultOptions)({ projectRoot: '/test' });
+    const handlers = mockWatcher.on.mock.calls
+      .filter(([event]) => event === 'change')
+      .map(([, handler]) => handler);
+    return handlers[1];
+  }
+
+  it('does not extract from files in the idioma folder, which compile writes', async () => {
+    // compile touches index.ts; extracting it compiled again, forever
+    const onChange = await sourceChangeHandler();
+    await onChange('/test/src/idioma/index.ts');
+    await onChange('/test/src/idioma/.generated/translations.js');
+    await new Promise((done) => setTimeout(done, 300));
+
+    expect(extractAndMergeFile).not.toHaveBeenCalled();
+  });
+
+  it('does not extract from files that do not import from the idioma folder', async () => {
+    const { readFile } = await import('fs/promises');
+    (readFile as Mock).mockResolvedValueOnce("import { x } from './lib';");
+    const onChange = await sourceChangeHandler();
+    await onChange('/test/src/Other.tsx');
+    await new Promise((done) => setTimeout(done, 300));
+
+    expect(extractAndMergeFile).not.toHaveBeenCalled();
   });
 
   it('recompiles when PO files are added', async () => {

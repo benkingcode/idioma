@@ -1,14 +1,19 @@
-import { utimes } from 'fs/promises';
+import { readFile, utimes } from 'fs/promises';
 import { watch, type FSWatcher } from 'chokidar';
-import { join, resolve } from 'pathe';
+import { isAbsolute, join, relative, resolve } from 'pathe';
 import { compileTranslations } from '../compiler/compile.js';
 import type { PoFormatOptions } from '../po/types.js';
 import { ensureGitignore } from '../utils/gitignore.js';
+import {
+  loadPathsMatcher,
+  type PathsMatcher,
+} from '../utils/resolve-tsconfig-paths.js';
 import {
   createDebouncedExtractor,
   type DebouncedExtractor,
 } from './debounce.js';
 import { createChokidarIgnoreFilter } from './ignore-patterns.js';
+import { fileImportsIdioma } from './import-detect.js';
 import { extractAndMergeFile } from './incremental-extract.js';
 import {
   OPTIONS_ENV,
@@ -104,6 +109,7 @@ export function withIdioma(
   let sourceWatcher: FSWatcher | null = null;
   let debouncedExtractor: DebouncedExtractor | null = null;
   let projectRoot = '';
+  let pathsMatcher: PathsMatcher | null = null;
 
   async function compile(): Promise<void> {
     try {
@@ -148,6 +154,28 @@ export function withIdioma(
     console.log(`[idioma] PO file added: ${path}`);
     await compile();
     await touchOutputFile();
+  }
+
+  /**
+   * Queues a changed source file for extraction, as the Vite plugin does.
+   * Files inside idiomaDir are skipped: compile writes them and
+   * touchOutputFile touches index.ts, so extracting them compiled again and
+   * looped forever. Files that do not import from idiomaDir hold nothing to
+   * extract.
+   */
+  async function queueSourceFile(path: string): Promise<void> {
+    const absIdiomaDir = resolve(projectRoot, idiomaDir);
+    const fromIdiomaDir = relative(absIdiomaDir, path);
+    if (!fromIdiomaDir.startsWith('..') && !isAbsolute(fromIdiomaDir)) return;
+    let content: string;
+    try {
+      content = await readFile(path, 'utf8');
+    } catch {
+      // Deleted before it was read: nothing to extract
+      return;
+    }
+    if (!fileImportsIdioma(content, path, absIdiomaDir, pathsMatcher)) return;
+    debouncedExtractor?.add(path);
   }
 
   function setupWatcher(): void {
@@ -214,13 +242,8 @@ export function withIdioma(
         },
       });
 
-      sourceWatcher.on('change', (path) => {
-        debouncedExtractor?.add(path);
-      });
-
-      sourceWatcher.on('add', (path) => {
-        debouncedExtractor?.add(path);
-      });
+      sourceWatcher.on('change', queueSourceFile);
+      sourceWatcher.on('add', queueSourceFile);
     }
   }
 
@@ -229,6 +252,7 @@ export function withIdioma(
   ): Promise<MetroConfig> {
     // Determine project root
     projectRoot = metroConfig.projectRoot || process.cwd();
+    pathsMatcher = loadPathsMatcher(projectRoot);
 
     // Compile translations at startup
     await compile();
@@ -263,6 +287,7 @@ export function withIdioma(
     }
     const transformerOptions: MetroTransformerOptions = {
       idiomaDir,
+      projectRoot,
       useSuspense,
       locales,
     };
