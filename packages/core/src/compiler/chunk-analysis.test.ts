@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ExtractedMessage } from '../babel/extract-trans';
+import type { ExtractedMessage } from '../oxc/transform';
 import { analyzeChunks } from './chunk-analysis';
 
 describe('analyzeChunks', () => {

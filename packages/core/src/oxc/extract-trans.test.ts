@@ -1,25 +1,42 @@
-import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
+import { parseSync, type JSXElement } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
-import { extractTransMessage, type ExtractedMessage } from './extract-trans';
+import { createLineLookup } from './parse';
+import { extractTransMessage, type ExtractedMessage } from './transform';
 
+// The Babel Trans extractor's cases, run on the Oxc one. Only this helper
+// changed: it parses with Oxc and reads every element named Trans, as the
+// old extractor's own name check did.
 function extractFromCode(code: string): ExtractedMessage[] {
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['jsx', 'typescript'],
+  const { program } = parseSync('test.tsx', code, {
+    lang: 'tsx',
+    preserveParens: false,
   });
-
+  const lineOf = createLineLookup(code);
   const messages: ExtractedMessage[] = [];
-
-  traverse(ast, {
-    JSXElement(path) {
-      const result = extractTransMessage(path, 'test.tsx');
-      if (result) {
-        messages.push(result);
-      }
-    },
-  });
-
+  const isTrans = (element: JSXElement) => {
+    const name = element.openingElement.name;
+    return (
+      (name.type === 'JSXIdentifier' && name.name === 'Trans') ||
+      (name.type === 'JSXMemberExpression' && name.property.name === 'Trans')
+    );
+  };
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    const element = node as JSXElement;
+    if (element.type === 'JSXElement' && isTrans(element)) {
+      const read = extractTransMessage(
+        element,
+        code,
+        `test.tsx:${lineOf(element.start)}`,
+      );
+      if (read) messages.push(read.message);
+    }
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else visit(value);
+    }
+  };
+  visit(program);
   return messages;
 }
 

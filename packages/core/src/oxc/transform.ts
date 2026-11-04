@@ -568,44 +568,19 @@ class ModuleTransform {
     element: JSXElement,
     idOverride?: string,
   ): DescribedTrans | null {
-    const opening = element.openingElement;
-    const id = idOverride ?? getStringAttribute(opening, 'id');
-    const context = getStringAttribute(opening, 'context');
-    const namespace = getStringAttribute(opening, 'ns');
-    const keyOnly = element.children.length === 0 || opening.selfClosing;
-
-    let message: ExtractedMessage;
-    let serialized: SerializeResult | null = null;
-    if (keyOnly) {
-      // The message comes from the catalogue by its id (issue #17)
-      if (!id) return null;
-      message = {
-        key: id,
-        source: '',
-        placeholders: {},
-        components: [],
-        references: [this.reference(element)],
-      };
-    } else {
-      serialized = serializeJsxChildren(element.children, this.code);
-      if (!serialized.message) return null;
-      message = {
-        key: id || generateKey(serialized.message, context, namespace),
-        source: serialized.message,
-        placeholders: serialized.placeholders,
-        components: serialized.components,
-        references: [this.reference(element)],
-      };
-      if (serialized.comments?.length) message.comments = serialized.comments;
-    }
-    if (context) message.context = context;
-    if (namespace) message.namespace = namespace;
-
-    this.options.onExtract?.(message);
+    const read = extractTransMessage(
+      element,
+      this.code,
+      this.reference(element),
+      idOverride,
+    );
+    if (!read) return null;
+    this.options.onExtract?.(read.message);
     this.idiomaUsed = true;
+    const opening = element.openingElement;
+    const keyOnly = element.children.length === 0 || opening.selfClosing;
     return {
-      message,
-      serialized,
+      ...read,
       values: keyOnly ? getValuesExpression(opening) : undefined,
     };
   }
@@ -792,6 +767,51 @@ class ModuleTransform {
       message,
     );
   }
+}
+
+/**
+ * The message of a Trans element, with `id` overridden for a conditional
+ * branch. Null when the element is not transformed: a key-only Trans with no
+ * id, or children that serialize to nothing.
+ */
+export function extractTransMessage(
+  element: JSXElement,
+  code: string,
+  reference: string,
+  idOverride?: string,
+): { message: ExtractedMessage; serialized: SerializeResult | null } | null {
+  const opening = element.openingElement;
+  const id = idOverride ?? getStringAttribute(opening, 'id');
+  const context = getStringAttribute(opening, 'context');
+  const namespace = getStringAttribute(opening, 'ns');
+
+  let message: ExtractedMessage;
+  let serialized: SerializeResult | null = null;
+  if (element.children.length === 0 || opening.selfClosing) {
+    // The message comes from the catalogue by its id (issue #17)
+    if (!id) return null;
+    message = {
+      key: id,
+      source: '',
+      placeholders: {},
+      components: [],
+      references: [reference],
+    };
+  } else {
+    serialized = serializeJsxChildren(element.children, code);
+    if (!serialized.message) return null;
+    message = {
+      key: id || generateKey(serialized.message, context, namespace),
+      source: serialized.message,
+      placeholders: serialized.placeholders,
+      components: serialized.components,
+      references: [reference],
+    };
+    if (serialized.comments?.length) message.comments = serialized.comments;
+  }
+  if (context) message.context = context;
+  if (namespace) message.namespace = namespace;
+  return { message, serialized };
 }
 
 interface DescribedTrans {

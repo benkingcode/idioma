@@ -6,9 +6,8 @@ import {
 
 /**
  * Detect whether a source file imports anything from the user's idioma
- * directory. Mirrors the babel plugin's import-resolution logic so that
- * any file this returns `false` for would also produce zero extractions
- * if handed to babel.
+ * directory. Mirrors the transform's import-resolution logic so that
+ * any file this returns `false` for would also produce zero extractions.
  *
  * Cheap by design: a regex scan over the source text, no AST parse. False
  * positives (e.g., matches inside comments or string literals) are acceptable
