@@ -1,4 +1,4 @@
-import { parseSync, type Program } from 'oxc-parser';
+import { parseSync, rawTransferSupported, type Program } from 'oxc-parser';
 
 export type SourceLang = 'js' | 'jsx' | 'ts' | 'tsx';
 
@@ -36,6 +36,12 @@ export function parseOptions(filename: string): ParseOptions {
   };
 }
 
+// Raw transfer hands the AST to JavaScript as a buffer instead of JSON: on
+// Dancefloor's 831 files, 39 ms against 139 ms (and 87 ms for Babel's parser),
+// measured with oxc-parser 0.157.0. It needs a 64-bit platform, so it is used
+// where oxc-parser says it works.
+const RAW_TRANSFER = rawTransferSupported();
+
 /** Parses with `parse` when given (Vite), else with oxc-parser. */
 export function parseModule(
   code: string,
@@ -44,7 +50,10 @@ export function parseModule(
 ): Program {
   const options = parseOptions(filename);
   if (parse) return parse(code, options);
-  const result = parseSync(filename, code, options);
+  const result = parseSync(filename, code, {
+    ...options,
+    experimentalRawTransfer: RAW_TRANSFER,
+  });
   const error = result.errors[0];
   if (error) {
     throw new SyntaxError(`${filename}: ${error.message}`);

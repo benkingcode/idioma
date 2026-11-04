@@ -157,8 +157,11 @@ class ModuleTransform {
   private readonly bindings = new Map<string, BindingType>();
   private readonly idiomaDir: string;
   private readonly lineOf: (offset: number) => number;
-  /** Nodes already walked, as a conditional id copies its subtrees per branch */
-  private readonly walked = new Set<Node>();
+  /**
+   * Subtrees a `<__Trans>` carries over, already walked: a conditional id
+   * writes them once per branch, and each must be transformed once.
+   */
+  private readonly carried = new Set<Node>();
   private idiomaUsed = false;
 
   constructor(
@@ -179,8 +182,6 @@ class ModuleTransform {
   // ---- walking ----------------------------------------------------------
 
   private visit(node: Node, parent: Node | null): void {
-    if (this.walked.has(node)) return;
-    this.walked.add(node);
     switch (node.type) {
       case 'ImportDeclaration':
         this.trackImport(node);
@@ -196,6 +197,12 @@ class ModuleTransform {
         return;
     }
     this.visitChildren(node);
+  }
+
+  private visitCarried(node: Node, parent: Node): void {
+    if (this.carried.has(node)) return;
+    this.carried.add(node);
+    this.visit(node, parent);
   }
 
   private visitChildren(node: Node): void {
@@ -607,14 +614,14 @@ class ModuleTransform {
     // The expressions and component attributes carried over, with whatever
     // they hold transformed first, as Babel visited the new element.
     for (const node of Object.values(serialized?.placeholderNodes ?? {})) {
-      this.visit(node, element);
+      this.visitCarried(node, element);
     }
     for (const component of serialized?.componentNodes ?? []) {
       for (const attribute of component.openingElement.attributes) {
-        this.visit(attribute, component.openingElement);
+        this.visitCarried(attribute, component.openingElement);
       }
     }
-    if (values) this.visit(values, element.openingElement);
+    if (values) this.visitCarried(values, element.openingElement);
 
     const props: string[] = [];
     if (this.options.mode === 'suspense') {
