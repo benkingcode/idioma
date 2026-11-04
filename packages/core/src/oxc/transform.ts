@@ -290,7 +290,7 @@ class ModuleTransform {
     const binding = this.bindings.get(callee.name);
     if (binding === 'useT' && this.options.mode === 'suspense') {
       this.idiomaUsed = true;
-      this.s.overwrite(
+      this.replace(
         call.start,
         call.end,
         '__useTSuspense(__$idiomaChunk, __$idiomaLoad)',
@@ -345,7 +345,7 @@ class ModuleTransform {
     if (this.options.mode === 'suspense') {
       this.idiomaUsed = true;
       this.visitChildren(call);
-      this.s.overwrite(arg.start, arg.end, JSON.stringify(key));
+      this.replace(arg.start, arg.end, JSON.stringify(key));
       return;
     }
 
@@ -365,7 +365,7 @@ class ModuleTransform {
       (second.type === 'Literal' && second.value === null) ||
       (second.type === 'Identifier' && second.name === 'undefined')
     );
-    this.s.overwrite(
+    this.replace(
       second.start,
       last.end,
       keep ? `${inlined}, ${this.slice(second)}` : inlined,
@@ -381,7 +381,7 @@ class ModuleTransform {
         this.describeTCall(arg, id),
       );
       this.visitChildren(call);
-      this.s.overwrite(
+      this.replace(
         call.start,
         call.end,
         `(${this.printConditional(leaves, (id) => this.tCallText(call, arg, id))})`,
@@ -396,11 +396,7 @@ class ModuleTransform {
     this.visitChildren(call);
     const first = call.arguments[0]!;
     const last = call.arguments[call.arguments.length - 1]!;
-    this.s.overwrite(
-      first.start,
-      last.end,
-      this.tCallArgs(arg, description.id),
-    );
+    this.replace(first.start, last.end, this.tCallArgs(arg, description.id));
   }
 
   /**
@@ -534,7 +530,7 @@ class ModuleTransform {
         parent?.type === 'JSXElement' ||
         parent?.type === 'JSXFragment' ||
         parent?.type === 'JSXAttribute';
-      this.s.overwrite(
+      this.replace(
         element.start,
         element.end,
         inJsx ? `{${text}}` : `(${text})`,
@@ -552,7 +548,7 @@ class ModuleTransform {
       this.visitChildren(element);
       return;
     }
-    this.s.overwrite(
+    this.replace(
       element.start,
       element.end,
       this.transText(element, described),
@@ -724,13 +720,14 @@ class ModuleTransform {
         return `${key}: () => import(${path})`;
       });
       text =
-        'import { __TransSuspense, __useTSuspense } from "@idioma/react/runtime-suspense";\n' +
-        `const __$idiomaChunk = ${JSON.stringify(chunkId)};\n` +
-        `const __$idiomaLoad = {${loaders.join(', ')}};\n`;
+        'import { __TransSuspense, __useTSuspense } from "@idioma/react/runtime-suspense"; ' +
+        `const __$idiomaChunk = ${JSON.stringify(chunkId)}; ` +
+        `const __$idiomaLoad = {${loaders.join(', ')}}; `;
     } else {
-      text = 'import { __Trans } from "@idioma/react";\n';
+      text = 'import { __Trans } from "@idioma/react"; ';
     }
-    // After any directives ('use client'), as Babel's unshiftContainer did
+    // After any directives ('use client'), as Babel's unshiftContainer did.
+    // On the first statement's own line, so no line moves (see replace()).
     const first = program.body.find(
       (statement) =>
         !(statement.type === 'ExpressionStatement' && statement.directive),
@@ -743,6 +740,25 @@ class ModuleTransform {
   }
 
   // ---- helpers ------------------------------------------------------------
+
+  /**
+   * Overwrites a range with text that has as many line breaks as the range
+   * had, so every line after it stays on its line. Metro hands the output to
+   * the app's Babel transformer with no source map, so a line that moved
+   * would put React Native stack traces and breakpoints on the wrong line.
+   *
+   * Text with more line breaks is left as it is. Only a conditional id makes
+   * it: each branch copies the call's `values`, so values written over several
+   * lines add lines once per extra branch. Taking line breaks out of user code
+   * is not safe (comments, automatic semicolons), so that case keeps its drift.
+   */
+  private replace(start: number, end: number, text: string): void {
+    this.s.overwrite(
+      start,
+      end,
+      keepLineCount(this.code.slice(start, end), text),
+    );
+  }
 
   /** The current text of a node, with edits inside it. */
   private slice(node: { start: number; end: number }): string {
@@ -833,6 +849,30 @@ interface ConditionalTree<T> {
 }
 
 /** `{"en": "Hello", "es": "Hola"}`, compiled ICU functions as code. */
+/**
+ * The text, with the line breaks it lacks to match the original. They go
+ * before its closing `/>`, `)`, `}` or `]`, or after its end, all of which
+ * are inside the node or argument list it replaces: never after a JSX
+ * element, where a line break would change the text around it.
+ */
+function keepLineCount(original: string, text: string): string {
+  const missing = countLineBreaks(original) - countLineBreaks(text);
+  if (missing <= 0) return text;
+  const breaks = '\n'.repeat(missing);
+  const closer = /(?:\/>|[)}\]])$/.exec(text);
+  return closer
+    ? `${text.slice(0, closer.index)}${breaks}${closer[0]}`
+    : `${text}${breaks}`;
+}
+
+function countLineBreaks(text: string): number {
+  let count = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text.charCodeAt(i) === 10) count++;
+  }
+  return count;
+}
+
 function translationsObject(messages: MessageTranslations): string {
   const entries = Object.entries(messages).map(([locale, message]) => {
     const value =
