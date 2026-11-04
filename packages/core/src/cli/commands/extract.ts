@@ -1,45 +1,21 @@
 import { promises as fs } from 'fs';
-import { createRequire } from 'node:module';
-import { dirname, join, relative, resolve } from 'path';
-import * as babel from '@babel/core';
-import type * as t from '@babel/types';
+import { join, relative, resolve } from 'path';
 import { defineCommand } from 'citty';
 import fg from 'fast-glob';
-import { literalIdLeaves } from '../../babel/literal-id.js';
-import { serializeJsxChildren } from '../../babel/serialize.js';
-import { generateKey } from '../../keys/generator.js';
+import { extractModule, type CatalogueMessage } from '../../oxc/extract.js';
 import { mergeCatalogs } from '../../po/merge.js';
 import { loadPoFile, writePoFile } from '../../po/parser.js';
 import type { Catalog, Message, PoFormatOptions } from '../../po/types.js';
 import { ensureGitignore } from '../../utils/gitignore.js';
 import {
-  isAliasedIdiomaImport,
   loadPathsMatcher,
   type PathsMatcher,
 } from '../../utils/resolve-tsconfig-paths.js';
 import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createSpinner } from '../ui/index.js';
 
-// Resolve the presets from this package, not by bare name. Babel resolves a
-// bare name from the consumer's cwd, so an app that does not install
-// @babel/preset-react itself got "Cannot find package" for every file and
-// extract reported 0 messages (issue #11). Resolving here also makes a
-// missing preset fail when the module loads, instead of once per file.
-const require = createRequire(import.meta.url);
-const presetReact = require.resolve('@babel/preset-react');
-const presetTypescript = require.resolve('@babel/preset-typescript');
-
-export interface ExtractedMessage {
-  key: string;
-  source: string;
-  location: string;
-  /** Line number in source file (1-indexed, 0 if unavailable) */
-  line: number;
-  context?: string;
-  /** Translator comment (extracted to PO #. comment) */
-  comment?: string;
-  namespace?: string;
-}
+/** A message as `idioma extract` writes it to the catalogue. */
+export type ExtractedMessage = CatalogueMessage;
 
 export interface ExtractOptions {
   cwd: string;
@@ -193,232 +169,11 @@ export async function extractFromFile(
   idiomaDir?: string,
   pathsMatcher?: PathsMatcher,
 ): Promise<ExtractedMessage[]> {
-  const messages: ExtractedMessage[] = [];
-
-  // Track bindings from idioma imports
-  const translatableBindings = new Map<
-    string,
-    'Trans' | 'useT' | 't' | 'createT'
-  >();
-
-  // idiomaDir is required for extraction
-  if (!idiomaDir) {
-    return messages;
-  }
-
   try {
-    await babel.transformAsync(code, {
-      filename: absolutePath,
-      presets: [[presetReact, { runtime: 'automatic' }], presetTypescript],
-      plugins: [
-        function extractorPlugin(): babel.PluginObj {
-          return {
-            visitor: {
-              ImportDeclaration(path) {
-                const source = path.node.source.value;
-
-                // Check if this import is from the idioma folder
-                let isIdiomaImport = false;
-                if (source.startsWith('.')) {
-                  const fileDir = dirname(absolutePath);
-                  const resolvedImport = resolve(fileDir, source);
-                  isIdiomaImport = resolvedImport.startsWith(idiomaDir);
-                } else if (pathsMatcher) {
-                  isIdiomaImport = isAliasedIdiomaImport(
-                    source,
-                    idiomaDir,
-                    pathsMatcher,
-                  );
-                }
-
-                if (!isIdiomaImport) return;
-
-                // Track translatable imports
-                for (const specifier of path.node.specifiers) {
-                  if (specifier.type !== 'ImportSpecifier') continue;
-
-                  const imported =
-                    specifier.imported.type === 'Identifier'
-                      ? specifier.imported.name
-                      : specifier.imported.value;
-                  const local = specifier.local.name;
-
-                  if (
-                    imported === 'Trans' ||
-                    imported === 'useT' ||
-                    imported === 't' ||
-                    imported === 'createT'
-                  ) {
-                    translatableBindings.set(
-                      local,
-                      imported as 'Trans' | 'useT' | 't' | 'createT',
-                    );
-                  }
-                }
-              },
-
-              VariableDeclarator(path) {
-                const init = path.node.init;
-                const id = path.node.id;
-                if (id.type !== 'Identifier') return;
-
-                // Handle identifier aliases: const T = Trans
-                if (init?.type === 'Identifier') {
-                  const type = translatableBindings.get(init.name);
-                  if (type) {
-                    translatableBindings.set(id.name, type);
-                  }
-                  return;
-                }
-
-                // Handle createT() and useT() calls:
-                // const t = createT('es') OR const t = useT()
-                // The resulting function is tracked as a 't' binding
-                if (
-                  init?.type === 'CallExpression' &&
-                  init.callee.type === 'Identifier'
-                ) {
-                  const calleeType = translatableBindings.get(init.callee.name);
-                  if (calleeType === 'createT' || calleeType === 'useT') {
-                    translatableBindings.set(id.name, 't');
-                  }
-                }
-              },
-
-              JSXElement(path) {
-                const opening = path.node.openingElement;
-                const elementName = opening.name;
-
-                // Get component name
-                let componentName: string | null = null;
-                if (elementName.type === 'JSXIdentifier') {
-                  componentName = elementName.name;
-                }
-                if (!componentName) return;
-
-                // Check if this is a Trans component using binding tracking
-                const isTrans =
-                  translatableBindings.get(componentName) === 'Trans';
-                if (!isTrans) return;
-
-                const { ids, context, comment, namespace, source } =
-                  parseTransElement(path.node);
-                // A key-only Trans (issue #17) has an id and no source.
-                if (!source && ids.length === 0) return;
-
-                // Explicit ids (one per branch of a conditional id), or a
-                // hash key from the source. With no id, the early return
-                // above guarantees a source.
-                const keys =
-                  ids.length > 0
-                    ? ids
-                    : [generateKey(source ?? '', context, namespace)];
-                const line = path.node.loc?.start.line ?? 0;
-
-                for (const key of keys) {
-                  messages.push({
-                    key,
-                    source: source ?? '',
-                    location: displayPath,
-                    line,
-                    context,
-                    comment,
-                    namespace,
-                  });
-                }
-              },
-
-              // Extract t() calls from useT hook
-              CallExpression(path) {
-                const callee = path.node.callee;
-                if (callee.type !== 'Identifier') return;
-
-                // Check if this is a t function call using binding tracking
-                const isT = translatableBindings.get(callee.name) === 't';
-
-                if (!isT) return;
-
-                const args = path.node.arguments;
-                const sourceArg = args[0];
-
-                if (!sourceArg) return;
-
-                // Handle object form: t({ id: 'key', source: 'text' })
-                if (sourceArg.type === 'ObjectExpression') {
-                  let ids: string[] | null = null;
-                  let source: string | undefined;
-                  let context: string | undefined;
-                  let namespace: string | undefined;
-
-                  for (const prop of sourceArg.properties) {
-                    if (prop.type !== 'ObjectProperty' || prop.computed)
-                      continue;
-                    const keyName =
-                      prop.key.type === 'Identifier'
-                        ? prop.key.name
-                        : prop.key.type === 'StringLiteral'
-                          ? prop.key.value
-                          : undefined;
-                    if (!keyName) continue;
-
-                    if (keyName === 'id') {
-                      // A string literal, or a conditional of them (issue #14)
-                      ids = literalIdLeaves(prop.value);
-                    } else if (
-                      keyName === 'source' &&
-                      prop.value.type === 'StringLiteral'
-                    ) {
-                      source = prop.value.value;
-                    } else if (
-                      keyName === 'context' &&
-                      prop.value.type === 'StringLiteral'
-                    ) {
-                      context = prop.value.value;
-                    } else if (
-                      keyName === 'ns' &&
-                      prop.value.type === 'StringLiteral'
-                    ) {
-                      namespace = prop.value.value;
-                    }
-                  }
-
-                  // No static id, skip. The Babel plugin fails the build for
-                  // such a call; extraction stays lenient so a file being
-                  // edited in dev mode is not lost from the catalogue.
-                  if (!ids) return;
-
-                  const line = path.node.loc?.start.line ?? 0;
-                  for (const key of ids) {
-                    messages.push({
-                      key,
-                      source: source ?? '',
-                      location: displayPath,
-                      line,
-                      context,
-                      namespace,
-                    });
-                  }
-                  return;
-                }
-
-                // Only extract string literal sources
-                if (sourceArg.type !== 'StringLiteral') return;
-
-                const source = sourceArg.value;
-                const key = generateKey(source);
-                const line = path.node.loc?.start.line ?? 0;
-
-                messages.push({
-                  key,
-                  source,
-                  location: displayPath,
-                  line,
-                });
-              },
-            },
-          };
-        },
-      ],
+    return extractModule(code, absolutePath, {
+      displayPath,
+      idiomaDir,
+      pathsMatcher,
     });
   } catch (error) {
     // Silently skip files with parse errors
@@ -426,56 +181,8 @@ export async function extractFromFile(
       `Warning: Could not parse ${displayPath}:`,
       (error as Error).message,
     );
+    return [];
   }
-
-  return messages;
-}
-
-function parseTransElement(element: t.JSXElement): {
-  /** The explicit id, or one per branch of a conditional id; empty if none */
-  ids: string[];
-  context?: string;
-  comment?: string;
-  namespace?: string;
-  source?: string;
-} {
-  const opening = element.openingElement;
-  let ids: string[] = [];
-  let context: string | undefined;
-  let comment: string | undefined;
-  let namespace: string | undefined;
-
-  // Extract id, context, comment, and ns from props
-  for (const attr of opening.attributes) {
-    if (attr.type !== 'JSXAttribute') continue;
-    if (attr.name.type !== 'JSXIdentifier') continue;
-
-    const name = attr.name.name;
-    // id="key", id={'key'} or id={live ? 'a' : 'b'}, as the Babel plugin
-    // accepts (issue #14)
-    if (name === 'id') {
-      const value =
-        attr.value?.type === 'JSXExpressionContainer'
-          ? attr.value.expression
-          : attr.value;
-      ids = literalIdLeaves(value) ?? [];
-    }
-    if (name === 'context' && attr.value?.type === 'StringLiteral') {
-      context = attr.value.value;
-    }
-    if (name === 'comment' && attr.value?.type === 'StringLiteral') {
-      comment = attr.value.value;
-    }
-    if (name === 'ns' && attr.value?.type === 'StringLiteral') {
-      namespace = attr.value.value;
-    }
-  }
-
-  // Serialize children to source string using the proper serializer
-  // that handles plural(), component tags, and other expressions correctly
-  const { message: source } = serializeJsxChildren(element.children);
-
-  return { ids, context, comment, namespace, source };
 }
 
 export function messagesToCatalog(
