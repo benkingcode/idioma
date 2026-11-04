@@ -101,9 +101,12 @@ export interface TransformResult {
 /** A call or element that cannot be inlined, with where it is. */
 export class IdiomaTransformError extends Error {
   constructor(
+    /** The file, the reason and a code frame */
     message: string,
     /** UTF-16 offset of the node in the source */
     readonly pos: number,
+    /** The reason alone, for a bundler that draws its own code frame */
+    readonly reason: string,
   ) {
     super(message);
     this.name = 'IdiomaTransformError';
@@ -786,6 +789,7 @@ class ModuleTransform {
     return new IdiomaTransformError(
       `${this.filename}: ${message}\n${codeFrame(this.code, node.start)}`,
       node.start,
+      message,
     );
   }
 }

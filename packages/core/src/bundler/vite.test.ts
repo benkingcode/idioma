@@ -84,6 +84,116 @@ describe('Idioma Vite Plugin', () => {
     expect(plugin.handleHotUpdate?.constructor.name).toBe('AsyncFunction');
   });
 
+  describe('transform', () => {
+    // A plugin past buildStart, in build mode, with the given config
+    async function startedPlugin() {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.mocked(loadConfig).mockResolvedValue({
+        idiomaDir: './src/idioma',
+        defaultLocale: 'en',
+      } as IdiomaConfig);
+      const plugin = idiomaVitePlugin() as any;
+      plugin.configResolved({ command: 'build', root: '/project' });
+      await plugin.buildStart.call({});
+      return plugin;
+    }
+
+    const app = `
+      import { Trans } from './idioma';
+      export const App = () => <Trans id="greeting">Hello</Trans>;
+    `;
+
+    it('has no reactBabel hook: it transforms on its own (#20)', () => {
+      const plugin = idiomaVitePlugin({ idiomaDir: './src/idioma' }) as any;
+      expect(plugin.api?.reactBabel).toBeUndefined();
+      expect(plugin.transform.handler).toBeTypeOf('function');
+    });
+
+    it("runs before other plugins' transforms, plugin-react 6's compiler included", () => {
+      const plugin = idiomaVitePlugin({ idiomaDir: './src/idioma' }) as any;
+      expect(plugin.enforce).toBe('pre');
+      expect(plugin.transform.order).toBe('pre');
+    });
+
+    it('filters out node_modules and non-script files', () => {
+      const { filter } = (idiomaVitePlugin() as any).transform;
+      const matches = (patterns: RegExp[], value: string) =>
+        patterns.some((pattern) => pattern.test(value));
+      expect(matches(filter.id.include, '/project/src/App.tsx')).toBe(true);
+      expect(matches(filter.id.include, '/project/src/style.css')).toBe(false);
+      expect(
+        matches(filter.id.exclude, '/project/node_modules/x/index.js'),
+      ).toBe(true);
+    });
+
+    it('turns <Trans> into <__Trans>, keeping JSX for the next plugin', async () => {
+      const plugin = await startedPlugin();
+      const result = plugin.transform.handler.call(
+        {
+          error: (e: unknown) => {
+            throw e;
+          },
+        },
+        app,
+        '/project/src/App.tsx',
+        {},
+      );
+      expect(result.code).toContain('<__Trans __t={');
+      expect(result.code).toContain('import { __Trans } from "@idioma/react"');
+      expect(result.map.mappings).not.toBe('');
+    });
+
+    it('leaves a module with nothing to transform alone', async () => {
+      const plugin = await startedPlugin();
+      const result = plugin.transform.handler.call(
+        {},
+        'export const x = 1;',
+        '/project/src/x.ts',
+        {},
+      );
+      expect(result).toBeNull();
+    });
+
+    it('reports a call that cannot be inlined at its position', async () => {
+      const plugin = await startedPlugin();
+      const error = vi.fn((e: unknown) => {
+        throw e;
+      });
+      const code = `
+        import { Trans } from './idioma';
+        export const App = ({ k }) => <Trans id={k}>Hello</Trans>;
+      `;
+      expect(() =>
+        plugin.transform.handler.call(
+          { error },
+          code,
+          '/project/src/App.tsx',
+          {},
+        ),
+      ).toThrow();
+      expect(error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('<Trans> needs an id'),
+          pos: code.indexOf('<Trans id={k}>'),
+        }),
+      );
+    });
+
+    it("edits Rolldown's native MagicString when the app enables it", async () => {
+      const { default: MagicString } = await import('magic-string');
+      const plugin = await startedPlugin();
+      const native = new MagicString(app);
+      const result = plugin.transform.handler.call(
+        {},
+        app,
+        '/project/src/App.tsx',
+        { magicString: native },
+      );
+      expect(result.code).toBe(native);
+      expect(native.toString()).toContain('<__Trans');
+    });
+  });
+
   describe('dev-mode extraction', () => {
     async function saveSourceFile(options?: IdiomaViteOptions) {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
