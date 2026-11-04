@@ -1,39 +1,35 @@
-import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
-import * as t from '@babel/types';
+import { parseSync, type JSXElement } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
 import { serializeJsxChildren, type SerializeResult } from './serialize';
+import { transformModule } from './transform';
 
-function parseJsx(code: string): t.JSXElement {
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['jsx', 'typescript'],
+// The Babel serializer's cases, run on the Oxc serializer. Only this helper
+// changed: it parses with Oxc and finds the first JSX element.
+function serialize(code: string): SerializeResult {
+  const { program } = parseSync('test.tsx', code, {
+    lang: 'tsx',
+    preserveParens: false,
   });
-
-  let jsxElement: t.JSXElement | null = null;
-
-  traverse(ast, {
-    JSXElement(path) {
-      jsxElement = path.node;
-      path.stop();
-    },
-  });
-
-  if (!jsxElement) {
-    throw new Error('No JSX element found');
-  }
-
-  return jsxElement;
-}
-
-function getChildren(code: string): t.JSXElement['children'] {
-  return parseJsx(code).children;
+  let found: JSXElement | null = null;
+  const visit = (node: unknown): void => {
+    if (found || !node || typeof node !== 'object') return;
+    if ((node as { type?: string }).type === 'JSXElement') {
+      found = node as JSXElement;
+      return;
+    }
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else visit(value);
+    }
+  };
+  visit(program);
+  if (!found) throw new Error('No JSX element found');
+  return serializeJsxChildren((found as JSXElement).children, code);
 }
 
 describe('serializeJsxChildren', () => {
   it('serializes simple text', () => {
-    const children = getChildren('<Trans>Hello world</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Hello world</Trans>');
 
     expect(result.message).toBe('Hello world');
     expect(result.placeholders).toEqual({});
@@ -41,24 +37,21 @@ describe('serializeJsxChildren', () => {
   });
 
   it('serializes text with simple identifier placeholder', () => {
-    const children = getChildren('<Trans>Hello {name}</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Hello {name}</Trans>');
 
     expect(result.message).toBe('Hello {name}');
     expect(result.placeholders).toEqual({ name: 'name' });
   });
 
   it('serializes text with member expression placeholder', () => {
-    const children = getChildren('<Trans>Hello {user.name}</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Hello {user.name}</Trans>');
 
     expect(result.message).toBe('Hello {user.name}');
     expect(result.placeholders).toEqual({ 'user.name': 'user.name' });
   });
 
   it('serializes complex expression as numbered placeholder', () => {
-    const children = getChildren('<Trans>Count: {getCount()}</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Count: {getCount()}</Trans>');
 
     expect(result.message).toBe('Count: {0}');
     expect(result.placeholders).toEqual({ '0': 'getCount()' });
@@ -66,20 +59,18 @@ describe('serializeJsxChildren', () => {
   });
 
   it('serializes JSX element with named tag', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Click <Link>here</Link> to continue</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe('Click <Link>here</Link> to continue');
     expect(result.components).toEqual(['Link']);
   });
 
   it('serializes multiple JSX elements with named tags', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans><Bold>Hello</Bold> and <Italic>world</Italic></Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       '<Bold>Hello</Bold> and <Italic>world</Italic>',
@@ -88,26 +79,23 @@ describe('serializeJsxChildren', () => {
   });
 
   it('serializes self-closing JSX element with named tag', () => {
-    const children = getChildren('<Trans>Line break<br/>here</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Line break<br/>here</Trans>');
 
     expect(result.message).toBe('Line break<br/>here');
     expect(result.components).toEqual(['br']);
   });
 
   it('serializes nested JSX elements with named tags', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans><Bold><Italic>text</Italic></Bold></Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe('<Bold><Italic>text</Italic></Bold>');
     expect(result.components).toEqual(['Bold', 'Italic']);
   });
 
   it('serializes placeholders inside JSX elements', () => {
-    const children = getChildren('<Trans><Link>Hello {name}</Link></Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans><Link>Hello {name}</Link></Trans>');
 
     expect(result.message).toBe('<Link>Hello {name}</Link>');
     expect(result.placeholders).toEqual({ name: 'name' });
@@ -115,10 +103,9 @@ describe('serializeJsxChildren', () => {
   });
 
   it('handles duplicate component names', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Click <Link>here</Link> or <Link>there</Link></Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     // Both Links use the same tag name - runtime tracks order
     expect(result.message).toBe(
@@ -128,8 +115,7 @@ describe('serializeJsxChildren', () => {
   });
 
   it('handles multiple numbered placeholders', () => {
-    const children = getChildren('<Trans>Results: {fn1()} and {fn2()}</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Results: {fn1()} and {fn2()}</Trans>');
 
     expect(result.message).toBe('Results: {0} and {1}');
     expect(result.placeholders['0']).toBe('fn1()');
@@ -137,34 +123,30 @@ describe('serializeJsxChildren', () => {
   });
 
   it('trims and normalizes whitespace', () => {
-    const children = getChildren(`<Trans>
+    const result = serialize(`<Trans>
       Hello   world
     </Trans>`);
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe('Hello world');
   });
 
   it('handles empty Trans', () => {
-    const children = getChildren('<Trans></Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans></Trans>');
 
     expect(result.message).toBe('');
   });
 
   it('handles JSX fragment children', () => {
-    const children = getChildren('<Trans><>fragment content</></Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans><>fragment content</></Trans>');
 
     // Fragment content should be flattened
     expect(result.message).toBe('fragment content');
   });
 
   it('does not create placeholder for whitespace between text and component (issue #5)', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one platform.</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     // Space between "with" and <Text> should be literal, not {0}
     expect(result.message).toBe(
@@ -174,10 +156,9 @@ describe('serializeJsxChildren', () => {
   });
 
   it('inlines {" "} expression as literal space, not placeholder (issue #5)', () => {
-    const children = getChildren(
+    const result = serialize(
       `<Trans>Promote your next club night with{' '}<Text>Dancefloor Pro</Text>, the all-in-one platform.</Trans>`,
     );
-    const result = serializeJsxChildren(children);
 
     // {' '} should become a literal space, not {0}
     expect(result.message).toBe(
@@ -188,7 +169,7 @@ describe('serializeJsxChildren', () => {
 
   it('inlines {" "} in multiline Trans with components (issue #5 exact reproduction)', () => {
     // Exact formatting from benkingcode/dancefloor-mono PR #320
-    const children = getChildren(`<Trans id="promotersPage.hero.subtitle">
+    const result = serialize(`<Trans id="promotersPage.hero.subtitle">
                 Go beyond just selling tickets. Promote your next club night
                 with{' '}
                 <Text
@@ -203,7 +184,6 @@ describe('serializeJsxChildren', () => {
                 dance music. Reach the right audience, build your community, and
                 reward your superfans.
               </Trans>`);
-    const result = serializeJsxChildren(children);
 
     expect(result.message).not.toContain('{0}');
     expect(result.message).toBe(
@@ -213,24 +193,22 @@ describe('serializeJsxChildren', () => {
   });
 
   it('trims whitespace inside multiline component tags', () => {
-    const children = getChildren(`<Trans>
+    const result = serialize(`<Trans>
       <Text>
         Dancefloor Pro
       </Text>
     </Trans>`);
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe('<Text>Dancefloor Pro</Text>');
   });
 
   it('handles component with explicit whitespace and punctuation', () => {
     // Matches the reproduction case from GitHub issue #4
-    const children = getChildren(`<Trans>
+    const result = serialize(`<Trans>
   Promote your next club night with{' '}
   <Text>Dancefloor Pro</Text>, the all-in-one
   ticketing platform.
 </Trans>`);
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       'Promote your next club night with <Text>Dancefloor Pro</Text>, the all-in-one ticketing platform.',
@@ -238,26 +216,24 @@ describe('serializeJsxChildren', () => {
   });
 
   it('handles expression containers adjacent to multiline components', () => {
-    const children = getChildren(`<Trans>
+    const result = serialize(`<Trans>
       Built with{' '}
       <span>
         open source
       </span>{' '}
       tools
     </Trans>`);
-    const result = serializeJsxChildren(children);
 
     // {' '} string literals become inline spaces (not placeholders)
     expect(result.message).toBe('Built with <span>open source</span> tools');
   });
 
   it('handles nested multiline components', () => {
-    const children = getChildren(`<Trans>
+    const result = serialize(`<Trans>
       <Bold>
         Important: <Italic>read carefully</Italic>
       </Bold>
     </Trans>`);
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       '<Bold>Important: <Italic>read carefully</Italic></Bold>',
@@ -267,10 +243,9 @@ describe('serializeJsxChildren', () => {
 
 describe('serializeJsxChildren with plural()', () => {
   it('serializes plural() call to ICU format', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>You have {plural(count, { one: "# item", other: "# items" })} in cart</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       'You have {count, plural, one {# item} other {# items}} in cart',
@@ -280,7 +255,7 @@ describe('serializeJsxChildren with plural()', () => {
   });
 
   it('serializes plural() with all CLDR forms', () => {
-    const children = getChildren(`
+    const result = serialize(`
       <Trans>
         {plural(n, {
           zero: "none",
@@ -292,7 +267,6 @@ describe('serializeJsxChildren with plural()', () => {
         })}
       </Trans>
     `);
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       '{n, plural, zero {none} one {one} two {two} few {few} many {many} other {other}}',
@@ -301,10 +275,9 @@ describe('serializeJsxChildren with plural()', () => {
   });
 
   it('handles plural() alongside regular placeholders', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Hello {name}, you have {plural(count, { one: "# message", other: "# messages" })}</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       'Hello {name}, you have {count, plural, one {# message} other {# messages}}',
@@ -316,10 +289,9 @@ describe('serializeJsxChildren with plural()', () => {
   });
 
   it('handles plural() with member expression value', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Items: {plural(data.count, { one: "#", other: "#" })}</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       'Items: {data.count, plural, one {#} other {#}}',
@@ -329,10 +301,9 @@ describe('serializeJsxChildren with plural()', () => {
   });
 
   it('handles plural() inside JSX elements', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans><span>{plural(count, { one: "# item", other: "# items" })}</span></Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.message).toBe(
       '<span>{count, plural, one {# item} other {# items}}</span>',
@@ -342,10 +313,9 @@ describe('serializeJsxChildren with plural()', () => {
   });
 
   it('escapes ICU special chars in plural forms', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>{plural(count, { one: "{count} item", other: "{count} items" })}</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     // Curly braces should be escaped in ICU
     expect(result.message).toContain("one {'{count}' item}");
@@ -354,70 +324,62 @@ describe('serializeJsxChildren with plural()', () => {
 
 describe('serializeJsxChildren componentNodes', () => {
   it('stores componentNodes parallel to components', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Click <Link>here</Link> or <Bold>this</Bold></Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.componentNodes).toHaveLength(2);
     expect(result.components).toEqual(['Link', 'Bold']);
   });
 
   it('preserves JSX attributes on componentNodes', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Style <Text size="inherit" fw={500}>content</Text> here</Trans>',
     );
-    const result = serializeJsxChildren(children);
 
+    // The element as written; the transform writes it self-closing (below)
     expect(result.componentNodes).toHaveLength(1);
     const node = result.componentNodes[0]!;
-    // Should be self-closing
-    expect(node.openingElement.selfClosing).toBe(true);
-    expect(node.children).toHaveLength(0);
-    // Should have 2 attributes preserved
     expect(node.openingElement.attributes).toHaveLength(2);
   });
 
   it('preserves attributes on intrinsic elements', () => {
-    const children = getChildren(
+    const result = serialize(
       '<Trans>Go <span style={{ fontWeight: 500 }}>bold</span></Trans>',
     );
-    const result = serializeJsxChildren(children);
 
     expect(result.componentNodes).toHaveLength(1);
     const node = result.componentNodes[0]!;
     expect(node.openingElement.attributes).toHaveLength(1);
     // Name should be span
     expect(
-      t.isJSXIdentifier(node.openingElement.name) &&
+      node.openingElement.name.type === 'JSXIdentifier' &&
         node.openingElement.name.name,
     ).toBe('span');
   });
 
-  it('creates self-closing nodes even for elements with children', () => {
-    const children = getChildren(
-      '<Trans><Link href="/test">click me</Link></Trans>',
-    );
-    const result = serializeJsxChildren(children);
+  it('writes a component with children self-closing, attributes kept', () => {
+    const code = `
+      import { Trans } from './idioma';
+      export const A = () => <Trans><Link href="/test">click me</Link></Trans>;
+    `;
+    const { code: output } = transformModule(code, '/project/src/A.tsx', {
+      idiomaDir: '/project/src/idioma',
+    });
 
-    const node = result.componentNodes[0]!;
-    expect(node.openingElement.selfClosing).toBe(true);
-    expect(node.children).toHaveLength(0);
-    // Should preserve the href attribute
-    expect(node.openingElement.attributes).toHaveLength(1);
+    expect(output).toContain('__c={[<Link href="/test" />]}');
+    expect(output).toContain('__cn={["Link"]}');
   });
 
   it('handles self-closing JSX elements', () => {
-    const children = getChildren('<Trans>Line<br/>break</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Line<br/>break</Trans>');
 
     expect(result.componentNodes).toHaveLength(1);
     expect(result.componentNodes[0]!.openingElement.selfClosing).toBe(true);
   });
 
   it('returns empty componentNodes when no components', () => {
-    const children = getChildren('<Trans>Hello {name}</Trans>');
-    const result = serializeJsxChildren(children);
+    const result = serialize('<Trans>Hello {name}</Trans>');
 
     expect(result.componentNodes).toEqual([]);
   });

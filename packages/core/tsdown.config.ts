@@ -12,8 +12,7 @@ export default defineConfig({
   target: 'node18',
   platform: 'node',
   external: [
-    // Peer dependencies & babel ecosystem
-    /^@babel\//,
+    // Peer dependencies
     'metro-config',
     'vite',
     // Regular dependencies (don't bundle)

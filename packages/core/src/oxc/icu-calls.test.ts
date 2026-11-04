@@ -1,39 +1,49 @@
-import * as parser from '@babel/parser';
-import traverse from '@babel/traverse';
-import * as t from '@babel/types';
+import { parseSync, type CallExpression } from 'oxc-parser';
 import { describe, expect, it } from 'vitest';
-import {
-  serializePluralCallToIcu,
-  serializeSelectCallToIcu,
-  serializeSelectOrdinalCallToIcu,
-} from './extract-plural';
+import { serializeIcuCall, type IcuCallName } from './icu-calls';
 
-/**
- * Helper to parse a plural() function call from code.
- * Extracts the CallExpression AST node for testing.
- */
-function parsePluralCall(code: string): t.CallExpression | null {
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['jsx', 'typescript'],
+// The Babel plural serializer's cases, run on the Oxc one. Only these helpers
+// changed: they parse with Oxc and wrap serializeIcuCall in the old names.
+let lastCode = '';
+
+function findCall(code: string, name: IcuCallName): CallExpression | null {
+  lastCode = code;
+  const { program } = parseSync('test.tsx', code, {
+    lang: 'tsx',
+    preserveParens: false,
   });
-
-  let callExpr: t.CallExpression | null = null;
-
-  traverse(ast, {
-    CallExpression(path) {
-      if (
-        t.isIdentifier(path.node.callee) &&
-        path.node.callee.name === 'plural'
-      ) {
-        callExpr = path.node;
-        path.stop();
-      }
-    },
-  });
-
-  return callExpr;
+  let found: CallExpression | null = null;
+  const visit = (node: unknown): void => {
+    if (found || !node || typeof node !== 'object') return;
+    const candidate = node as CallExpression;
+    if (
+      candidate.type === 'CallExpression' &&
+      candidate.callee.type === 'Identifier' &&
+      candidate.callee.name === name
+    ) {
+      found = candidate;
+      return;
+    }
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else visit(value);
+    }
+  };
+  visit(program);
+  return found;
 }
+
+const parsePluralCall = (code: string) => findCall(code, 'plural');
+const parseSelectCall = (code: string) => findCall(code, 'select');
+const parseSelectOrdinalCall = (code: string) =>
+  findCall(code, 'selectOrdinal');
+const serializePluralCallToIcu = (call: CallExpression) =>
+  serializeIcuCall('plural', call, lastCode);
+const serializeSelectCallToIcu = (call: CallExpression) =>
+  serializeIcuCall('select', call, lastCode);
+const serializeSelectOrdinalCallToIcu = (call: CallExpression) =>
+  serializeIcuCall('selectOrdinal', call, lastCode);
+
 
 describe('serializePluralCallToIcu', () => {
   it('converts simple one/other plural() call to ICU', () => {
@@ -168,31 +178,6 @@ describe('serializePluralCallToIcu', () => {
   });
 });
 
-/**
- * Helper to parse a select() function call from code.
- */
-function parseSelectCall(code: string): t.CallExpression | null {
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['jsx', 'typescript'],
-  });
-
-  let callExpr: t.CallExpression | null = null;
-
-  traverse(ast, {
-    CallExpression(path) {
-      if (
-        t.isIdentifier(path.node.callee) &&
-        path.node.callee.name === 'select'
-      ) {
-        callExpr = path.node;
-        path.stop();
-      }
-    },
-  });
-
-  return callExpr;
-}
 
 describe('serializeSelectCallToIcu', () => {
   it('converts simple select() call to ICU', () => {
@@ -282,31 +267,6 @@ describe('serializeSelectCallToIcu', () => {
   });
 });
 
-/**
- * Helper to parse a selectOrdinal() function call from code.
- */
-function parseSelectOrdinalCall(code: string): t.CallExpression | null {
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['jsx', 'typescript'],
-  });
-
-  let callExpr: t.CallExpression | null = null;
-
-  traverse(ast, {
-    CallExpression(path) {
-      if (
-        t.isIdentifier(path.node.callee) &&
-        path.node.callee.name === 'selectOrdinal'
-      ) {
-        callExpr = path.node;
-        path.stop();
-      }
-    },
-  });
-
-  return callExpr;
-}
 
 describe('serializeSelectOrdinalCallToIcu', () => {
   it('converts simple selectOrdinal() call to ICU', () => {

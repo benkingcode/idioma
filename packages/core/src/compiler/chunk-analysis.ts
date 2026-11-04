@@ -1,5 +1,5 @@
 import { isAbsolute, join } from 'path';
-import type { ExtractedMessage } from '../babel/extract-trans.js';
+import type { ExtractedMessage } from '../oxc/transform.js';
 import type { Catalog } from '../po/types.js';
 import { getChunkId } from './chunk-id.js';
 
