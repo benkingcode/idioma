@@ -31,7 +31,7 @@ Follow the red-green-refactor cycle:
 pnpm test --watch
 
 # Run a specific test file
-pnpm test packages/core/src/babel/plugin.test.ts
+pnpm test packages/core/src/oxc/transform.test.ts
 ```
 
 ## Task Completion Checklist
@@ -63,7 +63,7 @@ pnpm dev
 pnpm test
 
 # Run a single test file
-pnpm test packages/core/src/babel/plugin.test.ts
+pnpm test packages/core/src/oxc/transform.test.ts
 
 # Type check all packages
 pnpm typecheck
@@ -106,7 +106,7 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 
 **@idioma/core** (`packages/core/`) - Build tools and CLI
 
-- `babel/` - Babel plugin that transforms `<Trans>` components and extracts messages
+- `oxc/` - The Oxc transform: turns `<Trans>` and `t()` into compiled references, and extracts messages. No Babel
 - `bundler/` - Vite and Metro plugins for build integration
 - `cli/` - CLI commands: `extract`, `compile`, `check`, `stats`, `translate`
 - `compiler/` - Compiles PO files to JS/TS with typed exports
@@ -164,7 +164,7 @@ src/idioma/
 ### High-Level Flow
 
 ```
-Source Code → Babel Plugin → PO Files → Compiler → JavaScript → Runtime
+Source Code → Oxc Transform → PO Files → Compiler → JavaScript → Runtime
      ↓              ↓            ↓          ↓           ↓
   <Trans>       Extract      Translate   Compile    Render
   useT()        messages     (manual/AI)  to JS     message
@@ -172,9 +172,9 @@ Source Code → Babel Plugin → PO Files → Compiler → JavaScript → Runtim
 
 **Two-Phase Compilation**: Extraction (code → PO) is separate from compilation (PO → JS). This enables manual editing and TMS (Translation Management System) integration.
 
-### Babel Plugin Transformations
+### Transformations
 
-The Babel plugin (`packages/core/src/babel/plugin.ts`) has two modes:
+The transform (`transformModule` in `packages/core/src/oxc/transform.ts`) parses with oxc-parser and edits the source with MagicString, so JSX stays JSX for the next plugin. There is no Babel in it (`packages/core/src/no-babel.test.ts`). It has two modes:
 
 ```typescript
 mode?: 'inlined' | 'suspense'; // default: 'inlined'
@@ -202,7 +202,7 @@ For `useT()`:
 const t = useT();
 t('Hello {name}', { name: 'Ben' });
 
-// After (Babel inlines translations as 2nd arg via __m marker)
+// After (the transform inlines translations as 2nd arg via __m marker)
 t('Hello {name}', { __m: { en: '...', es: '...' } }, { name: 'Ben' });
 ```
 
@@ -210,7 +210,7 @@ t('Hello {name}', { __m: { en: '...', es: '...' } }, { name: 'Ben' });
 // Before (object form with explicit id)
 t({ id: 'greeting', source: 'Hello {name}', values: { name: 'Ben' } });
 
-// After (Babel normalizes to string form + inlines translations)
+// After (the transform normalizes to string form + inlines translations)
 t('Hello {name}', { __m: { en: '...', es: '...' } }, { name: 'Ben' });
 // Without source: t({ id: 'key' }) → t('key', { __m: { en: '...', es: '...' } })
 ```
@@ -223,7 +223,7 @@ A key-only `Trans` (no children) is inlined from the catalogue by its id; its `v
 <__Trans __t={{ en: 'Hello {name}', es: 'Hola {name}', __source: 'greeting' }} __a={{ name }} />
 ```
 
-An id that is a conditional of string literals is split into one call or element per branch before anything else, so each branch is inlined and extracted like a literal id (`babel/literal-id.ts` decides what counts, for the plugin and the CLI extractor alike):
+An id that is a conditional of string literals is split into one call or element per branch before anything else, so each branch is inlined and extracted like a literal id (`literalIdLeaves` in `oxc/transform.ts` decides what counts, for the transform and the CLI extractor alike):
 
 ```tsx
 t({ id: live ? 'set.live' : 'set.past', values });
@@ -243,14 +243,14 @@ A call that is not inlined renders its id at runtime, and typecheck, compile and
 
 Dynamic string-form calls, `t(message)`, stay legal: `createT` looks them up at runtime. **Extraction is deliberately lenient where the plugin is strict:** the CLI and dev-mode extractors skip a non-literal id instead of failing, so a file being edited is not lost from the catalogue. The plugin is the gate; do not make one match the other.
 
-A call that still reaches the runtime un-inlined (a file Babel never saw) warns once per id in development (`_warnNotInlined` in `packages/core/src/runtime/warn.ts`).
+A call that still reaches the runtime un-inlined (a file the transform never saw) warns once per id in development (`_warnNotInlined` in `packages/core/src/runtime/warn.ts`).
 
 #### Suspense Mode (`mode: 'suspense'`) — For lazy loading (React 19+)
 
 Uses dynamic imports with React 19's `use()` hook for lazy loading:
 
 ```tsx
-// Babel injects at file level:
+// The transform injects at file level:
 import { __TransSuspense } from '@idioma/react/runtime-suspense';
 const __$idiomaChunk = "src_components_Header";
 const __$idiomaLoad = {
@@ -274,7 +274,7 @@ const __$idiomaLoad = {
 
 #### Import Detection
 
-The plugin uses `idiomaDir` config to detect imports from the user's idioma folder (not from `@idioma/react` directly). This allows Babel to distinguish user Trans components from other libraries.
+The plugin uses `idiomaDir` config to detect imports from the user's idioma folder (not from `@idioma/react` directly). This lets the transform tell user Trans components apart from other libraries.
 
 #### Binding Tracking
 
@@ -319,7 +319,7 @@ generateKey('Submit', undefined, 'auth'); // Different hash (namespace affects k
 
 #### At Build Time - Extraction
 
-`packages/core/src/babel/serialize.ts` converts helper functions to ICU format:
+`packages/core/src/oxc/icu-calls.ts` converts helper functions to ICU format (`oxc/serialize.ts` does `<Trans>` children and template literals):
 
 ```tsx
 // Source code:
@@ -397,13 +397,13 @@ Since bundlers always use inlined or suspense mode, here's what actually runs:
 
 **Inlined Mode**:
 
-- Detects if 2nd arg is Babel-inlined translations (has `__m` marker: `{ __m: { locale: translation } }`)
+- Detects if 2nd arg is inlined translations (has `__m` marker: `{ __m: { locale: translation } }`)
 - Uses inlined data when present
 - Falls back to runtime lookup for dynamic strings (rare edge case)
 
 **Suspense Mode** — `__useTSuspense`:
 
-- Receives chunk ID and loader from Babel
+- Receives chunk ID and loader from the transform
 - Uses `use()` hook for loading
 - Returns function that looks up by key in loaded chunk
 
@@ -552,7 +552,7 @@ This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for
 
 1. Load `idioma.config.ts`
 2. Compile PO files to JS
-3. Load compiled translations for Babel plugin (non-Suspense)
+3. Load compiled translations for the transform (non-Suspense)
 4. Set up incremental extraction (dev mode)
 
 **HMR** (dev mode):
@@ -560,18 +560,7 @@ This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for
 - PO file changes → recompile → full reload
 - Source file changes → incremental extraction → recompile
 
-**Babel Integration** via Vite's `api.reactBabel`:
-
-```typescript
-babelConfig.plugins.push([
-  '@idioma/core/babel',
-  {
-    mode: useSuspense ? 'suspense' : 'inlined',
-    translations: loadedTranslations, // only for inlined mode
-    idiomaDir: '/abs/path/to/idioma',
-  },
-]);
-```
+**Transform**: its own `transform` hook with `order: 'pre'` and Rolldown hook filters (`filter.id`, `filter.code`), so it runs before `@vitejs/plugin-react` (6+, Oxc, React Compiler included) and before Vite's own JSX transform. It never uses `api.reactBabel`: plugin-react 6 has no Babel and never calls it (#20). Needs Vite 8+. When the app enables `experimental.nativeMagicString`, it edits Rolldown's native MagicString (`meta.magicString`).
 
 **Incremental Extraction** (`packages/core/src/bundler/incremental-extract.ts`):
 
@@ -581,7 +570,7 @@ babelConfig.plugins.push([
 
 #### Metro Plugin (`packages/core/src/bundler/metro.ts`)
 
-Similar pattern for React Native.
+Same compile and watch pattern for React Native. `withIdioma` sets `transformer.babelTransformerPath` to `bundler/metro-transformer.ts`, which runs the Oxc transform and then the app's own transformer (Expo's or React Native's). Metro gives a transformer only the module, and its workers start after the config loads, so the upstream path and the options travel in environment variables (`IDIOMA_METRO_UPSTREAM_TRANSFORMER`, `IDIOMA_METRO_OPTIONS`). `getCacheKey` hashes the compiled catalogue, because the output inlines it.
 
 ---
 
