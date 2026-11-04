@@ -591,7 +591,7 @@ async function generateTranslationsJs(
 
   content += '};\n';
 
-  // Write .js for runtime/bundler (Vite loads this at build time for Babel)
+  // Write .js for the bundler: the Vite and Metro transforms load it at build time
   // No .d.ts needed since user code doesn't import translations.js directly
   await writeIfChanged(join(outputDir, 'translations.js'), content);
 }

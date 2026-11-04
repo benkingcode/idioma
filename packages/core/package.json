@@ -17,27 +17,33 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.mjs"
     },
     "./vite": {
       "types": "./dist/bundler/vite.d.mts",
-      "import": "./dist/bundler/vite.mjs"
+      "import": "./dist/bundler/vite.mjs",
+      "require": "./dist/bundler/vite.mjs"
     },
     "./metro": {
       "types": "./dist/bundler/metro.d.mts",
-      "import": "./dist/bundler/metro.mjs"
+      "import": "./dist/bundler/metro.mjs",
+      "require": "./dist/bundler/metro.mjs"
     },
     "./runtime": {
       "types": "./dist/runtime/index.d.mts",
-      "import": "./dist/runtime/index.mjs"
+      "import": "./dist/runtime/index.mjs",
+      "require": "./dist/runtime/index.mjs"
     },
     "./icu": {
       "types": "./dist/icu/index.d.mts",
-      "import": "./dist/icu/index.mjs"
+      "import": "./dist/icu/index.mjs",
+      "require": "./dist/icu/index.mjs"
     },
     "./keys": {
       "types": "./dist/keys/generator.d.mts",
-      "import": "./dist/keys/generator.mjs"
+      "import": "./dist/keys/generator.mjs",
+      "require": "./dist/keys/generator.mjs"
     }
   },
   "bin": {
