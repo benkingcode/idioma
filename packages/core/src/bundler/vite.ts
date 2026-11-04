@@ -1,8 +1,13 @@
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import type { Plugin, ResolvedConfig } from 'vite';
+import { join } from 'path';
+import MagicString from 'magic-string';
+import type { Plugin, Rolldown } from 'vite';
 import { loadConfig } from '../cli/config.js';
 import { createCompileLock } from '../compiler/compile.js';
+import {
+  IdiomaTransformError,
+  transformModule,
+  type Translations,
+} from '../oxc/transform.js';
 import type { PoFormatOptions } from '../po/types.js';
 import { ensureGitignore } from '../utils/gitignore.js';
 import {
@@ -17,7 +22,11 @@ import { shouldIgnorePath } from './ignore-patterns.js';
 import { fileImportsIdioma } from './import-detect.js';
 import { extractAndMergeFile } from './incremental-extract.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// The modules that can hold something to transform: a Trans, useT or createT
+// binding, or a call to a function named t (the #14 check, for a t passed in
+// as a parameter). Rolldown tests the filter in Rust, so the rest of the
+// app's modules never reach JavaScript.
+const CODE_FILTER = /\bTrans\b|\buseT\b|\bcreateT\b|\bt\s*\(/;
 
 export interface IdiomaViteOptions {
   /**
@@ -66,7 +75,9 @@ export interface IdiomaViteOptions {
  * Features:
  * - Compiles PO files on build start
  * - Watches PO files for changes in dev mode
- * - Injects Babel plugin for Trans/useT transformation
+ * - Transforms Trans and t() itself, with Oxc (Vite 8+). It runs before every
+ *   other plugin's transform, so it works with @vitejs/plugin-react 6 and its
+ *   React Compiler, which compile JSX in a transform of their own (#20).
  * - Triggers HMR when translations change
  * - Supports Suspense mode for lazy loading translations
  *
@@ -95,9 +106,8 @@ export default function idiomaVitePlugin(
   let isDevMode = false;
   let projectRoot = '';
   let pathsMatcher: PathsMatcher | null = null;
-  // Use a stable object reference so Babel plugin always sees updates
-  // (reactBabel callback captures this by reference at config time)
-  const loadedTranslations: Record<string, Record<string, unknown>> = {};
+  // One object for the plugin's life, mutated when the catalogue recompiles
+  const loadedTranslations: Translations = {};
   let debouncedExtractor: DebouncedExtractor | null = null;
 
   // Compile lock prevents concurrent compilations from racing
@@ -156,7 +166,7 @@ export default function idiomaVitePlugin(
       // Compile translations at build start
       await compile();
 
-      // Load compiled translations for Babel plugin (inlined mode only)
+      // Load compiled translations for the transform (inlined mode only)
       // In suspense mode, both Trans and useT use lazy loading via dynamic imports
       if (!useSuspense) {
         try {
@@ -169,7 +179,7 @@ export default function idiomaVitePlugin(
           // Use cache-busting query param for dev mode to pick up HMR changes
           const cacheBuster = isDevMode ? `?t=${Date.now()}` : '';
           const module = await import(translationsPath + cacheBuster);
-          // Mutate the existing object so Babel plugin sees updates
+          // Mutate the one object the transform reads
           for (const key of Object.keys(loadedTranslations)) {
             delete loadedTranslations[key];
           }
@@ -217,7 +227,7 @@ export default function idiomaVitePlugin(
       // Handle PO file changes - recompile translations
       if (file.endsWith('.po') && file.includes(localeDir)) {
         compile().then(async () => {
-          // Reload translations for Babel plugin (inlined mode only)
+          // Reload translations for the transform (inlined mode only)
           if (!useSuspense) {
             try {
               const translationsPath = join(
@@ -228,7 +238,7 @@ export default function idiomaVitePlugin(
               );
               const cacheBuster = `?t=${Date.now()}`;
               const module = await import(translationsPath + cacheBuster);
-              // Mutate the existing object so Babel plugin sees updates
+              // Mutate the one object the transform reads
               for (const key of Object.keys(loadedTranslations)) {
                 delete loadedTranslations[key];
               }
@@ -239,7 +249,7 @@ export default function idiomaVitePlugin(
           }
 
           // Invalidate all modules to force re-transformation with fresh translations
-          // We need to invalidate because Babel inlines translations at transform time
+          // The transform inlines translations, so every module must run again
           server.moduleGraph.invalidateAll();
 
           server.ws.send({
@@ -262,8 +272,8 @@ export default function idiomaVitePlugin(
       if (!isSourceFile || !debouncedExtractor) return;
 
       // Skip extraction for files that don't import from idiomaDir. This
-      // avoids the HMR cascade when editing files unrelated to i18n —
-      // babel would have extracted nothing from them anyway.
+      // avoids the HMR cascade when editing files unrelated to i18n, which
+      // hold nothing to extract anyway.
       const content = await read();
       if (!fileImportsIdioma(content, file, absIdiomaDir, pathsMatcher)) return;
 
@@ -271,35 +281,58 @@ export default function idiomaVitePlugin(
       // Don't block HMR - extraction happens async
     },
 
-    // Inject Babel plugin for all builds (dev and production)
-    api: {
-      reactBabel(babelConfig: { plugins: unknown[] }) {
-        const pluginOptions: Record<string, unknown> = {
-          // Use 'suspense' for lazy loading, 'inlined' for baked-in translations
-          mode: useSuspense ? 'suspense' : 'inlined',
-          // Pass idiomaDir for robust config-based import detection
-          idiomaDir: join(projectRoot, idiomaDir),
-          // Pass path alias matcher for resolving non-relative imports
-          pathsMatcher: pathsMatcher ?? undefined,
-        };
-
-        // Pass loaded translations for inlining (inlined mode only)
-        // This is a stable reference - HMR updates mutate the same object
-        if (!useSuspense) {
-          pluginOptions.translations = loadedTranslations;
+    transform: {
+      // Before every other plugin's transform, whatever the plugins array
+      // order: plugin-react 6 compiles JSX in an `enforce: 'pre'` transform of
+      // its own, and after it there is no <Trans> left to find (#20).
+      order: 'pre',
+      filter: {
+        id: {
+          include: [/\.[cm]?[jt]sx?(\?|$)/],
+          exclude: [/\/node_modules\//],
+        },
+        code: { include: [CODE_FILTER] },
+      },
+      handler(code, id, meta) {
+        if (!idiomaDir) return null;
+        // Rolldown's native MagicString, when the app enables
+        // `experimental.nativeMagicString`; else magic-string
+        const native = (
+          meta as { magicString?: Rolldown.RolldownMagicString } | undefined
+        )?.magicString;
+        const edits = native ?? new MagicString(code);
+        const filename = id.split('?')[0]!;
+        try {
+          const result = transformModule(
+            code,
+            filename,
+            {
+              mode: useSuspense ? 'suspense' : 'inlined',
+              translations: useSuspense ? undefined : loadedTranslations,
+              idiomaDir: join(projectRoot, idiomaDir),
+              pathsMatcher: pathsMatcher ?? undefined,
+              locales,
+              outputDir,
+              projectRoot,
+            },
+            edits,
+          );
+          if (!result.changed) return null;
+          if (native) return { code: native };
+          return {
+            code: result.code,
+            map: (edits as MagicString).generateMap({
+              hires: 'boundary',
+              source: filename,
+              includeContent: true,
+            }),
+          };
+        } catch (error) {
+          if (error instanceof IdiomaTransformError) {
+            return this.error({ message: error.reason, pos: error.pos });
+          }
+          throw error;
         }
-
-        // Add suspense-specific options
-        if (useSuspense) {
-          pluginOptions.locales = locales;
-          pluginOptions.outputDir = outputDir;
-          pluginOptions.projectRoot = projectRoot;
-        }
-
-        babelConfig.plugins.push([
-          join(__dirname, '../babel/plugin.mjs'),
-          pluginOptions,
-        ]);
       },
     },
   };

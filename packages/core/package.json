@@ -86,9 +86,13 @@
   },
   "peerDependencies": {
     "@babel/core": "^7.0.0",
-    "metro-config": ">=0.80.0"
+    "metro-config": ">=0.80.0",
+    "vite": ">=8.0.0"
   },
   "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
     "metro-config": {
       "optional": true
     }
@@ -108,7 +112,7 @@
     "@types/murmurhash-js": "^1.0.6",
     "dotenv": "^17.2.3",
     "ignore": "^7.0.5",
-    "vite": "^5.4.21"
+    "vite": "^8.3.5"
   },
   "keywords": [
     "i18n",
