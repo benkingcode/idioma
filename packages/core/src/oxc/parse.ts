@@ -50,10 +50,13 @@ export function parseModule(
 ): Program {
   const options = parseOptions(filename);
   if (parse) return parse(code, options);
-  const result = parseSync(filename, code, {
+  // A variable, not a literal: oxc-parser 0.157.0 documents and reads
+  // `experimentalRawTransfer`, but its ParserOptions type does not list it.
+  const rawOptions: ParseOptions & { experimentalRawTransfer: boolean } = {
     ...options,
     experimentalRawTransfer: RAW_TRANSFER,
-  });
+  };
+  const result = parseSync(filename, code, rawOptions);
   const error = result.errors[0];
   if (error) {
     throw new SyntaxError(`${filename}: ${error.message}`);
