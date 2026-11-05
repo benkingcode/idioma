@@ -119,6 +119,28 @@ describe('published package dependencies', () => {
     });
   }
 
+  for (const pkg of ['core', 'react', 'ai']) {
+    it(`@idioma/${pkg} uses every dependency it installs`, () => {
+      // A dependency nothing imports still installs for every user:
+      // consola and unplugin did until 0.7.0, cli-progress until dead code
+      // that imported it was found
+      const root = join(PACKAGES_DIR, pkg);
+      const manifest = JSON.parse(
+        readFileSync(join(root, 'package.json'), 'utf8'),
+      );
+      const used = new Set<string>();
+      for (const file of sourceFiles(join(root, 'src'))) {
+        for (const { source } of runtimeImports(file)) {
+          if (isBare(source)) used.add(packageName(source));
+        }
+      }
+      const unused = Object.keys(manifest.dependencies ?? {}).filter(
+        (name) => !used.has(name),
+      );
+      expect(unused).toEqual([]);
+    });
+  }
+
   it('core and react never name the AI SDK, not even in their types', () => {
     // AI translation is @idioma/ai's job. A type-only import from 'ai' in
     // core used to survive into its .d.ts, so a project with
