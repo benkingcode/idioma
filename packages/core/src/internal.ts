@@ -8,9 +8,10 @@
  */
 export { ensureExtracted } from './cli/commands/ensure-extracted.js';
 export { extractFromFile } from './cli/commands/extract.js';
-export type {
-  AiPackage,
-  TranslateCommandArgs,
+export {
+  autoContextEnabled,
+  type AiPackage,
+  type TranslateCommandArgs,
 } from './cli/commands/translate-command.js';
 export { getIdiomaPaths, loadConfig, type IdiomaConfig } from './cli/config.js';
 export {

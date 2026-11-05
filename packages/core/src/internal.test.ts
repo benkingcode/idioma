@@ -19,6 +19,7 @@ describe('@idioma/core/internal', () => {
       'createAnimatedHeader',
       'setNonInteractive',
       'colors',
+      'autoContextEnabled',
     ] as const) {
       expect(typeof internal[name], name).toBe('function');
     }
