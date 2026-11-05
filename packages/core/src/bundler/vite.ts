@@ -128,7 +128,13 @@ export default function idiomaVitePlugin(
     hasCustomLocalesDir = !!(options.localesDir ?? config.localesDir);
   }
 
-  async function compile() {
+  /**
+   * Compiles the catalogue. A production build fails when it does not
+   * compile: it would otherwise ship stale or missing translations with
+   * nothing failing. The dev server logs the error and keeps running, so a
+   * half-edited PO file does not take it down.
+   */
+  async function compile(options: { throwOnError?: boolean } = {}) {
     try {
       // Under Vite's root, as the transform and the extractor read them: a
       // relative path resolved against the working directory, so a build
@@ -148,6 +154,12 @@ export default function idiomaVitePlugin(
         projectRoot,
       });
     } catch (error) {
+      if (options.throwOnError) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(`[idioma] Could not compile translations: ${reason}`, {
+          cause: error,
+        });
+      }
       console.error('[idioma] Compilation error:', error);
     }
   }
@@ -169,7 +181,7 @@ export default function idiomaVitePlugin(
       pathsMatcher = loadPathsMatcher(projectRoot);
 
       // Compile translations at build start
-      await compile();
+      await compile({ throwOnError: !isDevMode });
 
       // Load compiled translations for the transform (inlined mode only)
       // In suspense mode, both Trans and useT use lazy loading via dynamic imports

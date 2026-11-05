@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig, type IdiomaConfig } from '../cli/config';
 import { extractAndMergeFile } from './incremental-extract';
 import idiomaVitePlugin, { type IdiomaViteOptions } from './vite';
@@ -13,8 +13,10 @@ vi.mock('../cli/config', () => ({
   loadConfig: vi.fn(),
 }));
 
+const compileMock = vi.hoisted(() => vi.fn());
+
 vi.mock('../compiler/compile', () => ({
-  createCompileLock: () => ({ compile: vi.fn().mockResolvedValue(undefined) }),
+  createCompileLock: () => ({ compile: compileMock }),
 }));
 
 vi.mock('./incremental-extract', () => ({
@@ -28,6 +30,11 @@ vi.mock('./import-detect', () => ({
 }));
 
 describe('Idioma Vite Plugin', () => {
+  beforeEach(() => {
+    compileMock.mockReset();
+    compileMock.mockResolvedValue(undefined);
+  });
+
   it('creates a plugin with correct name', () => {
     const plugin = idiomaVitePlugin({
       idiomaDir: './src/idioma',
@@ -238,6 +245,42 @@ describe('Idioma Vite Plugin', () => {
         expect(extractAndMergeFile).toHaveBeenCalledWith(
           expect.objectContaining({ po: { foldLength: 120 } }),
         ),
+      );
+    });
+  });
+
+  describe('translations that do not compile', () => {
+    const config = {
+      idiomaDir: './src/idioma',
+      defaultLocale: 'en',
+    } as IdiomaConfig;
+
+    it('fail the production build', async () => {
+      vi.mocked(loadConfig).mockResolvedValue(config);
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      compileMock.mockRejectedValueOnce(
+        new Error('Error parsing PO data: Invalid key name "Hello" at line 6'),
+      );
+      const plugin = idiomaVitePlugin() as any;
+      plugin.configResolved({ command: 'build', root: '/project' });
+
+      await expect(plugin.buildStart.call({})).rejects.toThrow(
+        /\[idioma\] Could not compile translations.*Invalid key name/s,
+      );
+    });
+
+    it('keep the dev server running, and log the error', async () => {
+      vi.mocked(loadConfig).mockResolvedValue(config);
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+      compileMock.mockRejectedValueOnce(new Error('Invalid key name'));
+      const plugin = idiomaVitePlugin({ watch: false }) as any;
+      plugin.configResolved({ command: 'serve', root: '/project' });
+
+      await expect(plugin.buildStart.call({})).resolves.toBeUndefined();
+      expect(error).toHaveBeenCalledWith(
+        '[idioma] Compilation error:',
+        expect.any(Error),
       );
     });
   });
