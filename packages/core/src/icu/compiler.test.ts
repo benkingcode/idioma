@@ -146,3 +146,30 @@ describe('compileIcuToFunction', () => {
     expect(fn({ count: 2 })).toBe('رسالتان');
   });
 });
+
+describe('dotted argument names', () => {
+  // <Trans>{user.name} has {plural(count, ...)}</Trans> serializes its
+  // member expression as a dotted placeholder, which the formatjs parser
+  // rejects (MALFORMED_ARGUMENT)
+  const message =
+    '{user.name} has {count, plural, one {# ticket} other {# tickets}}';
+
+  it('analyzes a plural next to a dotted placeholder', () => {
+    const analysis = analyzeIcuMessage(message);
+    expect(analysis.hasPlural).toBe(true);
+    expect(analysis.variables).toEqual(['user.name', 'count']);
+  });
+
+  it('formats a plural next to a dotted placeholder', () => {
+    const format = compileIcuToFunction(message, 'en');
+    expect(format({ 'user.name': 'Ana', count: 2 })).toBe('Ana has 2 tickets');
+  });
+
+  it('keeps quoted braces as literal text', () => {
+    const format = compileIcuToFunction(
+      "'{user.name}' is {count, plural, other {# x}}",
+      'en',
+    );
+    expect(format({ count: 1 })).toBe('{user.name} is 1 x');
+  });
+});

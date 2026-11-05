@@ -184,3 +184,8 @@ msgstr "{count, plural, one {# day left} other {# days left}}"
 #, extracted
 msgid "fallback.spanishOnly"
 msgstr ""
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "001Mxuru"
+msgstr "{user.name} has {count, plural, one {# ticket} other {# tickets}}"
