@@ -42,10 +42,11 @@ const IdiomaConfigSchema = z.object({
   po: z
     .object({
       /**
-       * Column at which long msgid/msgstr lines are folded.
-       * Set to 0 to keep each string on one line, e.g. to match a TMS export.
-       * Applies when a file is next written; unchanged files are not rewritten.
-       * @default 76
+       * The page width long msgid and msgstr lines are wrapped to, as GNU
+       * gettext's `msgcat --width` wraps them. Set to 0 to keep each string
+       * on one line, e.g. to match a TMS export. Applies when a file is next
+       * written; unchanged files are not rewritten.
+       * @default 79
        */
       foldLength: z.number().int().min(0).optional(),
     })
