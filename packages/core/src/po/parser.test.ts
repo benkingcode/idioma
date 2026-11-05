@@ -418,5 +418,31 @@ msgstr "Login"
 
       expect(catalogs.size).toBe(0);
     });
+
+    // An unescaped quote: the parser stops at line 6
+    const brokenPo =
+      'msgid ""\nmsgstr ""\n"Language: en\\n"\n\nmsgid "a.b\nmsgstr "Hello"\n';
+
+    it('throws, naming the file, when a flat PO file does not parse', async () => {
+      // It used to be treated as missing, so the locale dropped out of the
+      // build with nothing failing
+      const localesDir = join(tempDir, 'broken-flat-locales');
+      await fs.mkdir(localesDir, { recursive: true });
+      await fs.writeFile(join(localesDir, 'en.po'), brokenPo);
+
+      await expect(loadLocaleCatalogs(localesDir, 'en')).rejects.toThrow(
+        /en\.po.*Invalid key name/s,
+      );
+    });
+
+    it('throws, naming the file, when a namespace PO file does not parse', async () => {
+      const localesDir = join(tempDir, 'broken-ns-locales');
+      await fs.mkdir(join(localesDir, 'en'), { recursive: true });
+      await fs.writeFile(join(localesDir, 'en', 'auth.po'), brokenPo);
+
+      await expect(loadLocaleCatalogs(localesDir, 'en')).rejects.toThrow(
+        /auth\.po.*Invalid key name/s,
+      );
+    });
   });
 });
