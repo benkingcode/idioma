@@ -1,10 +1,13 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import {
+  extractFromFile,
+  type Catalog,
+  type Message,
+} from '@idioma/core/internal';
 import type { generateText as generateTextFn, LanguageModel } from 'ai';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { extractFromFile } from '../cli/commands/extract.js';
-import type { Catalog, Message } from '../po/types.js';
 import { formatBox, formatHeader, formatKeyValueList } from './format.js';
 
 /** Provider options type extracted from generateText parameters */

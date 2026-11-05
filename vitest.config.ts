@@ -1,6 +1,17 @@
+import { fileURLToPath } from 'url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // @idioma/ai's unit tests run against core's source, as core's own do.
+  // Without this they would import core's dist/, so a core change would
+  // need a build before @idioma/ai's tests saw it.
+  resolve: {
+    alias: {
+      '@idioma/core/internal': fileURLToPath(
+        new URL('./packages/core/src/internal.ts', import.meta.url),
+      ),
+    },
+  },
   test: {
     globals: true,
     coverage: {

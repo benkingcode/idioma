@@ -85,7 +85,7 @@ function isBare(source: string): boolean {
 }
 
 describe('published package dependencies', () => {
-  for (const pkg of ['core', 'react']) {
+  for (const pkg of ['core', 'react', 'ai']) {
     it(`@idioma/${pkg} declares every package its source imports`, () => {
       const root = join(PACKAGES_DIR, pkg);
       const manifest = JSON.parse(

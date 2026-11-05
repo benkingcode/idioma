@@ -8,7 +8,10 @@
  */
 export { ensureExtracted } from './cli/commands/ensure-extracted.js';
 export { extractFromFile } from './cli/commands/extract.js';
-export type { TranslateCommandArgs } from './cli/commands/translate-command.js';
+export type {
+  AiPackage,
+  TranslateCommandArgs,
+} from './cli/commands/translate-command.js';
 export { getIdiomaPaths, loadConfig, type IdiomaConfig } from './cli/config.js';
 export {
   colors,

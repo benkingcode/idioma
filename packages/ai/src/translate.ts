@@ -1,29 +1,30 @@
 import { join, resolve } from 'path';
 import {
+  colors,
+  createAnimatedHeader,
+  ensureExtracted,
+  getIdiomaPaths,
+  loadConfig,
+  loadPoFile,
+  setNonInteractive,
+  writePoFile,
+  type PoFormatOptions,
+  type TranslateCommandArgs,
+} from '@idioma/core/internal';
+import {
   createContextProvider,
   createDryRunContextProvider,
   generateContextForCatalog,
   type ContextFileProgress,
   type ContextProvider,
-} from '../../ai/context.js';
-import {
-  formatBox,
-  formatHeader,
-  formatKeyValueList,
-} from '../../ai/format.js';
+} from './context.js';
+import { formatBox, formatHeader, formatKeyValueList } from './format.js';
 import {
   createDryRunProvider,
   createTranslationProvider,
   type MessageToTranslate,
   type TranslationProvider,
-} from '../../ai/provider.js';
-import { loadPoFile, writePoFile } from '../../po/parser.js';
-import type { PoFormatOptions } from '../../po/types.js';
-import { getIdiomaPaths, loadConfig } from '../config.js';
-import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
-import { colors } from '../ui/theme.js';
-import { ensureExtracted } from './ensure-extracted.js';
-import type { TranslateCommandArgs } from './translate-command.js';
+} from './provider.js';
 
 export interface TranslateResult {
   translated: number;
@@ -367,9 +368,8 @@ export async function runTranslateAll(
 }
 
 /**
- * What `idioma translate` runs. It is loaded with import() by
- * translate-command.ts, so the optional AI SDK is loaded only for this
- * command, never for the rest of the CLI.
+ * What `idioma translate` runs. Core's CLI defines the command and its
+ * arguments, finds @idioma/ai in the project, and calls this.
  */
 export async function runTranslateCommand(
   args: TranslateCommandArgs,
