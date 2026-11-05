@@ -67,6 +67,8 @@ Idioma reads your source code to understand context ("checkout button", "error m
 
 ## Quick Start
 
+Requirements: Node 22 or later, React 18 or 19 (Suspense mode needs 19), and Vite 8 or later for the web or Metro for React Native.
+
 ```bash
 npm install @idioma/core @idioma/react
 ```
@@ -75,7 +77,7 @@ Add the Vite plugin:
 
 ```ts
 // vite.config.ts
-import { idioma } from '@idioma/core/bundler/vite';
+import idioma from '@idioma/core/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
