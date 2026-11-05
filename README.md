@@ -564,6 +564,8 @@ function EventDate({ date }) {
 
 Idioma focuses on message translation and delegates formatting to the platform's `Intl` APIs, which handle locale-specific number, currency, and date formatting natively.
 
+ICU's own formatting arguments are not applied. In a translation, `{price, number, ::currency/EUR}`, `{day, date, long}` and `{time, time, short}` render the raw value, and a plural's `#` renders its number without grouping (`1000`, not `1,000`). Format with `Intl` as above and pass in the result.
+
 ### Imperative usage with useT
 
 ```tsx
