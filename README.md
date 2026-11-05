@@ -59,6 +59,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
   - [Pluralization](#pluralization)
   - [Selection](#selection)
   - [Namespaces](#namespaces)
+- [Working with coding agents](#working-with-coding-agents)
 - [CLI Commands](#cli-commands)
 - [Configuration](#configuration)
 - [API Reference](#api-reference)
@@ -618,6 +619,16 @@ t({ id: 'subscribe', source: 'Subscribe now', ns: 'marketing' });
 ```
 
 A namespace's messages live in `locales/{locale}/{namespace}.po`, for example `locales/es/marketing.po`.
+
+## Working with coding agents
+
+Idioma suits a workflow where a coding agent, such as Claude Code, writes the strings and their translations as it works:
+
+1. Write each string with a stable id and its English in the code: `<Trans id="cart.empty">Your cart is empty</Trans>`, or `t({ id: 'cart.empty', source: 'Your cart is empty' })`. The agent never has to look the English up.
+2. Extraction adds the message to every locale's PO file. The dev server does it on save; otherwise run `idioma extract`.
+3. The agent fills in each locale's `msgstr` in `locales/{locale}.po`.
+4. Keep your translation rules (tone, glossary, words that stay in English) in a file next to the PO files that the agent reads, such as `locales/CLAUDE.md`, which Claude Code loads when it opens a file there.
+5. Typed ids catch a misspelled key at typecheck, and the build fails on a PO file or a plural that a bad edit broke, so it can't ship. See [What fails the build](#what-fails-the-build).
 
 ## CLI Commands
 
