@@ -218,8 +218,21 @@ export async function compileTranslations(
         if (translationText && !hasComponentTags) {
           try {
             analysis = analyzeIcuMessage(translationText);
-          } catch {
-            // If parsing fails, treat as non-ICU message
+          } catch (error) {
+            // A plural or select that does not parse used to be kept as
+            // plain text, so the page rendered the raw ICU. Other text the
+            // parser rejects stays plain text, as before.
+            if (looksLikePluralOrSelect(translationText)) {
+              const file = namespace
+                ? `${locale}/${namespace}.po`
+                : `${locale}.po`;
+              const reason =
+                error instanceof Error ? error.message : String(error);
+              throw new Error(
+                `[idioma] ${file}: ${JSON.stringify(key)} is not valid ICU MessageFormat (${reason}): ${translationText}`,
+                { cause: error },
+              );
+            }
           }
         }
 
@@ -333,6 +346,11 @@ export function compileIcuToFunctionString(
   const body = generateCodeForElements(ast, locale);
 
   return `(args) => { ${body} }`;
+}
+
+/** Whether a message has a plural, select or selectordinal argument. */
+function looksLikePluralOrSelect(message: string): boolean {
+  return /\{\s*[^{},]+,\s*(?:plural|select|selectordinal)\s*,/.test(message);
 }
 
 /** Code that reads a value by name: args["user.name"], never args.<name>. */
