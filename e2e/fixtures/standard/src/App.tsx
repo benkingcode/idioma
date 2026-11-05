@@ -4,6 +4,7 @@ import { EdgeCases } from './components/EdgeCases';
 import { Fallbacks } from './components/Fallbacks';
 import { Interpolation } from './components/Interpolation';
 import { IntrinsicElements } from './components/IntrinsicElements';
+import { LegacyTrans } from './components/LegacyTrans';
 import { PlainCreateT } from './components/PlainCreateT';
 import { Plurals } from './components/Plurals';
 import { UseT } from './components/UseT';
@@ -86,6 +87,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="fallbacks-section">
           <h2>Locale fallbacks</h2>
           <Fallbacks />
+        </section>
+
+        <section data-testid="legacy-section">
+          <h2>Another library's Trans</h2>
+          <LegacyTrans />
         </section>
 
         <section data-testid="edge-cases-section">

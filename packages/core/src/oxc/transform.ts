@@ -17,6 +17,7 @@ import {
 } from 'oxc-parser';
 import { getChunkId } from '../compiler/chunk-id.js';
 import { generateKey } from '../keys/generator.js';
+import { isInsideDir } from '../utils/paths.js';
 import {
   isAliasedIdiomaImport,
   type PathsMatcher,
@@ -230,7 +231,8 @@ class ModuleTransform {
     const source = node.source.value;
     let fromIdioma = false;
     if (source.startsWith('.')) {
-      fromIdioma = resolve(dirname(this.filename), source).startsWith(
+      fromIdioma = isInsideDir(
+        resolve(dirname(this.filename), source),
         this.idiomaDir,
       );
     } else if (this.options.pathsMatcher) {

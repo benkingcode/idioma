@@ -215,6 +215,32 @@ describe('Idioma Vite Plugin', () => {
       });
     }
 
+    it('extracts a file in a sibling folder whose name starts the same', async () => {
+      vi.mocked(extractAndMergeFile).mockClear();
+      vi.mocked(loadConfig).mockResolvedValue({
+        idiomaDir: './src/idioma',
+        defaultLocale: 'en',
+      } as IdiomaConfig);
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      const plugin = idiomaVitePlugin() as any;
+      plugin.configResolved({ command: 'serve', root: '/project' });
+      await plugin.buildStart.call({});
+      await plugin.handleHotUpdate({
+        file: '/project/src/idioma-legacy/Banner.tsx',
+        read: async () => '',
+        server: {},
+      });
+
+      await vi.waitFor(() =>
+        expect(extractAndMergeFile).toHaveBeenCalledWith(
+          expect.objectContaining({
+            filePath: '/project/src/idioma-legacy/Banner.tsx',
+          }),
+        ),
+      );
+    });
+
     it('passes po options from idioma.config.ts to extraction', async () => {
       vi.mocked(loadConfig).mockResolvedValue({
         idiomaDir: './src/idioma',

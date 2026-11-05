@@ -1,4 +1,5 @@
 import { dirname, resolve } from 'path';
+import { isInsideDir } from '../utils/paths.js';
 import {
   isAliasedIdiomaImport,
   type PathsMatcher,
@@ -29,7 +30,7 @@ export function fileImportsIdioma(
     if (!spec) continue;
     if (spec.startsWith('.')) {
       const resolved = resolve(fileDir, spec);
-      if (resolved.startsWith(idiomaDir)) {
+      if (isInsideDir(resolved, idiomaDir)) {
         return true;
       }
     } else if (pathsMatcher) {

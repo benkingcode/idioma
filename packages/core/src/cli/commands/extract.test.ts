@@ -615,6 +615,24 @@ msgstr "Old message"
       expect(result.messages.length).toBe(0);
     });
 
+    it('extractFromFile ignores a sibling folder whose name starts the same', async () => {
+      const code = `
+        import { Trans } from './idioma-legacy'
+        export function App() {
+          return <Trans>Hello world</Trans>
+        }
+      `;
+
+      const messages = await extractFromFile(
+        code,
+        '/project/src/App.tsx',
+        'src/App.tsx',
+        '/project/src/idioma',
+      );
+
+      expect(messages).toEqual([]);
+    });
+
     it('extractFromFile detects aliased Trans import', async () => {
       const mockMatcher: PathsMatcher = (specifier: string) => {
         if (specifier.startsWith('@app/')) {

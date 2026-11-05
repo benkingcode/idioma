@@ -104,6 +104,31 @@ describe('resolve-tsconfig-paths', () => {
       ).toBe(true);
     });
 
+    it('returns false for an alias to a sibling folder whose name starts the same', () => {
+      writeFileSync(
+        join(tempDir, 'tsconfig.json'),
+        JSON.stringify({
+          compilerOptions: {
+            baseUrl: '.',
+            paths: {
+              '@dancefloor-start/*': ['./src/*'],
+            },
+          },
+        }),
+      );
+
+      const matcher = loadPathsMatcher(tempDir)!;
+      const idiomaDir = join(tempDir, 'src', 'idioma');
+
+      expect(
+        isAliasedIdiomaImport(
+          '@dancefloor-start/idioma-legacy',
+          idiomaDir,
+          matcher,
+        ),
+      ).toBe(false);
+    });
+
     it('returns true for subpath imports within idiomaDir', () => {
       writeFileSync(
         join(tempDir, 'tsconfig.json'),

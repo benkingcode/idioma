@@ -1,4 +1,5 @@
 import { createPathsMatcher, getTsconfig } from 'get-tsconfig';
+import { isInsideDir } from './paths.js';
 
 /**
  * A function that resolves an import specifier against tsconfig paths.
@@ -27,5 +28,5 @@ export function isAliasedIdiomaImport(
 ): boolean {
   const resolved = pathsMatcher(source);
   if (!resolved || resolved.length === 0) return false;
-  return resolved.some((p) => p.startsWith(idiomaDir));
+  return resolved.some((p) => isInsideDir(p, idiomaDir));
 }
