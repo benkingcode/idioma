@@ -174,3 +174,8 @@ msgstr "مرحبًا، {name}!"
 #, extracted
 msgid "001e7GnR"
 msgstr "مصنوع باستخدام <span>مفتوح المصدر</span> أدوات"
+
+#: src/components/PlainCreateT.tsx
+#, extracted
+msgid "createT.daysLeft"
+msgstr "{count, plural, zero {لم يتبق أي يوم} one {بقي يوم واحد} two {بقي يومان} few {بقيت # أيام} many {بقي # يومًا} other {بقي # يوم}}"

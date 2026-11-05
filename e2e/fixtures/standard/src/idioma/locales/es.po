@@ -175,3 +175,8 @@ msgstr "¡Bienvenido, {name}!"
 #, extracted
 msgid "001e7GnR"
 msgstr "Construido con <span>código abierto</span> herramientas"
+
+#: src/components/PlainCreateT.tsx
+#, extracted
+msgid "createT.daysLeft"
+msgstr "{count, plural, one {Queda # día} other {Quedan # días}}"

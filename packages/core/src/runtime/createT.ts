@@ -1,8 +1,14 @@
 import { generateKey } from '../keys/generator.js';
 import { _warnNotInlined } from './warn.js';
 
+/**
+ * One locale's message: a string, or a function of the values that the
+ * compiler made from a plural or select.
+ */
+type MessageValue = string | ((args: Record<string, unknown>) => string);
+
 /** Translations object shape from compiler */
-type TranslationsMap = Record<string, Record<string, string>>;
+type TranslationsMap = Record<string, Record<string, MessageValue>>;
 
 // =============================================================================
 // Helper types for typed overloads
@@ -84,12 +90,27 @@ function interpolateValues(
 }
 
 /**
+ * A message with its values: a compiled plural or select is called with
+ * them, and a string has its {placeholders} filled in.
+ */
+function formatMessage(
+  message: MessageValue,
+  values: Record<string, unknown> | undefined,
+): string {
+  if (typeof message === 'function') return message(values ?? {});
+  if (values && Object.keys(values).length > 0) {
+    return interpolateValues(message, values);
+  }
+  return message;
+}
+
+/**
  * Check if a value is an inlined translations object (from Babel).
  * Inlined translations have the shape: { __m: { locale: translation } }
  */
 function isInlinedTranslations(
   value: unknown,
-): value is { __m: Record<string, string> } {
+): value is { __m: Record<string, MessageValue> } {
   if (typeof value !== 'object' || value === null) return false;
   return '__m' in value;
 }
@@ -143,18 +164,13 @@ export function _createTFactory<
     // Shape: { __m: { en: 'Hello', es: 'Hola' } }
     if (inlinedOrValues && isInlinedTranslations(inlinedOrValues)) {
       const localeMessages = inlinedOrValues.__m;
-      if (!localeMessages) return source;
+      if (!localeMessages) return formatMessage(source, values);
 
       // Try to get message for requested locale, fall back to first available
       const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
-      if (msg === undefined) return source;
+      if (msg === undefined) return formatMessage(source, values);
 
-      // Apply value interpolation if provided
-      if (values && Object.keys(values).length > 0) {
-        return interpolateValues(msg, values);
-      }
-
-      return msg;
+      return formatMessage(msg, values);
     }
 
     // Case 2: Runtime lookup for dynamic strings
@@ -164,13 +180,7 @@ export function _createTFactory<
       const localeMessages = translations[key];
       if (localeMessages) {
         const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
-        if (msg !== undefined) {
-          // Apply value interpolation if second arg is values (not inlined translations)
-          if (inlinedOrValues && Object.keys(inlinedOrValues).length > 0) {
-            return interpolateValues(msg, inlinedOrValues);
-          }
-          return msg;
-        }
+        if (msg !== undefined) return formatMessage(msg, inlinedOrValues);
       }
     }
 

@@ -43,6 +43,49 @@ describe('_createTFactory', () => {
     });
   });
 
+  describe('compiled ICU messages (plural, select)', () => {
+    // The compiler turns a plural or select into a function of the values,
+    // and the transform inlines it into __m as it is
+    const days = (args: Record<string, unknown>) =>
+      Number(args.count) === 1 ? '1 día' : `${String(args.count)} días`;
+    const daysEn = (args: Record<string, unknown>) =>
+      Number(args.count) === 1 ? '1 day' : `${String(args.count)} days`;
+
+    it('calls a compiled plural with the values', () => {
+      const t = _createTFactory('es');
+      const result = t(
+        '{count, plural, one {# day} other {# days}}',
+        { __m: { en: daysEn, es: days } },
+        { count: 3 },
+      );
+      expect(result).toBe('3 días');
+    });
+
+    it('calls a compiled message that has no values with an empty object', () => {
+      const t = _createTFactory('es');
+      const seen: unknown[] = [];
+      const hola = (args: Record<string, unknown>) => {
+        seen.push(args);
+        return 'Hola';
+      };
+      const result = t('{x, select, other {Hello}}', {
+        __m: { en: () => 'Hello', es: hola },
+      });
+      expect(result).toBe('Hola');
+      expect(seen).toEqual([{}]);
+    });
+
+    it('calls a compiled plural reached by fallback', () => {
+      const t = _createTFactory('fr');
+      const result = t(
+        '{count, plural, one {# day} other {# days}}',
+        { __m: { en: daysEn, es: days } },
+        { count: 1 },
+      );
+      expect(result).toBe('1 day');
+    });
+  });
+
   describe('placeholder interpolation', () => {
     it('interpolates placeholders in source text', () => {
       const t = _createTFactory('en');
