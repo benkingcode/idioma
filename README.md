@@ -2,6 +2,8 @@
 
 **AI-first, compile-time i18n for React. Write in English, ship in every language.**
 
+**Each page ships only the translations it uses.** Every message is compiled into the component that renders it, so your bundler's code splitting splits your translations too, with nothing to configure. See [Automatic Code Splitting](#automatic-code-splitting).
+
 ~800 bytes runtime. Automatic key generation. AI-powered translation that understands your codebase and key context.
 
 Traditional i18n workflow: Write code → Extract messages → Upload to TMS → Wait for translators → Download → Test → Find bugs → Repeat.
@@ -24,29 +26,30 @@ Idioma reads your source code to understand context ("checkout button", "error m
 
 **Performance**
 
-- **~800 bytes runtime** — Translations compile to static imports; the runtime just renders them
-- **Tree-shaken bundles** — Only translations for components on each page ship to the client
-- **Compile-time processing** — No runtime parsing or fetching
+- **Automatic code splitting**: Each page ships only the translations its components use, with no namespaces to set up and no catalogues to load
+- **~800 bytes runtime**: Translations are inlined at build time; the runtime just renders them
+- **Compile-time processing**: No runtime parsing or fetching
 
 **Developer Experience**
 
-- **Write natural JSX** — `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
-- **Flexible key strategy** — Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
-- **AI-powered translation** — Built-in translation with Claude or GPT, with automatic context extraction
-- **Type-safe** — Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
-- **ICU MessageFormat** — Full support for plurals, selects, ordinals, and complex formatting
+- **Write natural JSX**: `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
+- **Flexible key strategy**: Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
+- **AI-powered translation**: Built-in translation with Claude or GPT, with automatic context extraction
+- **Type-safe**: Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
+- **ICU MessageFormat**: Full support for plurals, selects, ordinals, and complex formatting
 
 **Integrations**
 
-- **Vite plugin** — HMR for translations, zero config
-- **React Native / Metro** — First-class React Native support with Metro bundler
-- **React Server Components** — Compile-time inlined translations work seamlessly in RSC
-- **PO file format** — Works with Phrase, Lokalise, Crowdin, and any TMS
-- **Plain JS support** — `createT` for Zod schemas, error handling, and non-React code
+- **Vite plugin**: HMR for translations, zero config
+- **React Native / Metro**: First-class React Native support with Metro bundler
+- **React Server Components**: Compile-time inlined translations work seamlessly in RSC
+- **PO file format**: Works with Phrase, Lokalise, Crowdin, and any TMS
+- **Plain JS support**: `createT` for Zod schemas, error handling, and non-React code
 
 ## Table of Contents
 
-- [Quick Start](#quick-start) — Vite setup
+- [Quick Start](#quick-start) (Vite setup)
+- [Automatic Code Splitting](#automatic-code-splitting)
 - [React Native](#react-native)
 - [React Server Components](#react-server-components)
 - [Plain JavaScript](#plain-javascript-outside-react)
@@ -157,6 +160,25 @@ export const useT = createUseT<IdiomaTypes>();
 ```
 
 The `IdiomaTypes` generic carries your actual message keys through to the components, so `<Trans id="...">` autocompletes with your real messages.
+
+## Automatic Code Splitting
+
+Each page ships only the translations its components use, with nothing to configure. Most i18n libraries load a whole catalogue per locale, or the namespaces you split it into by hand. Idioma compiles every message into the component that renders it, so your bundler's own code splitting decides which page gets which strings.
+
+**How it works:**
+
+1. At build time, the transform replaces each `<Trans>` and `t()` call with the message it renders, inlined at the call site
+2. Each message travels with its component's code, into whichever chunk the bundler puts that component in
+3. Route-level and lazy splitting therefore split your translations too: a page loads only the chunks it needs, and their messages with them
+
+A 10,000-message app doesn't ship 10,000 messages to every page: each page gets only what it needs.
+
+**What gets bundled:**
+
+- ✅ Translations for components rendered on the page
+- ❌ Translations for components on other routes
+
+By default each message carries every locale, so switching locale is instant. For apps where initial bundle size is critical, [Suspense mode](#suspense-mode-react-19) loads only the active locale.
 
 ## React Native
 
@@ -774,25 +796,6 @@ PO files work with translation management systems like Phrase, Lokalise, and Cro
 
 Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, lines longer than 76 columns are folded. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Metro plugin doesn't read `idioma.config.ts`, so pass the same `po` option to its `withIdioma()`.
 
-## Bundle Optimization
-
-Idioma automatically tree-shakes translations at the component level. Only the translations used by components on a given page are included in that page's bundle.
-
-**How it works:**
-
-1. The Idioma transform turns each `<Trans>` into a reference to specific translation keys
-2. Each source file's translations are compiled to a separate chunk
-3. The bundler includes only the chunks imported by components on each route
-
-This means a 10,000-message app doesn't ship 10,000 messages to every page—each page gets only what it needs.
-
-**What gets bundled:**
-
-- ✅ Translations for components rendered on the page
-- ❌ Translations for components on other routes
-
-By default, all locale variants for those keys are included (enabling instant locale switching). For apps where initial bundle size is critical, Suspense mode loads only the active locale.
-
 ## Suspense Mode (React 19+)
 
 For apps where initial load size is critical, Suspense mode takes optimization further: instead of bundling all locale variants, it loads only the active locale via dynamic imports.
@@ -938,12 +941,12 @@ The transform, built on the Oxc parser, extracts messages during build, generate
 
 | Feature                   | Idioma        | Lingui        | Paraglide    | react-intl | i18next  |
 | ------------------------- | ------------- | ------------- | ------------ | ---------- | -------- |
+| Component-level splitting | Yes           | No            | Yes          | No         | No       |
 | Runtime size (gzipped)    | ~800B         | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
 | Key management            | Auto + Manual | Auto + Manual | Manual       | Manual     | Manual   |
 | Extraction                | Built-in      | Built-in      | None         | CLI        | CLI      |
 | AI translation            | Built-in      | No            | No           | No         | No       |
 | Compile-time              | Yes           | Yes           | Yes          | Optional   | No       |
-| Component-level splitting | Yes           | No            | Yes          | No         | No       |
 | Lazy loading              | Opt-in        | Yes           | Experimental | Yes        | Yes      |
 | PO format                 | Yes           | Yes           | No           | No         | Plugin   |
 | Number/date formatting    | Use Intl      | Use Intl      | Use Intl     | Built-in   | Built-in |
