@@ -251,7 +251,7 @@ export default async function Page({ locale }: { locale: Locale }) {
 }
 ```
 
-The `t` function is synchronous—translations are compiled into the bundle at build time, so there's no runtime fetching. This makes RSC usage straightforward: just call `createT` with the locale and use it.
+The `t` function is synchronous: translations are compiled into the bundle at build time, so there's no runtime fetching. This makes RSC usage straightforward: just call `createT` with the locale and use it.
 
 ```ts
 // Source text (auto-hashed to key)
@@ -293,10 +293,10 @@ schema.parse(formData); // Errors in Spanish
 
 Works great for:
 
-- **Zod/Yup schemas** — Localized validation messages
-- **Error handling** — Translated error classes
-- **Utility functions** — Any non-React code that needs i18n
-- **Constants** — Lazy-evaluated translated labels
+- **Zod/Yup schemas**: Localized validation messages
+- **Error handling**: Translated error classes
+- **Utility functions**: Any non-React code that needs i18n
+- **Constants**: Lazy-evaluated translated labels
 
 ```typescript
 // Translated errors
@@ -761,7 +761,7 @@ It never shows another locale's translation: a key with no default-locale text r
 
 ## Content-Addressable Keys
 
-Idioma uses content-addressable keys—the message text determines the key:
+Idioma uses content-addressable keys, where the message text determines the key:
 
 1. **Murmurhash3** generates a 32-bit hash from the source message
 2. **Base62 encoding** (0-9, A-Z, a-z) produces compact 8-character keys
@@ -1002,9 +1002,9 @@ Sizes are gzipped and minified, with React left out, for the APIs an app imports
 
 TypeScript provides full type safety via generated types:
 
-- **Message keys** — Autocomplete on `id` props and `t({ id: '...' })` calls
-- **Required values** — Type errors when you forget interpolation values (`t('Hello {name}')` requires `{ name: string }`)
-- **Locales** — Autocomplete and validation on locale strings
+- **Message keys**: Autocomplete on `id` props and `t({ id: '...' })` calls
+- **Required values**: Type errors when you forget interpolation values (`t('Hello {name}')` requires `{ name: string }`)
+- **Locales**: Autocomplete and validation on locale strings
 
 ## Packages
 
