@@ -1,26 +1,14 @@
 # Idioma
 
-**AI-first, compile-time i18n for React. Write in English, ship in every language.**
+**Compile-time i18n for React and React Native. Each page ships only the translations it uses, and a broken translation fails the build.**
 
-**Each page ships only the translations it uses.** Every message is compiled into the component that renders it, so your bundler's code splitting splits your translations too, with nothing to configure. See [Automatic Code Splitting](#automatic-code-splitting).
-
-About 1.4 KB of runtime. Automatic key generation. AI-powered translation that understands your codebase and key context.
-
-Traditional i18n workflow: Write code → Extract messages → Upload to TMS → Wait for translators → Download → Test → Find bugs → Repeat.
-
-With Idioma: Write code → Run `idioma translate` → Ship.
-
-```bash
-# Translate all missing messages with AI
-idioma translate
-
-# Extracting messages from source files...
-# Generating context from source code...
-# Translating 847 messages to es...
-# ✓ Done in 12.3s
+```tsx
+<Trans id="cart.title">Your cart</Trans>
 ```
 
-Idioma reads your source code to understand context ("checkout button", "error message in cart"), then translates with that understanding. No more uploading CSVs or waiting for translators on routine updates.
+The build inlines each message into the component that renders it, so your route chunks carry their own translations and nothing else. See [Automatic Code Splitting](#automatic-code-splitting) and [What fails the build](#what-fails-the-build).
+
+About 1.4 KB of runtime. Typed ids and values. PO files with ICU MessageFormat. Optional AI translation that reads your code for context.
 
 ## Features
 
@@ -36,6 +24,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - **Flexible key strategy**: Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
 - **AI-powered translation**: Built-in translation with any AI SDK model (Claude, GPT, Gemini and others), with translator context read from your code
 - **Type-safe**: Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
+- **Build-time checks**: A non-literal id, a PO file that doesn't parse or an invalid plural fails the build instead of shipping
 - **ICU MessageFormat**: Full support for plurals, selects, ordinals, and complex formatting
 
 **Integrations**
@@ -43,7 +32,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 - **Vite plugin**: HMR for translations, zero config
 - **React Native / Metro**: First-class React Native support with Metro bundler
 - **React Server Components**: Compile-time inlined translations work seamlessly in RSC
-- **PO file format**: Works with Phrase, Lokalise, Crowdin, and any TMS
+- **PO file format**: Key-based gettext files, one per locale, that you edit by hand or send to a TMS
 - **Plain JS support**: `createT` for Zod schemas, error handling, and non-React code
 
 ## Table of Contents
