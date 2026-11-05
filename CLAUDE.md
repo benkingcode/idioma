@@ -187,7 +187,7 @@ The transform (`transformModule` in `packages/core/src/oxc/transform.ts`) parses
 mode?: 'inlined' | 'suspense'; // default: 'inlined'
 ```
 
-#### Inlined Mode (`mode: 'inlined'`) — Default
+#### Inlined Mode (`mode: 'inlined'`), the default
 
 Transforms components to internal versions with pre-compiled translations baked in:
 
@@ -252,7 +252,7 @@ Dynamic string-form calls, `t(message)`, stay legal: `createT` looks them up at 
 
 A call that still reaches the runtime un-inlined (a file the transform never saw) warns once per id in development (`_warnNotInlined` in `packages/core/src/runtime/warn.ts`).
 
-#### Suspense Mode (`mode: 'suspense'`) — For lazy loading (React 19+)
+#### Suspense Mode (`mode: 'suspense'`), for lazy loading (React 19+)
 
 Uses dynamic imports with React 19's `use()` hook for lazy loading:
 
@@ -381,7 +381,7 @@ Each locale's translation is analysed on its own text, so one locale can be a pl
 <Trans>You have {plural(count, { one: '# item', other: '# items' })}</Trans>
 ```
 
-These helpers are only used during extraction to serialize to ICU format. At runtime, the compiled JS functions handle the logic directly—the helper functions aren't called in production.
+These helpers are only used during extraction to serialize to ICU format. At runtime, the compiled JS functions handle the logic directly: the helper functions aren't called in production.
 
 ### Runtime Behavior
 
@@ -391,7 +391,7 @@ Since bundlers always use inlined or suspense mode, here's what actually runs.
 
 #### Trans Component (`packages/react/src/Trans.tsx`)
 
-**Inlined Mode** — `__Trans` component:
+**Inlined Mode** (the `__Trans` component):
 
 - Receives pre-compiled translations via `__t` prop
 - Uses `IdiomaContext` to get current locale
@@ -400,7 +400,7 @@ Since bundlers always use inlined or suspense mode, here's what actually runs.
   2. Component tag interpolation (`<Link>text</Link>`)
   3. Value interpolation (`{name}`)
 
-**Suspense Mode** — `__TransSuspense` component (`packages/react/src/runtime-suspense/`):
+**Suspense Mode** (the `__TransSuspense` component, `packages/react/src/runtime-suspense/`):
 
 - Uses React 19's `use()` hook
 - Suspends while translations load via dynamic import
@@ -414,7 +414,7 @@ Since bundlers always use inlined or suspense mode, here's what actually runs.
 - Uses inlined data when present
 - Falls back to runtime lookup for dynamic strings (rare edge case)
 
-**Suspense Mode** — `__useTSuspense`:
+**Suspense Mode** (`__useTSuspense`):
 
 - Receives chunk ID and loader from the transform
 - Uses `use()` hook for loading

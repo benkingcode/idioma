@@ -40,7 +40,7 @@ export interface TranslationProviderOptions {
 
 const TRANSLATION_SYSTEM_PROMPT = `You are an expert translator specializing in software UI localization. Translate the following messages from {sourceLocale} to {targetLocale}.
 
-CRITICAL — Preserve exactly as they appear:
+CRITICAL: preserve exactly as they appear:
 - Placeholders: {name}, {count}, {0}, etc.
 - Component tags: <0>...</0>, <1>...</1>
 - ICU syntax: {count, plural, one {...} other {...}}
@@ -48,7 +48,7 @@ CRITICAL — Preserve exactly as they appear:
 
 Translation guidelines:
 - Match the source's tone and formality level
-- Keep translations concise — UI space is limited
+- Keep translations concise: UI space is limited
 - Use context hints (if provided) to choose appropriate wording
 - Return translations in the exact order provided
 

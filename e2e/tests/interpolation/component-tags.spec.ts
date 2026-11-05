@@ -40,7 +40,7 @@ test.describe('Interpolation - Component Tags', () => {
 
   test('renders nested component tags', async ({ page }) => {
     const container = page.getByTestId('comp-nested');
-    // Exact text match — no leading/trailing spaces inside <Bold> (issue #4)
+    // Exact text match: no leading/trailing spaces inside <Bold> (issue #4)
     await expect(container).toHaveText('Important: read carefully');
     // Verify nesting structure: strong contains em
     await expect(container.locator('strong > em')).toHaveText('read carefully');
