@@ -109,4 +109,42 @@ describe('published package dependencies', () => {
       expect([...missing]).toEqual([]);
     });
   }
+
+  it('no entry point but idioma translate loads the optional AI SDK', () => {
+    // `ai` is an optional peer: the config, the plugins, the runtime and
+    // every other CLI command must load without it. Only idioma translate
+    // may load it, with import()
+    const root = join(PACKAGES_DIR, 'core');
+    const manifest = JSON.parse(
+      readFileSync(join(root, 'package.json'), 'utf8'),
+    );
+    const entries = Object.values(
+      manifest.exports as Record<string, { import: string }>,
+    ).map((target) =>
+      join(
+        root,
+        target.import.replace(/^\.\/dist\//, 'src/').replace(/\.mjs$/, '.ts'),
+      ),
+    );
+    entries.push(join(root, 'src/cli/index.ts'));
+    const offenders = new Set<string>();
+    for (const entry of entries) {
+      const seen = new Set<string>();
+      const walk = (file: string) => {
+        if (seen.has(file)) return;
+        seen.add(file);
+        for (const { source, dynamic } of runtimeImports(file)) {
+          if (dynamic) continue;
+          if (packageName(source) === 'ai') {
+            offenders.add(file.slice(root.length + 1));
+          }
+          if (source.startsWith('.')) {
+            walk(resolve(dirname(file), source).replace(/\.js$/, '.ts'));
+          }
+        }
+      };
+      walk(entry);
+    }
+    expect([...offenders]).toEqual([]);
+  });
 });

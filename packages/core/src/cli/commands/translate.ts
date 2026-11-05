@@ -1,5 +1,4 @@
 import { join, resolve } from 'path';
-import { defineCommand } from 'citty';
 import {
   createContextProvider,
   createDryRunContextProvider,
@@ -24,6 +23,7 @@ import { getIdiomaPaths, loadConfig } from '../config.js';
 import { createAnimatedHeader, setNonInteractive } from '../ui/index.js';
 import { colors } from '../ui/theme.js';
 import { ensureExtracted } from './ensure-extracted.js';
+import type { TranslateCommandArgs } from './translate-command.js';
 
 export interface TranslateResult {
   translated: number;
@@ -366,263 +366,232 @@ export async function runTranslateAll(
   return { results, errors };
 }
 
-export const translateCommand = defineCommand({
-  meta: {
-    name: 'translate',
-    description: 'Translate messages using AI',
-  },
-  args: {
-    locale: {
-      type: 'string',
-      description:
-        'Target locale to translate (translates all locales if not specified)',
-    },
-    force: {
-      type: 'boolean',
-      description: 'Retranslate existing translations',
-      default: false,
-    },
-    'dry-run': {
-      type: 'boolean',
-      description: 'Preview translations without saving',
-      default: false,
-    },
-    'mark-ai': {
-      type: 'boolean',
-      description: 'Mark translations with ai-translated flag',
-      default: true,
-    },
-    'no-auto-context': {
-      type: 'boolean',
-      description: 'Skip automatic AI context generation for messages',
-      default: false,
-    },
-    verbose: {
-      type: 'boolean',
-      description: 'Show detailed logs including AI prompts',
-      default: false,
-    },
-  },
-  async run({ args }) {
-    const cwd = process.cwd();
-    const config = await loadConfig(cwd);
+/**
+ * What `idioma translate` runs. It is loaded with import() by
+ * translate-command.ts, so the optional AI SDK is loaded only for this
+ * command, never for the rest of the CLI.
+ */
+export async function runTranslateCommand(
+  args: TranslateCommandArgs,
+): Promise<void> {
+  const cwd = process.cwd();
+  const config = await loadConfig(cwd);
 
-    // Verbose mode uses non-interactive output (no spinners/progress bars)
-    if (args.verbose) {
-      setNonInteractive(true);
+  // Verbose mode uses non-interactive output (no spinners/progress bars)
+  if (args.verbose) {
+    setNonInteractive(true);
+  }
+
+  // Create verbose callback
+  const onVerbose = args.verbose
+    ? (msg: string) => console.log(msg)
+    : undefined;
+
+  // Get AI config
+  const { model, guidelines, providerOptions } = config.ai ?? {};
+
+  // Create provider
+  let provider: TranslationProvider;
+
+  // In dry run mode, use a provider that skips AI calls
+  if (args['dry-run']) {
+    provider = createDryRunProvider({
+      guidelines,
+      onVerbose,
+    });
+  } else {
+    // Require explicit model configuration
+    if (!model) {
+      console.error('Error: AI model not configured.\n');
+      console.error('Add to idioma.config.ts:');
+      console.error('');
+      console.error('  import { anthropic } from "@ai-sdk/anthropic";');
+      console.error('');
+      console.error('  export default defineConfig({');
+      console.error('    // ... other config');
+      console.error('    ai: {');
+      console.error('      model: anthropic("claude-sonnet-4-20250514"),');
+      console.error('    },');
+      console.error('  });');
+      console.error('');
+      console.error(
+        'See https://ai-sdk.dev/providers for available providers.',
+      );
+      process.exitCode = 1;
+      return;
     }
 
-    // Create verbose callback
-    const onVerbose = args.verbose
-      ? (msg: string) => console.log(msg)
-      : undefined;
+    provider = createTranslationProvider({
+      model,
+      guidelines,
+      providerOptions,
+      onVerbose,
+    });
+  }
 
-    // Get AI config
-    const { model, guidelines, providerOptions } = config.ai ?? {};
+  // Create context provider if auto-context is enabled
+  const autoContext = !args['no-auto-context'];
+  let contextProvider: ContextProvider | undefined;
 
-    // Create provider
-    let provider: TranslationProvider;
-
-    // In dry run mode, use a provider that skips AI calls
+  if (autoContext) {
     if (args['dry-run']) {
-      provider = createDryRunProvider({
+      contextProvider = createDryRunContextProvider({
         guidelines,
         onVerbose,
       });
-    } else {
-      // Require explicit model configuration
-      if (!model) {
-        console.error('Error: AI model not configured.\n');
-        console.error('Add to idioma.config.ts:');
-        console.error('');
-        console.error('  import { anthropic } from "@ai-sdk/anthropic";');
-        console.error('');
-        console.error('  export default defineConfig({');
-        console.error('    // ... other config');
-        console.error('    ai: {');
-        console.error('      model: anthropic("claude-sonnet-4-20250514"),');
-        console.error('    },');
-        console.error('  });');
-        console.error('');
-        console.error(
-          'See https://ai-sdk.dev/providers for available providers.',
-        );
-        process.exitCode = 1;
-        return;
-      }
-
-      provider = createTranslationProvider({
+    } else if (model) {
+      contextProvider = createContextProvider({
         model,
         guidelines,
         providerOptions,
         onVerbose,
       });
     }
+  }
 
-    // Create context provider if auto-context is enabled
-    const autoContext = !args['no-auto-context'];
-    let contextProvider: ContextProvider | undefined;
+  const { localeDir } = getIdiomaPaths(config);
 
-    if (autoContext) {
-      if (args['dry-run']) {
-        contextProvider = createDryRunContextProvider({
-          guidelines,
-          onVerbose,
-        });
-      } else if (model) {
-        contextProvider = createContextProvider({
-          model,
-          guidelines,
-          providerOptions,
-          onVerbose,
-        });
-      }
-    }
+  // Determine target locales
+  const targetLocales = args.locale
+    ? [args.locale as string]
+    : (config.locales ?? []).filter((l) => l !== config.defaultLocale);
 
-    const { localeDir } = getIdiomaPaths(config);
+  if (targetLocales.length === 0) {
+    console.error('Error: No target locales to translate');
+    console.error(
+      'Either specify a locale or configure locales in idioma.config.ts',
+    );
+    process.exitCode = 1;
+    return;
+  }
 
-    // Determine target locales
-    const targetLocales = args.locale
-      ? [args.locale as string]
-      : (config.locales ?? []).filter((l) => l !== config.defaultLocale);
+  // Start animated header (globe + config info)
+  // Extract model info (LanguageModel can be string or object with provider/modelId)
+  const modelInfo =
+    model && typeof model === 'object'
+      ? { provider: model.provider, modelId: model.modelId }
+      : typeof model === 'string'
+        ? { provider: 'ai-sdk', modelId: model }
+        : undefined;
 
-    if (targetLocales.length === 0) {
-      console.error('Error: No target locales to translate');
-      console.error(
-        'Either specify a locale or configure locales in idioma.config.ts',
-      );
-      process.exitCode = 1;
-      return;
-    }
+  const header = createAnimatedHeader();
+  header.start({
+    title: 'idioma translate',
+    autoContext,
+    provider: args['dry-run'] ? 'dry-run' : (modelInfo?.provider ?? 'ai-sdk'),
+    model: modelInfo?.modelId,
+  });
 
-    // Start animated header (globe + config info)
-    // Extract model info (LanguageModel can be string or object with provider/modelId)
-    const modelInfo =
-      model && typeof model === 'object'
-        ? { provider: model.provider, modelId: model.modelId }
-        : typeof model === 'string'
-          ? { provider: 'ai-sdk', modelId: model }
-          : undefined;
-
-    const header = createAnimatedHeader();
-    header.start({
-      title: 'idioma translate',
-      autoContext,
-      provider: args['dry-run'] ? 'dry-run' : (modelInfo?.provider ?? 'ai-sdk'),
-      model: modelInfo?.modelId,
-    });
-
-    // Ensure PO files exist (auto-extract if missing)
-    // Skip in dry run mode - we don't want to write any files
-    if (!args['dry-run']) {
-      const allLocales = [config.defaultLocale, ...targetLocales].filter(
-        (v, i, a) => a.indexOf(v) === i,
-      );
-      await ensureExtracted({
-        localeDir,
-        locales: allLocales,
-        cwd,
-        config,
-        onExtractStart: () => {
-          header.setStatus('PO files missing, extracting messages first...');
-        },
-        onExtractComplete: ({ messages, files }) => {
-          header.log(`✔ Extracted ${messages} messages from ${files} files`);
-        },
-      });
-    }
-
-    let currentLocaleIndex = 0;
-    let currentLocaleLabel = '';
-    let currentTotal = 0;
-
-    const { results, errors } = await runTranslateAll({
+  // Ensure PO files exist (auto-extract if missing)
+  // Skip in dry run mode - we don't want to write any files
+  if (!args['dry-run']) {
+    const allLocales = [config.defaultLocale, ...targetLocales].filter(
+      (v, i, a) => a.indexOf(v) === i,
+    );
+    await ensureExtracted({
       localeDir,
-      defaultLocale: config.defaultLocale,
-      targetLocales,
-      provider,
-      force: args.force,
-      dryRun: args['dry-run'],
-      markAI: args['mark-ai'],
-      autoContext: autoContext && !!contextProvider,
-      contextProvider,
-      projectRoot: cwd,
-      idiomaDir: resolve(cwd, config.idiomaDir),
-      po: config.po,
-      onVerbose,
-      onContextFileCountKnown: (count) => {
-        if (count > 0) {
-          header.setProgress('Generating context', 0, count);
-        }
+      locales: allLocales,
+      cwd,
+      config,
+      onExtractStart: () => {
+        header.setStatus('PO files missing, extracting messages first...');
       },
-      onContextFileComplete: (progress) => {
-        header.setProgress(
-          'Generating context',
-          progress.currentFile,
-          progress.totalFiles,
-        );
-        if (progress.currentFile === progress.totalFiles) {
-          header.log(
-            `✔ Generated context for ${progress.totalMessagesGenerated} messages`,
-          );
-        }
-      },
-      onLocaleStart: (locale) => {
-        currentLocaleLabel =
-          targetLocales.length > 1
-            ? `[${currentLocaleIndex + 1}/${targetLocales.length}] ${locale}`
-            : locale;
-      },
-      onMessageCountKnown: (count) => {
-        currentTotal = count;
-        if (count > 0) {
-          header.setProgress(currentLocaleLabel, 0, count);
-        }
-      },
-      onBatchComplete: (progress) => {
-        header.setProgress(
-          currentLocaleLabel,
-          progress.completedMessages,
-          currentTotal,
-        );
-      },
-      onLocaleComplete: (_locale, result) => {
-        const checkmark =
-          result.translated > 0 ? colors().success('✔') : colors().primary('✔');
-        header.log(
-          `${checkmark} ${currentLocaleLabel}: ${result.translated} translated, ${result.skipped} skipped`,
-        );
-        currentLocaleIndex++;
+      onExtractComplete: ({ messages, files }) => {
+        header.log(`✔ Extracted ${messages} messages from ${files} files`);
       },
     });
+  }
 
-    // Stop the animated header now that translation is complete
-    header.stop();
+  let currentLocaleIndex = 0;
+  let currentLocaleLabel = '';
+  let currentTotal = 0;
 
-    // Summary
-    let totalTranslated = 0;
-    let totalSkipped = 0;
-
-    for (const [, result] of results) {
-      totalTranslated += result.translated;
-      totalSkipped += result.skipped;
-    }
-
-    if (targetLocales.length > 1) {
-      console.log('');
-      console.log(
-        `Summary: ${totalTranslated} translated, ${totalSkipped} skipped across ${results.size} locales`,
-      );
-    }
-
-    // Report errors
-    if (errors.size > 0) {
-      console.log('');
-      console.error('Errors:');
-      for (const [locale, error] of errors) {
-        console.error(`  [${locale}] ${error.message}`);
+  const { results, errors } = await runTranslateAll({
+    localeDir,
+    defaultLocale: config.defaultLocale,
+    targetLocales,
+    provider,
+    force: args.force,
+    dryRun: args['dry-run'],
+    markAI: args['mark-ai'],
+    autoContext: autoContext && !!contextProvider,
+    contextProvider,
+    projectRoot: cwd,
+    idiomaDir: resolve(cwd, config.idiomaDir),
+    po: config.po,
+    onVerbose,
+    onContextFileCountKnown: (count) => {
+      if (count > 0) {
+        header.setProgress('Generating context', 0, count);
       }
-      process.exitCode = 1;
+    },
+    onContextFileComplete: (progress) => {
+      header.setProgress(
+        'Generating context',
+        progress.currentFile,
+        progress.totalFiles,
+      );
+      if (progress.currentFile === progress.totalFiles) {
+        header.log(
+          `✔ Generated context for ${progress.totalMessagesGenerated} messages`,
+        );
+      }
+    },
+    onLocaleStart: (locale) => {
+      currentLocaleLabel =
+        targetLocales.length > 1
+          ? `[${currentLocaleIndex + 1}/${targetLocales.length}] ${locale}`
+          : locale;
+    },
+    onMessageCountKnown: (count) => {
+      currentTotal = count;
+      if (count > 0) {
+        header.setProgress(currentLocaleLabel, 0, count);
+      }
+    },
+    onBatchComplete: (progress) => {
+      header.setProgress(
+        currentLocaleLabel,
+        progress.completedMessages,
+        currentTotal,
+      );
+    },
+    onLocaleComplete: (_locale, result) => {
+      const checkmark =
+        result.translated > 0 ? colors().success('✔') : colors().primary('✔');
+      header.log(
+        `${checkmark} ${currentLocaleLabel}: ${result.translated} translated, ${result.skipped} skipped`,
+      );
+      currentLocaleIndex++;
+    },
+  });
+
+  // Stop the animated header now that translation is complete
+  header.stop();
+
+  // Summary
+  let totalTranslated = 0;
+  let totalSkipped = 0;
+
+  for (const [, result] of results) {
+    totalTranslated += result.translated;
+    totalSkipped += result.skipped;
+  }
+
+  if (targetLocales.length > 1) {
+    console.log('');
+    console.log(
+      `Summary: ${totalTranslated} translated, ${totalSkipped} skipped across ${results.size} locales`,
+    );
+  }
+
+  // Report errors
+  if (errors.size > 0) {
+    console.log('');
+    console.error('Errors:');
+    for (const [locale, error] of errors) {
+      console.error(`  [${locale}] ${error.message}`);
     }
-  },
-});
+    process.exitCode = 1;
+  }
+}

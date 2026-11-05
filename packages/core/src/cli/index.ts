@@ -6,7 +6,7 @@ import { debugCommand } from './commands/debug.js';
 import { extractCommand } from './commands/extract.js';
 import { initCommand } from './commands/init.js';
 import { statsCommand } from './commands/stats.js';
-import { translateCommand } from './commands/translate.js';
+import { translateCommand } from './commands/translate-command.js';
 import { setNonInteractive } from './ui/index.js';
 
 const require = createRequire(import.meta.url);
