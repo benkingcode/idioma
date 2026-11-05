@@ -9,19 +9,22 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "extract": "idioma extract",
-    "compile": "idioma compile"
+    "compile": "idioma compile",
+    "translate": "idioma translate"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.0",
     "@idioma/react": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@idioma/ai": "workspace:*",
     "@idioma/core": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.2.1",
+    "ai": "^6.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   }

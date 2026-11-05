@@ -1,4 +1,3 @@
-import { anthropic } from '@ai-sdk/anthropic';
 import { defineConfig } from '@idioma/core';
 
 export default defineConfig({
@@ -6,7 +5,4 @@ export default defineConfig({
   defaultLocale: 'en',
   locales: ['en', 'es', 'ar'],
   useSuspense: true, // Enable Suspense mode for React 19+ lazy loading
-  ai: {
-    model: anthropic('claude-haiku-4-5'),
-  },
 });
