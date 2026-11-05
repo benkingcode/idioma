@@ -191,7 +191,7 @@ msgstr "Hello"
     expect(poFiles).toEqual(['en.po']);
   });
 
-  it('is idempotent — running twice produces same result', async () => {
+  it('is idempotent: running twice produces same result', async () => {
     const config = makeConfig();
 
     await runInit({ cwd: tempDir, config });

@@ -138,7 +138,7 @@ export interface CreateTOptions {
  * @param options - The default locale, which a missing translation falls back to
  * @returns A synchronous translation function
  *
- * @internal Used by generated idioma/plain.ts — import `createT` from there instead.
+ * @internal Used by generated idioma/plain.ts. Import `createT` from there instead.
  */
 export function _createTFactory<
   TKey extends string = string,

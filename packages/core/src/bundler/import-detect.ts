@@ -11,8 +11,8 @@ import {
  * any file this returns `false` for would also produce zero extractions.
  *
  * Cheap by design: a regex scan over the source text, no AST parse. False
- * positives (e.g., matches inside comments or string literals) are acceptable
- * — they only cost one no-op extraction cycle, which the downstream
+ * positives (e.g., matches inside comments or string literals) are acceptable:
+ * they only cost one no-op extraction cycle, which the downstream
  * writeIfChanged guard then swallows.
  */
 export function fileImportsIdioma(

@@ -609,7 +609,7 @@ msgstr "Old message"
         localeDir,
         defaultLocale: 'en',
         idiomaDir,
-        // No pathsMatcher — alias won't be resolved
+        // No pathsMatcher, so the alias won't be resolved
       });
 
       expect(result.messages.length).toBe(0);
