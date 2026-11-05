@@ -1,5 +1,6 @@
 import { join, resolve } from 'path';
 import {
+  autoContextEnabled,
   colors,
   createAnimatedHeader,
   ensureExtracted,
@@ -432,7 +433,7 @@ export async function runTranslateCommand(
   }
 
   // Create context provider if auto-context is enabled
-  const autoContext = !args['no-auto-context'];
+  const autoContext = autoContextEnabled(args);
   let contextProvider: ContextProvider | undefined;
 
   if (autoContext) {

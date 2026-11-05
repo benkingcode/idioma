@@ -1,11 +1,14 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { parseArgs, type ArgsDef } from 'citty';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   AI_INSTALL_HINT,
+  autoContextEnabled,
   loadAiPackage,
   runTranslateCli,
+  translateCommand,
   type TranslateCommandArgs,
 } from './translate-command';
 
@@ -93,5 +96,22 @@ describe('runTranslateCli', () => {
       'pnpm add -D @idioma/ai ai@6 @ai-sdk/anthropic@3',
     );
     expect(process.exitCode).toBe(1);
+  });
+});
+
+describe('translate arguments', () => {
+  const parse = (argv: string[]) =>
+    parseArgs(argv, translateCommand.args as ArgsDef);
+
+  it('generates context by default', () => {
+    expect(autoContextEnabled(parse([]) as TranslateCommandArgs)).toBe(true);
+  });
+
+  it('--no-auto-context turns context generation off', () => {
+    // citty reads --no-x as x = false, so an argument named
+    // 'no-auto-context' never became true and the flag did nothing
+    expect(
+      autoContextEnabled(parse(['--no-auto-context']) as TranslateCommandArgs),
+    ).toBe(false);
   });
 });

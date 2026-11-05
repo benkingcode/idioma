@@ -27,13 +27,16 @@ const translateArgs = {
   },
   'mark-ai': {
     type: 'boolean',
-    description: 'Mark translations with ai-translated flag',
+    description: "Don't flag translations as ai-translated",
     default: true,
   },
-  'no-auto-context': {
+  // citty reads --no-x as x = false, so the flag is --no-auto-context on
+  // an argument named auto-context. An argument named no-auto-context
+  // never became true. --help shows a default-true boolean as --no-x
+  'auto-context': {
     type: 'boolean',
     description: 'Skip automatic AI context generation for messages',
-    default: false,
+    default: true,
   },
   verbose: {
     type: 'boolean',
@@ -43,6 +46,11 @@ const translateArgs = {
 } as const;
 
 export type TranslateCommandArgs = ParsedArgs<typeof translateArgs>;
+
+/** Whether to generate translator context: off with --no-auto-context. */
+export function autoContextEnabled(args: TranslateCommandArgs): boolean {
+  return args['auto-context'] !== false;
+}
 
 export const translateCommand = defineCommand({
   meta: {
