@@ -599,6 +599,58 @@ msgstr "Hello"
     });
   });
 
+  describe('a plural or select that does not parse', () => {
+    const header = (locale: string) => `
+msgid ""
+msgstr ""
+"Language: ${locale}\\n"
+`;
+
+    it('fails the compile, naming the locale and the key', async () => {
+      await createPoFile(
+        'en',
+        `${header('en')}
+msgid "cart.count"
+msgstr "{count, plural, one {# item} other {# items}}"
+`,
+      );
+      // The other branch is missing its closing brace
+      await createPoFile(
+        'es',
+        `${header('es')}
+msgid "cart.count"
+msgstr "{count, plural, one {# artículo} other {# artículos}"
+`,
+      );
+
+      await expect(
+        compileTranslations({
+          localeDir: poDir,
+          outputDir,
+          defaultLocale: 'en',
+        }),
+      ).rejects.toThrow(/es.*"cart\.count".*not valid ICU/s);
+    });
+
+    it('still compiles other text the parser rejects, as plain text', async () => {
+      await createPoFile(
+        'en',
+        `${header('en')}
+msgid "math.lt"
+msgstr "Use {a, b} as you like"
+`,
+      );
+
+      await expect(
+        compileTranslations({
+          localeDir: poDir,
+          outputDir,
+          defaultLocale: 'en',
+        }),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('ICU analysis across locales', () => {
     const header = (locale: string) => `
 msgid ""

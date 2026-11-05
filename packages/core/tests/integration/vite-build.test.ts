@@ -78,6 +78,18 @@ describe('vite build with the Idioma plugin', () => {
     );
   });
 
+  it('fails when a plural does not parse', async () => {
+    // The other branch is missing its closing brace
+    await fs.writeFile(
+      join(root, 'src/idioma/locales/en.po'),
+      'msgid ""\nmsgstr ""\n"Language: en\\n"\n\nmsgid "cart.count"\nmsgstr "{count, plural, one {# item} other {# items}"\n',
+    );
+
+    await expect(viteBuild()).rejects.toThrow(
+      /en\.po: "cart\.count" is not valid ICU/,
+    );
+  });
+
   it('fails when there is no catalogue at all', async () => {
     await expect(viteBuild()).rejects.toThrow(/No \.po files/);
   });
