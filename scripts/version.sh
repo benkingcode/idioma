@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Lockstep version bumping for @idioma/core and @idioma/react.
+# Lockstep version bumping for @idioma/core, @idioma/react and @idioma/ai.
 # Usage:
 #   ./scripts/version.sh patch          # 0.1.12 → 0.1.13
 #   ./scripts/version.sh minor          # 0.1.12 → 0.2.0
@@ -38,7 +38,7 @@ echo "Bumping to v$VERSION..."
 # Update both package.json files
 node -e "
   const fs = require('fs');
-  for (const pkg of ['packages/core/package.json', 'packages/react/package.json']) {
+  for (const pkg of ['packages/core/package.json', 'packages/react/package.json', 'packages/ai/package.json']) {
     const json = JSON.parse(fs.readFileSync(pkg, 'utf8'));
     json.version = '$VERSION';
     fs.writeFileSync(pkg, JSON.stringify(json, null, 2) + '\n');
@@ -46,7 +46,7 @@ node -e "
 "
 
 # Stage, commit, and tag
-git add packages/core/package.json packages/react/package.json
+git add packages/core/package.json packages/react/package.json packages/ai/package.json
 git commit -m "chore: bump to v$VERSION"
 git tag "v$VERSION"
 
@@ -54,6 +54,7 @@ echo ""
 echo "Done! Version bumped to v$VERSION"
 echo "  - packages/core/package.json  → $VERSION"
 echo "  - packages/react/package.json → $VERSION"
+echo "  - packages/ai/package.json    → $VERSION"
 echo "  - Git commit created"
 echo "  - Git tag v$VERSION created"
 echo ""

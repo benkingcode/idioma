@@ -52,23 +52,31 @@ jobs:
       - name: Verify version consistency
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          CORE_VERSION=$(node -p "require('./packages/core/package.json').version")
-          REACT_VERSION=$(node -p "require('./packages/react/package.json').version")
-
-          if [ "$CORE_VERSION" != "$TAG_VERSION" ] || [ "$REACT_VERSION" != "$TAG_VERSION" ]; then
-            echo "Version mismatch!"
-            echo "  Tag:           $TAG_VERSION"
-            echo "  @idioma/core:  $CORE_VERSION"
-            echo "  @idioma/react: $REACT_VERSION"
+          STATUS=0
+          for dir in core react ai; do
+            VERSION=$(node -p "require('./packages/$dir/package.json').version")
+            echo "  @idioma/$dir: $VERSION"
+            if [ "$VERSION" != "$TAG_VERSION" ]; then STATUS=1; fi
+          done
+          if [ "$STATUS" != 0 ]; then
+            echo "Version mismatch! Tag: $TAG_VERSION"
             exit 1
           fi
           echo "All versions match: $TAG_VERSION"
 
+      # Each step skips a version npm already has, so after a failed
+      # publish, "Re-run failed jobs" publishes only what's missing.
+      # @idioma/ai goes last: if it fails (npm can't attach a trusted
+      # publisher to a package before its first publish), core and react
+      # have still shipped together.
       - name: Publish @idioma/core
-        run: pnpm --filter @idioma/core publish --no-git-checks --provenance --access public
+        run: ./scripts/publish-if-new.sh @idioma/core
 
       - name: Publish @idioma/react
-        run: pnpm --filter @idioma/react publish --no-git-checks --provenance --access public
+        run: ./scripts/publish-if-new.sh @idioma/react
+
+      - name: Publish @idioma/ai
+        run: ./scripts/publish-if-new.sh @idioma/ai
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
