@@ -62,7 +62,7 @@
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "^3.5.22",
     "chalk": "^5.6.2",
-    "chokidar": "^3.6.0",
+    "chokidar": "^5.0.0",
     "ci-info": "^4.3.1",
     "citty": "^0.1.6",
     "cli-progress": "^3.12.0",

@@ -1,3 +1,4 @@
+import type { Stats } from 'fs';
 import { readFile, utimes } from 'fs/promises';
 import { watch, type FSWatcher } from 'chokidar';
 import { isAbsolute, join, relative, resolve } from 'pathe';
@@ -181,10 +182,10 @@ export function withIdioma(
   function setupWatcher(): void {
     // Set up PO file watcher
     if (!poWatcher) {
-      const poWatchPath = resolve(projectRoot, localeDir, '**/*.po');
-
-      poWatcher = watch(poWatchPath, {
+      // chokidar takes a folder, not a glob, since version 4
+      poWatcher = watch(resolve(projectRoot, localeDir), {
         ignoreInitial: true,
+        ignored: ignoreNonPoFiles,
         awaitWriteFinish: {
           stabilityThreshold: 100,
           pollInterval: 50,
@@ -227,15 +228,9 @@ export function withIdioma(
       );
 
       // Watch source files, using .gitignore patterns automatically
-      const sourceWatchPath = resolve(projectRoot, '**/*.{tsx,jsx,ts,js}');
-      const ignoreFilter = createChokidarIgnoreFilter(
-        projectRoot,
-        ignorePatterns,
-      );
-
-      sourceWatcher = watch(sourceWatchPath, {
+      sourceWatcher = watch(projectRoot, {
         ignoreInitial: true,
-        ignored: ignoreFilter,
+        ignored: createSourceWatchIgnore(projectRoot, ignorePatterns),
         awaitWriteFinish: {
           stabilityThreshold: 100,
           pollInterval: 50,
@@ -298,4 +293,36 @@ export function withIdioma(
       transformer: { ...transformer, babelTransformerPath: transformerPath },
     };
   };
+}
+
+const SOURCE_FILE = /\.(tsx|jsx|ts|js)$/;
+
+/**
+ * chokidar's `ignored` for the PO watcher: every file but a .po file.
+ * Folders are never ignored, so namespace folders (locales/es/*.po) are
+ * walked. chokidar calls it once without stats and once with them.
+ *
+ * @internal Exported for tests
+ */
+export function ignoreNonPoFiles(path: string, stats?: Stats): boolean {
+  return stats?.isFile() === true && !path.endsWith('.po');
+}
+
+/**
+ * chokidar's `ignored` for the source watcher: what .gitignore and the
+ * base patterns ignore (node_modules, .git, .generated), and every file
+ * that is not a script.
+ *
+ * @internal Exported for tests
+ */
+export function createSourceWatchIgnore(
+  projectRoot: string,
+  additionalPatterns?: string[],
+): (path: string, stats?: Stats) => boolean {
+  const ignoreFilter = createChokidarIgnoreFilter(
+    projectRoot,
+    additionalPatterns,
+  );
+  return (path, stats) =>
+    ignoreFilter(path) || (stats?.isFile() === true && !SOURCE_FILE.test(path));
 }
