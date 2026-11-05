@@ -12,7 +12,9 @@ import type { IdiomaTypes, Locale } from './.generated/types';
 
 export const Trans = createTrans<IdiomaTypes>();
 export const useT = createUseT<IdiomaTypes>();
-export const IdiomaProvider = createIdiomaProvider();
+export const IdiomaProvider = createIdiomaProvider({
+  defaultLocale: 'en',
+});
 export const useLocale = createUseLocale();
 
 export type { IdiomaTypes, Locale };

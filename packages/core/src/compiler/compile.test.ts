@@ -146,6 +146,33 @@ msgstr "Hello"
     expect(content).not.toContain('./.generated/translations');
   });
 
+  it('gives the provider and createT the default locale, for fallbacks', async () => {
+    await createPoFile(
+      'fr',
+      `
+msgid ""
+msgstr ""
+"Language: fr\\n"
+
+msgid "Hello"
+msgstr "Bonjour"
+`,
+    );
+
+    await compileTranslations({
+      localeDir: poDir,
+      outputDir,
+      defaultLocale: 'fr',
+    });
+
+    const index = await fs.readFile(join(outputDir, 'index.ts'), 'utf-8');
+    expect(index).toContain(
+      "createIdiomaProvider({\n  defaultLocale: 'fr',\n})",
+    );
+    const plain = await fs.readFile(join(outputDir, 'plain.ts'), 'utf-8');
+    expect(plain).toContain("defaultLocale: 'fr',");
+  });
+
   it('compiles ICU plural messages to functions', async () => {
     await createPoFile(
       'en',

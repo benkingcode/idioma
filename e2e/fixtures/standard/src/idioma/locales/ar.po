@@ -179,3 +179,8 @@ msgstr "مصنوع باستخدام <span>مفتوح المصدر</span> أدو�
 #, extracted
 msgid "createT.daysLeft"
 msgstr "{count, plural, zero {لم يتبق أي يوم} one {بقي يوم واحد} two {بقي يومان} few {بقيت # أيام} many {بقي # يومًا} other {بقي # يوم}}"
+
+#: src/components/Fallbacks.tsx
+#, extracted
+msgid "fallback.spanishOnly"
+msgstr ""

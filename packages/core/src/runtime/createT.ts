@@ -1,4 +1,5 @@
 import { generateKey } from '../keys/generator.js';
+import { _pickMessage } from './message.js';
 import { _warnNotInlined } from './warn.js';
 
 /**
@@ -115,6 +116,12 @@ function isInlinedTranslations(
   return '__m' in value;
 }
 
+/** What generated idioma/plain.ts passes to `_createTFactory`. */
+export interface CreateTOptions {
+  /** The source locale, which a missing translation falls back to */
+  defaultLocale?: string;
+}
+
 /**
  * Factory to create a synchronous translation function for use outside React components.
  *
@@ -125,6 +132,7 @@ function isInlinedTranslations(
  *
  * @param locale - The locale to use for translations
  * @param translations - Optional translations object for runtime lookup of dynamic strings
+ * @param options - The default locale, which a missing translation falls back to
  * @returns A synchronous translation function
  *
  * @internal Used by generated idioma/plain.ts — import `createT` from there instead.
@@ -135,7 +143,12 @@ export function _createTFactory<
     string,
     Record<string, unknown>
   >,
->(locale: string, translations?: TranslationsMap): PlainTFunction<TKey, MV> {
+>(
+  locale: string,
+  translations?: TranslationsMap,
+  options: CreateTOptions = {},
+): PlainTFunction<TKey, MV> {
+  const { defaultLocale } = options;
   return ((
     source:
       | string
@@ -166,8 +179,8 @@ export function _createTFactory<
       const localeMessages = inlinedOrValues.__m;
       if (!localeMessages) return formatMessage(source, values);
 
-      // Try to get message for requested locale, fall back to first available
-      const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
+      // The locale, its base locale, the default locale, then the source
+      const msg = _pickMessage(localeMessages, locale, defaultLocale);
       if (msg === undefined) return formatMessage(source, values);
 
       return formatMessage(msg, values);
@@ -179,7 +192,7 @@ export function _createTFactory<
       const key = generateKey(source);
       const localeMessages = translations[key];
       if (localeMessages) {
-        const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
+        const msg = _pickMessage(localeMessages, locale, defaultLocale);
         if (msg !== undefined) return formatMessage(msg, inlinedOrValues);
       }
     }

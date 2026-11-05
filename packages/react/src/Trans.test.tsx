@@ -192,4 +192,44 @@ describe('__Trans', () => {
       process.env.NODE_ENV = originalEnv;
     });
   });
+
+  describe('locale fallbacks', () => {
+    const WithDefault = createIdiomaProvider({ defaultLocale: 'en' });
+
+    it('falls back to the base locale: es-MX gets es', () => {
+      render(
+        <WithDefault locale="es-MX">
+          <__Trans __t={{ en: 'Hello', es: 'Hola', __source: 'Hello' }} />
+        </WithDefault>,
+      );
+      expect(screen.getByText('Hola')).toBeDefined();
+    });
+
+    it('falls back to the default locale', () => {
+      render(
+        <WithDefault locale="fr">
+          <__Trans __t={{ en: 'Hello', es: 'Hola', __source: 'Hello!' }} />
+        </WithDefault>,
+      );
+      expect(screen.getByText('Hello')).toBeDefined();
+    });
+
+    it("falls back to the source, never another locale's text (#8)", () => {
+      const { container } = render(
+        <WithDefault locale="en">
+          <__Trans __t={{ ca: 'Torna enrere', __source: 'nav.back' }} />
+        </WithDefault>,
+      );
+      expect(container.textContent).toBe('nav.back');
+    });
+
+    it('falls back to the source when the provider has no default', () => {
+      const { container } = render(
+        <IdiomaProvider locale="fr">
+          <__Trans __t={{ es: 'Hola', __source: 'Hello' }} />
+        </IdiomaProvider>,
+      );
+      expect(container.textContent).toBe('Hello');
+    });
+  });
 });

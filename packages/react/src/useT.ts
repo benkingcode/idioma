@@ -1,3 +1,4 @@
+import { _pickMessage } from '@idioma/core/runtime';
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';
@@ -78,7 +79,7 @@ export function __useT(
     );
   }
 
-  const { locale } = context;
+  const { locale, defaultLocale } = context;
 
   return useCallback(
     (
@@ -92,7 +93,7 @@ export function __useT(
         const localeMessages = translations[id];
         if (!localeMessages) return id;
 
-        const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
+        const msg = _pickMessage(localeMessages, locale, defaultLocale);
         if (msg === undefined) return id;
         if (typeof msg === 'function') return msg(keyValues || {});
         return keyValues ? interpolateValues(msg, keyValues) : msg;
@@ -134,7 +135,7 @@ export function __useT(
           : source;
       }
 
-      const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
+      const msg = _pickMessage(localeMessages, locale, defaultLocale);
       if (msg === undefined) {
         return actualValues && Object.keys(actualValues).length > 0
           ? interpolateValues(source, actualValues)
@@ -149,6 +150,6 @@ export function __useT(
         ? interpolateValues(msg, actualValues)
         : msg;
     },
-    [translations, locale],
+    [translations, locale, defaultLocale],
   ) as UseTFunction;
 }
