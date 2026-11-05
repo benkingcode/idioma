@@ -4,6 +4,7 @@ import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parsePoString, writePoFile } from '../po/parser';
 import {
+  compileIcuToFunctionString,
   compileTranslations,
   createCompileLock,
   type CompileOptions,
@@ -227,7 +228,7 @@ msgstr "{count, plural, one {# item} other {# items}}"
 
     // Verify the generated code structure for plurals
     expect(content).toContain('(args) =>');
-    expect(content).toContain("Intl.PluralRules('en')");
+    expect(content).toContain('Intl.PluralRules("en")');
     expect(content).toContain('pr.select');
     // Check for one/other branches
     expect(content).toContain("'one'");
@@ -289,8 +290,8 @@ msgstr "{gender, select, male {He} female {She} other {They}} liked your post"
 
     // Verify select handling
     expect(content).toContain('(args) =>');
-    expect(content).toContain("sv === 'male'");
-    expect(content).toContain("sv === 'female'");
+    expect(content).toContain('sv === "male"');
+    expect(content).toContain('sv === "female"');
     expect(content).toContain('"He"');
     expect(content).toContain('"She"');
     expect(content).toContain('"They"');
@@ -321,7 +322,7 @@ msgstr "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عن
     const content = await fs.readFile(translationsPath, 'utf-8');
 
     // Should use Intl.PluralRules with Arabic locale
-    expect(content).toContain("Intl.PluralRules('ar')");
+    expect(content).toContain('Intl.PluralRules("ar")');
   });
 
   describe('useSuspense mode', () => {
@@ -556,6 +557,48 @@ msgstr "Hello"
   // Issue #13: a key's analysis used to come from the first catalogue read
   // (directory order), even when its msgstr there was empty, and was then
   // reused to compile every other locale.
+  describe('ICU code generation', () => {
+    const run = (code: string, args: Record<string, unknown>) =>
+      // eslint-disable-next-line no-eval
+      (0, eval)(`(${code})`)(args);
+
+    it('compiles a plural next to a dotted placeholder', () => {
+      const code = compileIcuToFunctionString(
+        '{user.name} has {count, plural, one {# ticket} other {# tickets}}',
+        'en',
+      );
+      expect(run(code, { 'user.name': 'Ana', count: 1 })).toBe(
+        'Ana has 1 ticket',
+      );
+    });
+
+    it('reads values by quoted name, never as code', () => {
+      const code = compileIcuToFunctionString(
+        '{count, plural, other {# for {name}}}',
+        'en',
+      );
+      expect(code).toContain('args["count"]');
+      expect(code).toContain('args["name"]');
+      expect(code).not.toMatch(/args\.[a-z]/);
+    });
+
+    it('does not run a placeholder name as code', () => {
+      // A translation is text from a TMS, an LLM or a contributor: the
+      // compiled module must not execute it
+      const code = compileIcuToFunctionString(
+        "Hi {constructor.constructor('return 42')()}",
+        'en',
+        {
+          hasPlaceholders: true,
+          hasPlural: false,
+          hasSelect: false,
+          variables: [],
+        },
+      );
+      expect(run(code, {})).toBe('Hi ');
+    });
+  });
+
   describe('ICU analysis across locales', () => {
     const header = (locale: string) => `
 msgid ""

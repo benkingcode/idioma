@@ -9,6 +9,63 @@ import {
   type SelectElement,
 } from '@formatjs/icu-messageformat-parser';
 
+/**
+ * Parses an ICU message, accepting dotted argument names.
+ *
+ * `<Trans>{user.name} has {plural(count, ...)}</Trans>` serializes the member
+ * expression as `{user.name}`, and the formatjs parser rejects a `.` in an
+ * argument name (MALFORMED_ARGUMENT), so the plural was never compiled and
+ * rendered as raw ICU. Each dotted name is swapped for a plain token before
+ * parsing and swapped back in the tree, literals included, so a quoted
+ * `'{user.name}'` stays literal text.
+ */
+export function parseIcu(message: string): MessageFormatElement[] {
+  const names: string[] = [];
+  const masked = message.replace(
+    /\{(\s*)([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)(\s*[,}])/g,
+    (_match, before: string, name: string, after: string) => {
+      names.push(name);
+      return `{${before}${tokenFor(names.length - 1)}${after}`;
+    },
+  );
+  const ast = parse(masked);
+  if (names.length > 0) restoreNames(ast, names);
+  return ast;
+}
+
+function tokenFor(index: number): string {
+  return `__idiomaArg${index}__`;
+}
+
+function restoreNames(elements: MessageFormatElement[], names: string[]) {
+  const restore = (text: string) =>
+    text.replace(/__idiomaArg(\d+)__/g, (token, index: string) => {
+      return names[Number(index)] ?? token;
+    });
+  for (const el of elements) {
+    if (el.type === TYPE.literal) {
+      el.value = restore(el.value);
+      continue;
+    }
+    if (
+      el.type === TYPE.argument ||
+      el.type === TYPE.number ||
+      el.type === TYPE.date ||
+      el.type === TYPE.time ||
+      el.type === TYPE.plural ||
+      el.type === TYPE.select
+    ) {
+      el.value = restore(el.value);
+    }
+    if (el.type === TYPE.plural || el.type === TYPE.select) {
+      for (const option of Object.values(el.options)) {
+        restoreNames(option.value, names);
+      }
+    }
+    if (el.type === TYPE.tag) restoreNames(el.children, names);
+  }
+}
+
 export interface IcuAnalysis {
   /** Whether the message contains any placeholders */
   hasPlaceholders: boolean;
@@ -24,7 +81,7 @@ export interface IcuAnalysis {
  * Analyze an ICU message to determine its structure.
  */
 export function analyzeIcuMessage(message: string): IcuAnalysis {
-  const ast = parse(message);
+  const ast = parseIcu(message);
 
   const result: IcuAnalysis = {
     hasPlaceholders: false,
@@ -90,7 +147,7 @@ export function compileIcuToFunction(
   message: string,
   locale: string,
 ): (args: Record<string, unknown>) => string {
-  const ast = parse(message);
+  const ast = parseIcu(message);
 
   // For simple literal-only messages, return a constant function
   const firstElement = ast[0];

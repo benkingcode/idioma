@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import {
-  parse,
   TYPE,
   type LiteralElement,
   type MessageFormatElement,
@@ -9,7 +8,11 @@ import {
   type PluralOrSelectOption,
   type SelectElement,
 } from '@formatjs/icu-messageformat-parser';
-import { analyzeIcuMessage, type IcuAnalysis } from '../icu/compiler.js';
+import {
+  analyzeIcuMessage,
+  parseIcu,
+  type IcuAnalysis,
+} from '../icu/compiler.js';
 import { loadLocaleCatalogs } from '../po/parser.js';
 import type { Catalog, Message } from '../po/types.js';
 import { writeIfChanged } from '../utils/write-if-changed.js';
@@ -311,22 +314,38 @@ export function compileIcuToFunctionString(
   const analysis = cachedAnalysis ?? analyzeIcuMessage(message);
 
   if (!analysis.hasPlural && !analysis.hasSelect) {
-    // Simple string with placeholders - use template literal
-    // Escape backticks and ${} in the message
-    const escaped = message
-      .replace(/\\/g, '\\\\')
-      .replace(/`/g, '\\`')
-      .replace(/\$\{/g, '\\${');
-    // Replace {varName} with ${args.varName}
-    const template = escaped.replace(/\{([^}]+)\}/g, '${args.$1}');
-    return `\`${template}\``;
+    // Simple string with placeholders: a function returning a template
+    // literal, whose placeholders read values by quoted name. A name is text
+    // from a translation, so it must never become code (args.<name>).
+    let template = '';
+    let last = 0;
+    for (const match of message.matchAll(/\{([^}]+)\}/g)) {
+      template += escapeTemplateText(message.slice(last, match.index));
+      template += `\${${argument(match[1]!)} ?? ''}`;
+      last = match.index! + match[0].length;
+    }
+    template += escapeTemplateText(message.slice(last));
+    return `(args) => \`${template}\``;
   }
 
   // Parse the ICU message and generate JavaScript code
-  const ast = parse(message);
+  const ast = parseIcu(message);
   const body = generateCodeForElements(ast, locale);
 
   return `(args) => { ${body} }`;
+}
+
+/** Code that reads a value by name: args["user.name"], never args.<name>. */
+function argument(name: string): string {
+  return `args[${JSON.stringify(name)}]`;
+}
+
+/** Text escaped for the inside of a template literal. */
+function escapeTemplateText(text: string): string {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${');
 }
 
 /**
@@ -347,7 +366,7 @@ function generateCodeForElements(
         break;
 
       case TYPE.argument:
-        parts.push(`String(args.${el.value} ?? '')`);
+        parts.push(`String(${argument(el.value)} ?? '')`);
         break;
 
       case TYPE.plural:
@@ -368,7 +387,7 @@ function generateCodeForElements(
       case TYPE.number:
       case TYPE.date:
       case TYPE.time:
-        parts.push(`String(args.${el.value} ?? '')`);
+        parts.push(`String(${argument(el.value)} ?? '')`);
         break;
     }
   }
@@ -427,7 +446,7 @@ function generatePluralCode(el: PluralElement, locale: string): string {
   }
 
   // Use Intl.PluralRules for category matching
-  code += `const pr = new Intl.PluralRules('${locale}'); `;
+  code += `const pr = new Intl.PluralRules(${JSON.stringify(locale)}); `;
   code += `const cat = pr.select(av); `;
 
   // Generate category matches (skip 'zero' as we handled it above)
@@ -451,7 +470,7 @@ function generatePluralCode(el: PluralElement, locale: string): string {
   if (!hasOtherCase) {
     code += `return ''; `;
   }
-  code += `})(Number(args.${varName}))`;
+  code += `})(Number(${argument(varName)}))`;
 
   return code;
 }
@@ -473,7 +492,7 @@ function generateCodeForOption(
         parts.push(JSON.stringify((el as LiteralElement).value));
         break;
       case TYPE.argument:
-        parts.push(`String(args.${el.value} ?? '')`);
+        parts.push(`String(${argument(el.value)} ?? '')`);
         break;
       case TYPE.pound:
         // # in plural - substitute with the plural value
@@ -488,7 +507,9 @@ function generateCodeForOption(
         parts.push(generateSelectCode(el as SelectElement, locale));
         break;
       default:
-        parts.push(`String(args.${(el as { value: string }).value} ?? '')`);
+        parts.push(
+          `String(${argument((el as { value: string }).value)} ?? '')`,
+        );
         break;
     }
   }
@@ -515,7 +536,7 @@ function generateSelectCode(el: SelectElement, locale: string): string {
     if (key === 'other') continue; // Handle 'other' as fallback
 
     const optionCode = generateCodeForOption(option, locale);
-    code += `if (sv === '${key}') { ${optionCode} } `;
+    code += `if (sv === ${JSON.stringify(key)}) { ${optionCode} } `;
   }
 
   // 'other' is the fallback
@@ -527,7 +548,7 @@ function generateSelectCode(el: SelectElement, locale: string): string {
     // Only add fallback if there's no 'other' case
     code += `return ''; `;
   }
-  code += `})(String(args.${varName} ?? ''))`;
+  code += `})(String(${argument(varName)} ?? ''))`;
 
   return code;
 }

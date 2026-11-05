@@ -185,3 +185,8 @@ msgstr "{count, plural, one {Queda # día} other {Quedan # días}}"
 #, extracted
 msgid "fallback.spanishOnly"
 msgstr "Solo en español"
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "001Mxuru"
+msgstr "{user.name} tiene {count, plural, one {# entrada} other {# entradas}}"

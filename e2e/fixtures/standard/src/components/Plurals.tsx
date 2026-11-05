@@ -4,6 +4,7 @@ import { Trans } from '../idioma';
 
 export function Plurals() {
   const [count, setCount] = useState(0);
+  const user = { name: 'Ana' };
 
   return (
     <div>
@@ -22,6 +23,15 @@ export function Plurals() {
             one: '# message',
             other: '# messages',
           })}
+        </Trans>
+      </p>
+
+      {/* A plural next to a member expression, which serializes as the
+          dotted placeholder {user.name} */}
+      <p data-testid="plural-dotted">
+        <Trans>
+          {user.name} has{' '}
+          {plural(count, { one: '# ticket', other: '# tickets' })}
         </Trans>
       </p>
 

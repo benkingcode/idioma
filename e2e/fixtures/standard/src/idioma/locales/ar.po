@@ -178,9 +178,16 @@ msgstr "مصنوع باستخدام <span>مفتوح المصدر</span> أدو�
 #: src/components/PlainCreateT.tsx
 #, extracted
 msgid "createT.daysLeft"
-msgstr "{count, plural, zero {لم يتبق أي يوم} one {بقي يوم واحد} two {بقي يومان} few {بقيت # أيام} many {بقي # يومًا} other {بقي # يوم}}"
+msgstr ""
+"{count, plural, zero {لم يتبق أي يوم} one {بقي يوم واحد} two {بقي يومان} "
+"few {بقيت # أيام} many {بقي # يومًا} other {بقي # يوم}}"
 
 #: src/components/Fallbacks.tsx
 #, extracted
 msgid "fallback.spanishOnly"
 msgstr ""
+
+#: src/components/Plurals.tsx
+#, extracted
+msgid "001Mxuru"
+msgstr "{user.name} لديه {count, plural, zero {لا تذاكر} one {تذكرة واحدة} two {تذكرتان} few {# تذاكر} many {# تذكرة} other {# تذكرة}}"
