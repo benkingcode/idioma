@@ -33,13 +33,34 @@ describe('_createTFactory', () => {
       expect(result).toBe('Hello world');
     });
 
-    it('uses first available locale as fallback when source not available', () => {
-      const t = _createTFactory('de');
+    it("falls back to the source text, never another locale's (#8)", () => {
+      const t = _createTFactory('de', undefined, { defaultLocale: 'en' });
       const result = t('Hello world', {
         __m: { es: 'Hola mundo', fr: 'Bonjour monde' },
       });
-      // Falls back to first locale in the object
+      expect(result).toBe('Hello world');
+    });
+
+    it('falls back to the base locale: es-MX gets es', () => {
+      const t = _createTFactory('es-MX', undefined, { defaultLocale: 'en' });
+      const result = t('Hello world', {
+        __m: { en: 'Hello, world', es: 'Hola mundo' },
+      });
       expect(result).toBe('Hola mundo');
+    });
+
+    it('falls back to the default locale', () => {
+      const t = _createTFactory('fr', undefined, { defaultLocale: 'en' });
+      const result = t('Hello world', {
+        __m: { en: 'Hello, world', es: 'Hola mundo' },
+      });
+      expect(result).toBe('Hello, world');
+    });
+
+    it('falls back to the id of a key-only call, not another locale (#8)', () => {
+      // The transform writes t({ id }) as t(id, { __m })
+      const t = _createTFactory('en', undefined, { defaultLocale: 'en' });
+      expect(t('nav.back', { __m: { ca: 'Torna enrere' } })).toBe('nav.back');
     });
   });
 
@@ -76,7 +97,7 @@ describe('_createTFactory', () => {
     });
 
     it('calls a compiled plural reached by fallback', () => {
-      const t = _createTFactory('fr');
+      const t = _createTFactory('fr', undefined, { defaultLocale: 'en' });
       const result = t(
         '{count, plural, one {# day} other {# days}}',
         { __m: { en: daysEn, es: days } },

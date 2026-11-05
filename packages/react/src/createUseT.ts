@@ -1,4 +1,4 @@
-import { _warnNotInlined } from '@idioma/core/runtime';
+import { _pickMessage, _warnNotInlined } from '@idioma/core/runtime';
 import { useCallback, useContext } from 'react';
 import { IdiomaContext } from './context';
 import { interpolateValues } from './interpolate';
@@ -208,7 +208,7 @@ export function createUseT<
       );
     }
 
-    const { locale } = ctx;
+    const { locale, defaultLocale } = ctx;
 
     return useCallback(
       (
@@ -260,7 +260,7 @@ export function createUseT<
             : source;
         }
 
-        const msg = localeMessages[locale] ?? Object.values(localeMessages)[0];
+        const msg = _pickMessage(localeMessages, locale, defaultLocale);
         if (msg === undefined) {
           return actualValues && Object.keys(actualValues).length > 0
             ? interpolateValues(source, actualValues)
@@ -275,7 +275,7 @@ export function createUseT<
           ? interpolateValues(msg, actualValues)
           : msg;
       },
-      [locale],
+      [locale, defaultLocale],
     ) as TFunction<C>;
   };
 }

@@ -7,5 +7,6 @@
  * @packageDocumentation
  */
 
-export { _createTFactory } from './createT.js';
+export { _createTFactory, type CreateTOptions } from './createT.js';
+export { _pickMessage } from './message.js';
 export { _warnNotInlined } from './warn.js';

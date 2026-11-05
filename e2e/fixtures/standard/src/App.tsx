@@ -1,6 +1,7 @@
 import { BasicTrans } from './components/BasicTrans';
 import { ComponentTags } from './components/ComponentTags';
 import { EdgeCases } from './components/EdgeCases';
+import { Fallbacks } from './components/Fallbacks';
 import { Interpolation } from './components/Interpolation';
 import { IntrinsicElements } from './components/IntrinsicElements';
 import { PlainCreateT } from './components/PlainCreateT';
@@ -28,6 +29,7 @@ export default function App({ locale, onLocaleChange }: AppProps) {
             >
               <option value="en">English</option>
               <option value="es">Español</option>
+              <option value="es-MX">Español (México)</option>
               <option value="ar">العربية</option>
             </select>
           </label>
@@ -79,6 +81,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="createt-section">
           <h2>createT</h2>
           <PlainCreateT />
+        </section>
+
+        <section data-testid="fallbacks-section">
+          <h2>Locale fallbacks</h2>
+          <Fallbacks />
         </section>
 
         <section data-testid="edge-cases-section">

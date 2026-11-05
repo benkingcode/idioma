@@ -14,6 +14,7 @@ export {
   createUseLocale,
   IdiomaContext,
   type IdiomaContextValue,
+  type IdiomaProviderOptions,
   type IdiomaProviderProps,
 } from './context';
 

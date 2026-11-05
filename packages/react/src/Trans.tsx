@@ -1,3 +1,4 @@
+import { _pickMessage } from '@idioma/core/runtime';
 import { useContext, type ReactNode } from 'react';
 import { IdiomaContext } from './context';
 import { renderMessage, type TransComponent } from './interpolate';
@@ -52,17 +53,12 @@ export function __Trans({
     return children ?? null;
   }
 
-  const { locale } = context;
-  const msg = __t[locale];
-
-  if (msg === undefined) {
-    // Fallback: try to find any available message
-    const fallback = Object.values(__t)[0];
-    if (fallback === undefined) {
-      return null;
-    }
-    return renderMessage(fallback, __a, __c, __cn);
-  }
+  // The locale, its base locale, the default locale, then the source text
+  // (or, for a key-only Trans, the id) that the transform adds as __source.
+  // Never another locale's text (issue #8).
+  const msg =
+    _pickMessage(__t, context.locale, context.defaultLocale) ?? __t.__source;
+  if (msg === undefined) return null;
 
   return renderMessage(msg, __a, __c, __cn);
 }

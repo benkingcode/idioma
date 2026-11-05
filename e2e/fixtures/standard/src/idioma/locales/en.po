@@ -179,3 +179,8 @@ msgstr "Built with <span>open source</span> tools"
 #, extracted
 msgid "createT.daysLeft"
 msgstr "{count, plural, one {# day left} other {# days left}}"
+
+#: src/components/Fallbacks.tsx
+#, extracted
+msgid "fallback.spanishOnly"
+msgstr ""

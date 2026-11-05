@@ -257,8 +257,60 @@ describe('createUseT', () => {
         </IdiomaProvider>,
       );
 
-      // Falls back to first available (en)
+      // No default locale on this provider: the source text, not English
       expect(screen.getByTestId('result').textContent).toBe('Hello');
+    });
+
+    it('falls back to the base locale, then the default locale', () => {
+      const WithDefault = createIdiomaProvider({ defaultLocale: 'en' });
+      function TestComponent() {
+        const t = useT();
+        const m = { __m: { en: 'Hi', es: 'Hola' } } as unknown as Record<
+          string,
+          unknown
+        >;
+        return (
+          <>
+            <div data-testid="regional">{t('Hello', m)}</div>
+          </>
+        );
+      }
+
+      const { rerender } = render(
+        <WithDefault locale="es-MX">
+          <TestComponent />
+        </WithDefault>,
+      );
+      expect(screen.getByTestId('regional').textContent).toBe('Hola');
+
+      rerender(
+        <WithDefault locale="fr">
+          <TestComponent />
+        </WithDefault>,
+      );
+      expect(screen.getByTestId('regional').textContent).toBe('Hi');
+    });
+
+    it("renders the id, never another locale's text (#8)", () => {
+      const WithDefault = createIdiomaProvider({ defaultLocale: 'en' });
+      function TestComponent() {
+        const t = useT();
+        // t({ id: 'nav.back' }) as the transform writes it
+        return (
+          <div data-testid="result">
+            {t('nav.back', {
+              __m: { ca: 'Torna enrere' },
+            } as unknown as Record<string, unknown>)}
+          </div>
+        );
+      }
+
+      render(
+        <WithDefault locale="en">
+          <TestComponent />
+        </WithDefault>,
+      );
+      expect(screen.getByTestId('result').textContent).toBe('nav.back');
     });
   });
 

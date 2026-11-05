@@ -3,6 +3,8 @@ import { _createTFactory } from '@idioma/core/runtime';
 import type { Locale, TranslationKey, MessageValues } from './.generated/types';
 
 export const createT = (locale: Locale) =>
-  _createTFactory<TranslationKey, MessageValues>(locale);
+  _createTFactory<TranslationKey, MessageValues>(locale, undefined, {
+    defaultLocale: 'en',
+  });
 
 export type { Locale, TranslationKey, MessageValues };

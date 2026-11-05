@@ -9,6 +9,8 @@ import {
 
 export interface IdiomaContextValue {
   locale: string;
+  /** The source locale, which a missing translation falls back to */
+  defaultLocale?: string;
 }
 
 export const IdiomaContext = createContext<IdiomaContextValue | null>(null);
@@ -16,6 +18,15 @@ export const IdiomaContext = createContext<IdiomaContextValue | null>(null);
 export interface IdiomaProviderProps {
   children: ReactNode;
   locale: string;
+}
+
+export interface IdiomaProviderOptions {
+  /**
+   * The source locale. A message with no translation for the current
+   * locale (or its base locale) renders this locale's text, then the source
+   * text or id. The generated idioma/index.ts passes it.
+   */
+  defaultLocale?: string;
 }
 
 /**
@@ -32,9 +43,10 @@ export interface IdiomaProviderProps {
  *   )
  * }
  */
-export function createIdiomaProvider() {
+export function createIdiomaProvider(options: IdiomaProviderOptions = {}) {
+  const { defaultLocale } = options;
   return function IdiomaProvider({ children, locale }: IdiomaProviderProps) {
-    const value = useMemo(() => ({ locale }), [locale]);
+    const value = useMemo(() => ({ locale, defaultLocale }), [locale]);
 
     // Sync locale for plural() function fallback
     // Sync immediately for SSR (before effects run)

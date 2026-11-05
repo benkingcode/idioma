@@ -180,3 +180,8 @@ msgstr "Construido con <span>código abierto</span> herramientas"
 #, extracted
 msgid "createT.daysLeft"
 msgstr "{count, plural, one {Queda # día} other {Quedan # días}}"
+
+#: src/components/Fallbacks.tsx
+#, extracted
+msgid "fallback.spanishOnly"
+msgstr "Solo en español"
