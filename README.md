@@ -668,7 +668,7 @@ idioma compile
 
 AI-powered translation with any [AI SDK](https://ai-sdk.dev/providers) model, set as `ai.model` in `idioma.config.ts` (see [Configuration](#configuration)). The provider reads its API key from the environment, for example `ANTHROPIC_API_KEY`.
 
-Idioma uses AI SDK 6, so install a version 3 provider, such as `pnpm add -D @ai-sdk/anthropic@3`. Version 4 providers are built for AI SDK 7, and AI SDK 6 rejects their models.
+The AI SDK is an optional peer dependency, so the rest of Idioma doesn't install it. Install AI SDK 6 with a version 3 provider, such as `pnpm add -D ai@6 @ai-sdk/anthropic@3`. Version 4 providers are built for AI SDK 7, and AI SDK 6 rejects their models.
 
 ```bash
 idioma translate                    # Translate missing messages
@@ -752,7 +752,7 @@ export default defineConfig({
   po: { foldLength: 0 },
 
   // AI translation config (uses Vercel AI SDK)
-  // Install a provider built for AI SDK 6: pnpm add -D @ai-sdk/anthropic@3
+  // Install the AI SDK and a provider for it: pnpm add -D ai@6 @ai-sdk/anthropic@3
   ai: {
     model: anthropic('claude-sonnet-5-5'), // import { anthropic } from '@ai-sdk/anthropic'
     // See https://ai-sdk.dev/providers for other providers (openai, google, etc.)
