@@ -919,23 +919,17 @@ const locale = useLocale(); // 'en'
 
 ## How It Works
 
-**Development:**
+In development and in the production build alike, the Vite plugin (or the Metro transformer) compiles each module before React sees it:
 
 ```
 <Trans>Hello {name}</Trans>
-    ↓ runs as-is
-React context provides locale, renders translated text
+    ↓
+<__Trans __t={{ en: "Hello {name}", es: "Hola {name}", __source: "Hello {name}" }} __a={{ name }} />
 ```
 
-**Production build:**
+`__t` holds this one message in every locale, and `__a` its values. At runtime, `__Trans` picks the active locale's text and fills in the values. A `t()` call is compiled the same way, with the translations as its second argument.
 
-```
-<Trans>Hello {name}</Trans>
-    ↓ Idioma transforms to
-<__Trans __t={__$idioma.a7Fk29} __a={{name}} />
-```
-
-The transform, built on the Oxc parser, extracts messages during build, generates content-addressed keys, and transforms components to use the compiled translation object.
+The transform is built on the Oxc parser. It generates content-addressed keys for messages without an id and inlines each message's compiled translations where it is used. In development, saving a file also extracts its messages into the PO files and recompiles them.
 
 ## Comparison
 
