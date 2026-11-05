@@ -107,7 +107,7 @@ The E2E fixtures and examples import from the compiled `dist/` directories, not 
 
 ### Releasing
 
-`scripts/version.sh <version>` bumps `@idioma/core`, `@idioma/react` and `@idioma/ai` together, commits and tags. Pushing the tag runs the Publish workflow, which publishes each package through `scripts/publish-if-new.sh`: it skips a version npm already has, so "Re-run failed jobs" after a failure publishes only what's missing. `@idioma/ai` publishes last. npm can't attach a trusted publisher (OIDC) to a package before it exists, so `@idioma/ai`'s first version is published by hand, and its trusted publisher is added on npmjs.com after that.
+`scripts/version.sh <version>` bumps `@idioma/core`, `@idioma/react` and `@idioma/ai` together, commits and tags. Pushing the tag runs the Publish workflow, which publishes each package through `scripts/publish-if-new.sh`: it skips a version npm already has, so "Re-run failed jobs" after a failure publishes only what's missing. `@idioma/ai` publishes last. npm can't attach a trusted publisher (OIDC) to a package before it exists, so `@idioma/ai` is created by a hand publish first, and its trusted publisher is added on npmjs.com after that. Publish by hand with `pnpm publish`, never `npm publish`, which leaves `workspace:*` in the published manifest. Make the hand publish a placeholder prerelease (`0.8.0-next.0`, `--tag next`), not the real version: a new trusted publisher expires unless it publishes within 2 days, and `publish-if-new.sh` would skip a version that is already on npm.
 
 ## Architecture
 
