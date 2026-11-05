@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
 import MagicString from 'magic-string';
 import type { Plugin, Rolldown } from 'vite';
 import { loadConfig } from '../cli/config.js';
@@ -130,13 +130,18 @@ export default function idiomaVitePlugin(
 
   async function compile() {
     try {
+      // Under Vite's root, as the transform and the extractor read them: a
+      // relative path resolved against the working directory, so a build
+      // run from elsewhere (vite build apps/web) found no catalogue.
       // Ensure .gitignore exists (skip creating locales/ if custom path provided)
-      await ensureGitignore(idiomaDir, { skipLocalesDir: hasCustomLocalesDir });
+      await ensureGitignore(resolve(projectRoot, idiomaDir), {
+        skipLocalesDir: hasCustomLocalesDir,
+      });
 
       // Use compile lock to prevent concurrent compilations from racing
       await compileLock.compile({
-        localeDir,
-        outputDir,
+        localeDir: resolve(projectRoot, localeDir),
+        outputDir: resolve(projectRoot, outputDir),
         defaultLocale,
         useSuspense,
         locales,
