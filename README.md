@@ -871,6 +871,14 @@ import { IdiomaProvider } from '@/idioma';
 | Locale switch        | Instant                | Suspends until loaded  |
 | React version        | 18+                    | 19+ (uses `use` hook)  |
 
+**Current limitations:**
+
+- A message with no translation for the active locale renders as empty text. The per-locale chunks don't fall back to the default locale.
+- A message missing from the catalogue renders its key, not its source text.
+- `createT` (`idioma/plain`) returns keys instead of text, because it has no chunk to load.
+- Each file's translations load when one of its components first renders, so nested components from different files load one after another.
+- Suspense mode has its own provider and context, so its components can't be mixed with the default mode's.
+
 ## API Reference
 
 ### Trans Component
