@@ -34,7 +34,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 
 - **Write natural JSX**: `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
 - **Flexible key strategy**: Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
-- **AI-powered translation**: Built-in translation with Claude or GPT, with automatic context extraction
+- **AI-powered translation**: Built-in translation with any AI SDK model (Claude, GPT, Gemini and others), with translator context read from your code
 - **Type-safe**: Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
 - **ICU MessageFormat**: Full support for plurals, selects, ordinals, and complex formatting
 
@@ -624,7 +624,9 @@ idioma compile
 
 ### translate
 
-AI-powered translation (requires `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`):
+AI-powered translation with any [AI SDK](https://ai-sdk.dev/providers) model, set as `ai.model` in `idioma.config.ts` (see [Configuration](#configuration)). The provider reads its API key from the environment, for example `ANTHROPIC_API_KEY`.
+
+Idioma uses AI SDK 6, so install a version 3 provider, such as `pnpm add -D @ai-sdk/anthropic@3`. Version 4 providers are built for AI SDK 7, and AI SDK 6 rejects their models.
 
 ```bash
 idioma translate                    # Translate missing messages
@@ -644,14 +646,14 @@ idioma translate --no-auto-context  # Skip automatic context generation
 
 ```po
 #. [AI Context]: Button label shown when user confirms their order
-#: src/components/Checkout.tsx:42
-msgid "Confirm"
+#: src/components/Checkout.tsx
+msgid "checkout.confirm"
 msgstr "Confirmar"
 ```
 
-**Cost and performance:** Translation uses batched API calls. A typical 1,000-message project costs roughly $0.50–2.00 USD depending on message complexity and provider. Context generation is a one-time cost per message; subsequent translations reuse existing context.
+**Cost and performance:** Translation uses batched API calls. A typical 1,000-message project costs roughly $0.50 to $2.00, depending on message complexity and provider. Context generation is a one-time cost per message; subsequent translations reuse existing context.
 
-**Dry run mode:** The `--dry-run` flag runs the translation pipeline without making API calls or saving files. Combined with `--verbose`, you can inspect the exact prompts that would be sent to the AI—useful for debugging your guidelines or understanding what context each message receives:
+**Dry run mode:** The `--dry-run` flag runs the translation pipeline without making API calls or saving files. Combined with `--verbose`, you can inspect the exact prompts that would be sent to the AI. That helps when you debug your guidelines or want to see what context each message receives:
 
 ```bash
 idioma translate --dry-run --verbose
@@ -708,9 +710,9 @@ export default defineConfig({
   po: { foldLength: 0 },
 
   // AI translation config (uses Vercel AI SDK)
-  // Install your preferred provider: pnpm add @ai-sdk/anthropic
+  // Install a provider built for AI SDK 6: pnpm add -D @ai-sdk/anthropic@3
   ai: {
-    model: anthropic('claude-sonnet-4-5'), // import { anthropic } from '@ai-sdk/anthropic'
+    model: anthropic('claude-sonnet-5-5'), // import { anthropic } from '@ai-sdk/anthropic'
     // See https://ai-sdk.dev/providers for other providers (openai, google, etc.)
 
     // Project-specific guidelines for AI translation
