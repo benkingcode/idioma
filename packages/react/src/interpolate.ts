@@ -311,9 +311,14 @@ export function renderMessage(
   components?: TransComponent[],
   componentNames?: string[],
 ): ReactNode {
-  // Compiled plural/ICU: msg is a function
+  // A compiled plural or select returns a template: render it as a plain
+  // message, so its placeholders are filled in and its tags become
+  // components (values are filled in after tags are read, so a value never
+  // becomes a component)
   if (typeof msg === 'function') {
-    return msg(args || {});
+    const template = msg(args || {});
+    if (typeof template !== 'string') return template;
+    return renderMessage(template, args, components, componentNames);
   }
 
   // String message - may need interpolation

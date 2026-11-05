@@ -268,7 +268,11 @@ export function createUseT<
         }
 
         if (typeof msg === 'function') {
-          return msg(actualValues || {});
+          // A compiled plural or select returns a template to fill in
+          const template = msg(actualValues || {});
+          return actualValues && Object.keys(actualValues).length > 0
+            ? interpolateValues(template, actualValues)
+            : template;
         }
 
         return actualValues && Object.keys(actualValues).length > 0

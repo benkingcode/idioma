@@ -327,18 +327,9 @@ export function compileIcuToFunctionString(
   const analysis = cachedAnalysis ?? analyzeIcuMessage(message);
 
   if (!analysis.hasPlural && !analysis.hasSelect) {
-    // Simple string with placeholders: a function returning a template
-    // literal, whose placeholders read values by quoted name. A name is text
-    // from a translation, so it must never become code (args.<name>).
-    let template = '';
-    let last = 0;
-    for (const match of message.matchAll(/\{([^}]+)\}/g)) {
-      template += escapeTemplateText(message.slice(last, match.index));
-      template += `\${${argument(match[1]!)} ?? ''}`;
-      last = match.index! + match[0].length;
-    }
-    template += escapeTemplateText(message.slice(last));
-    return `(args) => \`${template}\``;
+    // No plural or select: the message is its own template, and its
+    // placeholders are filled in at runtime. Never code made from a name.
+    return `(args) => ${JSON.stringify(message)}`;
   }
 
   // Parse the ICU message and generate JavaScript code
@@ -358,17 +349,11 @@ function argument(name: string): string {
   return `args[${JSON.stringify(name)}]`;
 }
 
-/** Text escaped for the inside of a template literal. */
-function escapeTemplateText(text: string): string {
-  return text
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\$\{/g, '\\${');
-}
-
 /**
  * Generate JavaScript code for a list of message format elements.
- * Returns code that evaluates to a string.
+ * Returns code that evaluates to a template: the branch a plural or select
+ * picks, with # filled in and every {placeholder} and <Tag> left for the
+ * runtime, which renders it as it renders a plain message.
  */
 function generateCodeForElements(
   elements: MessageFormatElement[],
@@ -384,7 +369,7 @@ function generateCodeForElements(
         break;
 
       case TYPE.argument:
-        parts.push(`String(${argument(el.value)} ?? '')`);
+        parts.push(JSON.stringify(`{${el.value}}`));
         break;
 
       case TYPE.plural:
@@ -405,7 +390,7 @@ function generateCodeForElements(
       case TYPE.number:
       case TYPE.date:
       case TYPE.time:
-        parts.push(`String(${argument(el.value)} ?? '')`);
+        parts.push(JSON.stringify(`{${el.value}}`));
         break;
     }
   }
@@ -510,7 +495,7 @@ function generateCodeForOption(
         parts.push(JSON.stringify((el as LiteralElement).value));
         break;
       case TYPE.argument:
-        parts.push(`String(${argument(el.value)} ?? '')`);
+        parts.push(JSON.stringify(`{${el.value}}`));
         break;
       case TYPE.pound:
         // # in plural - substitute with the plural value
@@ -525,9 +510,7 @@ function generateCodeForOption(
         parts.push(generateSelectCode(el as SelectElement, locale));
         break;
       default:
-        parts.push(
-          `String(${argument((el as { value: string }).value)} ?? '')`,
-        );
+        parts.push(JSON.stringify(`{${(el as { value: string }).value}}`));
         break;
     }
   }

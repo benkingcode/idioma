@@ -190,3 +190,8 @@ msgstr "Solo en español"
 #, extracted
 msgid "001Mxuru"
 msgstr "{user.name} tiene {count, plural, one {# entrada} other {# entradas}}"
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "0035HFOB"
+msgstr "{cartCount, plural, one {Tienes # artículo. Mira <Link>tu carrito</Link>} other {Tienes # artículos. Mira <Link>tu carrito</Link>}}"

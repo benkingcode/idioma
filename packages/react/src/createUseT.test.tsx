@@ -291,6 +291,32 @@ describe('createUseT', () => {
       expect(screen.getByTestId('regional').textContent).toBe('Hi');
     });
 
+    it('fills the placeholders a compiled plural leaves in its template', () => {
+      function TestComponent() {
+        const t = useT();
+        return (
+          <div data-testid="result">
+            {t(
+              '{name} has {count, plural, other {# tickets}}',
+              {
+                __m: { en: () => '{name} has 2 tickets' },
+              } as unknown as Record<string, unknown>,
+              { name: 'Ana', count: 2 } as never,
+            )}
+          </div>
+        );
+      }
+
+      render(
+        <IdiomaProvider locale="en">
+          <TestComponent />
+        </IdiomaProvider>,
+      );
+      expect(screen.getByTestId('result').textContent).toBe(
+        'Ana has 2 tickets',
+      );
+    });
+
     it("renders the id, never another locale's text (#8)", () => {
       const WithDefault = createIdiomaProvider({ defaultLocale: 'en' });
       function TestComponent() {

@@ -558,6 +558,9 @@ msgstr "Hello"
   // (directory order), even when its msgstr there was empty, and was then
   // reused to compile every other locale.
   describe('ICU code generation', () => {
+    // A compiled plural or select resolves the ICU structure and returns a
+    // template: its placeholders and tags are left for the runtime, which
+    // renders them as it renders a plain message
     const run = (code: string, args: Record<string, unknown>) =>
       // eslint-disable-next-line no-eval
       (0, eval)(`(${code})`)(args);
@@ -568,34 +571,56 @@ msgstr "Hello"
         'en',
       );
       expect(run(code, { 'user.name': 'Ana', count: 1 })).toBe(
-        'Ana has 1 ticket',
+        '{user.name} has 1 ticket',
       );
     });
 
-    it('reads values by quoted name, never as code', () => {
+    it('reads the plural value by quoted name, never as code', () => {
       const code = compileIcuToFunctionString(
         '{count, plural, other {# for {name}}}',
         'en',
       );
       expect(code).toContain('args["count"]');
-      expect(code).toContain('args["name"]');
       expect(code).not.toMatch(/args\.[a-z]/);
+    });
+
+    it('leaves an argument as a placeholder for the runtime', () => {
+      const code = compileIcuToFunctionString(
+        '{count, plural, other {# for {name}}}',
+        'en',
+      );
+      expect(run(code, { count: 2, name: 'Ana' })).toBe('2 for {name}');
+    });
+
+    it('keeps component tags around a plural', () => {
+      const code = compileIcuToFunctionString(
+        'You have {count, plural, one {# item} other {# items}}. See <Link>cart</Link>',
+        'en',
+      );
+      expect(run(code, { count: 2 })).toBe(
+        'You have 2 items. See <Link>cart</Link>',
+      );
+    });
+
+    it('keeps component tags inside a plural branch', () => {
+      const code = compileIcuToFunctionString(
+        '{count, plural, one {<b>#</b> item} other {<b>#</b> items}}',
+        'en',
+      );
+      expect(run(code, { count: 2 })).toBe('<b>2</b> items');
     });
 
     it('does not run a placeholder name as code', () => {
       // A translation is text from a TMS, an LLM or a contributor: the
       // compiled module must not execute it
-      const code = compileIcuToFunctionString(
-        "Hi {constructor.constructor('return 42')()}",
-        'en',
-        {
-          hasPlaceholders: true,
-          hasPlural: false,
-          hasSelect: false,
-          variables: [],
-        },
-      );
-      expect(run(code, {})).toBe('Hi ');
+      const message = "Hi {constructor.constructor('return 42')()}";
+      const code = compileIcuToFunctionString(message, 'en', {
+        hasPlaceholders: true,
+        hasPlural: false,
+        hasSelect: false,
+        variables: [],
+      });
+      expect(run(code, {})).toBe(message);
     });
   });
 
