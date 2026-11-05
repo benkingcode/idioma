@@ -1,6 +1,5 @@
 import { createRequire } from 'node:module';
 import { defineCommand, runMain } from 'citty';
-import { config as loadDotenv } from 'dotenv';
 import { checkCommand } from './commands/check.js';
 import { compileCommand } from './commands/compile.js';
 import { debugCommand } from './commands/debug.js';
@@ -13,8 +12,15 @@ import { setNonInteractive } from './ui/index.js';
 const require = createRequire(import.meta.url);
 const { version } = require('../../package.json') as { version: string };
 
-// Load .env file from current working directory
-loadDotenv({ quiet: true });
+// Load .env from the working directory, when there is one, with Node's own
+// loader. The CLI imported dotenv, a devDependency, so a clean install
+// crashed with "Cannot find package 'dotenv'". Values already set in the
+// environment are kept, as dotenv kept them.
+try {
+  process.loadEnvFile();
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+}
 
 const main = defineCommand({
   meta: {
