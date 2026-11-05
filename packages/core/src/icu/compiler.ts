@@ -32,7 +32,7 @@ export function parseIcu(message: string): MessageFormatElement[] {
   // Tags stay literal text, so a compiled plural keeps <Link>...</Link> in
   // the template it returns, and the analyzer sees the arguments inside
   // them. The runtime turns tags into components, as for a plain message.
-  const ast = parse(masked, { ignoreTag: true });
+  const ast = parse(masked, { ignoreTag: true, shouldParseSkeletons: true });
   if (names.length > 0) restoreNames(ast, names);
   return ast;
 }
@@ -79,6 +79,10 @@ export interface IcuAnalysis {
   hasSelect: boolean;
   /** List of variable names used in the message */
   variables: string[];
+  /** Whether the message has a number, date or time argument to format */
+  hasFormat: boolean;
+  /** The arguments formatted as a date or time, which take a Date */
+  dateVariables: string[];
 }
 
 /**
@@ -92,9 +96,12 @@ export function analyzeIcuMessage(message: string): IcuAnalysis {
     hasPlural: false,
     hasSelect: false,
     variables: [],
+    hasFormat: false,
+    dateVariables: [],
   };
 
   const variableSet = new Set<string>();
+  const dateSet = new Set<string>();
 
   function visitElements(elements: MessageFormatElement[]) {
     for (const el of elements) {
@@ -125,10 +132,17 @@ export function analyzeIcuMessage(message: string): IcuAnalysis {
           break;
 
         case TYPE.number:
+          result.hasPlaceholders = true;
+          result.hasFormat = true;
+          variableSet.add(el.value);
+          break;
+
         case TYPE.date:
         case TYPE.time:
           result.hasPlaceholders = true;
+          result.hasFormat = true;
           variableSet.add(el.value);
+          dateSet.add(el.value);
           break;
       }
     }
@@ -136,6 +150,7 @@ export function analyzeIcuMessage(message: string): IcuAnalysis {
 
   visitElements(ast);
   result.variables = Array.from(variableSet);
+  result.dateVariables = Array.from(dateSet);
 
   return result;
 }

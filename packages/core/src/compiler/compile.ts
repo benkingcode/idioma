@@ -2,11 +2,14 @@ import { promises as fs } from 'fs';
 import { basename, join } from 'path';
 import {
   TYPE,
+  type DateElement,
   type LiteralElement,
   type MessageFormatElement,
+  type NumberElement,
   type PluralElement,
   type PluralOrSelectOption,
   type SelectElement,
+  type TimeElement,
 } from '@formatjs/icu-messageformat-parser';
 import {
   analyzeIcuMessage,
@@ -82,6 +85,8 @@ export interface CompiledMessage {
   isIcu: boolean;
   /** Variable names used in the message */
   variables: string[];
+  /** The variables formatted as a date or time */
+  dateVariables?: string[];
   /** Number of component tags (<0>...</0>, <1>...</1>, etc.) */
   componentCount: number;
   /** Optional namespace */
@@ -252,6 +257,7 @@ export async function compileTranslations(
         if (translationText && !typedKeys.has(compositeKey)) {
           typedKeys.add(compositeKey);
           compiled.variables = analysis?.variables ?? [];
+          compiled.dateVariables = analysis?.dateVariables ?? [];
           compiled.componentCount = countComponentTags(translationText);
         }
 
@@ -266,14 +272,27 @@ export async function compileTranslations(
         const hasIcu =
           analysis?.hasPlural ||
           analysis?.hasSelect ||
+          analysis?.hasFormat ||
           message.flags?.includes('icu-format');
 
         if (hasIcu) {
-          compiled.translations[locale] = compileIcuToFunctionString(
-            translationText,
-            locale,
-            analysis,
-          );
+          try {
+            compiled.translations[locale] = compileIcuToFunctionString(
+              translationText,
+              locale,
+              analysis,
+            );
+          } catch (error) {
+            const file = namespace
+              ? `${locale}/${namespace}.po`
+              : `${locale}.po`;
+            const reason =
+              error instanceof Error ? error.message : String(error);
+            throw new Error(
+              `[idioma] ${file}: ${JSON.stringify(key)} cannot be compiled (${reason}): ${translationText}`,
+              { cause: error },
+            );
+          }
           compiled.isIcu = true;
         } else {
           compiled.translations[locale] = translationText;
@@ -326,8 +345,8 @@ export function compileIcuToFunctionString(
 ): string {
   const analysis = cachedAnalysis ?? analyzeIcuMessage(message);
 
-  if (!analysis.hasPlural && !analysis.hasSelect) {
-    // No plural or select: the message is its own template, and its
+  if (!analysis.hasPlural && !analysis.hasSelect && !analysis.hasFormat) {
+    // No plural, select or format: the message is its own template, and its
     // placeholders are filled in at runtime. Never code made from a name.
     return `(args) => ${JSON.stringify(message)}`;
   }
@@ -341,7 +360,111 @@ export function compileIcuToFunctionString(
 
 /** Whether a message has a plural, select or selectordinal argument. */
 function looksLikePluralOrSelect(message: string): boolean {
-  return /\{\s*[^{},]+,\s*(?:plural|select|selectordinal)\s*,/.test(message);
+  return /\{\s*[^{},]+,\s*(?:plural|select|selectordinal|number|date|time)\s*[,}]/.test(
+    message,
+  );
+}
+
+/**
+ * The Intl options for ICU's named styles, as FormatJS's intl-messageformat
+ * defines them. A skeleton (::currency/EUR) gives its own options instead.
+ */
+const NUMBER_STYLES: Record<string, Intl.NumberFormatOptions> = {
+  integer: { maximumFractionDigits: 0 },
+  percent: { style: 'percent' },
+};
+const DATE_STYLES: Record<string, Intl.DateTimeFormatOptions> = {
+  short: { month: 'numeric', day: 'numeric', year: '2-digit' },
+  medium: { month: 'short', day: 'numeric', year: 'numeric' },
+  long: { month: 'long', day: 'numeric', year: 'numeric' },
+  full: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
+};
+const TIME_STYLES: Record<string, Intl.DateTimeFormatOptions> = {
+  short: { hour: 'numeric', minute: 'numeric' },
+  medium: { hour: 'numeric', minute: 'numeric', second: 'numeric' },
+  long: {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    timeZoneName: 'short',
+  },
+  full: {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    timeZoneName: 'short',
+  },
+};
+
+type FormatElement = NumberElement | DateElement | TimeElement;
+
+/**
+ * The Intl options for a number, date or time argument. A style or skeleton
+ * Intl cannot format (a bare `currency` has no currency code) throws here,
+ * so it fails the compile instead of the page.
+ */
+function formatOptions(
+  el: FormatElement,
+  locale: string,
+): Intl.NumberFormatOptions | Intl.DateTimeFormatOptions {
+  const kind =
+    el.type === TYPE.number
+      ? 'number'
+      : el.type === TYPE.date
+        ? 'date'
+        : 'time';
+  const style = el.style;
+  let options: Intl.NumberFormatOptions | Intl.DateTimeFormatOptions;
+  if (style == null) {
+    options = {};
+  } else if (typeof style === 'string') {
+    const table =
+      kind === 'number'
+        ? NUMBER_STYLES
+        : kind === 'date'
+          ? DATE_STYLES
+          : TIME_STYLES;
+    const named = table[style];
+    if (!named) {
+      throw new Error(
+        `unsupported ${kind} style "${style}": use one of ${Object.keys(table).join(', ')}, or a skeleton such as ${
+          kind === 'number' ? '::currency/EUR' : '::yMMMd'
+        }`,
+      );
+    }
+    options = named;
+  } else {
+    options = style.parsedOptions as
+      | Intl.NumberFormatOptions
+      | Intl.DateTimeFormatOptions;
+  }
+  if (kind === 'number') {
+    new Intl.NumberFormat(locale, options as Intl.NumberFormatOptions);
+  } else {
+    new Intl.DateTimeFormat(locale, options as Intl.DateTimeFormatOptions);
+  }
+  return options;
+}
+
+/**
+ * Code that formats a number, date or time argument with Intl, with the
+ * options worked out at build time. A missing value stays a placeholder,
+ * as it does in a plain message.
+ */
+function formatCode(el: FormatElement, locale: string): string {
+  const options = JSON.stringify(formatOptions(el, locale));
+  const value = argument(el.value);
+  const loc = JSON.stringify(locale);
+  const formatted =
+    el.type === TYPE.number
+      ? `new Intl.NumberFormat(${loc}, ${options}).format(Number(${value}))`
+      : `new Intl.DateTimeFormat(${loc}, ${options}).format(${value} instanceof Date ? ${value} : new Date(${value}))`;
+  return `(${value} === undefined ? ${JSON.stringify(`{${el.value}}`)} : ${formatted})`;
+}
+
+/** Code that formats a plural's # as a number in the locale. */
+function formatPoundCode(valueExpr: string, locale: string): string {
+  return `new Intl.NumberFormat(${JSON.stringify(locale)}).format(${valueExpr})`;
 }
 
 /** Code that reads a value by name: args["user.name"], never args.<name>. */
@@ -381,16 +504,16 @@ function generateCodeForElements(
         break;
 
       case TYPE.pound:
-        // # in plural - use the plural value expression
+        // # in plural: the plural value, formatted as a number
         if (pluralValueExpr) {
-          parts.push(`String(${pluralValueExpr})`);
+          parts.push(formatPoundCode(pluralValueExpr, locale));
         }
         break;
 
       case TYPE.number:
       case TYPE.date:
       case TYPE.time:
-        parts.push(JSON.stringify(`{${el.value}}`));
+        parts.push(formatCode(el, locale));
         break;
     }
   }
@@ -498,10 +621,15 @@ function generateCodeForOption(
         parts.push(JSON.stringify(`{${el.value}}`));
         break;
       case TYPE.pound:
-        // # in plural - substitute with the plural value
+        // # in plural: the plural value, formatted as a number
         if (valueExpr) {
-          parts.push(`String(${valueExpr})`);
+          parts.push(formatPoundCode(valueExpr, locale));
         }
+        break;
+      case TYPE.number:
+      case TYPE.date:
+      case TYPE.time:
+        parts.push(formatCode(el, locale));
         break;
       case TYPE.plural:
         parts.push(generatePluralCode(el as PluralElement, locale));
@@ -645,7 +773,11 @@ async function generateTypesTs(
   for (const [key, msg] of messages) {
     if (msg.variables.length > 0) {
       const entries = msg.variables
-        .map((v) => `${quoteIfNeeded(v)}: string | number`)
+        .map((v) =>
+          msg.dateVariables?.includes(v)
+            ? `${quoteIfNeeded(v)}: Date | string | number`
+            : `${quoteIfNeeded(v)}: string | number`,
+        )
         .join('; ');
       content += `  ${JSON.stringify(key)}: { ${entries} };\n`;
     } else {

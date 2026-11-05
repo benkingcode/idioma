@@ -2,6 +2,7 @@ import { BasicTrans } from './components/BasicTrans';
 import { ComponentTags } from './components/ComponentTags';
 import { EdgeCases } from './components/EdgeCases';
 import { Fallbacks } from './components/Fallbacks';
+import { Formats } from './components/Formats';
 import { Interpolation } from './components/Interpolation';
 import { IntrinsicElements } from './components/IntrinsicElements';
 import { LegacyTrans } from './components/LegacyTrans';
@@ -82,6 +83,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="createt-section">
           <h2>createT</h2>
           <PlainCreateT />
+        </section>
+
+        <section data-testid="formats-section">
+          <h2>Number and date formats</h2>
+          <Formats />
         </section>
 
         <section data-testid="fallbacks-section">

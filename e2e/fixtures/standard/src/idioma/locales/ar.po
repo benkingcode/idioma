@@ -197,4 +197,21 @@ msgstr ""
 #: src/components/ComponentTags.tsx
 #, extracted
 msgid "0035HFOB"
-msgstr "لديك {cartCount, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}. اطلع على <Link>سلتك</Link>"
+msgstr ""
+"لديك {cartCount, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few "
+"{# عناصر} many {# عنصرًا} other {# عنصر}}. اطلع على <Link>سلتك</Link>"
+
+#: src/components/Formats.tsx
+#, extracted
+msgid "formats.total"
+msgstr "المجموع: {price, number, ::currency/EUR}"
+
+#: src/components/Formats.tsx
+#, extracted
+msgid "formats.when"
+msgstr "في {day, date, long}"
+
+#: src/components/Formats.tsx
+#, extracted
+msgid "formats.tickets"
+msgstr "{count, plural, zero {لا تذاكر} one {تذكرة واحدة} two {تذكرتان} few {# تذاكر} many {# تذكرة} other {# تذكرة}}"
