@@ -700,14 +700,14 @@ idioma translate --dry-run --verbose
 
 ### check
 
-Validate translation completeness:
+Report how complete each locale's translations are:
 
 ```bash
 idioma check              # Check all locales
 idioma check --locale es  # Check specific locale
 ```
 
-Exits with code 1 if translations are incomplete.
+For each `{locale}.po` in the locales folder, it prints how many messages are translated, and how many are missing (an empty `msgstr`) or marked `fuzzy`. It exits with code 1 if any locale has a missing or fuzzy message, so it can gate CI. An id-only key with no default-locale text counts as missing in the default locale too. Namespace folders (`locales/{locale}/*.po`) are not checked.
 
 ### stats
 
