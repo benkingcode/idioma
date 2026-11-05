@@ -418,7 +418,21 @@ function describe(locale: string) {
 
 `Trans` must be imported from your generated idioma module, not from `@idioma/react`. A dynamic source string, `t(message)`, still compiles, but it is not translated: it renders as written.
 
-The catalogue is checked at build time too. `vite build` fails, naming the file and key, when a PO file does not parse or when a plural or select in it is not valid ICU MessageFormat. The dev server logs the same error and keeps running.
+### What fails the build
+
+Idioma fails the build, with a message that names the file, rather than ship text that would render wrong:
+
+| Fails the build                                                                                   | Why                                            |
+| ------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `t({ id })` or `<Trans id>` whose id is not a string literal or a conditional of them             | It can't be inlined, so it would render its id |
+| `t({ id: 'a.key' })` on a function that isn't a `t` from `useT()` or `createT()` in the same file | Same: it is never inlined                      |
+| `<Trans id>` that isn't imported from your idioma folder                                          | Same                                           |
+| A PO file that does not parse                                                                     | Its whole locale would be missing              |
+| A plural, select or selectordinal in a PO file that is not valid ICU MessageFormat                | The page would show the raw ICU                |
+
+The first three are code errors: the dev server shows them too, at the call. The last two are catalogue errors: the dev server logs them and keeps running, so a half-edited PO file doesn't stop it.
+
+The second check looks at any call with `{ id: '...' }` whose id is in your catalogue, whatever the function, so `router.navigate({ id: 'settings' })` fails if `settings` is also a message id. Dotted ids such as `settings.title` keep the two apart.
 
 ### Context
 
