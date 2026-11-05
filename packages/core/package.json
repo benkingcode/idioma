@@ -60,7 +60,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@formatjs/icu-messageformat-parser": "^2.11.4",
+    "@formatjs/icu-messageformat-parser": "^3.5.22",
     "chalk": "^5.6.2",
     "chokidar": "^3.6.0",
     "ci-info": "^4.3.1",
