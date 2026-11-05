@@ -198,12 +198,15 @@ describe('CLI Config', () => {
       expect(config.localesDir).toBe('./locales');
     });
 
-    it('accepts ai.guidelines in config', async () => {
+    it('keeps the ai block, unchecked, for @idioma/ai', async () => {
+      // Core doesn't know the AI settings: @idioma/ai checks them when it
+      // translates. Core must still keep them, or @idioma/ai never sees them
       const configContent = `
         export default {
           idiomaDir: './src/idioma',
           defaultLocale: 'en',
           ai: {
+            model: { provider: 'test', modelId: 'test-model' },
             guidelines: 'This is a formal business app. Use professional language.',
           },
         }
@@ -212,9 +215,10 @@ describe('CLI Config', () => {
 
       const config = await loadConfig(tempDir);
 
-      expect(config.ai?.guidelines).toBe(
-        'This is a formal business app. Use professional language.',
-      );
+      expect(config.ai).toEqual({
+        model: { provider: 'test', modelId: 'test-model' },
+        guidelines: 'This is a formal business app. Use professional language.',
+      });
     });
 
     it('accepts po.foldLength in config', async () => {

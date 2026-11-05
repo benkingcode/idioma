@@ -38,8 +38,15 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
-/** The runtime imports of a module: type-only imports are erased. */
-function runtimeImports(file: string): ImportRef[] {
+/**
+ * The imports of a module. By default only runtime ones: type-only imports
+ * are erased. With `types`, type-only imports too, as a published .d.ts
+ * keeps them.
+ */
+function runtimeImports(
+  file: string,
+  { types = false }: { types?: boolean } = {},
+): ImportRef[] {
   const program = parseSync(file, readFileSync(file, 'utf8'))
     .program as Program;
   const refs: ImportRef[] = [];
@@ -47,19 +54,21 @@ function runtimeImports(file: string): ImportRef[] {
     if (!node || typeof node !== 'object') return;
     if (Array.isArray(node)) return node.forEach(visit);
     const n = node as Record<string, any>;
-    if (n.type === 'ImportDeclaration' && n.importKind !== 'type') {
+    if (n.type === 'ImportDeclaration' && (types || n.importKind !== 'type')) {
       const specifiers = n.specifiers as Array<Record<string, any>>;
       const allTypes =
         specifiers.length > 0 &&
         specifiers.every(
           (s) => s.type === 'ImportSpecifier' && s.importKind === 'type',
         );
-      if (!allTypes) refs.push({ source: n.source.value, dynamic: false });
+      if (types || !allTypes) {
+        refs.push({ source: n.source.value, dynamic: false });
+      }
     } else if (
       (n.type === 'ExportNamedDeclaration' ||
         n.type === 'ExportAllDeclaration') &&
       n.source &&
-      n.exportKind !== 'type'
+      (types || n.exportKind !== 'type')
     ) {
       refs.push({ source: n.source.value, dynamic: false });
     } else if (n.type === 'ImportExpression' && n.source?.type === 'Literal') {
@@ -110,41 +119,26 @@ describe('published package dependencies', () => {
     });
   }
 
-  it('no entry point but idioma translate loads the optional AI SDK', () => {
-    // `ai` is an optional peer: the config, the plugins, the runtime and
-    // every other CLI command must load without it. Only idioma translate
-    // may load it, with import()
-    const root = join(PACKAGES_DIR, 'core');
-    const manifest = JSON.parse(
-      readFileSync(join(root, 'package.json'), 'utf8'),
-    );
-    const entries = Object.values(
-      manifest.exports as Record<string, { import: string }>,
-    ).map((target) =>
-      join(
-        root,
-        target.import.replace(/^\.\/dist\//, 'src/').replace(/\.mjs$/, '.ts'),
-      ),
-    );
-    entries.push(join(root, 'src/cli/index.ts'));
-    const offenders = new Set<string>();
-    for (const entry of entries) {
-      const seen = new Set<string>();
-      const walk = (file: string) => {
-        if (seen.has(file)) return;
-        seen.add(file);
-        for (const { source, dynamic } of runtimeImports(file)) {
-          if (dynamic) continue;
-          if (packageName(source) === 'ai') {
-            offenders.add(file.slice(root.length + 1));
-          }
-          if (source.startsWith('.')) {
-            walk(resolve(dirname(file), source).replace(/\.js$/, '.ts'));
+  it('core and react never name the AI SDK, not even in their types', () => {
+    // AI translation is @idioma/ai's job. A type-only import from 'ai' in
+    // core used to survive into its .d.ts, so a project with
+    // skipLibCheck: false and no AI SDK failed to typecheck
+    const offenders: string[] = [];
+    for (const pkg of ['core', 'react']) {
+      const root = join(PACKAGES_DIR, pkg);
+      for (const file of sourceFiles(join(root, 'src'))) {
+        for (const { source } of runtimeImports(file, { types: true })) {
+          const name = packageName(source);
+          if (
+            name === 'ai' ||
+            name.startsWith('@ai-sdk/') ||
+            name === '@idioma/ai'
+          ) {
+            offenders.push(`${source} (${pkg}/${file.slice(root.length + 1)})`);
           }
         }
-      };
-      walk(entry);
+      }
     }
-    expect([...offenders]).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 });

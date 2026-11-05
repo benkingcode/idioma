@@ -1,27 +1,7 @@
 import { promises as fs } from 'fs';
 import { join, resolve } from 'path';
-import type { generateText as generateTextFn, LanguageModel } from 'ai';
 import { createJiti } from 'jiti';
 import { z } from 'zod';
-
-/** Re-export LanguageModel for users to reference in their config */
-export type { LanguageModel } from 'ai';
-
-/** Provider options type extracted from generateText parameters */
-export type ProviderOptions = Parameters<
-  typeof generateTextFn
->[0]['providerOptions'];
-
-/** AI configuration schema - uses z.any() since LanguageModel can't be validated at runtime */
-const AiConfigSchema = z
-  .object({
-    model: z.any().optional() as z.ZodOptional<z.ZodType<LanguageModel>>,
-    guidelines: z.string().optional(),
-    providerOptions: z.any().optional() as z.ZodOptional<
-      z.ZodType<ProviderOptions>
-    >,
-  })
-  .optional();
 
 /**
  * Zod schema for Idioma configuration.
@@ -71,10 +51,11 @@ const IdiomaConfigSchema = z.object({
     })
     .optional(),
   /**
-   * AI translation provider configuration.
-   * Uses the Vercel AI SDK - install your preferred provider package (e.g., @ai-sdk/anthropic).
+   * AI translation settings for `idioma translate`. @idioma/ai reads and
+   * checks them; core keeps them as written. To type them, import
+   * `defineConfig` from `@idioma/ai` instead of `@idioma/core`.
    */
-  ai: AiConfigSchema,
+  ai: z.unknown().optional(),
 });
 
 /** Idioma configuration type - derived from the Zod schema */

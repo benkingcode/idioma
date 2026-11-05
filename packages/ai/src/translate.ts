@@ -11,6 +11,7 @@ import {
   type PoFormatOptions,
   type TranslateCommandArgs,
 } from '@idioma/core/internal';
+import { readAiConfig } from './config.js';
 import {
   createContextProvider,
   createDryRunContextProvider,
@@ -388,7 +389,7 @@ export async function runTranslateCommand(
     : undefined;
 
   // Get AI config
-  const { model, guidelines, providerOptions } = config.ai ?? {};
+  const { model, guidelines, providerOptions } = readAiConfig(config.ai);
 
   // Create provider
   let provider: TranslationProvider;
@@ -406,11 +407,12 @@ export async function runTranslateCommand(
       console.error('Add to idioma.config.ts:');
       console.error('');
       console.error('  import { anthropic } from "@ai-sdk/anthropic";');
+      console.error('  import { defineConfig } from "@idioma/ai";');
       console.error('');
       console.error('  export default defineConfig({');
       console.error('    // ... other config');
       console.error('    ai: {');
-      console.error('      model: anthropic("claude-sonnet-4-20250514"),');
+      console.error('      model: anthropic("claude-sonnet-5-5"),');
       console.error('    },');
       console.error('  });');
       console.error('');

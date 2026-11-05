@@ -9,6 +9,14 @@ import { runTranslateCommand } from './translate.js';
  * in the project and calls it; nothing else in Idioma loads it.
  */
 export { runTranslateCommand };
+export {
+  defineConfig,
+  readAiConfig,
+  type AiConfig,
+  type IdiomaConfig,
+  type LanguageModel,
+  type ProviderOptions,
+} from './config.js';
 
 // What core's CLI calls. The typecheck fails here if the two drift apart.
 ({ runTranslateCommand }) satisfies AiPackage;
