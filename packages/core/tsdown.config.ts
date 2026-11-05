@@ -9,30 +9,6 @@ export default defineConfig({
   sourcemap: true,
   minify: true,
   clean: true,
-  target: 'node18',
+  target: 'node22',
   platform: 'node',
-  external: [
-    // Peer dependencies
-    'metro-config',
-    'vite',
-    // Regular dependencies (don't bundle)
-    '@formatjs/icu-messageformat-parser',
-    'chokidar',
-    'citty',
-    'consola',
-    'fast-glob',
-    'gettext-parser',
-    'murmurhash-js',
-    'pathe',
-    'unplugin',
-    // Optional AI providers
-    '@anthropic-ai/sdk',
-    'openai',
-    'dotenv',
-    // CLI UI
-    'cli-progress',
-    'ora',
-    'chalk',
-    'ci-info',
-  ],
 });
