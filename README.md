@@ -373,6 +373,16 @@ Use explicit IDs for translations that need to survive source text refactoring:
 
 This is useful for checkout flows, legal text, or any message that goes through formal translation review. See [Choosing Your Key Strategy](#choosing-your-key-strategy) for guidance.
 
+What extraction writes for an explicit id depends on whether the call carries its text:
+
+| Call                                                     | Default locale's `msgstr` | Other locales' `msgstr` |
+| -------------------------------------------------------- | ------------------------- | ----------------------- |
+| `<Trans id="checkout.confirm">Confirm order</Trans>`     | `Confirm order`           | empty, to translate     |
+| `t({ id: 'checkout.confirm', source: 'Confirm order' })` | `Confirm order`           | empty, to translate     |
+| `t({ id: 'checkout.nameLabel' })`                        | **empty**                 | empty, to translate     |
+
+A key-only call has no text to extract, so you write its default-locale text in that locale's PO file yourself. Until then it renders its id in every locale that lacks a translation.
+
 ### Static ids (checked at build time)
 
 Idioma inlines translations at build time, so an id must be known at build time. A call it cannot inline would render the id itself, so **the build fails** instead, with a code frame pointing at the call:
