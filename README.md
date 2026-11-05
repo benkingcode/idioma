@@ -4,7 +4,7 @@
 
 **Each page ships only the translations it uses.** Every message is compiled into the component that renders it, so your bundler's code splitting splits your translations too, with nothing to configure. See [Automatic Code Splitting](#automatic-code-splitting).
 
-~800 bytes runtime. Automatic key generation. AI-powered translation that understands your codebase and key context.
+About 1.4 KB of runtime. Automatic key generation. AI-powered translation that understands your codebase and key context.
 
 Traditional i18n workflow: Write code → Extract messages → Upload to TMS → Wait for translators → Download → Test → Find bugs → Repeat.
 
@@ -27,7 +27,7 @@ Idioma reads your source code to understand context ("checkout button", "error m
 **Performance**
 
 - **Automatic code splitting**: Each page ships only the translations its components use, with no namespaces to set up and no catalogues to load
-- **~800 bytes runtime**: Translations are inlined at build time; the runtime just renders them
+- **About 1.4 KB of runtime**: Translations are inlined at build time; the runtime just renders them
 - **Compile-time processing**: No runtime parsing or fetching
 
 **Developer Experience**
@@ -944,7 +944,7 @@ The transform, built on the Oxc parser, extracts messages during build, generate
 | Feature                   | Idioma        | Lingui        | Paraglide    | react-intl | i18next  |
 | ------------------------- | ------------- | ------------- | ------------ | ---------- | -------- |
 | Component-level splitting | Yes           | No            | Yes          | No         | No       |
-| Runtime size (gzipped)    | ~800B         | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
+| Runtime size (gzipped)    | ~1.4KB        | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
 | Key management            | Auto + Manual | Auto + Manual | Manual       | Manual     | Manual   |
 | Extraction                | Built-in      | Built-in      | None         | CLI        | CLI      |
 | AI translation            | Built-in      | No            | No           | No         | No       |
@@ -955,7 +955,7 @@ The transform, built on the Oxc parser, extracts messages during build, generate
 | SSR                       | Yes           | Yes           | Yes          | Yes        | Yes      |
 | RSC                       | Yes           | Yes           | Yes          | No         | Yes      |
 
-**Note on runtime size:** Idioma's ~800B runtime handles message rendering. ICU plural/select parsing adds ~2KB when you use those features. The total is still significantly smaller than alternatives because parsing happens at build time for static messages.
+**Note on runtime size:** Idioma's runtime (`Trans`, `useT` and the provider) is about 1.4 KB gzipped, measured with esbuild, minified, with React left out. Plurals and selects compile to functions at build time, so no message parser ships at runtime. The translations themselves are not included in that figure: they are inlined into the components that render them.
 
 ## Editor Support
 
@@ -968,7 +968,7 @@ TypeScript provides full type safety via generated types:
 ## Packages
 
 - **@idioma/core**: Oxc transform, Vite plugin, Metro plugin, CLI, PO compiler
-- **@idioma/react**: Runtime components (~800 bytes gzipped)
+- **@idioma/react**: Runtime components (about 1.4 KB gzipped)
 
 ## License
 
