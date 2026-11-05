@@ -487,7 +487,7 @@ This prevents auto-deletion of TMS-imported messages.
 #### Writing (`writePoFile`)
 
 - Skips the write when the catalog is unchanged. The existing file is parsed and re-serialized first, so formatting differences (line folding, header normalisation) do not count as changes. This keeps hand-formatted catalogs intact and stops Vite's `.po` handler from sending a full reload after a no-op extraction.
-- Line folding follows `po.foldLength` in `idioma.config.ts` (default 76, `0` disables folding). The Metro plugin takes `po` as a `withIdioma()` option.
+- Line folding follows `po.foldLength` in `idioma.config.ts`: the page width, wrapped as GNU `msgcat` wraps (gettext-parser 10; default 79, `0` disables folding). The Metro plugin takes `po` as a `withIdioma()` option.
 
 #### Flag System
 

@@ -39,8 +39,9 @@ export interface Catalog {
  */
 export interface PoFormatOptions {
   /**
-   * Column at which long msgid/msgstr lines are folded. 0 disables folding.
-   * @default 76
+   * The page width long msgid and msgstr lines are wrapped to, as GNU
+   * gettext's `msgcat --width` wraps them. 0 disables folding.
+   * @default 79
    */
   foldLength?: number;
 }

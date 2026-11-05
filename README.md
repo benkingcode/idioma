@@ -748,7 +748,7 @@ export default defineConfig({
   // Files to scan for messages (default: ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'])
   sourcePatterns: ['src/**/*.tsx', 'src/**/*.jsx'],
 
-  // PO file output: keep each string on one line (default: fold at 76 columns)
+  // PO file output: keep each string on one line (default: wrap at 79 columns, as msgcat does)
   po: { foldLength: 0 },
 
   // AI translation config (uses Vercel AI SDK)
@@ -850,7 +850,7 @@ msgstr "Lee nuestros <Link>términos de servicio</Link> y <Link>política de pri
 
 Because a translation file holds keys, not source text, upload the default locale's file as the source language when you send catalogues to a translation management system such as Phrase, Lokalise or Crowdin.
 
-Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, lines longer than 76 columns are folded. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Metro plugin doesn't read `idioma.config.ts`, so pass the same `po` option to its `withIdioma()`.
+Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, long strings are wrapped at 79 columns, exactly as GNU gettext's `msgcat` wraps them. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Metro plugin doesn't read `idioma.config.ts`, so pass the same `po` option to its `withIdioma()`.
 
 ## Suspense Mode (React 19+)
 
