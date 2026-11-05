@@ -184,3 +184,18 @@ describe('dotted argument names', () => {
     expect(format({ count: 1 })).toBe('{user.name} is 1 x');
   });
 });
+
+describe('number, date and time arguments', () => {
+  it('marks a message that needs formatting', () => {
+    const analysis = analyzeIcuMessage(
+      'Total: {price, number, ::currency/EUR}',
+    );
+    expect(analysis.hasFormat).toBe(true);
+    expect(analysis.hasPlural).toBe(false);
+  });
+
+  it('lists the date and time arguments', () => {
+    const analysis = analyzeIcuMessage('{d, date, long} at {t, time} for {n}');
+    expect(analysis.dateVariables).toEqual(['d', 't']);
+  });
+});

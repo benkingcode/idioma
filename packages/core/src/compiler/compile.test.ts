@@ -624,6 +624,163 @@ msgstr "Hello"
     });
   });
 
+  describe('ICU number, date and time formats', () => {
+    // Compiled with the Intl options the formatjs parser derives from the
+    // style or skeleton, so nothing is parsed at runtime
+    const run = (code: string, args: Record<string, unknown>) =>
+      // eslint-disable-next-line no-eval
+      (0, eval)(`(${code})`)(args);
+    const day = new Date(2026, 10, 5, 21, 30);
+
+    it('formats a number with a skeleton', () => {
+      const code = compileIcuToFunctionString(
+        'Total: {price, number, ::currency/EUR}',
+        'es',
+      );
+      const euros = new Intl.NumberFormat('es', {
+        style: 'currency',
+        currency: 'EUR',
+      }).format(1234.5);
+      expect(run(code, { price: 1234.5 })).toBe(`Total: ${euros}`);
+    });
+
+    it('formats the named number styles', () => {
+      const code = compileIcuToFunctionString(
+        '{r, number, percent} of {n, number, integer} ({x, number})',
+        'en',
+      );
+      expect(run(code, { r: 0.25, n: 1234.6, x: 1234.5 })).toBe(
+        '25% of 1,235 (1,234.5)',
+      );
+    });
+
+    it('formats the named date and time styles', () => {
+      const code = compileIcuToFunctionString(
+        '{d, date, long} at {d, time, short}',
+        'en',
+      );
+      const date = new Intl.DateTimeFormat('en', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(day);
+      const time = new Intl.DateTimeFormat('en', {
+        hour: 'numeric',
+        minute: 'numeric',
+      }).format(day);
+      expect(run(code, { d: day })).toBe(`${date} at ${time}`);
+    });
+
+    it('formats a date skeleton, and a timestamp as a date', () => {
+      const code = compileIcuToFunctionString('{d, date, ::yMMMd}', 'en');
+      const expected = new Intl.DateTimeFormat('en', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      }).format(day);
+      expect(run(code, { d: day })).toBe(expected);
+      expect(run(code, { d: day.getTime() })).toBe(expected);
+    });
+
+    it("formats a plural's # with the locale's grouping", () => {
+      const code = compileIcuToFunctionString(
+        '{n, plural, one {# ticket} other {# tickets}}',
+        'en',
+      );
+      expect(run(code, { n: 1200 })).toBe('1,200 tickets');
+    });
+
+    it('formats inside a plural branch', () => {
+      const code = compileIcuToFunctionString(
+        '{n, plural, other {# for {price, number, ::currency/USD}}}',
+        'en',
+      );
+      expect(run(code, { n: 2, price: 9.5 })).toBe('2 for $9.50');
+    });
+
+    it('leaves a missing value as its placeholder', () => {
+      const code = compileIcuToFunctionString(
+        'Total: {price, number, ::currency/EUR}',
+        'en',
+      );
+      expect(run(code, {})).toBe('Total: {price}');
+    });
+
+    it('compiles a message whose only argument is a format', async () => {
+      // It used to be kept as text and render "{price, number, ...}"
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "cart.total"
+msgstr "Total: {price, number, ::currency/EUR}"
+`,
+      );
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+      });
+
+      const content = await fs.readFile(
+        join(outputDir, '.generated', 'translations.js'),
+        'utf-8',
+      );
+      expect(content).toContain('Intl.NumberFormat');
+    });
+
+    it('types a date argument to take a Date', async () => {
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "event.when"
+msgstr "On {day, date, long}"
+`,
+      );
+      await compileTranslations({
+        localeDir: poDir,
+        outputDir,
+        defaultLocale: 'en',
+      });
+
+      const types = await fs.readFile(
+        join(outputDir, '.generated', 'types.d.ts'),
+        'utf-8',
+      );
+      expect(types).toContain('"event.when": { day: Date | string | number };');
+    });
+
+    it('fails the compile on a style it cannot format, naming the key', async () => {
+      // currency with no currency code: Intl cannot format it
+      await createPoFile(
+        'en',
+        `
+msgid ""
+msgstr ""
+"Language: en\\n"
+
+msgid "cart.total"
+msgstr "Total: {price, number, currency}"
+`,
+      );
+
+      await expect(
+        compileTranslations({
+          localeDir: poDir,
+          outputDir,
+          defaultLocale: 'en',
+        }),
+      ).rejects.toThrow(/en\.po.*"cart\.total".*currency/s);
+    });
+  });
+
   describe('a plural or select that does not parse', () => {
     const header = (locale: string) => `
 msgid ""
