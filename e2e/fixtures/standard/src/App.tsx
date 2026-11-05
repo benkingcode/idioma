@@ -3,6 +3,7 @@ import { ComponentTags } from './components/ComponentTags';
 import { EdgeCases } from './components/EdgeCases';
 import { Fallbacks } from './components/Fallbacks';
 import { Formats } from './components/Formats';
+import { HotUpdate } from './components/HotUpdate';
 import { Interpolation } from './components/Interpolation';
 import { IntrinsicElements } from './components/IntrinsicElements';
 import { LegacyTrans } from './components/LegacyTrans';
@@ -83,6 +84,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="createt-section">
           <h2>createT</h2>
           <PlainCreateT />
+        </section>
+
+        <section data-testid="hot-update-section">
+          <h2>Hot update</h2>
+          <HotUpdate />
         </section>
 
         <section data-testid="formats-section">

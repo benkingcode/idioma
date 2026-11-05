@@ -214,4 +214,6 @@ msgstr "في {day, date, long}"
 #: src/components/Formats.tsx
 #, extracted
 msgid "formats.tickets"
-msgstr "{count, plural, zero {لا تذاكر} one {تذكرة واحدة} two {تذكرتان} few {# تذاكر} many {# تذكرة} other {# تذكرة}}"
+msgstr ""
+"{count, plural, zero {لا تذاكر} one {تذكرة واحدة} two {تذكرتان} few {# "
+"تذاكر} many {# تذكرة} other {# تذكرة}}"

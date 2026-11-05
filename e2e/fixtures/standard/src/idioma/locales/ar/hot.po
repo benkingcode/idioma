@@ -1,0 +1,9 @@
+msgid ""
+msgstr ""
+"Language: ar\n"
+"Content-Type: text/plain\n"
+
+#: src/components/HotUpdate.tsx
+#, extracted
+msgid "hot.message"
+msgstr "رسالة فورية"

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { generateKey } from '../keys/generator.js';
 import type { PathsMatcher } from '../utils/resolve-tsconfig-paths';
 import {
+  catalogueKey,
   transformModule,
   type ExtractedMessage,
   type TransformOptions,
@@ -2104,5 +2105,44 @@ describe('the idioma folder, matched exactly', () => {
       translations: { [generateKey('Hello')]: { en: 'Hello' } },
     });
     expect(result.code).toContain('<__Trans');
+  });
+});
+
+describe('the catalogue keys a module uses', () => {
+  // The Vite plugin uses them to hot-update only the modules a PO edit
+  // affects, instead of reloading the page
+  it('lists every key it looked up, translated or not', () => {
+    const code = `
+      import { Trans, useT } from './idioma'
+      const t = useT()
+      export const App = () => (
+        <>
+          <Trans id="a.title">A</Trans>
+          {t({ id: 'b.title' })}
+          {t({ id: 'c.title', ns: 'marketing' })}
+          {t('Hello')}
+        </>
+      )
+    `;
+    const result = transformModule(code, TEST_FILENAME, {
+      idiomaDir: TEST_IDIOMA_DIR,
+      translations: { 'a.title': { en: 'A' } },
+    });
+    expect([...result.messageKeys].sort()).toEqual(
+      [
+        'a.title',
+        'b.title',
+        catalogueKey('c.title', 'marketing'),
+        generateKey('Hello'),
+      ].sort(),
+    );
+  });
+
+  it('lists none for a module with no messages', () => {
+    const result = transformModule('export const x = 1', TEST_FILENAME, {
+      idiomaDir: TEST_IDIOMA_DIR,
+      translations: {},
+    });
+    expect(result.messageKeys).toEqual([]);
   });
 });
