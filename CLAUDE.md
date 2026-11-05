@@ -340,25 +340,27 @@ select(gender, { male: 'He', female: 'She', other: 'They' });
 
 #### At Build Time - Compilation
 
-`packages/core/src/compiler/compile.ts` compiles ICU to JavaScript functions:
+`packages/core/src/compiler/compile.ts` compiles a plural or select to a JavaScript function that returns a **template**: the branch it picks, with `#` filled in and every `{placeholder}` and `<Tag>` left in. The runtime renders that template as it renders a plain message, so tags become components and values are filled in after tags are read (a value never becomes a component):
 
 ```po
 # PO entry:
-msgstr "{count, plural, one {# item} other {# items}}"
+msgstr "{count, plural, one {# item} other {# items}}. See <Link>{place}</Link>"
 ```
 
 ```javascript
-// Compiled to:
+// Compiled to (simplified): values are read by quoted name, never args.<name>
 (args) => {
-  const v = Number(args.count);
-  const pr = new Intl.PluralRules('en');
-  const cat = pr.select(v);
-  if (cat === 'one') {
-    return String(v) + ' item';
-  }
-  return String(v) + ' items';
+  return (
+    ((v) => {
+      const pr = new Intl.PluralRules('en');
+      if (pr.select(v) === 'one') return String(v) + ' item';
+      return String(v) + ' items';
+    })(Number(args['count'])) + '. See <Link>{place}</Link>'
+  );
 };
 ```
+
+`parseIcu` in `packages/core/src/icu/compiler.ts` is the one parser for the analyzer, the interpreter and the code generator. It keeps tags as literal text (`ignoreTag`), and it accepts dotted argument names such as `{user.name}` (which the serializer writes for member expressions and the formatjs parser rejects) by masking them before parsing. A message with a plural, select or selectordinal that does not parse **fails the compile**, naming the file and key; other text the parser rejects compiles as plain text. A PO file that does not parse also fails the compile (`loadLocaleCatalogs` only skips a missing file). In `vite build` both fail the build; the dev server logs them and keeps running.
 
 Each locale's translation is analysed on its own text, so one locale can be a plural while another is a plain `{count} items`. A key's generated types (`MessageValues` variables, `MessageComponents` count) come from its first non-empty translation, reading the default locale first. An empty msgstr in another catalogue does not count.
 
@@ -374,7 +376,9 @@ These helpers are only used during extraction to serialize to ICU format. At run
 
 ### Runtime Behavior
 
-Since bundlers always use inlined or suspense mode, here's what actually runs:
+Since bundlers always use inlined or suspense mode, here's what actually runs.
+
+**Locale fallback** is one picker, `_pickMessage` in `packages/core/src/runtime/message.ts`, shared by `__Trans`, `useT` and `createT`: the locale, its base locales one subtag at a time (`es-MX`, then `es`), the default locale, then the source text or id. It never picks another locale's text (#8). The runtime learns the default locale from the generated wrappers: `createIdiomaProvider({ defaultLocale })` in `idioma/index.ts` and `_createTFactory(locale, undefined, { defaultLocale })` in `idioma/plain.ts`.
 
 #### Trans Component (`packages/react/src/Trans.tsx`)
 

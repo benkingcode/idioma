@@ -378,6 +378,8 @@ function describe(locale: string) {
 
 `Trans` must be imported from your generated idioma module, not from `@idioma/react`. A dynamic source string, `t(message)`, is still allowed: `createT` looks it up at runtime.
 
+The catalogue is checked at build time too. `vite build` fails, naming the file and key, when a PO file does not parse or when a plural or select in it is not valid ICU MessageFormat. The dev server logs the same error and keeps running.
+
 ### Context
 
 Add translator context that affects key generation (same text, different context = different key):
@@ -702,9 +704,9 @@ When a translation is missing, Idioma follows a fallback chain:
 1. **Exact locale** (`es-MX`)
 2. **Base locale** (`es` from `es-MX`)
 3. **Default locale** (`en`)
-4. **Source text** (always renders something)
+4. **Source text**, or the id of a key-only message
 
-This ensures your app always displays meaningful content, even with incomplete translations.
+It never shows another locale's translation: a key with no default-locale text renders its id on every locale that lacks it, so the gap is visible instead of showing, say, Catalan on an English page.
 
 ## Content-Addressable Keys
 
