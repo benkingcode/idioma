@@ -80,7 +80,9 @@ describe('withIdioma', () => {
 
   it('warns, and leaves the transformer alone, when there is none to wrap', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const config = await withIdioma(defaultOptions)({ projectRoot: '/project' });
+    const config = await withIdioma(defaultOptions)({
+      projectRoot: '/project',
+    });
 
     expect(config.transformer).toBeUndefined();
     expect(warn).toHaveBeenCalledWith(
@@ -194,10 +196,19 @@ describe('Metro watcher', () => {
     const wrapper = withIdioma(defaultOptions);
     await wrapper({ projectRoot: '/test' });
 
+    // chokidar 4 and later take no globs: a folder, filtered by `ignored`
     expect(watch).toHaveBeenCalledWith(
-      '/test/src/idioma/locales/**/*.po',
+      '/test/src/idioma/locales',
       expect.objectContaining({
         ignoreInitial: true,
+        ignored: expect.any(Function),
+      }),
+    );
+    expect(watch).toHaveBeenCalledWith(
+      '/test',
+      expect.objectContaining({
+        ignoreInitial: true,
+        ignored: expect.any(Function),
       }),
     );
   });
