@@ -10,6 +10,7 @@ import {
 } from '../oxc/transform.js';
 import type { PoFormatOptions } from '../po/types.js';
 import { ensureGitignore } from '../utils/gitignore.js';
+import { isInsideDir } from '../utils/paths.js';
 import {
   loadPathsMatcher,
   type PathsMatcher,
@@ -283,7 +284,7 @@ export default function idiomaVitePlugin(
       const isIgnored = shouldIgnorePath(file, projectRoot, ignorePatterns);
       // Skip files inside idiomaDir (those are generated, not user source)
       const absIdiomaDir = join(projectRoot, idiomaDir);
-      const isInsideIdiomaDir = file.startsWith(absIdiomaDir);
+      const isInsideIdiomaDir = isInsideDir(file, absIdiomaDir);
       const isSourceFile =
         matchesSourcePattern && !isIgnored && !isInsideIdiomaDir;
       if (!isSourceFile || !debouncedExtractor) return;

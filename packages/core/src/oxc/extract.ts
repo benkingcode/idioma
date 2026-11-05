@@ -8,6 +8,7 @@ import {
   type VariableDeclarator,
 } from 'oxc-parser';
 import { generateKey } from '../keys/generator.js';
+import { isInsideDir } from '../utils/paths.js';
 import {
   isAliasedIdiomaImport,
   type PathsMatcher,
@@ -90,7 +91,7 @@ export function extractModule(
     const source = node.source.value;
     let fromIdioma = false;
     if (source.startsWith('.')) {
-      fromIdioma = resolve(dirname(filename), source).startsWith(idiomaDir);
+      fromIdioma = isInsideDir(resolve(dirname(filename), source), idiomaDir);
     } else if (options.pathsMatcher) {
       fromIdioma = isAliasedIdiomaImport(
         source,

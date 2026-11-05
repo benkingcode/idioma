@@ -2080,3 +2080,29 @@ describe('Idioma Oxc transform', () => {
     });
   });
 });
+
+describe('the idioma folder, matched exactly', () => {
+  it('does not take a sibling folder whose name starts the same for it', () => {
+    const code = `
+      import { Trans } from './idioma-legacy'
+      export const App = () => <Trans>Hello</Trans>
+    `;
+    const result = transformModule(code, TEST_FILENAME, {
+      idiomaDir: TEST_IDIOMA_DIR,
+      translations: { [generateKey('Hello')]: { en: 'Hello' } },
+    });
+    expect(result.changed).toBe(false);
+  });
+
+  it('still transforms an import of the folder itself', () => {
+    const code = `
+      import { Trans } from './idioma'
+      export const App = () => <Trans>Hello</Trans>
+    `;
+    const result = transformModule(code, TEST_FILENAME, {
+      idiomaDir: TEST_IDIOMA_DIR,
+      translations: { [generateKey('Hello')]: { en: 'Hello' } },
+    });
+    expect(result.code).toContain('<__Trans');
+  });
+});

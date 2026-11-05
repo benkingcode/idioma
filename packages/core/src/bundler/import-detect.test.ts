@@ -78,4 +78,9 @@ describe('fileImportsIdioma', () => {
     const content = "// import { Trans } from '../idioma';";
     expect(fileImportsIdioma(content, FILE, IDIOMA_DIR, null)).toBe(true);
   });
+
+  it('returns false for a sibling folder whose name starts the same', () => {
+    const content = "import { Trans } from '../idioma-legacy';";
+    expect(fileImportsIdioma(content, FILE, IDIOMA_DIR, null)).toBe(false);
+  });
 });
