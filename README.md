@@ -980,19 +980,21 @@ The transform is built on the Oxc parser. It generates content-addressed keys fo
 
 ## Comparison
 
-| Feature                   | Idioma        | Lingui        | Paraglide    | react-intl | i18next  |
-| ------------------------- | ------------- | ------------- | ------------ | ---------- | -------- |
-| Component-level splitting | Yes           | No            | Yes          | No         | No       |
-| Runtime size (gzipped)    | ~1.4KB        | ~3KB          | ~2KB         | ~14KB      | ~22KB    |
-| Key management            | Auto + Manual | Auto + Manual | Manual       | Manual     | Manual   |
-| Extraction                | Built-in      | Built-in      | None         | CLI        | CLI      |
-| AI translation            | Built-in      | No            | No           | No         | No       |
-| Compile-time              | Yes           | Yes           | Yes          | Optional   | No       |
-| Lazy loading              | Opt-in        | Yes           | Experimental | Yes        | Yes      |
-| PO format                 | Yes           | Yes           | No           | No         | Plugin   |
-| Number/date formatting    | Use Intl      | Use Intl      | Use Intl     | Built-in   | Built-in |
-| SSR                       | Yes           | Yes           | Yes          | Yes        | Yes      |
-| RSC                       | Yes           | Yes           | Yes          | No         | Yes      |
+| Feature                   | Idioma        | Lingui                  | Paraglide                        | next-intl                   | react-intl    | i18next           |
+| ------------------------- | ------------- | ----------------------- | -------------------------------- | --------------------------- | ------------- | ----------------- |
+| Component-level splitting | Yes           | Per page (experimental) | Yes                              | No                          | No            | No                |
+| Runtime size (gzipped)    | ~1.4KB        | ~4.4KB                  | Generated                        | ~11.6KB                     | ~15KB         | ~24KB             |
+| Key management            | Auto + Manual | Auto + Manual           | Manual                           | Manual (auto, experimental) | Auto + Manual | Manual            |
+| Extraction                | Built-in      | Built-in                | None                             | Built-in (experimental)     | CLI           | CLI               |
+| AI translation            | Built-in      | No                      | Machine translation              | No                          | No            | Via locize (paid) |
+| Compile-time              | Yes           | Yes                     | Yes                              | Optional (experimental)     | Optional      | No                |
+| Lazy loading              | Opt-in        | Yes                     | Per-locale builds (experimental) | Yes                         | Yes           | Yes               |
+| PO format                 | Yes           | Yes                     | No                               | Yes (with extraction)       | No            | Plugin            |
+| Number/date formatting    | Use Intl      | Use Intl                | Use Intl                         | Built-in                    | Built-in      | Built-in          |
+| SSR                       | Yes           | Yes                     | Yes                              | Yes                         | Yes           | Yes               |
+| RSC                       | Yes           | Yes                     | Yes                              | Yes                         | Yes           | Yes               |
+
+Sizes are gzipped and minified, with React left out, for the APIs an app imports, measured in November 2026: Idioma with esbuild, the others with bundlejs. Lingui is `@lingui/core` with `@lingui/react`, next-intl is the `use-intl` client, react-intl drops to about 7.5 KB with its no-parser build, and i18next includes `react-i18next`. Paraglide generates its runtime for each project. next-intl's extraction (`useExtracted`), PO output and precompilation are experimental and need its Next.js plugin. Paraglide's machine translation comes from the inlang CLI, and i18next's AI translation from the locize service.
 
 **Note on runtime size:** Idioma's runtime (`Trans`, `useT` and the provider) is about 1.4 KB gzipped, measured with esbuild, minified, with React left out. Plurals and selects compile to functions at build time, so no message parser ships at runtime. The translations themselves are not included in that figure: they are inlined into the components that render them.
 
