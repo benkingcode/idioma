@@ -766,36 +766,47 @@ Most teams use auto keys by default and explicit IDs for checkout flows, legal t
 
 ## PO File Format
 
-Idioma uses the standard [gettext PO format](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html) with ICU MessageFormat in translations:
+Idioma uses the standard [gettext PO format](https://www.gnu.org/software/gettext/manual/html_node/PO-Files.html), one file per locale, with ICU MessageFormat in translations. The files are key-based: each `msgid` is the message's id, or its 8-character key when it has none, and the default locale's file holds the source text as its `msgstr`.
+
+```po
+# locales/en.po: the default locale holds the source text
+
+#: src/components/Checkout.tsx
+#, extracted
+msgid "checkout.confirm"
+msgstr "Confirm order"
+
+# An auto-keyed message (<Trans>Hello, {name}!</Trans>): its msgid is its key
+#: src/components/Greeting.tsx
+#, extracted
+msgid "0024c34D"
+msgstr "Hello, {name}!"
+```
 
 ```po
 # locales/es.po
 
-# Simple message
-msgid "Hello {name}"
-msgstr "Hola {name}"
+msgid "checkout.confirm"
+msgstr "Confirmar pedido"
 
-# With explicit context (from <Trans context="button">)
+msgid "0024c34D"
+msgstr "¡Hola, {name}!"
+
+# With context (from <Trans context="button">): part of the key, and kept as msgctxt for translators
 msgctxt "button"
-msgid "Submit"
+msgid "001CDU6P"
 msgstr "Enviar"
 
-# With AI-generated context (from idioma translate)
-#. [AI Context]: Error message when payment fails at checkout
-#: src/components/Checkout.tsx:87
-msgid "Payment failed"
-msgstr "El pago falló"
-
 # Pluralization (ICU format)
-msgid "{count, plural, one {# item} other {# items}}"
+msgid "cart.count"
 msgstr "{count, plural, one {# artículo} other {# artículos}}"
 
 # Component interpolation (tag names from JSX)
-msgid "Read our <Link>terms of service</Link> and <Link>privacy policy</Link>"
+msgid "legal.links"
 msgstr "Lee nuestros <Link>términos de servicio</Link> y <Link>política de privacidad</Link>"
 ```
 
-PO files work with translation management systems like Phrase, Lokalise, and Crowdin.
+Because a translation file holds keys, not source text, upload the default locale's file as the source language when you send catalogues to a translation management system such as Phrase, Lokalise or Crowdin.
 
 Idioma rewrites a PO file only when its messages change, so hand edits and TMS formatting survive dev-mode saves. When a file is written, lines longer than 76 columns are folded. Set `po: { foldLength: 0 }` to keep each string on one line, for example to match your TMS export. The Metro plugin doesn't read `idioma.config.ts`, so pass the same `po` option to its `withIdioma()`.
 
