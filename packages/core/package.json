@@ -71,6 +71,7 @@
     "fast-glob": "^3.3.3",
     "get-tsconfig": "^4.13.7",
     "gettext-parser": "^8.0.0",
+    "ignore": "^7.0.5",
     "jiti": "^2.6.1",
     "magic-string": "^1.4.5",
     "murmurhash-js": "^1.0.0",
@@ -103,8 +104,6 @@
     "@types/cli-progress": "^3.11.6",
     "@types/gettext-parser": "^4.0.4",
     "@types/murmurhash-js": "^1.0.6",
-    "dotenv": "^17.2.3",
-    "ignore": "^7.0.5",
     "vite": "^8.3.5"
   },
   "keywords": [
