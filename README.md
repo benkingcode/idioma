@@ -25,11 +25,11 @@ About 1.4 KB of runtime. Typed ids and values. PO files with ICU MessageFormat. 
 - **AI-powered translation**: Built-in translation with any AI SDK model (Claude, GPT, Gemini and others), with translator context read from your code
 - **Type-safe**: Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
 - **Build-time checks**: A non-literal id, a PO file that doesn't parse or an invalid plural fails the build instead of shipping
-- **ICU MessageFormat**: Full support for plurals, selects, ordinals, and complex formatting
+- **ICU MessageFormat**: Plurals, selects, ordinals, and number, date and time formats
 
 **Integrations**
 
-- **Vite plugin**: HMR for translations, zero config
+- **Vite plugin**: A PO edit hot-updates just the components that use the changed messages, zero config
 - **React Native / Metro**: First-class React Native support with Metro bundler
 - **React Server Components**: Compile-time inlined translations work seamlessly in RSC
 - **PO file format**: Key-based gettext files, one per locale, that you edit by hand or send to a TMS
@@ -418,6 +418,7 @@ Idioma fails the build, with a message that names the file, rather than ship tex
 | `t({ id: 'a.key' })` on a function that isn't a `t` from `useT()` or `createT()` in the same file | Same: it is never inlined                      |
 | `<Trans id>` that isn't imported from your idioma folder                                          | Same                                           |
 | A PO file that does not parse                                                                     | Its whole locale would be missing              |
+| A number, date or time style `Intl` can't format, such as `currency` with no currency code        | It can't be formatted                          |
 | A plural, select or selectordinal in a PO file that is not valid ICU MessageFormat                | The page would show the raw ICU                |
 
 The first three are code errors: the dev server shows them too, at the call. The last two are catalogue errors: the dev server logs them and keeps running, so a half-edited PO file doesn't stop it.
@@ -527,7 +528,35 @@ Ordinal rules are locale-aware via CLDR. In English:
 
 ### Number and Date Formatting
 
-For number, currency, and date formatting, use the standard `Intl` APIs alongside Idioma:
+Write ICU's `number`, `date` and `time` arguments in a message, and Idioma formats them for each locale with `Intl`. The format is worked out at build time, so nothing is parsed at runtime:
+
+```tsx
+const t = useT();
+
+t({
+  id: 'cart.total',
+  source: 'Total: {price, number, ::currency/EUR}', // es: "Total: 1234,50 €"
+  values: { price: 1234.5 },
+});
+
+t({
+  id: 'event.when',
+  source: 'On {day, date, long} at {day, time, short}',
+  values: { day: new Date() },
+});
+```
+
+A translator can change the format in their locale's PO file. The supported styles:
+
+| Argument      | Named styles                      | Skeletons                                                     |
+| ------------- | --------------------------------- | ------------------------------------------------------------- |
+| `{x, number}` | `integer`, `percent`              | `::currency/EUR`, `::percent`, `::compact-short` and the rest |
+| `{x, date}`   | `short`, `medium`, `long`, `full` | `::yMMMd`, `::EEEE` and the rest                              |
+| `{x, time}`   | `short`, `medium`, `long`, `full` | `::hmm` and the rest                                          |
+
+A plural's `#` is formatted as a number too (`1,000` in English). A date or time argument takes a `Date` or a timestamp. A missing value renders as its placeholder, as it does in a plain message. A style `Intl` can't format, such as `currency` without a currency code, [fails the build](#what-fails-the-build).
+
+To format a value outside a message, use `Intl` and pass in the result:
 
 ```tsx
 import { Trans, useLocale } from '@/idioma';
@@ -541,20 +570,7 @@ function Price({ amount }) {
 
   return <Trans>Total: {formatted}</Trans>;
 }
-
-function EventDate({ date }) {
-  const locale = useLocale();
-  const formatted = new Intl.DateTimeFormat(locale, {
-    dateStyle: 'long',
-  }).format(date);
-
-  return <Trans>Event on {formatted}</Trans>;
-}
 ```
-
-Idioma focuses on message translation and delegates formatting to the platform's `Intl` APIs, which handle locale-specific number, currency, and date formatting natively.
-
-ICU's own formatting arguments are not applied. A message whose only argument is `{price, number, ::currency/EUR}` (or a `date` or `time` argument) renders that text as written. Inside a plural or select they render the raw value, and a plural's `#` renders its number without grouping (`1000`, not `1,000`). Format with `Intl` as above and pass in the result.
 
 ### Imperative usage with useT
 
@@ -878,6 +894,7 @@ import { IdiomaProvider } from '@/idioma';
 - `createT` (`idioma/plain`) returns keys instead of text, because it has no chunk to load.
 - Each file's translations load when one of its components first renders, so nested components from different files load one after another.
 - Suspense mode has its own provider and context, so its components can't be mixed with the default mode's.
+- In development, a PO edit reloads the page instead of hot-updating it.
 
 ## API Reference
 
@@ -976,7 +993,7 @@ In development and in the production build alike, the Vite plugin (or the Metro 
 
 `__t` holds this one message in every locale, and `__a` its values. At runtime, `__Trans` picks the active locale's text and fills in the values. A `t()` call is compiled the same way, with the translations as its second argument.
 
-The transform is built on the Oxc parser. It generates content-addressed keys for messages without an id and inlines each message's compiled translations where it is used. In development, saving a file also extracts its messages into the PO files and recompiles them.
+The transform is built on the Oxc parser. It generates content-addressed keys for messages without an id and inlines each message's compiled translations where it is used. In development, saving a file also extracts its messages into the PO files and recompiles them, and a PO edit hot-updates just the components that use the messages it changed, so the page keeps its state.
 
 ## Comparison
 
