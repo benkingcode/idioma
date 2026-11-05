@@ -117,5 +117,8 @@
     "translation",
     "cli"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  }
 }

@@ -59,6 +59,9 @@
     "translation"
   ],
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@idioma/core": "workspace:*"
   }
