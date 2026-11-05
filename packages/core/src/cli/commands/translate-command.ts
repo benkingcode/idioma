@@ -1,5 +1,6 @@
+import { existsSync } from 'fs';
 import { createRequire } from 'module';
-import { join } from 'path';
+import { dirname, join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { defineCommand, type ParsedArgs } from 'citty';
 
@@ -90,23 +91,23 @@ export async function runTranslateCli(
  * @idioma/ai as the project installed it, or undefined when the project
  * has no @idioma/ai, or has it without the AI SDK.
  *
- * It is resolved from the project, not from core: pnpm links only a
+ * It is found from the project, not from core: pnpm links only a
  * package's own dependencies next to it, so a bare import('@idioma/ai')
  * here would not find the project's copy. Core doesn't list @idioma/ai in
  * its package.json either, which would make the two packages a cycle.
+ *
+ * Only the project's node_modules folders count, as Node walks them up
+ * from the project. require.resolve would also search NODE_PATH, which
+ * pnpm's bin shims point at the workspace's hoisted packages, so it found
+ * an @idioma/ai the project never installed.
  */
 export async function loadAiPackage(
   projectRoot: string,
 ): Promise<AiPackage | undefined> {
-  let entry: string;
-  try {
-    entry = createRequire(join(projectRoot, 'package.json')).resolve(
-      '@idioma/ai',
-    );
-  } catch (error) {
-    if (isModuleNotFound(error)) return undefined;
-    throw error;
-  }
+  const manifest = findInNodeModules(projectRoot, '@idioma/ai');
+  if (!manifest) return undefined;
+  // From inside the package, its own name resolves through its exports
+  const entry = createRequire(manifest).resolve('@idioma/ai');
   try {
     return (await import(pathToFileURL(entry).href)) as AiPackage;
   } catch (error) {
@@ -115,7 +116,16 @@ export async function loadAiPackage(
   }
 }
 
-/** Whether a resolve or import failed because a package isn't installed. */
+/** A package's package.json in the node_modules folders above `from`. */
+function findInNodeModules(from: string, name: string): string | undefined {
+  for (let dir = resolve(from); ; dir = dirname(dir)) {
+    const manifest = join(dir, 'node_modules', name, 'package.json');
+    if (existsSync(manifest)) return manifest;
+    if (dirname(dir) === dir) return undefined;
+  }
+}
+
+/** Whether an import failed because a package isn't installed. */
 function isModuleNotFound(error: unknown, name?: string): boolean {
   const { code, message } = error as { code?: string; message?: string };
   if (code !== 'ERR_MODULE_NOT_FOUND' && code !== 'MODULE_NOT_FOUND') {
