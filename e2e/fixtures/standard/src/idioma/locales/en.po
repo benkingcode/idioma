@@ -189,3 +189,10 @@ msgstr ""
 #, extracted
 msgid "001Mxuru"
 msgstr "{user.name} has {count, plural, one {# ticket} other {# tickets}}"
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "0035HFOB"
+msgstr ""
+"You have {cartCount, plural, one {# item} other {# items}}. See <Link>your "
+"cart</Link>"

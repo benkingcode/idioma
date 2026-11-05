@@ -82,6 +82,16 @@ describe('_createTFactory', () => {
       expect(result).toBe('3 días');
     });
 
+    it('fills the placeholders a compiled plural leaves in its template', () => {
+      const t = _createTFactory('en');
+      const result = t(
+        '{name} has {count, plural, other {# tickets}}',
+        { __m: { en: () => '{name} has 2 tickets' } },
+        { name: 'Ana', count: 2 },
+      );
+      expect(result).toBe('Ana has 2 tickets');
+    });
+
     it('calls a compiled message that has no values with an empty object', () => {
       const t = _createTFactory('es');
       const seen: unknown[] = [];

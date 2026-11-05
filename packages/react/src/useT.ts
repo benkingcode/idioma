@@ -95,7 +95,10 @@ export function __useT(
 
         const msg = _pickMessage(localeMessages, locale, defaultLocale);
         if (msg === undefined) return id;
-        if (typeof msg === 'function') return msg(keyValues || {});
+        if (typeof msg === 'function') {
+          const template = msg(keyValues || {});
+          return keyValues ? interpolateValues(template, keyValues) : template;
+        }
         return keyValues ? interpolateValues(msg, keyValues) : msg;
       }
 
@@ -143,7 +146,11 @@ export function __useT(
       }
 
       if (typeof msg === 'function') {
-        return msg(actualValues || {});
+        // A compiled plural or select returns a template to fill in
+        const template = msg(actualValues || {});
+        return actualValues && Object.keys(actualValues).length > 0
+          ? interpolateValues(template, actualValues)
+          : template;
       }
 
       return actualValues && Object.keys(actualValues).length > 0

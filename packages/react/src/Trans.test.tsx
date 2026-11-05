@@ -232,4 +232,47 @@ describe('__Trans', () => {
       expect(container.textContent).toBe('Hello');
     });
   });
+
+  describe('compiled plurals and selects', () => {
+    // A compiled plural returns a template, which renders as a plain
+    // message: placeholders filled in, tags turned into components
+    it('renders the component tags of a compiled plural', () => {
+      const { container } = render(
+        <IdiomaProvider locale="en">
+          <__Trans
+            __t={{ en: () => 'You have 2 items. See <Link>cart</Link>' }}
+            __c={[<a href="/cart" />]}
+            __cn={['Link']}
+          />
+        </IdiomaProvider>,
+      );
+      const link = screen.getByRole('link', { name: 'cart' });
+      expect(link.getAttribute('href')).toBe('/cart');
+      expect(container.textContent).toBe('You have 2 items. See cart');
+    });
+
+    it('fills the placeholders of a compiled plural', () => {
+      const { container } = render(
+        <IdiomaProvider locale="en">
+          <__Trans __t={{ en: () => '{name} has 2' }} __a={{ name: 'Ana' }} />
+        </IdiomaProvider>,
+      );
+      expect(container.textContent).toBe('Ana has 2');
+    });
+
+    it('never turns a value into a component', () => {
+      const { container } = render(
+        <IdiomaProvider locale="en">
+          <__Trans
+            __t={{ en: () => '{name} has <Link>2</Link>' }}
+            __a={{ name: '<Link>x</Link>' }}
+            __c={[<a href="/cart" />]}
+            __cn={['Link']}
+          />
+        </IdiomaProvider>,
+      );
+      expect(screen.getAllByRole('link')).toHaveLength(1);
+      expect(container.textContent).toBe('<Link>x</Link> has 2');
+    });
+  });
 });

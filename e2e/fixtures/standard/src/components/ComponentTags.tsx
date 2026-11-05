@@ -1,3 +1,5 @@
+import { plural } from '@idioma/core/icu';
+import { useState } from 'react';
 import { Trans } from '../idioma';
 
 // Test components for interpolation
@@ -19,9 +21,26 @@ function Italic({ children }: { children?: React.ReactNode }) {
 
 export function ComponentTags() {
   const name = 'World';
+  const [cartCount, setCartCount] = useState(1);
 
   return (
     <div>
+      {/* A plural next to a component: a compiled plural keeps its tags for
+          the runtime. The Spanish translation moves the link into the
+          plural's branches. */}
+      <p data-testid="comp-plural">
+        <Trans>
+          You have {plural(cartCount, { one: '# item', other: '# items' })}. See{' '}
+          <Link>your cart</Link>
+        </Trans>
+      </p>
+      <button
+        data-testid="comp-plural-increment"
+        onClick={() => setCartCount((c) => c + 1)}
+      >
+        +
+      </button>
+
       {/* Single component */}
       <p data-testid="comp-single">
         <Trans>

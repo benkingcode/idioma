@@ -325,9 +325,12 @@ export function __useTSuspense(
       return key;
     }
 
-    // Compiled ICU function (plural/select)
+    // A compiled plural or select returns a template to fill in
     if (typeof msg === 'function') {
-      return String(msg(values || {}));
+      const template = String(msg(values || {}));
+      return values && Object.keys(values).length > 0
+        ? interpolateValues(template, values)
+        : template;
     }
 
     // Plain string with optional value interpolation

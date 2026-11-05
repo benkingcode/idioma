@@ -190,4 +190,11 @@ msgstr ""
 #: src/components/Plurals.tsx
 #, extracted
 msgid "001Mxuru"
-msgstr "{user.name} لديه {count, plural, zero {لا تذاكر} one {تذكرة واحدة} two {تذكرتان} few {# تذاكر} many {# تذكرة} other {# تذكرة}}"
+msgstr ""
+"{user.name} لديه {count, plural, zero {لا تذاكر} one {تذكرة واحدة} two "
+"{تذكرتان} few {# تذاكر} many {# تذكرة} other {# تذكرة}}"
+
+#: src/components/ComponentTags.tsx
+#, extracted
+msgid "0035HFOB"
+msgstr "لديك {cartCount, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}. اطلع على <Link>سلتك</Link>"

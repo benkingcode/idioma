@@ -98,11 +98,14 @@ function formatMessage(
   message: MessageValue,
   values: Record<string, unknown> | undefined,
 ): string {
-  if (typeof message === 'function') return message(values ?? {});
+  // A compiled plural or select returns a template, with its placeholders
+  // left to fill in like a plain message's
+  const template =
+    typeof message === 'function' ? message(values ?? {}) : message;
   if (values && Object.keys(values).length > 0) {
-    return interpolateValues(message, values);
+    return interpolateValues(template, values);
   }
-  return message;
+  return template;
 }
 
 /**

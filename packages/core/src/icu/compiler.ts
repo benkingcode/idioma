@@ -10,7 +10,8 @@ import {
 } from '@formatjs/icu-messageformat-parser';
 
 /**
- * Parses an ICU message, accepting dotted argument names.
+ * Parses an ICU message, accepting dotted argument names, with tags kept as
+ * literal text.
  *
  * `<Trans>{user.name} has {plural(count, ...)}</Trans>` serializes the member
  * expression as `{user.name}`, and the formatjs parser rejects a `.` in an
@@ -28,7 +29,10 @@ export function parseIcu(message: string): MessageFormatElement[] {
       return `{${before}${tokenFor(names.length - 1)}${after}`;
     },
   );
-  const ast = parse(masked);
+  // Tags stay literal text, so a compiled plural keeps <Link>...</Link> in
+  // the template it returns, and the analyzer sees the arguments inside
+  // them. The runtime turns tags into components, as for a plain message.
+  const ast = parse(masked, { ignoreTag: true });
   if (names.length > 0) restoreNames(ast, names);
   return ast;
 }

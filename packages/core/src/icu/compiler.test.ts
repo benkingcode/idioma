@@ -147,6 +147,17 @@ describe('compileIcuToFunction', () => {
   });
 });
 
+describe('component tags', () => {
+  it('finds an argument inside a tag', () => {
+    // The parser read <b>{name}</b> as a tag node and the analyzer never
+    // looked inside it, so the generated types missed name
+    const analysis = analyzeIcuMessage(
+      '<b>{name}</b> has {count, plural, other {#}}',
+    );
+    expect(analysis.variables).toEqual(['name', 'count']);
+  });
+});
+
 describe('dotted argument names', () => {
   // <Trans>{user.name} has {plural(count, ...)}</Trans> serializes its
   // member expression as a dotted placeholder, which the formatjs parser
