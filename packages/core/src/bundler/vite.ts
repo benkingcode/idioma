@@ -1,9 +1,10 @@
 import { join, resolve } from 'path';
 import MagicString from 'magic-string';
-import type { Plugin, Rolldown } from 'vite';
+import type { EnvironmentModuleNode, Plugin, Rolldown } from 'vite';
 import { loadConfig } from '../cli/config.js';
 import { createCompileLock } from '../compiler/compile.js';
 import {
+  catalogueKey,
   IdiomaTransformError,
   transformModule,
   type Translations,
@@ -109,6 +110,14 @@ export default function idiomaVitePlugin(
   let pathsMatcher: PathsMatcher | null = null;
   // One object for the plugin's life, mutated when the catalogue recompiles
   const loadedTranslations: Translations = {};
+  /** How many times the compiled catalogue was loaded, for cache busting */
+  let loadCount = 0;
+  /** The catalogue keys each source file inlines, for hot updates */
+  const keysByFile = new Map<string, Set<string>>();
+  /** One recompile per PO change, shared by the client and SSR environments */
+  let catalogueUpdate:
+    | { timestamp: number; changed: Promise<Set<string> | null> }
+    | undefined;
   let debouncedExtractor: DebouncedExtractor | null = null;
 
   // Compile lock prevents concurrent compilations from racing
@@ -165,6 +174,55 @@ export default function idiomaVitePlugin(
     }
   }
 
+  /**
+   * Loads the compiled catalogue into the one object the transform reads.
+   * In dev mode a cache-busting query picks up a recompiled file.
+   */
+  async function loadTranslations(warning: string): Promise<void> {
+    try {
+      const translationsPath = join(
+        projectRoot,
+        outputDir,
+        '.generated',
+        'translations.js',
+      );
+      // A counter as well as the time: two loads in one millisecond (two
+      // quick PO writes) must not get the cached module
+      const cacheBuster = isDevMode ? `?t=${Date.now()}-${++loadCount}` : '';
+      const module = await import(translationsPath + cacheBuster);
+      for (const key of Object.keys(loadedTranslations)) {
+        delete loadedTranslations[key];
+      }
+      Object.assign(loadedTranslations, module.translations);
+    } catch (error) {
+      console.warn(warning, error);
+    }
+  }
+
+  /** Whether a file is one of the PO files the catalogue compiles from. */
+  function isCatalogueFile(file: string): boolean {
+    return (
+      file.endsWith('.po') && isInsideDir(file, resolve(projectRoot, localeDir))
+    );
+  }
+
+  /**
+   * Recompiles the catalogue and returns the keys whose messages changed,
+   * or null in Suspense mode, where modules do not inline translations.
+   */
+  async function updateCatalogue(): Promise<Set<string> | null> {
+    const before = snapshotTranslations(loadedTranslations);
+    await compile();
+    if (useSuspense) return null;
+    await loadTranslations('[idioma] Could not reload translations:');
+    const after = snapshotTranslations(loadedTranslations);
+    const changed = new Set<string>();
+    for (const key of new Set([...before.keys(), ...after.keys()])) {
+      if (before.get(key) !== after.get(key)) changed.add(key);
+    }
+    return changed;
+  }
+
   return {
     name: 'idioma',
     enforce: 'pre',
@@ -187,25 +245,8 @@ export default function idiomaVitePlugin(
       // Load compiled translations for the transform (inlined mode only)
       // In suspense mode, both Trans and useT use lazy loading via dynamic imports
       if (!useSuspense) {
-        try {
-          const translationsPath = join(
-            projectRoot,
-            outputDir,
-            '.generated',
-            'translations.js',
-          );
-          // Use cache-busting query param for dev mode to pick up HMR changes
-          const cacheBuster = isDevMode ? `?t=${Date.now()}` : '';
-          const module = await import(translationsPath + cacheBuster);
-          // Mutate the one object the transform reads
-          for (const key of Object.keys(loadedTranslations)) {
-            delete loadedTranslations[key];
-          }
-          Object.assign(loadedTranslations, module.translations);
-        } catch (error) {
-          // Translations may not exist yet on first build
-          console.warn('[idioma] Could not load translations:', error);
-        }
+        // Translations may not exist yet on first build
+        await loadTranslations('[idioma] Could not load translations:');
       }
 
       // Set up incremental extraction in dev mode
@@ -241,42 +282,42 @@ export default function idiomaVitePlugin(
     },
 
     // Handle HMR for PO files and source files
-    async handleHotUpdate({ file, server, read }) {
-      // Handle PO file changes - recompile translations
-      if (file.endsWith('.po') && file.includes(localeDir)) {
-        compile().then(async () => {
-          // Reload translations for the transform (inlined mode only)
-          if (!useSuspense) {
-            try {
-              const translationsPath = join(
-                projectRoot,
-                outputDir,
-                '.generated',
-                'translations.js',
-              );
-              const cacheBuster = `?t=${Date.now()}`;
-              const module = await import(translationsPath + cacheBuster);
-              // Mutate the one object the transform reads
-              for (const key of Object.keys(loadedTranslations)) {
-                delete loadedTranslations[key];
-              }
-              Object.assign(loadedTranslations, module.translations);
-            } catch (error) {
-              console.warn('[idioma] Could not reload translations:', error);
-            }
+    /**
+     * A PO edit recompiles the catalogue and hot-updates only the modules
+     * that inline a message that changed, so React Fast Refresh swaps them
+     * in place and the page keeps its state. It used to invalidate every
+     * module and reload the page. Vite calls this once per environment
+     * (client, SSR), and the recompile is shared between them.
+     */
+    hotUpdate: {
+      async handler({ file, timestamp, server }) {
+        if (!isCatalogueFile(file)) return;
+        if (catalogueUpdate?.timestamp !== timestamp) {
+          catalogueUpdate = { timestamp, changed: updateCatalogue() };
+        }
+        const changed = await catalogueUpdate.changed;
+        if (changed === null) {
+          // Suspense mode: chunks are loaded at runtime, so reload the page
+          if (this.environment.name === 'client') {
+            server.moduleGraph.invalidateAll();
+            this.environment.hot.send({ type: 'full-reload', path: '*' });
           }
+          return [];
+        }
+        const modules: EnvironmentModuleNode[] = [];
+        for (const [sourceFile, keys] of keysByFile) {
+          if (![...keys].some((key) => changed.has(key))) continue;
+          const nodes =
+            this.environment.moduleGraph.getModulesByFile(sourceFile);
+          if (nodes) modules.push(...nodes);
+        }
+        return modules;
+      },
+    },
 
-          // Invalidate all modules to force re-transformation with fresh translations
-          // The transform inlines translations, so every module must run again
-          server.moduleGraph.invalidateAll();
-
-          server.ws.send({
-            type: 'full-reload',
-            path: '*',
-          });
-        });
-        return [];
-      }
+    async handleHotUpdate({ file, server, read }) {
+      // PO files are handled by hotUpdate, per environment
+      if (isCatalogueFile(file)) return;
 
       // Handle source file changes - queue for incremental extraction
       // Uses .gitignore patterns automatically
@@ -335,6 +376,13 @@ export default function idiomaVitePlugin(
             },
             edits,
           );
+          if (!useSuspense) {
+            if (result.messageKeys.length > 0) {
+              keysByFile.set(filename, new Set(result.messageKeys));
+            } else {
+              keysByFile.delete(filename);
+            }
+          }
           if (!result.changed) return null;
           if (native) return { code: native };
           return {
@@ -354,4 +402,28 @@ export default function idiomaVitePlugin(
       },
     },
   };
+}
+
+/**
+ * Each message of a compiled catalogue as text, by catalogue key, so two
+ * catalogues can be compared. A compiled plural is compared by its code.
+ */
+function snapshotTranslations(translations: Translations): Map<string, string> {
+  const snapshot = new Map<string, string>();
+  const text = (messages: unknown) =>
+    JSON.stringify(messages, (_key, value: unknown) =>
+      typeof value === 'function' ? String(value) : value,
+    );
+  const namespaces = (translations as { __ns?: Record<string, Translations> })
+    .__ns;
+  for (const [key, messages] of Object.entries(translations)) {
+    if (key === '__ns') continue;
+    snapshot.set(key, text(messages));
+  }
+  for (const [ns, nsTranslations] of Object.entries(namespaces ?? {})) {
+    for (const [key, messages] of Object.entries(nsTranslations)) {
+      snapshot.set(catalogueKey(key, ns), text(messages));
+    }
+  }
+  return snapshot;
 }

@@ -1,3 +1,6 @@
+import { promises as fs } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadConfig, type IdiomaConfig } from '../cli/config';
 import { extractAndMergeFile } from './incremental-extract';
@@ -308,6 +311,167 @@ describe('Idioma Vite Plugin', () => {
         '[idioma] Compilation error:',
         expect.any(Error),
       );
+    });
+  });
+
+  describe('translation hot updates', () => {
+    // A PO edit used to invalidate every module and reload the page. Now the
+    // plugin compiles, compares the catalogue, and hands Vite only the
+    // modules that inline a message that changed, for Fast Refresh.
+    type Catalogue = Record<string, Record<string, string>>;
+    let root: string;
+    let catalogue: Catalogue;
+
+    async function writeCatalogue() {
+      const dir = join(root, 'src/idioma/.generated');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(
+        join(dir, 'translations.js'),
+        `export const translations = ${JSON.stringify(catalogue)};\n`,
+      );
+    }
+
+    beforeEach(async () => {
+      root = await fs.mkdtemp(join(tmpdir(), 'idioma-hmr-'));
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      compileMock.mockImplementation(writeCatalogue);
+    });
+
+    async function start(initial: Catalogue, options: IdiomaViteOptions = {}) {
+      catalogue = initial;
+      vi.mocked(loadConfig).mockResolvedValue({
+        idiomaDir: './src/idioma',
+        defaultLocale: 'en',
+      } as IdiomaConfig);
+      const plugin = idiomaVitePlugin({ watch: false, ...options }) as any;
+      plugin.configResolved({ command: 'serve', root });
+      await plugin.buildStart.call({});
+      return plugin;
+    }
+
+    function transform(plugin: any, name: string, id: string) {
+      const code = `import { useT } from './idioma'\nconst t = useT()\nexport const ${name} = t({ id: '${id}' })\n`;
+      plugin.transform.handler.call({}, code, join(root, `src/${name}.tsx`));
+    }
+
+    function environment(name = 'client') {
+      const modules: Record<string, object> = {};
+      return {
+        name,
+        modules,
+        hot: { send: vi.fn() },
+        moduleGraph: {
+          getModulesByFile(file: string) {
+            const key = file.slice(join(root, 'src/').length);
+            modules[key] ??= { file };
+            return new Set([modules[key]]);
+          },
+        },
+      };
+    }
+
+    const server = () => ({
+      ws: { send: vi.fn() },
+      moduleGraph: { invalidateAll: vi.fn() },
+    });
+
+    function editPo(plugin: any, env: object, timestamp = 1) {
+      return plugin.hotUpdate.handler.call(
+        { environment: env },
+        {
+          type: 'update',
+          file: join(root, 'src/idioma/locales/es.po'),
+          timestamp,
+          modules: [],
+          read: async () => '',
+          server: server(),
+        },
+      );
+    }
+
+    it('updates only the modules that use a changed message', async () => {
+      const plugin = await start({
+        'a.title': { en: 'A', es: 'A' },
+        'b.title': { en: 'B', es: 'B' },
+      });
+      transform(plugin, 'A', 'a.title');
+      transform(plugin, 'B', 'b.title');
+      catalogue = {
+        'a.title': { en: 'A', es: 'A2' },
+        'b.title': { en: 'B', es: 'B' },
+      };
+      const env = environment();
+
+      const modules = await editPo(plugin, env);
+
+      expect(modules).toEqual([env.modules['A.tsx']]);
+      expect(env.hot.send).not.toHaveBeenCalled();
+    });
+
+    it('updates a module whose message was just added', async () => {
+      const plugin = await start({});
+      transform(plugin, 'A', 'a.new');
+      catalogue = { 'a.new': { en: 'New', es: 'Nuevo' } };
+      const env = environment();
+
+      expect(await editPo(plugin, env)).toEqual([env.modules['A.tsx']]);
+    });
+
+    it('updates nothing when no message changed', async () => {
+      // An extraction that only moved a reference, for example
+      const plugin = await start({ 'a.title': { en: 'A', es: 'A' } });
+      transform(plugin, 'A', 'a.title');
+      const env = environment();
+
+      expect(await editPo(plugin, env)).toEqual([]);
+      expect(env.hot.send).not.toHaveBeenCalled();
+    });
+
+    it('compiles once for the client and SSR environments', async () => {
+      const plugin = await start({ 'a.title': { en: 'A', es: 'A' } });
+      transform(plugin, 'A', 'a.title');
+      catalogue = { 'a.title': { en: 'A', es: 'A2' } };
+      compileMock.mockClear();
+      const client = environment('client');
+      const ssr = environment('ssr');
+
+      const [fromClient, fromSsr] = await Promise.all([
+        editPo(plugin, client, 7),
+        editPo(plugin, ssr, 7),
+      ]);
+
+      expect(compileMock).toHaveBeenCalledTimes(1);
+      expect(fromClient).toEqual([client.modules['A.tsx']]);
+      expect(fromSsr).toEqual([ssr.modules['A.tsx']]);
+    });
+
+    it('still reloads the page in Suspense mode', async () => {
+      // Suspense mode does not inline translations into modules
+      const plugin = await start({}, { useSuspense: true });
+      const env = environment();
+
+      expect(await editPo(plugin, env)).toEqual([]);
+      expect(env.hot.send).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'full-reload' }),
+      );
+    });
+
+    it('leaves a PO file outside the locales folder alone', async () => {
+      const plugin = await start({});
+      const env = environment();
+      const result = await plugin.hotUpdate.handler.call(
+        { environment: env },
+        {
+          type: 'update',
+          file: join(root, 'vendor/other.po'),
+          timestamp: 1,
+          modules: [],
+          read: async () => '',
+          server: server(),
+        },
+      );
+      expect(result).toBeUndefined();
     });
   });
 });

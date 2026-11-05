@@ -97,6 +97,17 @@ export interface TransformResult {
   changed: boolean;
   /** The edits, for a bundler that wants a source map */
   edits: EditableString;
+  /**
+   * The catalogue keys the module looked up, translated or not, as
+   * `catalogueKey()` writes them. The Vite plugin hot-updates a module when
+   * one of its keys changes in the catalogue.
+   */
+  messageKeys: string[];
+}
+
+/** A catalogue key, with its namespace when it has one. */
+export function catalogueKey(key: string, ns?: string): string {
+  return ns ? `${ns}\u0005${key}` : key;
 }
 
 /** A call or element that cannot be inlined, with where it is. */
@@ -149,12 +160,17 @@ export function transformModule(
   edits: EditableString = new MagicString(code),
 ): TransformResult {
   if (!options.idiomaDir) {
-    return { code, changed: false, edits };
+    return { code, changed: false, edits, messageKeys: [] };
   }
   const program = parseModule(code, filename, options.parse);
   const transform = new ModuleTransform(code, filename, options, edits);
   transform.run(program);
-  return { code: edits.toString(), changed: edits.hasChanged(), edits };
+  return {
+    code: edits.toString(),
+    changed: edits.hasChanged(),
+    edits,
+    messageKeys: [...transform.messageKeys],
+  };
 }
 
 class ModuleTransform {
@@ -167,6 +183,8 @@ class ModuleTransform {
    */
   private readonly carried = new Set<Node>();
   private idiomaUsed = false;
+  /** The catalogue keys looked up, for hot updates */
+  readonly messageKeys = new Set<string>();
 
   constructor(
     private readonly code: string,
@@ -351,6 +369,7 @@ class ModuleTransform {
       return;
     }
 
+    this.messageKeys.add(key);
     const messages = this.options.translations?.[key];
     this.visitChildren(call);
     if (!messages) return;
@@ -772,6 +791,7 @@ class ModuleTransform {
   }
 
   private lookup(key: string, ns?: string): MessageTranslations {
+    this.messageKeys.add(catalogueKey(key, ns));
     const translations = (this.options.translations ?? {}) as Translations & {
       __ns?: Record<string, Translations>;
     };
