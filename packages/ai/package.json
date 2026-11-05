@@ -1,6 +1,6 @@
 {
   "name": "@idioma/ai",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "AI translation for Idioma: idioma translate, with any AI SDK model",
   "type": "module",
   "sideEffects": false,
