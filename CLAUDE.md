@@ -96,7 +96,14 @@ Use one of these approaches:
    pnpm build
    ```
 
-The E2E fixtures and examples import from the compiled `dist/` directories, not the source files directly. Forgetting to rebuild is a common source of confusion when changes "don't work".
+The E2E fixtures and examples import from the compiled `dist/` directories, not the source files directly. Forgetting to rebuild is a common source of confusion when changes "don't work". It also makes a red e2e run look like a flake: a test run against a `dist/` built before the fix fails, and passes once rebuilt.
+
+### Toolchain and dependencies
+
+- TypeScript 7 (`tsgo`) type-checks every package, and tsdown builds the declarations with it. Consumers use tsgo too, so a published `.d.ts` must type-check under it. tsdown stays on 0.23 (`^0.23.5`): its next minor needs TypeScript 7.1 for the tsgo path, and 7.1 is still in beta.
+- Vitest runs two projects (`vitest.config.ts`): `node` for every test except `packages/react/**/*.test.tsx`, which run in `react` (jsdom). The React tests run on React 19. Nothing tests React 18, though the peer range allows it.
+- `@idioma/react` is built with React Compiler 1.0 (`babel-plugin-react-compiler`).
+- What the published packages import at runtime must be in their `dependencies` or `peerDependencies`. `packages/core/tests/integration/package-deps.test.ts` reads every runtime import in both packages' `src/` and fails on one that is not. The 0.6.0 CLI crashed on a clean install because it imported `dotenv`, a devDependency. It now reads `.env` with Node's own `process.loadEnvFile()`.
 
 ## Architecture
 
@@ -496,7 +503,9 @@ This prevents auto-deletion of TMS-imported messages.
 
 ### AI Translation
 
-`packages/core/src/ai/` provides two AI features:
+`packages/core/src/ai/` provides two AI features, both used only by `idioma translate`.
+
+The AI SDK (`ai`) is an optional peer dependency. The command's definition (`cli/commands/translate-command.ts`) has no AI imports, and its `run` loads `translate.ts` with `import()`. So the config, the plugins, the runtime and every other command work without `ai`. Without it, `idioma translate` prints the install command and exits 1. `package-deps.test.ts` fails if any entry point imports `ai` statically. Type-only imports from `ai` (the config's `LanguageModel`) are erased and don't count.
 
 #### Context Generation (`context.ts`)
 
@@ -577,6 +586,8 @@ This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for
 #### Metro Plugin (`packages/core/src/bundler/metro.ts`)
 
 Same compile and watch pattern for React Native. `withIdioma` sets `transformer.babelTransformerPath` to `bundler/metro-transformer.ts`, which runs the Oxc transform and then the app's own transformer (Expo's or React Native's). Metro gives a transformer only the module, and its workers start after the config loads, so the upstream path and the options travel in environment variables (`IDIOMA_METRO_UPSTREAM_TRANSFORMER`, `IDIOMA_METRO_OPTIONS`). `getCacheKey` hashes the compiled catalogue, because the output inlines it.
+
+It watches with chokidar 5, which has no globs. It watches the locales folder and the project root, and filters with `ignored` functions (`ignoreNonPoFiles`, `createSourceWatchIgnore`). Chokidar can call `ignored` without `stats`, so the extension filters only drop a path whose `stats` say it is a file, never a folder.
 
 ---
 
