@@ -1,0 +1,57 @@
+{
+  "name": "@idioma/ai",
+  "version": "0.7.0",
+  "description": "AI translation for Idioma: idioma translate, with any AI SDK model",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benkingcode/idioma",
+    "directory": "packages/ai"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^4.2.1"
+  },
+  "peerDependencies": {
+    "@idioma/core": "workspace:*",
+    "ai": "^6.0.0"
+  },
+  "devDependencies": {
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@idioma/core": "workspace:*",
+    "ai": "^6.0.0"
+  },
+  "keywords": [
+    "i18n",
+    "react",
+    "translation",
+    "ai",
+    "ai-sdk",
+    "localization"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  }
+}

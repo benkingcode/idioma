@@ -6,12 +6,12 @@ import type {
   ContextProvider,
   FileContextRequest,
   GeneratedContext,
-} from '../../ai/context';
+} from './context';
 import type {
   TranslatedMessage,
   TranslationProvider,
   TranslationRequest,
-} from '../../ai/provider';
+} from './provider';
 import {
   runTranslate,
   runTranslateAll,

@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import type { Catalog, Message } from '@idioma/core/internal';
 import type { LanguageModel } from 'ai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Catalog, Message } from '../po/types';
 import {
   addAIContext,
   AI_CONTEXT_PREFIX,

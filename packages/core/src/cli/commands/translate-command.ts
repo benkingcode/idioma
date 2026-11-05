@@ -1,10 +1,13 @@
+import { createRequire } from 'module';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
 import { defineCommand, type ParsedArgs } from 'citty';
 
 /**
- * `idioma translate`, defined without its implementation. The CLI imports
- * every command to print its help, and the implementation imports the AI
- * SDK, an optional peer: so `run` loads it with import(), and every other
- * command, `idioma --help` included, works without the AI SDK installed.
+ * `idioma translate`. Core defines the command and its arguments; the
+ * implementation is @idioma/ai, a separate package with the AI SDK as a
+ * peer. Core never imports either, so a project that doesn't translate
+ * installs neither.
  */
 const translateArgs = {
   locale: {
@@ -48,29 +51,69 @@ export const translateCommand = defineCommand({
   },
   args: translateArgs,
   async run({ args }) {
-    let implementation: typeof import('./translate.js');
-    try {
-      implementation = await import('./translate.js');
-    } catch (error) {
-      if (isMissingAiSdk(error)) {
-        console.error(
-          '[idioma] idioma translate needs the AI SDK and a provider. ' +
-            'Install them, for example: pnpm add -D ai@6 @ai-sdk/anthropic@3',
-        );
-        process.exitCode = 1;
-        return;
-      }
-      throw error;
-    }
-    await implementation.runTranslateCommand(args);
+    await runTranslateCli(args, process.cwd());
   },
 });
 
-/** Whether an import failed because the `ai` package is not installed. */
-function isMissingAiSdk(error: unknown): boolean {
+/** What core's CLI calls in @idioma/ai. Its entry point `satisfies` this. */
+export interface AiPackage {
+  runTranslateCommand(args: TranslateCommandArgs): Promise<void>;
+}
+
+export const AI_INSTALL_HINT =
+  '[idioma] idioma translate needs @idioma/ai, the AI SDK and a provider. ' +
+  'Install them, for example: pnpm add -D @idioma/ai ai@6 @ai-sdk/anthropic@3';
+
+/** Runs @idioma/ai's translate, or says what to install. */
+export async function runTranslateCli(
+  args: TranslateCommandArgs,
+  projectRoot: string,
+): Promise<void> {
+  const ai = await loadAiPackage(projectRoot);
+  if (!ai) {
+    console.error(AI_INSTALL_HINT);
+    process.exitCode = 1;
+    return;
+  }
+  await ai.runTranslateCommand(args);
+}
+
+/**
+ * @idioma/ai as the project installed it, or undefined when the project
+ * has no @idioma/ai, or has it without the AI SDK.
+ *
+ * It is resolved from the project, not from core: pnpm links only a
+ * package's own dependencies next to it, so a bare import('@idioma/ai')
+ * here would not find the project's copy. Core doesn't list @idioma/ai in
+ * its package.json either, which would make the two packages a cycle.
+ */
+export async function loadAiPackage(
+  projectRoot: string,
+): Promise<AiPackage | undefined> {
+  let entry: string;
+  try {
+    entry = createRequire(join(projectRoot, 'package.json')).resolve(
+      '@idioma/ai',
+    );
+  } catch (error) {
+    if (isModuleNotFound(error)) return undefined;
+    throw error;
+  }
+  try {
+    return (await import(pathToFileURL(entry).href)) as AiPackage;
+  } catch (error) {
+    if (isModuleNotFound(error, 'ai')) return undefined;
+    throw error;
+  }
+}
+
+/** Whether a resolve or import failed because a package isn't installed. */
+function isModuleNotFound(error: unknown, name?: string): boolean {
   const { code, message } = error as { code?: string; message?: string };
+  if (code !== 'ERR_MODULE_NOT_FOUND' && code !== 'MODULE_NOT_FOUND') {
+    return false;
+  }
   return (
-    (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') &&
-    /['"]ai['"]/.test(message ?? '')
+    name === undefined || new RegExp(`['"]${name}['"]`).test(message ?? '')
   );
 }

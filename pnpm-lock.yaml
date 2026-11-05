@@ -236,6 +236,22 @@ importers:
         specifier: ^8.3.5
         version: 8.3.5(@types/node@22.20.5)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  packages/ai:
+    dependencies:
+      zod:
+        specifier: ^4.2.1
+        version: 4.2.1
+    devDependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.0
+        version: 3.0.1(zod@4.2.1)
+      '@idioma/core':
+        specifier: workspace:*
+        version: link:../core
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.2.1)
+
   packages/core:
     dependencies:
       '@formatjs/icu-messageformat-parser':
