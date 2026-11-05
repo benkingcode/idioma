@@ -7,7 +7,9 @@ import idioma from '../../src/bundler/vite';
 
 /**
  * A real `vite build` with the plugin, in a root that is not the working
- * directory.
+ * directory. A production build must not ship when the catalogue does not
+ * compile, because the app would then render stale or missing translations
+ * with nothing failing.
  */
 describe('vite build with the Idioma plugin', () => {
   let root: string;
@@ -62,5 +64,21 @@ describe('vite build with the Idioma plugin', () => {
     await expect(
       fs.access(join(process.cwd(), 'src/idioma')),
     ).rejects.toThrow();
+  });
+
+  it('fails when a PO file does not parse', async () => {
+    // An unescaped quote: the parser stops at line 6
+    await fs.writeFile(
+      join(root, 'src/idioma/locales/en.po'),
+      'msgid ""\nmsgstr ""\n"Language: en\\n"\n\nmsgid "a.b\nmsgstr "Hello"\n',
+    );
+
+    await expect(viteBuild()).rejects.toThrow(
+      /\[idioma\] Could not compile translations/,
+    );
+  });
+
+  it('fails when there is no catalogue at all', async () => {
+    await expect(viteBuild()).rejects.toThrow(/No \.po files/);
   });
 });
