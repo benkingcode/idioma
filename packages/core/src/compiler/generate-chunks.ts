@@ -52,7 +52,11 @@ export async function generateChunkModules(
             // Analyze for ICU patterns (plural, select)
             try {
               const analysis = analyzeIcuMessage(translation);
-              if (analysis.hasPlural || analysis.hasSelect) {
+              if (
+                analysis.hasPlural ||
+                analysis.hasSelect ||
+                analysis.hasFormat
+              ) {
                 // Compile ICU to function string
                 translations[key] = compileIcuToFunctionString(
                   translation,

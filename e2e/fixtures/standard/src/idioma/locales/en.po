@@ -196,3 +196,18 @@ msgid "0035HFOB"
 msgstr ""
 "You have {cartCount, plural, one {# item} other {# items}}. See <Link>your "
 "cart</Link>"
+
+#: src/components/Formats.tsx
+#, extracted
+msgid "formats.total"
+msgstr "Total: {price, number, ::currency/EUR}"
+
+#: src/components/Formats.tsx
+#, extracted
+msgid "formats.when"
+msgstr "On {day, date, long}"
+
+#: src/components/Formats.tsx
+#, extracted
+msgid "formats.tickets"
+msgstr "{count, plural, one {# ticket} other {# tickets}}"
