@@ -247,9 +247,9 @@ For translations in React Server Components, use `createT` from the plain module
 
 ```tsx
 // Page.tsx (Server Component)
-import { createT } from '@/idioma/plain';
+import { createT, type Locale } from '@/idioma/plain';
 
-export default async function Page({ locale }: { locale: string }) {
+export default async function Page({ locale }: { locale: Locale }) {
   const t = createT(locale);
 
   return (
@@ -283,9 +283,9 @@ For translations in utility functions, validation schemas, error messages, or an
 
 ```typescript
 // utils/validation.ts
-import { createT } from '@/idioma/plain';
+import { createT, type Locale } from '@/idioma/plain';
 
-export function createUserSchema(locale: string) {
+export function createUserSchema(locale: Locale) {
   const t = createT(locale);
 
   return z.object({
@@ -309,25 +309,31 @@ Works great for:
 - **Constants** — Lazy-evaluated translated labels
 
 ```typescript
-// Custom error class
-import { createT } from '@/idioma/plain';
+// Translated errors
+import { createT, type Locale } from '@/idioma/plain';
 
-export class AppError extends Error {
-  constructor(code: string, locale: string, values?: Record<string, unknown>) {
-    const t = createT(locale);
-    super(t({ id: `errors.${code}`, values }));
-    this.name = 'AppError';
+type ErrorCode = 'notFound' | 'forbidden';
+
+// Each id is a literal, so the build can inline it
+export function errorMessage(code: ErrorCode, locale: Locale) {
+  const t = createT(locale);
+  switch (code) {
+    case 'notFound':
+      return t({ id: 'errors.notFound' });
+    case 'forbidden':
+      return t({ id: 'errors.forbidden' });
   }
 }
 
-// API response helper
-export function formatApiError(code: string, locale: string) {
-  const t = createT(locale);
-  return { success: false, message: t(`error.${code}`) };
+export class AppError extends Error {
+  constructor(code: ErrorCode, locale: Locale) {
+    super(errorMessage(code, locale));
+    this.name = 'AppError';
+  }
 }
 ```
 
-**Bundle splitting:** In production, the Idioma transform inlines translations at each call site. Static strings (`t('literal')`) get optimal tree-shaking. Dynamic strings (`t(variable)`) trigger an automatic translations import for runtime lookup, which the transform injects only in files that need it.
+**Static and dynamic strings:** a call with a literal string or id is inlined at build time, so its translations ship with the code that uses it. A string known only at runtime, `t(message)`, is not translated: it renders as written. To choose a message at runtime, pick between literal ids, with a `switch` as above or a conditional: `t({ id: live ? 'set.live' : 'set.past' })`.
 
 ## Usage
 
@@ -400,7 +406,7 @@ function describe(locale: string) {
 }
 ```
 
-`Trans` must be imported from your generated idioma module, not from `@idioma/react`. A dynamic source string, `t(message)`, is still allowed: `createT` looks it up at runtime.
+`Trans` must be imported from your generated idioma module, not from `@idioma/react`. A dynamic source string, `t(message)`, still compiles, but it is not translated: it renders as written.
 
 The catalogue is checked at build time too. `vite build` fails, naming the file and key, when a PO file does not parse or when a plural or select in it is not valid ICU MessageFormat. The dev server logs the same error and keeps running.
 
@@ -415,26 +421,32 @@ Add translator context that affects key generation (same text, different context
 
 ### Pluralization
 
-Use the `plural()` function inside `<Trans>` or `t()` for pluralization:
+Use the `plural()` function inside `<Trans>` for pluralization:
 
 ```tsx
 import { Trans } from '@/idioma';
 import { plural } from '@idioma/core/icu';
 
-// In Trans component
 <Trans>
   You have {plural(count, { one: '# item', other: '# items' })} in your cart
 </Trans>;
+```
 
-// In t() template literal
+The `#` placeholder is replaced with the numeric value. This compiles to ICU MessageFormat:
+
+```
+You have {count, plural, one {# item} other {# items}} in your cart
+```
+
+In `t()`, write the ICU message itself, in `source` or in the PO file. `plural()`, `select()` and `selectOrdinal()` inside a `t()` template literal are not supported yet: such a call is never translated.
+
+```tsx
 const t = useT();
-t(`You have ${plural(count, { one: '# item', other: '# items' })} in cart`);
-```
-
-The `#` placeholder is replaced with the numeric value. Both usages compile to ICU MessageFormat:
-
-```
-You have {count, plural, one {# item} other {# items}} in cart
+t({
+  id: 'cart.count',
+  source: 'You have {count, plural, one {# item} other {# items}} in your cart',
+  values: { count },
+});
 ```
 
 Full plural forms for different languages:
@@ -458,16 +470,9 @@ Use the `select()` function for exact value matching (gender, status, categories
 import { Trans } from '@/idioma';
 import { select } from '@idioma/core/icu';
 
-// In Trans component
 <Trans>
   {select(gender, { male: 'He', female: 'She', other: 'They' })} liked your post
 </Trans>;
-
-// In t() template literal
-const t = useT();
-t(
-  `${select(status, { pending: 'Waiting', approved: 'Accepted', other: 'Unknown' })}`,
-);
 ```
 
 This compiles to ICU MessageFormat:
@@ -486,18 +491,11 @@ Use `selectOrdinal()` for ordinal formatting (1st, 2nd, 3rd):
 import { Trans } from '@/idioma';
 import { selectOrdinal } from '@idioma/core/icu';
 
-// In Trans component
 <Trans>
   You finished in{' '}
   {selectOrdinal(place, { one: '#st', two: '#nd', few: '#rd', other: '#th' })}{' '}
   place
 </Trans>;
-
-// In t() template literal
-const t = useT();
-t(
-  `Your ${selectOrdinal(attempt, { one: '#st', two: '#nd', few: '#rd', other: '#th' })} attempt`,
-);
 ```
 
 The `#` placeholder is replaced with the numeric value. This compiles to ICU MessageFormat:
@@ -558,15 +556,14 @@ function Greeting({ name }) {
   // With values (2nd arg)
   const greeting = t('Hello {name}', { name });
 
-  // With context (3rd arg - changes hash)
-  const submitLabel = t('Submit', undefined, { context: 'button' });
-
-  // With both values and context
-  const message = t('Welcome {user}', { user: name }, { context: 'header' });
+  // With an explicit id
+  const submitLabel = t({ id: 'form.submit', source: 'Submit' });
 
   return <span>{greeting}</span>;
 }
 ```
+
+A third argument, `t('Submit', undefined, { context: 'button' })` or `{ ns: 'common' }`, is not supported yet: the call compiles as if it were not there. To tell apart two uses of the same text, give each its own id. For a namespace, use `t({ id, ns })`.
 
 ### useLocale
 
@@ -589,10 +586,12 @@ Organize translations into namespaces for large apps:
 // In components
 <Trans ns="marketing">Welcome to our platform</Trans>;
 
-// With useT
+// With useT: the object form takes ns
 const t = useT();
-t('Subscribe now', undefined, { ns: 'marketing' });
+t({ id: 'subscribe', source: 'Subscribe now', ns: 'marketing' });
 ```
+
+A namespace's messages live in `locales/{locale}/{namespace}.po`, for example `locales/es/marketing.po`.
 
 ## CLI Commands
 
@@ -867,12 +866,11 @@ const t = useT();
 // Basic usage
 t('Hello world'); // Simple message
 t('Hello {name}', { name: 'Ben' }); // With values
-t('Submit', undefined, { context: 'button' }); // With context
-t('Save', undefined, { ns: 'common' }); // With namespace
 
 // ID-based
 t({ id: 'welcome' }); // Key only (translation must exist in PO)
 t({ id: 'greeting', source: 'Hello {name}', values: { name: 'Ben' } }); // With source text + values
+t({ id: 'save', ns: 'common' }); // In a namespace
 ```
 
 The `source` field provides default locale text for extraction (like children in `<Trans id="...">Source text</Trans>`). Without `source`, the PO entry gets an empty `msgstr` and you must add translations manually.
