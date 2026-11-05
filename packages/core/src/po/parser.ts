@@ -206,39 +206,52 @@ export async function loadLocaleCatalogs(
   const catalogs = new Map<string | undefined, Catalog>();
 
   // Check for flat file: locales/{locale}.po
+  // Only a missing file or directory is skipped. A file that does not parse
+  // throws: it used to be skipped too, so its locale dropped out of the
+  // build with nothing failing.
   const flatPath = join(localeDir, `${locale}.po`);
-  try {
-    const stat = await fs.stat(flatPath);
-    if (stat.isFile()) {
-      const content = await fs.readFile(flatPath, 'utf-8');
-      const catalog = parsePoString(content, locale);
-      catalog.namespace = undefined;
-      catalogs.set(undefined, catalog);
-    }
-  } catch {
-    // File doesn't exist, that's fine
+  if ((await statIfExists(flatPath))?.isFile()) {
+    const catalog = await parsePoFile(flatPath, locale);
+    catalog.namespace = undefined;
+    catalogs.set(undefined, catalog);
   }
 
   // Check for namespace directory: locales/{locale}/
   const nsDir = join(localeDir, locale);
-  try {
-    const stat = await fs.stat(nsDir);
-    if (stat.isDirectory()) {
-      const files = await fs.readdir(nsDir);
-      for (const file of files) {
-        if (file.endsWith('.po')) {
-          const namespace = basename(file, '.po');
-          const filePath = join(nsDir, file);
-          const content = await fs.readFile(filePath, 'utf-8');
-          const catalog = parsePoString(content, locale);
-          catalog.namespace = namespace;
-          catalogs.set(namespace, catalog);
-        }
+  if ((await statIfExists(nsDir))?.isDirectory()) {
+    const files = await fs.readdir(nsDir);
+    for (const file of files) {
+      if (file.endsWith('.po')) {
+        const namespace = basename(file, '.po');
+        const catalog = await parsePoFile(join(nsDir, file), locale);
+        catalog.namespace = namespace;
+        catalogs.set(namespace, catalog);
       }
     }
-  } catch {
-    // Directory doesn't exist, that's fine
   }
 
   return catalogs;
+}
+
+/** The file's stats, or undefined when it does not exist. */
+async function statIfExists(
+  path: string,
+): Promise<Awaited<ReturnType<typeof fs.stat>> | undefined> {
+  try {
+    return await fs.stat(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw error;
+  }
+}
+
+/** Parses a PO file, naming it in the error when it does not parse. */
+async function parsePoFile(path: string, locale: string): Promise<Catalog> {
+  const content = await fs.readFile(path, 'utf-8');
+  try {
+    return parsePoString(content, locale);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Could not parse ${path}: ${reason}`, { cause: error });
+  }
 }
