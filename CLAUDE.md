@@ -360,6 +360,8 @@ msgstr "{count, plural, one {# item} other {# items}}. See <Link>{place}</Link>"
 };
 ```
 
+ICU `number`, `date` and `time` arguments are formatted with `Intl`, with the options worked out at build time: the parser runs with `shouldParseSkeletons`, so a skeleton (`::currency/EUR`) arrives as Intl options, and the named styles (`integer`, `percent`; `short`, `medium`, `long`, `full`) map to FormatJS's intl-messageformat defaults (`NUMBER_STYLES`, `DATE_STYLES`, `TIME_STYLES` in `compile.ts`). A message with a format is compiled even without a plural, `#` is formatted as a number, date arguments are typed `Date | string | number`, and a style Intl can't format fails the compile.
+
 `parseIcu` in `packages/core/src/icu/compiler.ts` is the one parser for the analyzer, the interpreter and the code generator. It keeps tags as literal text (`ignoreTag`), and it accepts dotted argument names such as `{user.name}` (which the serializer writes for member expressions and the formatjs parser rejects) by masking them before parsing. A message with a plural, select or selectordinal that does not parse **fails the compile**, naming the file and key; other text the parser rejects compiles as plain text. A PO file that does not parse also fails the compile (`loadLocaleCatalogs` only skips a missing file). In `vite build` both fail the build; the dev server logs them and keeps running.
 
 Each locale's translation is analysed on its own text, so one locale can be a plural while another is a plain `{count} items`. A key's generated types (`MessageValues` variables, `MessageComponents` count) come from its first non-empty translation, reading the default locale first. An empty msgstr in another catalogue does not count.
@@ -561,8 +563,8 @@ This creates a mock provider (`createDryRunProvider`) that returns "Dry run" for
 
 **HMR** (dev mode):
 
-- PO file changes → recompile → full reload
-- Source file changes → incremental extraction → recompile
+- PO file changes → the `hotUpdate` hook, once per environment (client, SSR) → one shared recompile → the catalogue before and after compared by key → only the modules that use a changed key are returned to Vite, and React Fast Refresh swaps them in place. The transform reports each module's keys (`messageKeys` on `TransformResult`, translated or not, namespaced with `catalogueKey()`), and the plugin keeps them by file. A PO write that changes no message updates nothing. Suspense mode, which does not inline translations, still reloads the page.
+- Source file changes → incremental extraction → recompile (the resulting PO write then hot-updates the modules whose messages it added or changed)
 
 **Transform**: its own `transform` hook with `order: 'pre'` and Rolldown hook filters (`filter.id`, `filter.code`), so it runs before `@vitejs/plugin-react` (6+, Oxc, React Compiler included) and before Vite's own JSX transform. It never uses `api.reactBabel`: plugin-react 6 has no Babel and never calls it (#20). Needs Vite 8+. When the app enables `experimental.nativeMagicString`, it edits Rolldown's native MagicString (`meta.magicString`).
 
