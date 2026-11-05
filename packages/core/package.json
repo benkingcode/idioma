@@ -68,7 +68,7 @@
     "cli-progress": "^3.12.0",
     "fast-glob": "^3.3.3",
     "get-tsconfig": "^4.13.7",
-    "gettext-parser": "^8.0.0",
+    "gettext-parser": "^10.0.0",
     "ignore": "^7.0.5",
     "jiti": "^2.6.1",
     "magic-string": "^1.4.5",
