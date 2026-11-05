@@ -12,7 +12,7 @@
     "setup": "pnpm --filter './fixtures/*' install && pnpm --filter './fixtures/*' run extract && pnpm --filter './fixtures/*' run compile"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.0",
+    "@playwright/test": "~1.64.1",
     "@types/node": "^20.10.0",
     "typescript": "^7.0.2"
   }
