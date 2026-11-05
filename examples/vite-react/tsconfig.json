@@ -19,6 +19,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"],
+  "include": ["src", "idioma.config.ts"],
   "exclude": ["src/idioma/.generated"]
 }

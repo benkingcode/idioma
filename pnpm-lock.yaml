@@ -50,9 +50,6 @@ importers:
 
   e2e/fixtures/standard:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@idioma/react':
         specifier: workspace:*
         version: link:../../../packages/react
@@ -84,9 +81,6 @@ importers:
 
   e2e/fixtures/suspense:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@idioma/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -118,9 +112,6 @@ importers:
 
   e2e/fixtures/tree-shaking-standard:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@idioma/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -161,9 +152,6 @@ importers:
 
   e2e/fixtures/tree-shaking-suspense:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@idioma/core':
         specifier: workspace:*
         version: link:../../../packages/core
@@ -204,9 +192,6 @@ importers:
 
   examples/vite-react:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.0
-        version: 3.0.1(zod@4.2.1)
       '@idioma/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -217,6 +202,12 @@ importers:
         specifier: ^19.0.0
         version: 19.2.3(react@19.2.3)
     devDependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.0
+        version: 3.0.1(zod@4.2.1)
+      '@idioma/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@idioma/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -229,6 +220,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.2.1
         version: 6.2.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
+      ai:
+        specifier: ^6.0.0
+        version: 6.0.3(zod@4.2.1)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
