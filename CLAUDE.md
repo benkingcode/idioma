@@ -103,7 +103,11 @@ The E2E fixtures and examples import from the compiled `dist/` directories, not 
 - TypeScript 7 (`tsgo`) type-checks every package, and tsdown builds the declarations with it. Consumers use tsgo too, so a published `.d.ts` must type-check under it. tsdown stays on 0.23 (`^0.23.5`): its next minor needs TypeScript 7.1 for the tsgo path, and 7.1 is still in beta.
 - Vitest runs two projects (`vitest.config.ts`): `node` for every test except `packages/react/**/*.test.tsx`, which run in `react` (jsdom). The React tests run on React 19. Nothing tests React 18, though the peer range allows it.
 - `@idioma/react` is built with React Compiler 1.0 (`babel-plugin-react-compiler`).
-- What the published packages import at runtime must be in their `dependencies` or `peerDependencies`. `packages/core/tests/integration/package-deps.test.ts` reads every runtime import in both packages' `src/` and fails on one that is not. The 0.6.0 CLI crashed on a clean install because it imported `dotenv`, a devDependency. It now reads `.env` with Node's own `process.loadEnvFile()`.
+- What the published packages import at runtime must be in their `dependencies` or `peerDependencies`. `packages/core/tests/integration/package-deps.test.ts` reads every runtime import in the three packages' `src/` and fails on one that is not. The 0.6.0 CLI crashed on a clean install because it imported `dotenv`, a devDependency. It now reads `.env` with Node's own `process.loadEnvFile()`. The same test fails if core or react import the AI SDK at all, type-only imports included (see AI Translation).
+
+### Releasing
+
+`scripts/version.sh <version>` bumps `@idioma/core`, `@idioma/react` and `@idioma/ai` together, commits and tags. Pushing the tag runs the Publish workflow, which publishes each package through `scripts/publish-if-new.sh`: it skips a version npm already has, so "Re-run failed jobs" after a failure publishes only what's missing. `@idioma/ai` publishes last. npm can't attach a trusted publisher (OIDC) to a package before it exists, so `@idioma/ai`'s first version is published by hand, and its trusted publisher is added on npmjs.com after that.
 
 ## Architecture
 
@@ -115,12 +119,12 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 
 - `oxc/` - The Oxc transform: turns `<Trans>` and `t()` into compiled references, and extracts messages. No Babel
 - `bundler/` - Vite and Metro plugins for build integration
-- `cli/` - CLI commands: `extract`, `compile`, `check`, `stats`, `translate`
+- `cli/` - CLI commands: `extract`, `compile`, `check`, `stats`, `translate` (defined here, run by `@idioma/ai`)
 - `compiler/` - Compiles PO files to JS/TS with typed exports
 - `icu/` - ICU MessageFormat parser and compiler
 - `po/` - PO file parser and merge utilities
 - `keys/` - Message key generation (murmurhash-based)
-- `ai/` - AI translation: context generation from source code, unified provider via Vercel AI SDK
+- `internal.ts` - `@idioma/core/internal`: the helpers `@idioma/ai` uses. Not a public API
 
 **@idioma/react** (`packages/react/`) - Runtime components
 
@@ -130,6 +134,12 @@ Idioma is a compile-time React i18n library. Translations are extracted, stored 
 - `interpolate` for placeholder/tag substitution
 - `runtime-suspense/` - Suspense-based lazy loading (React 19+)
 - `server/` - Server-side rendering utilities
+
+**@idioma/ai** (`packages/ai/`) - AI translation, optional
+
+- `translate.ts` - what `idioma translate` runs
+- `context.ts`, `provider.ts` - context generation from source code, and translation, through the Vercel AI SDK
+- `config.ts` - the `ai` block of `idioma.config.ts`: its types, `defineConfig`, and `readAiConfig`, which checks it
 
 ### Configuration
 
@@ -503,9 +513,15 @@ This prevents auto-deletion of TMS-imported messages.
 
 ### AI Translation
 
-`packages/core/src/ai/` provides two AI features, both used only by `idioma translate`.
+AI translation is its own package, `@idioma/ai` (`packages/ai/src/`), with two features, both used only by `idioma translate`. Core has no AI code and names the AI SDK nowhere, in its code, its types or its manifest, so a project that doesn't translate installs neither. `package-deps.test.ts` enforces that, type-only imports included: a type import in a `.d.ts` broke `skipLibCheck: false` projects in 0.7.0.
 
-The AI SDK (`ai`) is an optional peer dependency. The command's definition (`cli/commands/translate-command.ts`) has no AI imports, and its `run` loads `translate.ts` with `import()`. So the config, the plugins, the runtime and every other command work without `ai`. Without it, `idioma translate` prints the install command and exits 1. `package-deps.test.ts` fails if any entry point imports `ai` statically. Type-only imports from `ai` (the config's `LanguageModel`) are erased and don't count.
+How the two packages meet:
+
+- **The command.** Core's CLI defines `idioma translate` and its arguments (`cli/commands/translate-command.ts`), then loads `@idioma/ai` from the project with `createRequire(<project>/package.json)`. It can't `import('@idioma/ai')`: pnpm links only a package's own dependencies next to it. Core's `package.json` doesn't name `@idioma/ai` either, so the packages don't form a build cycle. Without `@idioma/ai`, or with it but without `ai`, the command prints the install command and exits 1.
+- **The contract.** `@idioma/ai`'s entry `satisfies` core's `AiPackage` interface, so the typecheck fails if they drift. It takes core's helpers from `@idioma/core/internal`, and peer-depends on the exact same core version.
+- **The config.** Core keeps the `ai` block as written (`ai: z.unknown()`: zod would otherwise drop the key). `@idioma/ai` types it (`AiConfig`, `defineConfig`) and checks it when it translates (`readAiConfig`). The example app's tsconfig includes `idioma.config.ts`, so `pnpm typecheck` checks a real `anthropic()` model against `AiConfig`.
+- **The tests.** `@idioma/ai`'s unit tests import `@idioma/core/internal` from core's source, through an alias in `vitest.config.ts`. Its `tsc --noEmit` reads core's built declarations, so build before you typecheck.
+- **Flags.** citty reads `--no-x` as `x = false`, so a flag that turns something off is a default-true argument named `x` (`auto-context`, `mark-ai`), never one named `no-x`.
 
 #### Context Generation (`context.ts`)
 

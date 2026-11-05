@@ -22,7 +22,7 @@ About 1.4 KB of runtime. Typed ids and values. PO files with ICU MessageFormat. 
 
 - **Write natural JSX**: `<Trans>Hello {name}</Trans>`, not `t('greeting.hello', {name})`
 - **Flexible key strategy**: Auto-generated keys for rapid development; explicit IDs when you need stable, refactor-proof translations
-- **AI-powered translation**: Built-in translation with any AI SDK model (Claude, GPT, Gemini and others), with translator context read from your code
+- **AI translation, if you want it**: `idioma translate` with any AI SDK model (Claude, GPT, Gemini and others), with translator context read from your code. It's a separate package, `@idioma/ai`, so a project that doesn't translate installs no AI code
 - **Type-safe**: Generated TypeScript types message keys and required values (forget `{name}` and TypeScript tells you)
 - **Build-time checks**: A non-literal id, a PO file that doesn't parse or an invalid plural fails the build instead of shipping
 - **ICU MessageFormat**: Plurals, selects, ordinals, and number, date and time formats
@@ -668,7 +668,34 @@ idioma compile
 
 AI-powered translation with any [AI SDK](https://ai-sdk.dev/providers) model, set as `ai.model` in `idioma.config.ts` (see [Configuration](#configuration)). The provider reads its API key from the environment, for example `ANTHROPIC_API_KEY`.
 
-The AI SDK is an optional peer dependency, so the rest of Idioma doesn't install it. The one exception is a project that type-checks its dependencies (`skipLibCheck: false`): the config's types name the AI SDK's `LanguageModel`, so that project needs `ai` installed even if it never runs `idioma translate`. Install AI SDK 6 with a version 3 provider, such as `pnpm add -D ai@6 @ai-sdk/anthropic@3`. Version 4 providers are built for AI SDK 7, and AI SDK 6 rejects their models.
+AI translation is a separate package, `@idioma/ai`, so a project that doesn't translate installs no AI code and no AI SDK. Install it with AI SDK 6 and a version 3 provider:
+
+```bash
+pnpm add -D @idioma/ai ai@6 @ai-sdk/anthropic@3
+```
+
+Version 4 providers are built for AI SDK 7, and AI SDK 6 rejects their models. Without `@idioma/ai`, `idioma translate` prints that install command and exits 1.
+
+Then import `defineConfig` from `@idioma/ai` instead of `@idioma/core`. It is the same config, with the `ai` block typed:
+
+```ts
+// idioma.config.ts
+import { anthropic } from '@ai-sdk/anthropic';
+import { defineConfig } from '@idioma/ai';
+
+export default defineConfig({
+  idiomaDir: './src/idioma',
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'fr'],
+  ai: {
+    // Any AI SDK model: see https://ai-sdk.dev/providers (openai, google, etc.)
+    model: anthropic('claude-sonnet-5-5'),
+    // Your app's tone, audience and style, sent with every request
+    guidelines: `This is a children's educational game for ages 4-8.
+Use simple, friendly language. Avoid complex vocabulary.`,
+  },
+});
+```
 
 ```bash
 idioma translate                    # Translate missing messages
@@ -751,16 +778,8 @@ export default defineConfig({
   // PO file output: keep each string on one line (default: wrap at 79 columns, as msgcat does)
   po: { foldLength: 0 },
 
-  // AI translation config (uses Vercel AI SDK)
-  // Install the AI SDK and a provider for it: pnpm add -D ai@6 @ai-sdk/anthropic@3
-  ai: {
-    model: anthropic('claude-sonnet-5-5'), // import { anthropic } from '@ai-sdk/anthropic'
-    // See https://ai-sdk.dev/providers for other providers (openai, google, etc.)
-
-    // Project-specific guidelines for AI translation
-    guidelines: `This is a children's educational game for ages 4-8.
-Use simple, friendly language. Avoid complex vocabulary.`,
-  },
+  // AI translation settings (ai: { model, guidelines }) need @idioma/ai,
+  // and defineConfig from it: see translate above
 });
 ```
 
@@ -1027,6 +1046,7 @@ TypeScript provides full type safety via generated types:
 
 - **@idioma/core**: Oxc transform, Vite plugin, Metro plugin, CLI, PO compiler
 - **@idioma/react**: Runtime components (about 1.4 KB gzipped)
+- **@idioma/ai** (optional): `idioma translate`, AI translation with any AI SDK model
 
 ## License
 
