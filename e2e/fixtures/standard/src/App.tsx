@@ -3,6 +3,7 @@ import { ComponentTags } from './components/ComponentTags';
 import { EdgeCases } from './components/EdgeCases';
 import { Interpolation } from './components/Interpolation';
 import { IntrinsicElements } from './components/IntrinsicElements';
+import { PlainCreateT } from './components/PlainCreateT';
 import { Plurals } from './components/Plurals';
 import { UseT } from './components/UseT';
 import { UseTObjectForm } from './components/UseTObjectForm';
@@ -73,6 +74,11 @@ export default function App({ locale, onLocaleChange }: AppProps) {
         <section data-testid="intrinsic-elements-section">
           <h2>Intrinsic Elements</h2>
           <IntrinsicElements />
+        </section>
+
+        <section data-testid="createt-section">
+          <h2>createT</h2>
+          <PlainCreateT />
         </section>
 
         <section data-testid="edge-cases-section">
